@@ -497,7 +497,7 @@ footer a{color:var(--paper)}
     <section><div class="sec-h"><h2>6기 자료</h2></div><div class="px cam-more" style="margin-top:0"><a href="https://naver.me/FmGtUQAq" target="_blank" rel="noopener">STC 네이버 카페 (영상 업로드)</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 캠</a><span class="lab-sm" style="width:100%;margin-top:6px">수업 영상 구글드라이브 링크는 단톡방 공지에서 (공개 리포라 여기 안 넣음)</span></div></section>
     <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
       <div class="px"><p class="lab-sm">서버 계정이면 새 폰에서 그냥 로그인하면 돼요. 이 코드는 서버 없이 옮길 때 예비용.</p>
-        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm pink" id="logout" type="button">로그아웃</button></div>
+        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm pink" id="logout" type="button">로그아웃</button><button class="btn sm ghost" id="wipe" type="button">이 기기 데이터 전부 지우기</button></div>
         <textarea id="io-box" style="margin-top:10px;min-height:50px" placeholder="가져올 땐 여기에 코드를 붙여넣고 '가져오기'"></textarea>
       </div>
     </section>
@@ -1421,6 +1421,7 @@ $('login-form').addEventListener('submit', async e=>{
     enter({ id, name:u.name });
   }catch(err){ $('err').textContent = err.message; }
 });
+$('wipe').onclick = ()=>{ if(confirm('이 폰에 저장된 계정·진도를 전부 지웁니다. 서버 계정은 남아요. 계속?')){ try{ localStorage.clear(); }catch(e){} location.reload(); } };
 $('logout').onclick = ()=>{ try{ localStorage.removeItem('surf.session'); }catch(e){} location.reload(); };
 $('copy').addEventListener('click', copyNotion);
 $('practice').addEventListener('input', e=>LS.set(`surf.practice.${ME.id}`, e.target.value));
