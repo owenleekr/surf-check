@@ -9,6 +9,7 @@
 <title>오늘 파도 어때</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%232E6BFF'/%3E%3Cpath d='M0 5h1V4h1V3h1v1h1v1h1V4h1V3h1v1h1v1h-1v1H7v1H6V6H5V5H4v1H3v1H2V6H1V5z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js"></script>
 <style>
 /* ─────────────────────────────────────────────────────────────
    오늘 파도 어때 — 양양서핑학교 6기 파도 체크 · 미션 · 레벨
@@ -174,6 +175,11 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .cam-btn .live::before{content:""; width:10px; height:10px; background:var(--bad); animation:blink 1.2s steps(2,start) infinite}
 .cam-btn .t{font-weight:700; font-size:16px; line-height:1.25} .cam-btn .t span{display:block; font-weight:400; font-size:12px; opacity:.9; margin-top:2px}
 .cam-btn .arrow{margin-left:auto; font-size:22px; font-family:sans-serif}
+.camwrap{border:4px solid var(--ink); background:var(--ink); box-shadow:4px 4px 0 var(--ink); position:relative; margin-bottom:10px}
+.camwrap video{display:block; width:100%; aspect-ratio:16/9; background:#000}
+.camwrap .cover{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--paper); text-align:center; padding:16px; background:repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 4px), var(--deep)}
+.camwrap .cover small{font-size:11px; color:var(--sand); line-height:1.5}
+.camwrap .badge-live{position:absolute; left:10px; top:10px; background:var(--bad); color:#fff; font-size:11px; font-weight:700; padding:2px 7px; border:2px solid var(--ink)}
 .cam-more{display:flex; gap:8px; flex-wrap:wrap; font-size:12px; margin-top:10px}
 .cam-more a{border:3px solid var(--ink); padding:4px 9px; text-decoration:none; background:var(--paper); box-shadow:2px 2px 0 var(--ink)}
 
@@ -271,6 +277,35 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .ladder div{flex:1; border:4px solid var(--ink); background:#fff; padding:6px 2px; text-align:center; font-size:11px; line-height:1.2; opacity:.45}
 .ladder div b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:16px}
 .ladder div.on{opacity:1; background:var(--mint)} .ladder div.cur{opacity:1; background:var(--sun)}
+/* 캐릭터 빌더 */
+.builder{display:flex; gap:14px; align-items:flex-start}
+.builder canvas{width:112px; height:112px; flex:0 0 auto; background:var(--sky); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink)}
+.opts{flex:1; display:flex; flex-direction:column; gap:8px; min-width:0}
+.opt .lab-sm{margin-bottom:4px}
+.opt .row{display:flex; flex-wrap:wrap; gap:6px}
+.opt button{border:3px solid var(--ink); background:#fff; padding:4px 8px; font-size:12px; font-weight:700; box-shadow:2px 2px 0 var(--ink); display:flex; align-items:center; gap:5px}
+.opt button i{width:12px; height:12px; border:2px solid var(--ink); display:inline-block}
+.opt button[aria-pressed="true"]{background:var(--sun)}
+.opt button.coach{background:var(--orange); color:#fff}
+.role{display:flex; gap:0; margin-top:6px}
+.role button{flex:1; border:4px solid var(--ink); background:#fff; padding:8px; font-weight:700; font-size:14px}
+.role button + button{border-left:0}
+.role button[aria-pressed="true"]{background:var(--mint)}
+.field select{border:4px solid var(--ink); background:#fff; padding:10px 12px; font-size:16px; width:100%; box-shadow:inset 4px 4px 0 rgba(27,27,47,.12); font-family:inherit}
+.tagc{font-size:10px; border:2px solid var(--ink); padding:0 5px; background:var(--orange); color:#fff; vertical-align:2px; margin-left:4px}
+/* 칭찬 카드 */
+.cards{display:flex; flex-direction:column; gap:10px}
+.cardc{border:4px solid var(--ink); background:#fff; padding:10px 12px; box-shadow:3px 3px 0 var(--ink); position:relative; transform:rotate(-1deg)}
+.cardc:nth-child(even){transform:rotate(1deg); background:var(--sand)}
+.cardc .tpl{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:18px; line-height:1.2}
+.cardc .txt{font-size:13px; margin-top:4px; line-height:1.45}
+.cardc .meta{font-size:11px; color:var(--ink2); margin-top:6px}
+.modal{position:fixed; inset:0; background:rgba(18,36,95,.85); z-index:50; display:flex; align-items:flex-end; justify-content:center; padding:16px}
+.modal .px{width:100%; max-width:520px; max-height:88svh; overflow:auto}
+.chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
+.chips button{border:3px solid var(--ink); background:#fff; padding:5px 9px; font-size:13px; font-weight:700; box-shadow:2px 2px 0 var(--ink)}
+.chips button[aria-pressed="true"]{background:var(--coral); color:#fff}
+.rrow .clap{border:3px solid var(--ink); background:var(--sun); font-size:14px; padding:4px 7px; box-shadow:2px 2px 0 var(--ink); font-family:sans-serif}
 footer{margin-top:32px; font-size:11px; color:var(--sand); line-height:1.6; text-shadow:1px 1px 0 var(--ink)}
 footer a{color:var(--paper)}
 </style>
@@ -284,7 +319,9 @@ footer a{color:var(--paper)}
   <div class="wavebar"></div>
   <form class="px" id="login-form" autocomplete="off">
     <div class="mode"><button type="button" id="m-in" aria-pressed="true">로그인</button><button type="button" id="m-new" aria-pressed="false">새 계정</button></div>
-    <div class="field"><label for="uid">아이디</label><input id="uid" name="uid" inputmode="latin" autocapitalize="off" autocomplete="username" placeholder="영문·숫자 2~16자" maxlength="16" required></div>
+    <div class="field" id="f-role" hidden><label>누구세요?</label><div class="role"><button type="button" data-role="member" aria-pressed="true">6기 멤버</button><button type="button" data-role="coach" aria-pressed="false">코치</button></div></div>
+  <div class="field" id="f-roster" hidden><label for="uroster">이름 (명단에서 고르기)</label><select id="uroster"></select></div>
+  <div class="field"><label for="uid">아이디</label><input id="uid" name="uid" inputmode="latin" autocapitalize="off" autocomplete="username" placeholder="영문·숫자 2~16자" maxlength="16" required></div>
     <div class="field" id="f-name" hidden><label for="uname">이름 (닉네임)</label><input id="uname" name="uname" placeholder="레벨 카드에 표시돼요" maxlength="12"></div>
     <div class="field" id="f-av" hidden><label>캐릭터</label><div class="pick" id="pick-g"><button type="button" data-g="f" aria-pressed="true"><canvas></canvas>여자</button><button type="button" data-g="m" aria-pressed="false"><canvas></canvas>남자</button></div><div class="pick" id="pick-b"><button type="button" data-b="long" aria-pressed="true"><canvas></canvas>롱보드</button><button type="button" data-b="short" aria-pressed="false"><canvas></canvas>숏보드</button></div></div>
   <div class="field"><label for="upw">비밀번호</label><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required></div>
@@ -345,6 +382,7 @@ footer a{color:var(--paper)}
 
       <section>
         <div class="sec-h"><h2>라이브캠</h2><span class="tag">눈으로 확인</span></div>
+        <div class="camwrap"><video id="cam-video" playsinline muted controls preload="none"></video><div class="cover" id="cam-cover"><button class="btn pink" type="button" id="cam-play">▶ <span id="cam-play-name">낙산</span> 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small></div><span class="badge-live" id="cam-live" hidden>LIVE</span></div>
         <a class="cam-btn px" id="cam-btn" href="#" target="_blank" rel="noopener"><span class="live">LIVE</span><span class="t"><span id="cam-name">낙산 웨이브캠</span><span id="cam-src">WSB FARM</span></span><span class="arrow">→</span></a>
         <div class="cam-more"><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
       </section>
@@ -382,7 +420,8 @@ footer a{color:var(--paper)}
       <div class="stats" id="stats"></div>
     </div>
     <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
-    <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">바꾸기</span></div><div class="px"><div class="pick" id="edit-g"><button type="button" data-g="f"><canvas></canvas>여자</button><button type="button" data-g="m"><canvas></canvas>남자</button></div><div class="pick" id="edit-b"><button type="button" data-b="long"><canvas></canvas>롱보드</button><button type="button" data-b="short"><canvas></canvas>숏보드</button></div></div></section>
+    <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av"></canvas><div class="opts" id="bld-opts"></div></div></section>
+    <section><div class="sec-h"><h2>받은 칭찬 카드</h2><span class="tag" id="cards-n">0</span><span class="sub">6기 탭에서 친구에게 보내기</span></div><div class="cards" id="cards-in"></div></section>
     <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
     <section><div class="sec-h"><h2>레벨 표</h2></div><div class="px levels" id="levels"></div></section>
     <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
@@ -407,10 +446,15 @@ footer a{color:var(--paper)}
   <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>레벨</button>
   <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>6기</button>
 </nav>
+<div class="modal" id="card-modal" hidden><form class="px" id="card-form"><span class="eyebrow">칭찬 카드</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px;margin-top:2px"><span id="card-to">—</span> 에게</div>
+  <div class="chips" id="card-tpls"></div>
+  <textarea id="card-text" style="margin-top:10px;min-height:56px" placeholder="한 줄 더 (선택) — 예) 오늘 6시 세트 잡는 거 봤다"></textarea>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">보내기 +5 XP</button><button class="btn ghost" type="button" id="card-cancel">닫기</button></div></form></div>
 <div class="gain" id="gain">+10 XP</div>
 <div class="toast" id="toast"></div>
 
 <script>
+const $ = id => document.getElementById(id);
 /* ═══════════ 스프라이트 (문자 = 팔레트 키, . = 투명) ═══════════ */
 const PAL = { k:'#1B1B2F', w:'#FFF9E6', s:'#F7C59F', h:'#3A2A1E', r:'#FF6B6B', b:'#2E6BFF', y:'#FFD23F', g:'#4DE1A5', p:'#9B6BFF', o:'#FF9F1C', c:'#8FD3FF', d:'#1A47C9', t:'#E2B96A' };
 const SPR = {
@@ -443,7 +487,24 @@ const BOARD = {
   long: ['.yyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkk.','................'],
   short:['....yyyyyyy.....','..kyyyyyyyyyyk..','...kkkkkkkkkk...','................'],
 };
-const avatarRows = pr => BODY[pr?.gender==='m'?'m':'f'].concat(BOARD[pr?.board==='short'?'short':'long']);
+const HAT = {
+  none:null,
+  bucket:[ '....kkkkkkkk....','...kttttttttk...','..kkkkkkkkkkkk..'],
+  cap:   [ '.....kkkkkk.....','....kccccccccck.','.....kkkkkk.....'],
+  visor: [ '................','....kkkkkkkkkk..','.....kkkkk......'],
+};
+const VEST = [ '....kkoookk.....','...krkowokrk....','...ks.koo.sk....','......koo.......'];   // 코치 조끼 + 호루라기(w)
+const TOPS = { r:'#FF6B6B', b:'#2E6BFF', g:'#4DE1A5', p:'#9B6BFF', y:'#FFD23F', k:'#1B1B2F' };
+const TOP_KO = { r:'코랄', b:'블루', g:'민트', p:'퍼플', y:'옐로', k:'블랙' };
+const HAT_KO = { none:'없음', bucket:'서프햇', cap:'캡', visor:'바이저' };
+function overlay(rows, ov, y0){ rows = rows.slice(); ov.forEach((r,i)=>{ const y=y0+i; if(!rows[y]) return; rows[y] = [...rows[y]].map((c,x)=> r[x] && r[x]!=='.' ? r[x] : c).join(''); }); return rows; }
+function avatarRows(pr){
+  pr = pr||{}; let rows = BODY[pr.gender==='m'?'m':'f'].slice();
+  if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 5);
+  if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
+  return rows.concat(BOARD[pr.board==='short'?'short':'long']);
+}
+const avatarTintOf = (pr, L) => ({ y: ['#FFD23F','#FFD23F','#4DE1A5','#2E6BFF','#9B6BFF','#FF6B6B'][L||0]||'#FF6B6B', r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
 function drawSpr(cv, name, tint){
   const rows = Array.isArray(name) ? name : SPR[name]; if(!rows||!cv) return;
   cv.width = rows[0].length; cv.height = rows.length;
@@ -463,7 +524,7 @@ const auth = {
   async create(id, name, pw){
     const u = auth.users(); if(u[id]) throw new Error('이미 있는 아이디예요');
     const salt = Math.random().toString(36).slice(2,10);
-    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', profile:{ gender:pick.gender, board:pick.board }, createdAt: new Date().toISOString() };
+    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', profile:{ gender:pick.gender, board:pick.board, role:pick.role, top:pick.role==='coach'?'k':'r', hat:'none' }, createdAt: new Date().toISOString() };
     LS.set('surf.users', u); return u[id];
   },
   async login(id, pw){
@@ -473,7 +534,21 @@ const auth = {
   },
 };
 let ME = null;   // {id, name}
-const pick = { gender:'f', board:'long' };   // 가입 화면 선택값
+const pick = { gender:'f', board:'long', role:'member' };   // 가입 화면 선택값
+/* 6기 가을학기 명단 (칠판 사진 기준: 이름 · 서핑 시작 연도 · 첫 파도 탄 곳). 틀린 글자는 여기서 고치면 된다. */
+const ROSTER = [['이승대','2006','교산'],['김나리','2016','죽도'],['이해룡','2016','기사문'],['이상문','2017','만리포'],['장진혁','',''],['김도훈','2018','금진'],['김태은','2025','죽도'],['심재영','2019','신항'],['이나영','2022',''],['이미진','2022','제주'],['이성현','2026','낙산'],['정선아','2021','인구'],['조혜미','2024','곽지'],['허예랑','2018','남애리'],['홍미영','2026','낙산'],['최현재','2023','타이키'],['장은옥','2024','인구'],['박효종','2026','낙산'],['이한솔','2022','이호테우'],['정유정','2024','죽도'],['전영훈','2017','사천'],['전인수','2025','낙산'],['엄주승','2026','낙산'],['장베드로','2017','죽도']];
+const rosterOf = name => ROSTER.find(r=>r[0]===name);
+function syncRoleUI(){
+  const isNew = !$('f-role').hidden, member = pick.role==='member';
+  $('f-role').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.role===pick.role)));
+  $('f-roster').hidden = !(isNew && member); $('f-name').hidden = !(isNew && (!member || $('uroster').value==='__etc'));
+  $('f-name').querySelector('label').textContent = member ? '이름 (닉네임)' : '코치 이름';
+}
+function initRosterUI(){
+$('f-role').querySelectorAll('button').forEach(b=>b.onclick=()=>{ pick.role=b.dataset.role; syncRoleUI(); paintPick(); });
+$('uroster').innerHTML = ROSTER.map(r=>`<option value="${r[0]}">${r[0]}${r[1]?` · ${r[1]}년 ${r[2]}`:''}</option>`).join('') + '<option value="__etc">명단에 없어요 (직접 입력)</option>';
+$('uroster').onchange = ()=>{ $('f-name').hidden = $('uroster').value!=='__etc'; };
+}
 function myProfile(){ return auth.users()[ME.id]?.profile || { gender:'f', board:'long' }; }
 function setProfile(pr){ const u = auth.users(); if(!u[ME.id]) return; u[ME.id].profile = { ...myProfile(), ...pr }; LS.set('surf.users', u); refreshMe(); renderLevel(); syncUp(); }
 function dataKey(){ return `surf.data.${ME.id}`; }
@@ -511,22 +586,45 @@ const BADGES = [
 ];
 function calcXP(d){
   let xp = Object.keys(d.attend).length*XP.attend + Object.values(d.skills).filter(Boolean).length*XP.skill + Object.values(d.missions).filter(Boolean).length*XP.mission
-         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride;
+         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride + (ME ? cardXP() : 0);
   return xp;
+}
+/* 칭찬 카드: 받는 사람은 이름 기준(기기 달라도 같은 이름이면 도착). 로컬 + Supabase(설정 시) */
+const CARD_TPL = ['오늘 팝업 미쳤다','패들 파워 굿','라인업 매너 최고','와이프아웃도 멋있었어','새벽 입수 근성','세트 읽기 정확','첫 그린웨이브 축하','오늘 MVP'];
+function allCards(){ return LS.get('surf.cards', []).concat(state.remoteCards||[]).filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i); }
+function cardXP(){ const cs = allCards(); return (cs.filter(c=>c.to===ME.name).length + cs.filter(c=>c.from===ME.id).length)*5; }
+let cardTo = null, cardTpl = CARD_TPL[0];
+function openCard(name){
+  cardTo = name; cardTpl = CARD_TPL[0]; $('card-to').textContent = name; $('card-text').value = '';
+  $('card-tpls').innerHTML = CARD_TPL.map(t=>`<button type="button" aria-pressed="${t===cardTpl}">${t}</button>`).join('');
+  $('card-tpls').querySelectorAll('button').forEach(b=>b.onclick=()=>{ cardTpl=b.textContent; $('card-tpls').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', String(x===b))); });
+  $('card-modal').hidden = false;
+}
+$('card-cancel').onclick = ()=>$('card-modal').hidden = true;
+$('card-form').addEventListener('submit', async e=>{
+  e.preventDefault(); if(!cardTo) return;
+  const c = { id: ME.id+'-'+Date.now(), from:ME.id, fromName:ME.name, to:cardTo, tpl:cardTpl, text:$('card-text').value.trim().slice(0,120), date:new Date().toISOString() };
+  const cs = LS.get('surf.cards', []); cs.push(c); LS.set('surf.cards', cs); $('card-modal').hidden = true; gain(5); toast(`${cardTo}에게 칭찬 카드 보냄`);
+  if(supaOn()) fetch(`${SUPA.url}/rest/v1/cards`, { method:'POST', headers:supaH(), body:JSON.stringify({ id:c.id, from_id:c.from, from_name:c.fromName, to_name:c.to, tpl:c.tpl, text:c.text, created_at:c.date }) }).catch(()=>{});
+  refreshMe();
+});
+async function pullCards(){
+  if(!supaOn()) return; try{ const r = await fetch(`${SUPA.url}/rest/v1/cards?select=*&order=created_at.desc&limit=300`, { headers:supaH() }); if(!r.ok) return;
+    state.remoteCards = (await r.json()).map(x=>({ id:x.id, from:x.from_id, fromName:x.from_name, to:x.to_name, tpl:x.tpl, text:x.text||'', date:x.created_at })); }catch(e){}
 }
 function totalRides(d){ return Object.values(d.sessions||{}).reduce((s,x)=>s+(x.l||0)+(x.r||0),0); }
 function levelOf(xp){ let L=0; LEVELS.forEach(([min],i)=>{ if(xp>=min) L=i; }); return L; }
 
 /* ═══════════ 해변 · 데이터 ═══════════ */
 const BEACHES = [
-  {id:'naksan',   name:'낙산',           area:'양양', lat:38.121, lon:128.632, facing:95,  cam:'YNS1', camNote:'WSB FARM × 양양서핑학교 캠'},
-  {id:'ingu',     name:'인구',           area:'양양', lat:37.965, lon:128.766, facing:90,  cam:'IJ1'},
-  {id:'jukdo',    name:'죽도',           area:'양양', lat:37.972, lon:128.765, facing:100, cam:'JD1'},
-  {id:'gisamun',  name:'기사문',         area:'양양', lat:38.019, lon:128.727, facing:80,  cam:'GSM1'},
-  {id:'surfyy',   name:'서피비치·하조대', area:'양양', lat:38.038, lon:128.720, facing:85,  cam:'YHJD1'},
-  {id:'namae',    name:'남애',           area:'양양', lat:37.945, lon:128.787, facing:100, cam:'NA1'},
-  {id:'gyeongpo', name:'경포',           area:'강릉', lat:37.805, lon:128.909, facing:75,  cam:'GGP1'},
-  {id:'geumjin',  name:'금진',           area:'강릉', lat:37.640, lon:129.045, facing:100, cam:'GJ1'},
+  {id:'naksan',   name:'낙산',           area:'양양', lat:38.121, lon:128.632, facing:95,  cam:'YNS1', stream:'https://wsb.live.smilecdn.com/naksan1/naksan1.stream/playlist.m3u8', camNote:'WSB FARM × 양양서핑학교 캠'},
+  {id:'ingu',     name:'인구',           area:'양양', lat:37.965, lon:128.766, facing:90,  cam:'IJ1', stream:'https://wsb.live.smilecdn.com/ingu1/ingu1.stream/playlist.m3u8'},
+  {id:'jukdo',    name:'죽도',           area:'양양', lat:37.972, lon:128.765, facing:100, cam:'JD1', stream:'https://wsb.live.smilecdn.com/jukdo1/jukdo1.stream/playlist.m3u8'},
+  {id:'gisamun',  name:'기사문',         area:'양양', lat:38.019, lon:128.727, facing:80,  cam:'GSM1', stream:'https://wsb.live.smilecdn.com/gisamun3/gisamun3.stream/playlist.m3u8'},
+  {id:'surfyy',   name:'서피비치·하조대', area:'양양', lat:38.038, lon:128.720, facing:85,  cam:'YHJD1', stream:'https://wsb.live.smilecdn.com/hajodae1/hajodae1.stream/playlist.m3u8'},
+  {id:'namae',    name:'남애',           area:'양양', lat:37.945, lon:128.787, facing:100, cam:'NA1', stream:'https://wsb.live.smilecdn.com/484600865/main/playlist_sfm4s.m3u8'},
+  {id:'gyeongpo', name:'경포',           area:'강릉', lat:37.805, lon:128.909, facing:75,  cam:'GGP1', stream:'https://wsb.live.smilecdn.com/gyeongpo1/gyeongpo1.stream/playlist.m3u8'},
+  {id:'geumjin',  name:'금진',           area:'강릉', lat:37.640, lon:129.045, facing:100, cam:'GJ1', stream:'https://wsb.inforsurf.cn/live/geumjin_3745.m3u8'},
 ];
 const CAM_URL = c => `https://www.wsbfarm.com/wavecam/WaveCamView?beach=${c}`;
 const DAYS = 3, H0 = 5, H1 = 19;
@@ -592,7 +690,6 @@ function analyze(b, day){
 }
 
 /* ═══════════ 렌더: 파도 탭 ═══════════ */
-const $ = id => document.getElementById(id);
 const el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html!=null) e.innerHTML = html; return e; };
 function dateLabel(iso){ const d = new Date(iso+'T00:00'); return { md:`${d.getMonth()+1}/${d.getDate()}`, dow:DOW[d.getDay()], we:d.getDay()===0||d.getDay()===6, iso }; }
 function renderDays(){
@@ -692,7 +789,21 @@ function renderChecks(b, a){
     if(Object.values(saved).filter(Boolean).length===items.length){ const d=getData(); d.ckDone=(d.ckDone||0)+1; if(new Date().getHours()<7) d.dawn=(d.dawn||0)+1; setData(d); toast('체크리스트 완료! 1주차 미션에 반영'); refreshMe(); }
   }));
 }
-function renderCam(b){ $('cam-btn').href = CAM_URL(b.cam); $('cam-name').textContent = `${b.name} 웨이브캠`; $('cam-src').textContent = (b.camNote || 'WSB FARM 웨이브캠') + ' · 새 창'; }
+let hls = null, camPlaying = null;
+function camStop(){ const v = $('cam-video'); if(hls){ hls.destroy(); hls = null; } v.pause(); v.removeAttribute('src'); v.load(); camPlaying = null; $('cam-cover').hidden = false; $('cam-live').hidden = true; }
+function camPlay(b){
+  const v = $('cam-video'), url = b.stream; if(!url) return;
+  const fail = ()=>{ camStop(); $('cam-cover').innerHTML = `<div style="font-weight:700">캠이 지금 안 잡혀요</div><small>점검 중이거나 주소가 바뀌었을 수 있어요. 아래 WSB FARM 링크로 직접 보세요.</small><button class="btn sm ghost" type="button" onclick="renderCam(BEACHES[state.beach])">다시 시도</button>`; };
+  $('cam-cover').hidden = true; $('cam-live').hidden = false; camPlaying = b.id;
+  if(window.Hls && Hls.isSupported()){ hls = new Hls({ liveSyncDurationCount:3 }); hls.loadSource(url); hls.attachMedia(v); hls.on(Hls.Events.MANIFEST_PARSED, ()=>v.play().catch(()=>{})); hls.on(Hls.Events.ERROR, (_,d)=>{ if(d.fatal) fail(); }); }
+  else if(v.canPlayType('application/vnd.apple.mpegurl')){ v.src = url; v.onerror = fail; v.play().catch(()=>{}); }
+  else fail();
+}
+function renderCam(b){
+  if(camPlaying && camPlaying!==b.id) camStop();
+  $('cam-cover').innerHTML = `<button class="btn pink" type="button" id="cam-play">▶ ${b.name} 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small>`;
+  $('cam-play').onclick = ()=>camPlay(b);
+  $('cam-btn').href = CAM_URL(b.cam); $('cam-name').textContent = `${b.name} 웨이브캠`; $('cam-src').textContent = (b.camNote || 'WSB FARM 웨이브캠') + ' · 새 창'; }
 function renderCompare(){
   const rows = BEACHES.map((b,i)=>({ b, i, a:analyze(b, state.day) })); $('cmp-sub').textContent = `${['오늘','내일','모레'][state.day]} 권장 시간대 기준`;
   $('cmp').innerHTML = `<table><thead><tr><th>해변</th><th>파도</th><th>바람</th><th>입수</th><th>판정</th><th>캠</th></tr></thead><tbody>` + rows.map(({b,i,a})=>{ const r=a.rep; return `<tr role="button" tabindex="0" data-i="${i}" class="${i===state.beach?'cur':''}"><td class="name">${b.name}<small>${b.area}</small></td><td class="num">${r.h.toFixed(1)}m · ${Math.round(r.p)}초</td><td class="num">${Math.round(r.w)}kts ${compass8(r.dir)} <span style="color:var(--ink2)">${relKo[r.rel]}</span></td><td class="num">${pad2(a.best.h)}~${pad2(a.best.h+2)}</td><td><span class="mini" data-v="${a.vd.v}">${a.vd.t}</span></td><td><a href="${CAM_URL(b.cam)}" target="_blank" rel="noopener" title="${b.name} 캠" style="text-decoration:none">▶</a></td></tr>`; }).join('') + `</tbody></table>`;
@@ -780,7 +891,8 @@ function renderMission(){
 function renderLevel(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1];
   $('lv-name').textContent = ME.name; $('lv-title').textContent = `LV.${L} ${LEVELS[L][1]}`;
-  $('lv-meta').textContent = `@${ME.id} · 가입 ${(auth.users()[ME.id]?.createdAt||'').slice(0,10).replace(/-/g,'.')}`;
+  const ro = rosterOf(ME.name), pr0 = myProfile();
+  $('lv-meta').textContent = (pr0.role==='coach' ? '코치 · ' : ro&&ro[1] ? `서핑 시작 ${ro[1]} · 첫 파도 ${ro[2]} · ` : '') + `@${ME.id}`;
   $('xp-txt').textContent = `${xp} XP`; $('xp-next').textContent = next ? `다음 레벨 ${next[1]}까지 ${next[0]-xp} XP` : '최고 레벨!';
   const lo = LEVELS[L][0], hi = next ? next[0] : lo+1; $('xp-bar').style.width = Math.min(100, (xp-lo)/(hi-lo)*100)+'%';
   const skN = Object.values(d.skills).filter(Boolean).length, total = WEEKS.reduce((s,w)=>s+w.skills.length,0);
@@ -789,12 +901,21 @@ function renderLevel(){
   const attN = Object.keys(d.attend).length; let stage = 0; ATT_STAGES.forEach(([n],i)=>{ if(attN>=n) stage=i; });
   $('ladder').innerHTML = ATT_STAGES.map(([n,name],i)=>`<div class="${i<stage?'on':i===stage?'cur':''}"><b>${n}</b>${name}</div>`).join('');
   const nx = ATT_STAGES[stage+1]; $('ladder-txt').textContent = `출석 ${attN}회 · ${ATT_STAGES[stage][1]}${nx?` → ${nx[1]}까지 ${nx[0]-attN}회 남음`:' · 다 채웠어요!'}`;
-  const pr = myProfile();
-  $('edit-g').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.g===pr.gender)); drawSpr(x.querySelector('canvas'), avatarRows({gender:x.dataset.g, board:pr.board})); x.onclick = ()=>setProfile({gender:x.dataset.g}); });
-  $('edit-b').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.b===pr.board)); drawSpr(x.querySelector('canvas'), avatarRows({gender:pr.gender, board:x.dataset.b})); x.onclick = ()=>setProfile({board:x.dataset.b}); });
+  const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTintOf(pr, L));
+  const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
+  $('bld-opts').innerHTML =
+    opt('머리', 'gender', [['f','여자'],['m','남자']]) +
+    opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), (v,t)=>`<i style="background:${TOPS[v]}"></i>${t}`) +
+    opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
+    opt('보드', 'board', [['long','롱보드'],['short','숏보드']]) +
+    (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) : '');
+  $('bld-opts').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; setProfile({[x.dataset.k]:v}); });
+  const mine = allCards().filter(c=>c.to===ME.name).sort((a,b)=>b.date.localeCompare(a.date));
+  $('cards-n').textContent = mine.length;
+  $('cards-in').innerHTML = mine.map(c=>`<div class="cardc"><div class="tpl">${c.tpl}</div>${c.text?`<div class="txt">${c.text.replace(/</g,'&lt;')}</div>`:''}<div class="meta">${c.fromName} · ${c.date.slice(0,10).replace(/-/g,'.')}</div></div>`).join('') || '<div class="px" style="font-size:13px;color:var(--ink2)">아직 없어요. 먼저 보내면 돌아와요.</div>';
   $('levels').innerHTML = LEVELS.map(([min,name],i)=>`<div class="${i===L?'cur':''}"><span>LV.${i} ${name}</span><span class="num">${min} XP</span></div>`).join('');
 }
-function avatarTint(L){ const boards = ['y','y','g','b','p','r']; const c = boards[L]||'r'; return { y: PAL[c] }; }
+function avatarTint(L){ return avatarTintOf(myProfile(), L); }
 function refreshMe(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp);
   $('me-name').textContent = ME.name; $('me-lv').textContent = `LV.${L} ${LEVELS[L][1]} · ${xp} XP`;
@@ -805,6 +926,7 @@ function refreshMe(){
 
 /* ═══════════ 탭 · 로그인 · 부팅 ═══════════ */
 function showTab(t){
+  if(t!=='wave' && camPlaying) camStop();
   state.tab = t; ['wave','mission','level','rank'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
   if(t==='mission') renderMission(); if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0});
@@ -815,16 +937,18 @@ function enter(u){
   $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
   const sb = LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
   $('practice').value = LS.get(`surf.practice.${u.id}`, '');
-  refreshMe(); showTab('wave'); if(!state.loaded) bootWave();
+  refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); pullCards().then(refreshMe);
 }
 let mode = 'in';
-const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
+const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
 $('login-form').addEventListener('submit', async e=>{
-  e.preventDefault(); const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value, name = $('uname').value.trim();
+  e.preventDefault(); const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value;
+  let name = $('uname').value.trim(); if(mode==='new' && pick.role==='member' && $('uroster').value!=='__etc') name = $('uroster').value;
   try{
     if(!/^[a-z0-9_]{2,16}$/.test(id)) throw new Error('아이디는 영문 소문자·숫자·_ 2~16자');
     if(pw.length<4) throw new Error('비밀번호는 4자 이상');
+    if(mode==='new' && !name) throw new Error('이름을 골라 주세요');
     const u = mode==='new' ? await auth.create(id, name, pw) : await auth.login(id, pw);
     if(mode==='new'){ toast(`${u.name} 님, 6기 환영!`); }
     enter({ id, name:u.name });
@@ -840,12 +964,12 @@ $('imp').onclick = ()=>{ try{ const raw = $('io-box').value.trim(); if(!raw.star
 
 /* ═══════════ 가입 화면 캐릭터 고르기 ═══════════ */
 function paintPick(){
-  $('pick-g').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.g===pick.gender)); drawSpr(x.querySelector('canvas'), avatarRows({gender:x.dataset.g, board:pick.board})); });
-  $('pick-b').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.b===pick.board)); drawSpr(x.querySelector('canvas'), avatarRows({gender:pick.gender, board:x.dataset.b})); });
+  $('pick-g').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.g===pick.gender)); drawSpr(x.querySelector('canvas'), avatarRows({gender:x.dataset.g, board:pick.board, role:pick.role}), avatarTintOf({top:pick.role==='coach'?'k':'r'},0)); });
+  $('pick-b').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.b===pick.board)); drawSpr(x.querySelector('canvas'), avatarRows({gender:pick.gender, board:x.dataset.b, role:pick.role}), avatarTintOf({top:pick.role==='coach'?'k':'r'},0)); });
 }
 $('pick-g').querySelectorAll('button').forEach(x=>x.onclick=()=>{ pick.gender=x.dataset.g; paintPick(); });
 $('pick-b').querySelectorAll('button').forEach(x=>x.onclick=()=>{ pick.board=x.dataset.b; paintPick(); });
-paintPick();
+initRosterUI(); paintPick();
 
 /* ═══════════ 6기 랭킹 · 공유 동기화 (Supabase) ═══════════
    비워두면 이 기기의 계정들만 랭킹에 보인다. README의 SQL로 테이블을 만들고 url·key를 채우면
@@ -869,11 +993,12 @@ async function fetchRank(){
   catch(e){ return { rows:local, remote:false, err:true }; }
 }
 async function renderRank(){
-  $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>';
+  $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards();
   const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>b.xp-a.xp || b.rides-a.rides);
   $('rank-note').textContent = remote ? `${rows.length}명 · XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
-  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}"></canvas><div class="rn"><b>${x.name}</b><span>LV.${x.level} ${LEVELS[x.level]?.[1]||''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div></div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
-  rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTint(x.level)));
+  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}"></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>LV.${x.level} ${LEVELS[x.level]?.[1]||''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
+  rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTintOf(x.profile, x.level)));
+  $('rank').querySelectorAll('.clap').forEach(b=>b.onclick=()=>openCard(b.dataset.name));
 }
 
 paintAll();

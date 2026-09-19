@@ -24,3 +24,25 @@ create policy "update" on surfers for update using (true);
 2. `index.html`의 `const SUPA = { url:'', key:'' }`에 프로젝트 URL과 anon key를 넣고 push.
 
 앱은 진도가 바뀔 때마다 자기 행을 upsert하고, 6기 탭에서 XP 순으로 읽는다. 친구 그룹용이라 행 보호는 느슨하다(누구나 갱신 가능).
+
+칭찬 카드도 공유하려면 테이블 하나 더:
+```sql
+create table cards (
+  id text primary key, from_id text, from_name text, to_name text,
+  tpl text, text text, created_at timestamptz
+);
+alter table cards enable row level security;
+create policy "read all" on cards for select using (true);
+create policy "insert" on cards for insert with check (true);
+```
+
+칭찬 카드도 공유하려면 테이블 하나 더:
+```sql
+create table cards (
+  id text primary key, from_id text, from_name text, to_name text,
+  tpl text, text text, created_at timestamptz
+);
+alter table cards enable row level security;
+create policy "read all" on cards for select using (true);
+create policy "insert" on cards for insert with check (true);
+```
