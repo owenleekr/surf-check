@@ -44,6 +44,13 @@ a{color:inherit}
 :focus-visible{outline:4px solid var(--sun); outline-offset:2px}
 canvas{image-rendering:pixelated; image-rendering:crisp-edges}
 [hidden]{display:none!important}
+html{scroll-behavior:smooth}
+#tab-wave,#tab-mission,#tab-level,#tab-rank{animation:tabin .25s steps(5) both}
+@keyframes tabin{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+.btn,.chip,.day,.cnt button,.opt button,.chips button,.clap{transition:transform .08s steps(2), box-shadow .08s steps(2)}
+.chip:active,.day:active,.opt button:active,.chips button:active,.clap:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
+.tile,.slot,.rrow,.week,.cardc{animation:popin .3s steps(4) both}
+@keyframes popin{from{opacity:0; transform:scale(.96)} to{opacity:1; transform:none}}
 .num{font-variant-numeric:tabular-nums}
 
 /* 픽셀 박스 */
@@ -172,6 +179,8 @@ section{margin-top:26px}
 .item label{flex:1; cursor:pointer}
 .item label b{font-weight:700} .item label span{display:block; font-size:12px; color:var(--ink2); line-height:1.45}
 .item input:checked + label{text-decoration:line-through; text-decoration-thickness:3px; text-decoration-color:var(--coral); opacity:.75}
+.routine summary{cursor:pointer; font-size:12px; color:var(--ink2); padding:4px 0; list-style:none} .routine summary::before{content:"▸ "} .routine[open] summary::before{content:"▾ "}
+.routine .item{margin-top:10px}
 .practice{margin-top:12px}
 textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 12px; background:#fff; color:var(--ink); resize:vertical; box-shadow:inset 4px 4px 0 rgba(27,27,47,.12); font-size:14px}
 .lab-sm{font-size:12px; color:var(--ink2); margin-bottom:6px}
@@ -323,7 +332,7 @@ footer a{color:var(--paper)}
 <!-- ───────── 로그인 ───────── -->
 <div class="wrap" id="login">
   <div class="title"><small>YANGYANG SURF SCHOOL · 6기</small>오늘 파도 어때</div>
-  <div class="title-art"><canvas data-spr="sun" width="8" height="8" style="width:40px;height:40px"></canvas><canvas data-spr="surfer" width="16" height="16" style="width:96px;height:96px"></canvas><canvas data-spr="wave" width="16" height="8" style="width:80px;height:40px"></canvas></div>
+  <div class="title-art"><canvas data-spr="sun" width="8" height="8" style="width:40px;height:40px"></canvas><canvas data-spr="surfer" data-anim width="16" height="16" style="width:108px;height:108px"></canvas><canvas data-spr="wave" width="16" height="8" style="width:80px;height:40px"></canvas></div>
   <div class="wavebar"></div>
   <form class="px" id="login-form" autocomplete="off">
     <div class="mode"><button type="button" id="m-in" aria-pressed="true">로그인</button><button type="button" id="m-new" aria-pressed="false">새 계정</button></div>
@@ -343,7 +352,7 @@ footer a{color:var(--paper)}
 <div class="wrap" id="app" hidden>
   <header class="hdr">
     <h1 id="app-title">오늘 파도 어때</h1>
-    <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av"></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span></div></div>
+    <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av" data-anim></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span></div></div>
   </header>
   <div class="wavebar"></div>
 
@@ -361,10 +370,17 @@ footer a{color:var(--paper)}
         <p class="summary" id="summary"></p>
         <div class="lab-sm" style="margin-top:14px">추천 시간대 · 파고 / 주기 / 바람</div><div class="slots" id="slots"></div>
       </article>
+      <section style="margin-top:14px">
+        <div class="sec-h"><h2>라이브캠</h2><span class="tag">눈으로 확인</span></div>
+        <div class="camwrap"><video id="cam-video" playsinline muted controls preload="none"></video><div class="cover" id="cam-cover"><button class="btn pink" type="button" id="cam-play">▶ <span id="cam-play-name">낙산</span> 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small></div><span class="badge-live" id="cam-live" hidden>LIVE</span><button class="btn sm ghost" type="button" id="cam-off" style="position:absolute;right:10px;top:10px" onclick="camStop()">끄기</button></div>
+        <a class="cam-btn px" id="cam-btn" href="#" target="_blank" rel="noopener"><span class="live">LIVE</span><span class="t"><span id="cam-name">낙산 웨이브캠</span><span id="cam-src">WSB FARM</span></span><span class="arrow">→</span></a>
+        <div class="cam-more"><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
+      </section>
       <div class="px sess" id="sess">
         <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span></span><div class="total"><span id="sess-total">0</span><small>개 탔다</small></div></div><div style="text-align:right;font-size:12px;color:var(--ink2)">레프트 <b id="sess-l">0</b> · 라이트 <b id="sess-r">0</b><br>와이프아웃 <b id="sess-w">0</b> · 라이딩 1개 +2 XP</div></div>
         <div class="cnt"><button type="button" class="l" data-ride="l"><b>+1</b>레프트</button><button type="button" class="r" data-ride="r"><b>+1</b>라이트</button><button type="button" class="w" data-ride="w"><b>+1</b>와이프아웃</button></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--ink2)">세션 끝나면 노션 복사 → 라이딩 횟수가 채워져요</span><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
+        <button class="btn sm pink" type="button" onclick="openCard()" style="margin-top:10px;width:100%">👏 오늘 같이 탄 친구 칭찬하기</button>
       </div>
       <div class="px sand" id="tipbox" style="margin-top:14px;display:flex;gap:12px;align-items:flex-start"><canvas data-spr="book" width="8" height="8" style="width:32px;height:32px;flex:0 0 auto"></canvas><div><span class="eyebrow">오늘의 서핑 팁</span><div id="tip-txt" style="margin-top:4px;line-height:1.55;font-size:14px"></div><button class="undo" type="button" id="tip-next" style="margin-top:4px;padding:0">다른 팁 →</button></div></div>
       <div class="tiles" id="tiles"></div>
@@ -389,12 +405,6 @@ footer a{color:var(--paper)}
         <div class="practice"><div class="lab-sm" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">오늘 연습할 기술 / 포인트</div><textarea id="practice" placeholder="예) 팝업 — 손 V자, 팔꿈치 갈비뼈 아래, 엉덩이 안 들기"></textarea></div>
       </section>
 
-      <section>
-        <div class="sec-h"><h2>라이브캠</h2><span class="tag">눈으로 확인</span></div>
-        <div class="camwrap"><video id="cam-video" playsinline muted controls preload="none"></video><div class="cover" id="cam-cover"><button class="btn pink" type="button" id="cam-play">▶ <span id="cam-play-name">낙산</span> 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small></div><span class="badge-live" id="cam-live" hidden>LIVE</span><button class="btn sm ghost" type="button" id="cam-off" style="position:absolute;right:10px;top:10px" onclick="camStop()">끄기</button></div>
-        <a class="cam-btn px" id="cam-btn" href="#" target="_blank" rel="noopener"><span class="live">LIVE</span><span class="t"><span id="cam-name">낙산 웨이브캠</span><span id="cam-src">WSB FARM</span></span><span class="arrow">→</span></a>
-        <div class="cam-more"><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
-      </section>
 
       <section>
         <div class="sec-h"><h2>어디 갈까</h2><span class="tag">8곳 비교</span><span class="sub" id="cmp-sub"></span></div>
@@ -411,7 +421,7 @@ footer a{color:var(--paper)}
   <!-- 탭 2: 미션 -->
   <div id="tab-mission" hidden>
     <div class="px sand prog">
-      <canvas data-spr="surfer" width="16" height="16" id="prog-av"></canvas>
+      <canvas data-spr="surfer" width="16" height="16" id="prog-av" data-anim></canvas>
       <div class="t"><span class="eyebrow">6기 커리큘럼 진도</span><b id="prog-txt">0 / 8주</b><div class="bar" style="margin-top:6px"><i id="prog-bar"></i></div></div>
     </div>
     <div class="weeks" id="weeks"></div>
@@ -420,7 +430,7 @@ footer a{color:var(--paper)}
   <!-- 탭 3: 레벨 -->
   <div id="tab-level" hidden>
     <div class="px card">
-      <canvas data-spr="surfer" width="16" height="16" id="lv-av"></canvas>
+      <canvas data-spr="surfer" width="16" height="16" id="lv-av" data-anim></canvas>
       <div class="ct"><span class="eyebrow">양양서핑학교 6기</span><b id="lv-name">—</b><span class="lvname" id="lv-title">LV.0 물멍</span><div class="meta" id="lv-meta"></div></div>
     </div>
     <div class="px" style="margin-top:14px">
@@ -429,7 +439,7 @@ footer a{color:var(--paper)}
       <div class="stats" id="stats"></div>
     </div>
     <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
-    <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av"></canvas><div class="opts" id="bld-opts"></div></div></section>
+    <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av" data-anim></canvas><div class="opts" id="bld-opts"></div></div></section>
     <section><div class="sec-h"><h2>받은 칭찬 카드</h2><span class="tag" id="cards-n">0</span></div><div class="cards" id="cards-in"></div><button class="btn sm pink" type="button" style="margin-top:10px" onclick="openCard()">👏 나도 보내기</button></section>
     <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
     <section><div class="sec-h"><h2>레벨 표</h2></div><div class="px levels" id="levels"></div></section>
@@ -516,11 +526,24 @@ function avatarRows(pr){
   return rows.concat(BOARD[pr.board==='short'?'short':'long']);
 }
 const avatarTintOf = (pr, L) => ({ q:'#FF4B4B', w:'#FFFFFF', y: ['#FFD23F','#FFD23F','#4DE1A5','#2E6BFF','#9B6BFF','#FF6B6B'][L||0]||'#FF6B6B', r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
+let frame = 0; setInterval(()=>{ frame ^= 1; document.querySelectorAll('canvas[data-anim]').forEach(c=>{ if(c._rows) paint(c, c._rows, c._tint, frame); }); }, 550);
+function paint(cv, rows, tint, f){
+  const W = rows[0].length, H = rows.length, anim = cv.dataset.anim!=null, pad = anim ? 1 : 0;
+  cv.width = W + pad*2; cv.height = H + pad*2;
+  const g = cv.getContext('2d'); g.clearRect(0,0,cv.width,cv.height);
+  const bob = anim && f ? 1 : 0;                                   // 몸만 1px 위아래, 보드(마지막 4줄)는 고정
+  const px = [];                                                   // [x,y,ch] 최종 좌표
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ if(ch!=='.') px.push([x+pad, y+pad-(y>=H-4?0:bob), ch]); }));
+  if(anim){
+    g.fillStyle = 'rgba(27,27,47,.2)'; g.fillRect(pad+1, H+pad-1, W-2, 1);          // 보드 그림자
+    const occ = new Set(px.map(([x,y])=>x+','+y)); g.fillStyle = 'rgba(255,255,255,.6)';
+    px.forEach(([x,y])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ if(!occ.has((x+dx)+','+(y+dy))) g.fillRect(x+dx,y+dy,1,1); }));
+  }
+  px.forEach(([x,y,ch])=>{ g.fillStyle = (tint&&tint[ch])||PAL[ch]||ch; g.fillRect(x,y,1,1); });
+}
 function drawSpr(cv, name, tint){
   const rows = Array.isArray(name) ? name : SPR[name]; if(!rows||!cv) return;
-  cv.width = rows[0].length; cv.height = rows.length;
-  const g = cv.getContext('2d'); g.clearRect(0,0,cv.width,cv.height);
-  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ if(ch==='.') return; g.fillStyle = (tint&&tint[ch])||PAL[ch]||ch; g.fillRect(x,y,1,1); }));
+  cv._rows = rows; cv._tint = tint; paint(cv, rows, tint, frame);
 }
 function paintAll(root=document){ root.querySelectorAll('canvas[data-spr]').forEach(c=>drawSpr(c, c.dataset.spr)); }
 
@@ -730,7 +753,7 @@ function renderHero(b, a){
   $('hero-date').textContent = `${L.iso.replace(/-/g,'.')} (${L.dow}) · ${b.area}`; $('hero-name').textContent = b.name;
   const st = $('stamp'); st.dataset.v = a.vd.v; st.textContent = a.vd.t;
   const r = a.rep, win = `${pad2(a.best.h)}~${pad2(a.best.h+2)}시`, windTxt = `${compass(r.dir)} ${relKo[r.rel]} ${Math.round(r.w)}kts`;
-  const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : `<mark>${win}</mark>이 오늘의 정답.`;
+  const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : `<mark>${win}</mark>가 오늘의 정답.`;
   $('summary').innerHTML = `${r.h.toFixed(1)}m / ${Math.round(r.p)}초 ${a.swell} + ${windTxt}. ${a.power}. ${tail}`;
   const slots = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots.push({ h, s:(x.s+y.s)/2, wh:(x.h+y.h)/2, p:(x.p+y.p)/2, w:(x.w+y.w)/2, rel:x.rel, tp:x.tp, danger:x.danger||y.danger }); }
   const top = slots.slice().sort((p,q)=>q.s-p.s).slice(0,3).sort((p,q)=>p.h-q.h);
@@ -798,10 +821,18 @@ function renderChecks(b, a){
   if(r.p<7) items.push(['짧은 주기', `${Math.round(r.p)}초 윈드스웰. 파워 약하고 간격 짧음 → 세트 기다리지 말고 자주 잡기`]); else if(r.p>=10) items.push(['긴 주기', `${Math.round(r.p)}초. 세트 간격 길고 파워 있음 → 세트 사이 패들아웃`]);
   if(a.rep.tp!=null) items.push(['타이드', `${tidePhase(a)}. ${a.tides.map(t=>`${t.type} ${t.time}`).join(' · ')||'조차 매우 작음'}`]);
   const rain = Math.max(...a.hours.slice(a.srH, a.ssH+1).map(x=>x.rain??0)); if(rain>=50) items.push(['비', `강수확률 ${rain}%. 여벌 옷 비닐에`]);
-  items.push(['장비 점검', `리쉬코드 끈·스트링 마모, 테일 쪽 스트링 확인. 핀 조임, 왁스`]);
-  items.push(['기상특보', `<a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a>에서 강원 동해안 풍랑·너울 확인`]);
+  // 이번 주 커리큘럼에서 오늘 할 것 하나
+  const d0 = getData(), wk = WEEKS.find(w=>!weekDone(d0,w)) || WEEKS[7];
+  const sk = wk.skills.findIndex((_,i)=>!d0.skills[`${wk.n}-${i}`]);
+  items.push([`${wk.n}주차 · ${wk.title}`, sk>=0 ? `오늘 물에서: ${wk.skills[sk]}` : `미션: ${wk.mission}`]);
+  // 루틴은 매일 전부 보여주지 않고 요일 로테이션 2개 + 접힘
+  const ROUTINE = [['리쉬','리쉬코드 끈·테일 스트링 마모 확인'],['핀·왁스','핀 조임, 왁스 상태(수온 맞는 왁스인지)'],['기상특보','<a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a> 강원 동해안 풍랑·너울'],['물·간식','세션 후 마실 물, 바나나 하나'],['키·지갑','차 키는 리쉬 포켓 말고 방수팩. 지갑은 두고'],['스트레칭','어깨 돌리기 20회, 허리 비틀기 — 팝업 전 몸 풀기'],['수영 체크','오늘 컨디션 안 좋으면 안쪽에서만'],['탈의 준비','판초·수건·갈아입을 옷 차에']];
+  const dow = new Date(b.daily.time[state.day]+'T00:00').getDay();
+  const routine = [ROUTINE[(dow*2)%ROUTINE.length], ROUTINE[(dow*2+1)%ROUTINE.length]];
   const day = b.daily.time[state.day], key = `surf.ck.${ME.id}.${day}.${b.id}`, saved = LS.get(key, {});
-  $('checks').innerHTML = items.map((it,i)=>`<div class="item"><input type="checkbox" id="ck-${i}" data-i="${i}" ${saved[i]?'checked':''}><label for="ck-${i}"><b>${it[0]}</b><span>${it[1]}</span></label></div>`).join('');
+  const row = (it,i)=>`<div class="item"><input type="checkbox" id="ck-${i}" data-i="${i}" ${saved[i]?'checked':''}><label for="ck-${i}"><b>${it[0]}</b><span>${it[1]}</span></label></div>`;
+  $('checks').innerHTML = items.map(row).join('') + `<details class="routine"${saved.__r?' open':''}><summary>루틴 ${routine.length}개 · 오늘 당번</summary>${routine.map((it,j)=>row(it, items.length+j)).join('')}</details>`;
+  items.push(...routine);
   $('checks').querySelectorAll('input').forEach(c=>c.addEventListener('change', ()=>{
     saved[c.dataset.i] = c.checked; LS.set(key, saved);
     if(Object.values(saved).filter(Boolean).length===items.length){ const d=getData(); d.ckDone=(d.ckDone||0)+1; if(new Date().getHours()<7) d.dawn=(d.dawn||0)+1; setData(d); toast('체크리스트 완료! 1주차 미션에 반영'); refreshMe(); }
@@ -977,7 +1008,8 @@ function showTab(t){
   if(t!=='wave' && camPlaying) camStop(); if(t==='wave' && state.loaded && !camPlaying) setTimeout(()=>camPlay(BEACHES[state.beach]), 300);
   state.tab = t; ['wave','mission','level','rank'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
-  if(t==='mission') renderMission(); if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0});
+  if(t==='mission') renderMission(); if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0, behavior:'instant'});
+  const tb = $('tab-'+t); tb.style.animation='none'; void tb.offsetWidth; tb.style.animation='';
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
 function enter(u){
@@ -1044,7 +1076,7 @@ async function renderRank(){
   $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards();
   const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>b.xp-a.xp || b.rides-a.rides);
   $('rank-note').textContent = remote ? `${rows.length}명 · XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
-  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}"></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>LV.${x.level} ${LEVELS[x.level]?.[1]||''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
+  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>LV.${x.level} ${LEVELS[x.level]?.[1]||''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
   rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTintOf(x.profile, x.level)));
   $('rank').querySelectorAll('.clap').forEach(b=>b.onclick=()=>openCard(b.dataset.name));
 }
