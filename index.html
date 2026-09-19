@@ -385,7 +385,7 @@ footer a{color:var(--paper)}
   <div class="field"><label for="upw">비밀번호</label><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required></div>
     <div class="err" id="err"></div>
     <div class="login-actions"><button class="btn blue" type="submit" id="submit">▶ 로그인</button></div>
-    <div class="who">계정과 진도는 <b>이 기기(브라우저)에만</b> 저장돼요. 기수 친구들은 각자 폰에서 계정을 만들면 됩니다. 폰을 바꿀 땐 레벨 탭의 "데이터 옮기기"로 가져가세요.</div>
+    <div class="who">아이디·비밀번호는 서버에 저장되니 <b>어느 폰에서든</b> 같은 아이디로 로그인하면 진도가 따라와요. 기수 친구들은 각자 계정을 만들면 됩니다.</div>
   </form>
 </div>
 
@@ -418,9 +418,10 @@ footer a{color:var(--paper)}
         <div class="lab-sm" style="margin-top:14px">추천 시간대 · 파고 / 주기 / 바람</div><div class="slots" id="slots"></div>
       </article>
       <div class="px sess" id="sess">
-        <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span></span><div class="total"><span id="sess-total">0</span><small>개 탔다</small></div></div><div style="text-align:right;font-size:12px;color:var(--ink2)">레프트 <b id="sess-l">0</b> · 라이트 <b id="sess-r">0</b><br>와이프아웃 <b id="sess-w">0</b> · 라이딩 1개 +2 XP</div></div>
-        <div class="cnt"><button type="button" class="l" data-ride="l"><b>+1</b>레프트</button><button type="button" class="r" data-ride="r"><b>+1</b>라이트</button><button type="button" class="w" data-ride="w"><b>+1</b>와이프아웃</button></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--ink2)">세션 끝나면 노션 복사 → 라이딩 횟수가 채워져요</span><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
+        <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span> · <span id="sess-cls"></span></span><div class="total"><span id="sess-total">0</span><small id="sess-unit">번 성공</small></div><div class="lab-sm" id="sess-sub" style="margin:2px 0 0"></div></div><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
+        <div class="cnt" id="sess-btns"></div>
+        <div class="lab-sm" id="sess-hint" style="margin-top:8px"></div>
+        <details id="sess-lesson" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">✎ 오늘 레슨런 적기 (이론 · 피드백 · 다음)</summary><div id="sess-lesson-form" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div></details>
         <button class="btn sm pink" type="button" onclick="openCard()" style="margin-top:10px;width:100%">👏 오늘 같이 탄 친구 칭찬하기</button>
       </div>
       <div class="px sand" id="classbox" style="margin-top:14px" hidden><div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow" id="class-t">수업 시간표</span><span class="lab-sm" style="margin:0">단톡 공지가 우선</span></div><div id="class-rows" style="margin-top:6px;font-size:13px;line-height:1.6"></div></div>
@@ -463,7 +464,11 @@ footer a{color:var(--paper)}
 
   <!-- 탭 2: 미션 -->
   <div id="tab-mission" hidden>
-    <div class="px sand prog">
+    <section style="margin-top:0"><div class="sec-h"><h2>이번 주 레슨런</h2><span class="tag" id="lesson-w"></span><span class="sub">물에서 나와 3분 안에</span></div>
+      <div class="px" id="lesson-top" style="display:flex;flex-direction:column;gap:10px"></div>
+      <details class="px" id="lesson-past" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">지난 레슨런 모아보기</summary><div id="lesson-past-list" style="margin-top:10px;display:flex;flex-direction:column;gap:10px;font-size:13px"></div></details>
+    </section>
+    <div class="px sand prog" style="margin-top:14px">
       <canvas data-spr="surfer" width="16" height="16" id="prog-av" data-anim></canvas>
       <div class="t"><span class="eyebrow">6기 커리큘럼 진도</span><b id="prog-txt">0 / 8주</b><div class="bar" style="margin-top:6px"><i id="prog-bar"></i></div></div>
     </div>
@@ -491,7 +496,7 @@ footer a{color:var(--paper)}
     <section><div class="sec-h"><h2>내 서핑 레벨</h2><span class="tag">레벨표 기준</span></div><div class="px levels" id="levels"></div></section>
     <section><div class="sec-h"><h2>6기 자료</h2></div><div class="px cam-more" style="margin-top:0"><a href="https://naver.me/FmGtUQAq" target="_blank" rel="noopener">STC 네이버 카페 (영상 업로드)</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 캠</a><span class="lab-sm" style="width:100%;margin-top:6px">수업 영상 구글드라이브 링크는 단톡방 공지에서 (공개 리포라 여기 안 넣음)</span></div></section>
     <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
-      <div class="px"><p class="lab-sm">계정과 진도는 이 브라우저에만 있어요. 코드를 복사해 새 폰의 같은 화면에 붙여 넣으면 옮겨집니다.</p>
+      <div class="px"><p class="lab-sm">서버 계정이면 새 폰에서 그냥 로그인하면 돼요. 이 코드는 서버 없이 옮길 때 예비용.</p>
         <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm pink" id="logout" type="button">로그아웃</button></div>
         <textarea id="io-box" style="margin-top:10px;min-height:50px" placeholder="가져올 땐 여기에 코드를 붙여넣고 '가져오기'"></textarea>
       </div>
@@ -578,7 +583,11 @@ function avatarRows(pr){
   return rows.concat(BOARD[pr.board==='short'?'short':'long']);
 }
 const SLV_COLORS = ['#FFD23F','#A6F542','#4DE1A5','#2ED3E6','#2E6BFF','#9B6BFF','#FF6B6B','#FF9F1C','#F7C59F','#FFFFFF','#1B1B2F'];   // 서핑 LV.0~10 보드 색
-const avatarTintOf = (pr, L) => ({ q:'#FF4B4B', w:'#FFFFFF', y: SLV_COLORS[Math.min(10, L||0)], r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
+const BOTTOMS = { b:'#2E6BFF', k:'#1B1B2F', r:'#FF6B6B', g:'#4DE1A5', p:'#9B6BFF', t:'#E2B96A' };
+const BOTTOM_KO = { b:'블루', k:'블랙', r:'코랄', g:'민트', p:'퍼플', t:'베이지' };
+const BOARDC = { y:'#FFD23F', w:'#FFFFFF', c:'#8FD3FF', g:'#A6F542', p:'#FF9BD2', o:'#FF9F1C' };
+const BOARDC_KO = { y:'옐로', w:'화이트', c:'하늘', g:'라임', p:'핑크', o:'오렌지' };
+const avatarTintOf = (pr, L) => ({ q:'#FF4B4B', w:'#FFFFFF', b: BOTTOMS[pr?.bottom]||BOTTOMS.b, y: BOARDC[pr?.boardc]||BOARDC.y, r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
 let frame = 0; setInterval(()=>{ frame ^= 1; document.querySelectorAll('canvas[data-anim]').forEach(c=>{ if(c._rows) paint(c, c._rows, c._tint, frame); }); }, 550);
 function paint(cv, rows, tint, f){
   const W = rows[0].length, H = rows.length, anim = cv.dataset.anim!=null, pad = anim ? 1 : 0;
@@ -606,20 +615,55 @@ async function hash(str){
   if(crypto?.subtle){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
   let h=5381; for(const c of str) h=((h<<5)+h+c.charCodeAt(0))|0; return 'djb2:'+(h>>>0).toString(16);   // file:// 등 subtle 없을 때
 }
+/* 계정: Supabase에 accounts 테이블+RPC(supabase-accounts.sql)가 있으면 서버 계정(어느 폰에서든 로그인),
+   없으면 이 기기 로컬 계정. 서버 계정도 로컬 캐시를 두어 오프라인·바다 앞 신호 약할 때 열린다. */
+async function rpc(fn, args){
+  const r = await fetch(`${SUPA.url}/rest/v1/rpc/${fn}`, { method:'POST', headers:supaH(), body:JSON.stringify(args) });
+  if(r.status===404) throw Object.assign(new Error('norpc'), { code:'norpc' });
+  const body = await r.json().catch(()=>null);
+  if(!r.ok) throw Object.assign(new Error(body?.message||('rpc '+r.status)), { code: (body?.message||'').replace(/.*?(exists|nouser|wrongpw|badid|badpw|unauthorized).*/, '$1') });
+  return body;
+}
+const RPC_KO = { exists:'이미 있는 아이디예요', nouser:'없는 아이디예요. "새 계정"으로 만들어 주세요', wrongpw:'비밀번호가 달라요', badid:'아이디는 영문 소문자·숫자·_ 2~16자', badpw:'비밀번호는 4자 이상', unauthorized:'다시 로그인해 주세요' };
 const auth = {
   users(){ return LS.get('surf.users', {}); },
+  remember(id, u){ const all = auth.users(); all[id] = { ...(all[id]||{}), ...u }; LS.set('surf.users', all); },
   async create(id, name, pw){
+    const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y' };
+    if(supaOn()){
+      try{ const token = await rpc('signup', { p_id:id, p_name:name||id, p_pw:pw, p_profile:profile });
+        auth.remember(id, { name:name||id, cohort:'6기', profile, server:true, token, createdAt:new Date().toISOString() }); return auth.users()[id]; }
+      catch(e){ if(e.code!=='norpc' && !/Failed to fetch/.test(e.message)) throw new Error(RPC_KO[e.code]||e.message); }
+    }
     const u = auth.users(); if(u[id]) throw new Error('이미 있는 아이디예요');
     const salt = Math.random().toString(36).slice(2,10);
-    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', profile:{ gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none' }, createdAt: new Date().toISOString() };
+    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', profile, createdAt: new Date().toISOString() };
     LS.set('surf.users', u); return u[id];
   },
   async login(id, pw){
+    if(supaOn()){
+      try{ const r = await rpc('login', { p_id:id, p_pw:pw });
+        // 서버 데이터가 우선. 로컬에 더 최신 진도가 있으면(오프라인 작업) 합치되 서버 값을 기본으로
+        const local = LS.get(`surf.data.${id}`, null), server = r.data && Object.keys(r.data).length ? r.data : null;
+        LS.set(`surf.data.${id}`, server || local || {});
+        auth.remember(id, { name:r.name, profile:r.profile||{}, server:true, token:r.token, cohort:'6기' }); return auth.users()[id]; }
+      catch(e){ if(e.code!=='norpc' && !/Failed to fetch/.test(e.message)) throw new Error(RPC_KO[e.code]||e.message); }
+    }
     const u = auth.users()[id]; if(!u) throw new Error('없는 아이디예요. "새 계정"으로 만들어 주세요');
+    if(u.server && u.hash==null) throw new Error('서버 연결이 안 돼요. 신호 잡히는 곳에서 다시');
     if(u.hash !== await hash(u.salt+pw)) throw new Error('비밀번호가 달라요');
     return u;
   },
+  async refresh(){   // 세션 복원 시 서버 최신 진도 받아오기
+    const u = auth.users()[ME.id]; if(!supaOn() || !u?.token) return;
+    try{ const r = await rpc('load_data', { p_id:ME.id, p_token:u.token }); if(r.data && Object.keys(r.data).length) LS.set(dataKey(), r.data); if(r.profile) auth.remember(ME.id, { profile:r.profile, name:r.name }); ME.name = r.name||ME.name; }
+    catch(e){ if(e.code==='unauthorized'){ toast('다른 기기에서 로그인됨 · 다시 로그인'); LS.set('surf.session', null); setTimeout(()=>location.reload(), 1200); } }
+  },
 };
+let saveT; function saveUp(){   // 진도·프로필을 서버 계정에 저장 (1.5초 디바운스)
+  const u = ME && auth.users()[ME.id]; if(!u?.token || !supaOn()) return; clearTimeout(saveT);
+  saveT = setTimeout(()=>rpc('save_data', { p_id:ME.id, p_token:u.token, p_data:getData(), p_profile:u.profile||{}, p_name:u.name }).catch(()=>{}), 1500);
+}
 let ME = null;   // {id, name}
 const pick = { gender:'f', board:'long', role:'member', cls:'beginner' };   // 가입 화면 선택값
 /* 6기 가을학기 명단 (칠판 사진 기준: 이름 · 서핑 시작 연도 · 첫 파도 탄 곳). 틀린 글자는 여기서 고치면 된다. */
@@ -643,10 +687,10 @@ $('ucoach').onchange = ()=>{ $('f-name').hidden = $('ucoach').value!=='__etc'; }
 $('f-class').querySelectorAll('button').forEach(b=>b.onclick=()=>{ pick.cls=b.dataset.cls; syncRoleUI(); });
 }
 function myProfile(){ return auth.users()[ME.id]?.profile || { gender:'f', board:'long' }; }
-function setProfile(pr){ const u = auth.users(); if(!u[ME.id]) return; u[ME.id].profile = { ...myProfile(), ...pr }; LS.set('surf.users', u); refreshMe(); renderLevel(); syncUp(); }
+function setProfile(pr){ const u = auth.users(); if(!u[ME.id]) return; u[ME.id].profile = { ...myProfile(), ...pr }; LS.set('surf.users', u); refreshMe(); renderLevel(); syncUp(); saveUp(); }
 function dataKey(){ return `surf.data.${ME.id}`; }
 function getData(){ return LS.get(dataKey(), { attend:{}, skills:{}, missions:{}, notes:{}, logs:0, first:null }); }
-function setData(d){ LS.set(dataKey(), d); }
+function setData(d){ LS.set(dataKey(), d); saveUp(); }
 
 /* ═══════════ 커리큘럼 · XP · 레벨 ═══════════ */
 const XP = { attend:30, skill:10, mission:40, note:10, log:10, ride:2 };
@@ -712,7 +756,7 @@ const BADGES = [
   { id:'streak', name:'3주 연속',    icon:'fire',   test:d=>{ const w=attWeeks(d).sort((a,b)=>a-b); for(let i=0;i+2<w.length;i++) if(w[i+1]===w[i]+1&&w[i+2]===w[i]+2) return true; return false; } },
   { id:'popup',  name:'팝업 마스터', icon:'board',  test:d=>WEEKS[2].skills.every((_,i)=>d.skills[`3-${i}`]) },
   { id:'dawn',   name:'새벽형',      icon:'sunrise',test:d=>(d.dawn||0)>=1 },
-  { id:'note5',  name:'기록왕',      icon:'book',   test:d=>Object.values(d.notes).filter(x=>x&&x.trim()).length>=5 },
+  { id:'note5',  name:'기록왕',      icon:'book',   test:d=>lessonFilled(d)>=9 },
   { id:'log3',   name:'일지 3회',    icon:'rec',    test:d=>(d.logs||0)>=3 },
   { id:'half',   name:'반환점',      icon:'flag',   test:d=>attN(d)>=8 },
   { id:'full',   name:'16회 개근',   icon:'crown',  test:d=>attN(d)>=16 },
@@ -726,7 +770,7 @@ const BADGES = [
 ];
 function calcXP(d){
   let xp = attN(d)*XP.attend + Object.values(d.skills).filter(Boolean).length*XP.skill + Object.values(d.missions).filter(Boolean).length*XP.mission
-         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride + (ME ? cardXP() : 0) + quizXP(d) + questXP(d) + slvXP(d);
+         + lessonFilled(d)*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride + (ME ? cardXP() : 0) + quizXP(d) + questXP(d) + slvXP(d);
   return xp;
 }
 /* 칭찬 카드: 받는 사람은 이름 기준(기기 달라도 같은 이름이면 도착). 로컬 + Supabase(설정 시) */
@@ -757,7 +801,17 @@ async function pullCards(){
   if(!supaOn()) return; try{ const r = await fetch(`${SUPA.url}/rest/v1/cards?select=*&order=created_at.desc&limit=300`, { headers:supaH() }); if(!r.ok) return;
     state.remoteCards = (await r.json()).map(x=>({ id:x.id, from:x.from_id, fromName:x.from_name, to:x.to_name, tpl:x.tpl, text:x.text||'', date:x.created_at })); }catch(e){}
 }
-function totalRides(d){ return Object.values(d.sessions||{}).reduce((s,x)=>s+(x.l||0)+(x.r||0),0); }
+/* 레슨런: 주차별 {theory, feedback, next}. 옛 notes 문자열은 theory로 승격 */
+const LESSON_F = [['theory','이론수업에서 배운 것','예) 테일 종류 — 라운드는 안정, 스퀘어는 회전. 콕킹으로 첫 패들 3~4회 절약'],['feedback','코치 피드백 받은 것','예) 푸쉬업에서 중심 잡고 천천히. 레일은 가슴 바로 옆. 시선 앞'],['next','다음 세션에 해볼 것','예) 파도 넘을 때만 푸쉬, 바로 엎드려 패들. 하체 낮추고 상체 세우기']];
+function lessonOf(d, w){ const L = (d.lesson||{})[w] || {}; return { theory: L.theory ?? (d.notes||{})[w] ?? '', feedback: L.feedback||'', next: L.next||'' }; }
+function lessonFilled(d){ let n = 0; for(let w=1; w<=8; w++){ const L = lessonOf(d,w); LESSON_F.forEach(([k])=>{ if((L[k]||'').trim()) n++; }); } return n; }
+function setLesson(w, k, v){ const d = getData(); d.lesson = d.lesson||{}; const cur = lessonOf(d,w), was = !!(cur[k]||'').trim(); d.lesson[w] = { ...cur, [k]: v }; setData(d); if(!was && v.trim()) gain(XP.note); refreshMe(); }
+function lessonForm(w, compact){
+  const L = lessonOf(getData(), w);
+  return LESSON_F.map(([k,label,ph])=>`<div><div class="lab-sm">${label}${(L[k]||'').trim()?'':` · +${XP.note} XP`}</div><textarea data-lesson="${k}" data-w="${w}" style="min-height:${compact?48:64}px" placeholder="${ph}">${L[k]||''}</textarea></div>`).join('');
+}
+function bindLesson(root){ root.querySelectorAll('textarea[data-lesson]').forEach(t=>{ t.oninput = ()=>{ setLesson(+t.dataset.w, t.dataset.lesson, t.value); document.querySelectorAll(`textarea[data-lesson="${t.dataset.lesson}"][data-w="${t.dataset.w}"]`).forEach(o=>{ if(o!==t) o.value = t.value; }); }; }); }
+function totalRides(d){ return Object.values(d.sessions||{}).reduce((s,x)=>s+(x.l||0)+(x.r||0)+(x.t||0),0); }   // 성공 = 테이크오프(비기너) + 레프트/라이트(중급)
 function levelOf(xp){ let L=0; LEVELS.forEach(([min],i)=>{ if(xp>=min) L=i; }); return L; }
 
 /* ═══════════ 해변 · 데이터 ═══════════ */
@@ -967,7 +1021,7 @@ function renderCompare(){
 }
 function notionMarkdown(b, a){
   const r = a.rep, d = b.daily.time[state.day], hi = a.tides.filter(t=>t.type==='만조').map(t=>t.time).join(', '), lo = a.tides.filter(t=>t.type==='간조').map(t=>t.time).join(', '), sst = r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000);
-  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 | ${myProfile().board==='short'?'숏보드':'롱보드'} |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) | ${(()=>{const sx=session();return sx.l+sx.r?`${sx.l} / ${sx.r} (와이프아웃 ${sx.w})`:''})()} |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n`;
+  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 | ${myProfile().board==='short'?'숏보드':'롱보드'} |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) | ${(()=>{const sx=session(); if(sx.t||sx.a||sx.p) return `테이크오프 ${sx.t} / 도전 ${sx.a} (푸쉬업 ${sx.p})`; return sx.l+sx.r?`${sx.l} / ${sx.r} (와이프아웃 ${sx.w})`:''})()} |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n\n### 강의노트 (${Math.min(8, Math.max(1, weekOfDate(today())))}주차)\n\n${LESSON_F.map(([k,label])=>`**${label}**\n${(lessonOf(getData(), Math.min(8, Math.max(1, weekOfDate(today()))))[k]||'-')}\n`).join('\n')}`;
 }
 async function copyText(md){ try{ await navigator.clipboard.writeText(md); }catch(e){ const ta = document.createElement('textarea'); ta.value = md; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); } }
 async function copyNotion(){
@@ -1016,6 +1070,10 @@ const GLOSS = {
     ['와이프아웃','넘어지는 것. 머리 감싸고 보드 반대편으로'],
     ['레귤러 / 구피','왼발이 앞이면 레귤러, 오른발이 앞이면 구피'],
     ['스탠스','보드 위 발 위치와 자세. 무릎 굽히고 중심은 보드 중앙'],
+    ['푸쉬업','팝업 전 단계. 상체를 세워 중심을 잡는 자세. 여기서 중심이 안 잡히면 일어나다 넘어진다'],
+    ['콕킹','탁구공처럼 튕겨 나가듯 보드를 밀어 첫 패들링 3~4회를 절약하는 출발. 평영 킥을 더하면 가속'],
+    ['패들부스터','콕킹 + 평영 킥. 파도 잡을 때 마지막 가속 수단'],
+    ['스텝오프','오른발을 뒤로 옮겨 테일을 밟아 라이딩을 끝내는 법'],
   ],
   '장비': [
     ['노즈 / 테일','보드의 앞 / 뒤'],
@@ -1030,6 +1088,16 @@ const GLOSS = {
     ['숏보드','7피트 이하. 빠르고 예민. 늦게·가파른 곳에서'],
     ['볼륨(L)','보드 부력. 초보는 몸무게(kg)의 60~80% 리터'],
     ['웻수트 3/2','몸통 3mm·팔다리 2mm 두께. 수온 17~21도용'],
+    ['테일 — 라운드','꼬리까지 안정적으로 물을 감싸줌. 초보·롱보드에 흔함'],
+    ['테일 — 핀 / 라운드핀','물을 밀어내며 속도가 붙음. 라운드핀은 조금 더 둥글게'],
+    ['테일 — 스퀘어 / 스쿼시','물을 완전히 튕겨내 빠른 회전. 스쿼시 = 라운드 + 스퀘어'],
+    ['테일 — 스왈로','핀 테일을 둘로 갈라 제비꼬리. 회전과 그립을 함께'],
+    ['하드 레일 / 소프트 레일','하드는 잘 뜨고 빠름, 소프트는 물이 잡아줘 안정적이지만 느림'],
+    ['바텀 — 플랫','평평한 바닥. 어떤 보드에도 무난, 체중 많은 서퍼에게 좋음'],
+    ['바텀 — 컨케이브','얇은 커브 홈. 물 흐름을 핀까지 이어줘 직진·회전·속도 모두 좋음. 더블은 홈 두 줄'],
+    ['바텀 — 브이(V)','반대 레일로 쉽게 옮겨 타게 해줌'],
+    ['핀 높이 / 넓이','높으면 안정 ↑ 회전 ↓, 넓으면 회전 ↑ 속도 ↓'],
+    ['PU / EPS 블랭크','PU는 밀도 높고 무겁고 부력 낮음, EPS는 가볍지만 물 흡수가 빠름'],
   ],
   '에티켓': [
     ['우선권','피크에 가장 가까운 사람이 그 파도를 탄다'],
@@ -1087,7 +1155,7 @@ function questList(){
   return [
     ...([1,2,3,4].includes(new Date().getDay()) ? [{ t:'참석 투표', s:'단톡방 투표 · 목 18시까지', done: !!(d.vote||{})[weekOfDate(k)] , act:'vote' }] : []),
     { t:'컨디션 체크', s:'체크리스트 3개 이상', done: ck>=3 },
-    { t:'파도 3개', s:'오늘 세션 라이딩 3개', done: (sx.l+sx.r)>=3 },
+    { t:'성공 3번', s:'테이크오프·라이딩 3번', done: ((sx.l||0)+(sx.r||0)+(sx.t||0))>=3 },
     { t:'칭찬 1장', s:'동기에게 칭찬 카드', done: cards>=1 },
     { t:'용어 퀴즈', s:'미션 탭에서 3문제', done: !!(d.quiz||{})[k]?.done },
     ...((()=>{ const cw = weekOfDate(k); return cw>=1&&cw<=8 && [0,6].includes(new Date().getDay()) ? [{ t:`${cw}주차 출석`, s:`${attOf(d,cw).length}/${PER_WEEK}회 · ${WEEKS[cw-1].title}`, done: attOf(d,cw).includes(k) }] : []; })()),
@@ -1179,27 +1247,40 @@ const TIPS = [
   ['교장쌤','파도를 볼 땐 원운동을 뚫고 중력을 이기며 수면 위로 쳐 올라오는 힘 — 바텀 파워존 — 을 봐라. 그 에너지가 파도 고르는 요령.'],
   ['교장쌤','영상 보면 앞발이 앞쪽을 향한 사람이 꽤 있다. 지상 연습으로 지금 잡지 않으면 수정이 오래 걸린다.'],
   ['교장쌤','파도의 추력과 패들링 방향이 맞아야 한다. 서핑 용어로 트림, 물리학으로는 동압력(다이나믹 프레셔).'],
+  ['코치 피드백','푸쉬업 → 테이크오프 사이에서 중심을 잡고 천천히 해도 된다. 중심 안 잡힌 채 서면 오히려 넘어진다.'],
+  ['코치 피드백','파도 넘을 때만 푸쉬하고 바로 엎드려 패들링. 레일은 습관처럼 가슴 바로 옆을 잡는다.'],
+  ['코치 피드백','시선은 항상 앞으로. 하체를 낮춰 균형 잡고 상체는 세운다.'],
   ['매니저','참석 투표는 월~목, 목요일 18시까지. 수업 영상은 매주 월요일 공유드라이브에 올라오고 캠프 끝나면 지워지니 그날 받아둘 것.'],
 ];
 let tipIdx = Math.floor(Date.now()/864e5) % TIPS.length;
 function renderTip(){ const [k,t] = TIPS[tipIdx % TIPS.length]; $('tip-txt').innerHTML = `<b>[${k}]</b> ${t}`; }
 $('tip-next').onclick = ()=>{ tipIdx++; renderTip(); };
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };   // 로컬(KST) 날짜 — UTC 쓰면 새벽에 어제로 찍힌다
-function session(){ const d = getData(); d.sessions = d.sessions||{}; return d.sessions[today()] || { l:0, r:0, w:0, hist:[] }; }
+const EMPTY_SESS = () => ({ a:0, p:0, t:0, l:0, r:0, w:0, hist:[] });
+function session(){ const d = getData(); return (d.sessions||{})[today()] || EMPTY_SESS(); }
+/* 반별 카운터. 비기너: 도전 → 팝업 → 테이크오프 성공. 중급: 레프트/라이트 성공 + 와이프아웃 */
+const SESS_UI = {
+  beginner:{ unit:'번 일어섰다', btns:[['a','도전','w','파도 잡으러 감'],['p','푸쉬업','r','상체 세워 중심 잡음'],['t','테이크오프','l','일어나서 탐 +2XP']], total:sx=>sx.t, sub:sx=>`도전 ${sx.a} · 푸쉬업 ${sx.p} · 테이크오프 ${sx.t}${sx.a?` · 성공률 ${Math.round(sx.t/sx.a*100)}%`:''}`, hint:'파도 잡으러 갈 때 "도전", 푸쉬업에서 중심 잡았으면 "푸쉬업", 일어나서 탔으면 "테이크오프". 하나씩 눌러요.' },
+  inter:   { unit:'개 탔다', btns:[['l','레프트','l','+2XP'],['r','라이트','r','+2XP'],['w','와이프아웃','w','']], total:sx=>sx.l+sx.r, sub:sx=>`레프트 ${sx.l} · 라이트 ${sx.r} · 와이프아웃 ${sx.w}`, hint:'방향별로 탄 파도를 세요. 노션 복사하면 라이딩 횟수가 채워져요.' },
+};
+const sessUI = () => SESS_UI[myProfile().role==='coach' ? 'inter' : (myProfile().cls||'beginner')];
 function renderSession(){
-  const sx = session(); $('sess-beach').textContent = sx.beach || BEACHES[state.beach].name;
-  $('sess-total').textContent = sx.l + sx.r; $('sess-l').textContent = sx.l; $('sess-r').textContent = sx.r; $('sess-w').textContent = sx.w;
+  const sx = session(), ui = sessUI(), pr = myProfile();
+  $('sess-beach').textContent = sx.beach || BEACHES[state.beach].name; $('sess-cls').textContent = pr.role==='coach' ? '코치' : (pr.cls==='inter' ? '중급반' : '비기너반');
+  $('sess-total').textContent = ui.total(sx); $('sess-unit').textContent = ui.unit; $('sess-sub').textContent = ui.sub(sx); $('sess-hint').textContent = ui.hint;
+  $('sess-btns').innerHTML = ui.btns.map(([k,label,cls,memo])=>`<button type="button" class="${cls}" data-ride="${k}"><b>+1</b>${label}<span style="display:block;font-weight:400;font-size:10px;color:var(--ink2)">${memo}</span></button>`).join('');
+  $('sess-btns').querySelectorAll('[data-ride]').forEach(b=>b.onclick=()=>ride(b.dataset.ride));
+  const cw = Math.min(8, Math.max(1, weekOfDate(today()))); if(!$('sess-lesson-form').dataset.w || +$('sess-lesson-form').dataset.w!==cw){ $('sess-lesson-form').dataset.w = cw; $('sess-lesson-form').innerHTML = lessonForm(cw, true); bindLesson($('sess-lesson-form')); }
 }
 function ride(k){
-  const d = getData(); d.sessions = d.sessions||{}; const sx = d.sessions[today()] || { l:0, r:0, w:0, hist:[] };
-  sx[k]++; sx.hist.push(k); sx.beach = BEACHES[state.beach].name; d.sessions[today()] = sx; setData(d);
-  if(k!=='w') gain(XP.ride); renderSession(); refreshMe();
+  const d = getData(); d.sessions = d.sessions||{}; const sx = { ...EMPTY_SESS(), ...(d.sessions[today()]||{}) };
+  sx[k] = (sx[k]||0)+1; sx.hist.push(k); sx.beach = BEACHES[state.beach].name; d.sessions[today()] = sx; setData(d);
+  if(['t','l','r'].includes(k)) gain(XP.ride); renderSession(); refreshMe();
 }
 function unride(){
-  const d = getData(); const sx = d.sessions?.[today()]; if(!sx||!sx.hist.length) return;
-  const k = sx.hist.pop(); sx[k] = Math.max(0, sx[k]-1); setData(d); renderSession(); refreshMe();
+  const d = getData(); const sx = d.sessions?.[today()]; if(!sx||!sx.hist?.length) return;
+  const k = sx.hist.pop(); sx[k] = Math.max(0, (sx[k]||0)-1); setData(d); renderSession(); refreshMe();
 }
-$('sess').querySelectorAll('[data-ride]').forEach(b=>b.addEventListener('click', ()=>ride(b.dataset.ride)));
 $('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
@@ -1215,7 +1296,15 @@ async function bootWave(){
 
 /* ═══════════ 렌더: 미션 탭 ═══════════ */
 function weekDone(d, w){ return attOf(d,w.n).length>=PER_WEEK && w.skills.every((_,i)=>d.skills[`${w.n}-${i}`]) && !!d.missions[w.n]; }
+function renderLessonTop(){
+  const d = getData(), cw = Math.min(8, Math.max(1, weekOfDate(today())));
+  $('lesson-w').textContent = `${cw}주차 · ${WEEKS[cw-1].title}`;
+  $('lesson-top').innerHTML = lessonForm(cw, false); bindLesson($('lesson-top'));
+  const past = []; for(let w=8; w>=1; w--){ if(w===cw) continue; const L = lessonOf(d,w); if(LESSON_F.some(([k])=>(L[k]||'').trim())) past.push(`<div style="border-left:4px solid var(--ink);padding-left:10px"><b>${w}주차 · ${WEEKS[w-1].title}</b>${LESSON_F.map(([k,label])=>(L[k]||'').trim()?`<div style="margin-top:4px"><span style="color:var(--ink2)">${label.slice(0,2)}</span> ${L[k].replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`:'').join('')}</div>`); }
+  $('lesson-past-list').innerHTML = past.join('') || '<span style="color:var(--ink2)">아직 없어요</span>';
+}
 function renderMission(){
+  renderLessonTop();
   const d = getData(), doneN = WEEKS.filter(w=>weekDone(d,w)).length;
   $('prog-txt').textContent = `${doneN} / 8주 완료 · 출석 ${attN(d)}/${TOTAL_ATT}회`; $('prog-bar').style.width = (doneN/8*100)+'%';
   const nextW = WEEKS.find(w=>!weekDone(d,w))?.n ?? 8;
@@ -1230,14 +1319,14 @@ function renderMission(){
         <div class="att">${[0,1].map(i=>atts[i]?`<div class="stamp-att on">${i+1}회차 ${atts[i].slice(5).replace('-','.')}</div>`:`<div class="stamp-att">${i+1}회차 ${w.n<curW?'결석':w.n>curW?'예정':'도장 없음'}</div>`).join('')}${canStamp?`<button class="btn sm pink" type="button" data-act="att">오늘 출석 도장 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`:''}${att && w.n===curW && atts.includes(today())?`<button class="undo" type="button" data-act="unatt">오늘 도장 취소</button>`:''}</div>
         <div><div class="lab-sm">이번 주 배운 것 · 각 +${XP.skill} XP</div><div class="skills">${w.skills.map((s,i)=>`<div class="item"><input type="checkbox" id="sk-${w.n}-${i}" data-act="skill" data-k="${w.n}-${i}" ${d.skills[`${w.n}-${i}`]?'checked':''}><label for="sk-${w.n}-${i}"><b>${s}</b></label></div>`).join('')}</div></div>
         <div class="mission ${d.missions[w.n]?'done':''}"><canvas data-spr="${w.icon}"></canvas><div class="mt"><b>미션 · +${XP.mission} XP</b>${w.mission}</div>${d.missions[w.n]?`<button class="undo" type="button" data-act="unmission">취소</button>`:`<button class="btn sm blue" type="button" data-act="mission">완료</button>`}</div>
-        <div><div class="lab-sm">레슨 런 — 오늘 배운 것 / 느낀 점 · 첫 저장 +${XP.note} XP</div><textarea data-act="note" data-w="${w.n}" placeholder="예) 팝업할 때 엉덩이가 자꾸 뜬다. 팔꿈치를 갈비뼈 아래로 모으니 나아짐">${d.notes[w.n]||''}</textarea></div>
+        <div style="display:flex;flex-direction:column;gap:8px"><div class="eyebrow">레슨런</div>${lessonForm(w.n, true)}</div>
       </div></article>`;
   }).join('');
-  paintAll($('weeks'));
+  paintAll($('weeks')); bindLesson($('weeks'));
   $('weeks').querySelectorAll('.wh').forEach(h=>{ const go=()=>{ state.openWeek = +h.parentElement.dataset.w; renderMission(); }; h.addEventListener('click', go); h.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); });
   $('weeks').querySelectorAll('[data-act]').forEach(x=>{
     const w = +x.closest('.week').dataset.w, act = x.dataset.act;
-    if(act==='note'){ x.addEventListener('input', ()=>{ const d=getData(); const was=!!(d.notes[w]&&d.notes[w].trim()); d.notes[w]=x.value; setData(d); if(!was && x.value.trim()) gain(XP.note); refreshMe(); }); return; }
+    if(act==='note'){ return; }
     if(act==='skill'){ x.addEventListener('change', ()=>{ const d=getData(); d.skills[x.dataset.k]=x.checked; setData(d); if(x.checked) gain(XP.skill); refreshMe(); }); return; }
     x.addEventListener('click', ()=>{
       const d = getData();
@@ -1253,13 +1342,13 @@ function renderMission(){
 /* ═══════════ 렌더: 레벨 탭 ═══════════ */
 function renderLevel(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1], st = slvStat(d), curL = SLV[st.cur], nextL = SLV[st.cur] ;
-  $('lv-name').textContent = ME.name; $('lv-title').textContent = `${st.label}${st.cur?` · ${SLV[st.cur-1].g}`:' · 입문'} · 칭호 ${LEVELS[L][1]}`;
+  $('lv-name').textContent = ME.name; $('lv-title').textContent = `${'★'.repeat(st.cur)}${'☆'.repeat(Math.max(0,3-st.cur))} ${st.label}${st.cur?` · ${SLV[st.cur-1].g}`:' · 입문'} · 칭호 ${LEVELS[L][1]}`;
   const ro = rosterOf(ME.name), pr0 = myProfile();
   $('lv-meta').textContent = (pr0.role==='coach' ? '코치 · ' : ro&&ro[1] ? `서핑 시작 ${ro[1]} · 첫 파도 ${ro[2]} · ` : '') + `@${ME.id}`;
   $('xp-txt').textContent = `${xp} XP · 칭호 ${LEVELS[L][1]}`; $('xp-next').textContent = next ? `다음 칭호 ${next[1]}까지 ${next[0]-xp} XP` : '최고 칭호!';
   const lo = LEVELS[L][0], hi = next ? next[0] : lo+1; $('xp-bar').style.width = Math.min(100, (xp-lo)/(hi-lo)*100)+'%';
   const skN = Object.values(d.skills).filter(Boolean).length, total = WEEKS.reduce((s,w)=>s+w.skills.length,0);
-  $('stats').innerHTML = [[attN(d)+'/'+TOTAL_ATT,'출석'],[skN+'/'+total,'배운 것'],[Object.values(d.missions).filter(Boolean).length+'/8','미션'],[totalRides(d),'탄 파도'],[Object.values(d.notes).filter(x=>x&&x.trim()).length,'레슨 런'],[d.logs||0,'일지 복사']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('stats').innerHTML = [[attN(d)+'/'+TOTAL_ATT,'출석'],[skN+'/'+total,'배운 것'],[Object.values(d.missions).filter(Boolean).length+'/8','미션'],[totalRides(d),'탄 파도'],[lessonFilled(d),'레슨런'],[d.logs||0,'일지 복사']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
   $('badges').innerHTML = BADGES.map(b=>`<div class="badge ${b.test(d)?'':'lock'}"><canvas data-spr="${b.icon}"></canvas>${b.name}</div>`).join(''); paintAll($('badges'));
   const an = attN(d); let stage = 0; ATT_STAGES.forEach(([n],i)=>{ if(an>=n) stage=i; });
   $('ladder').innerHTML = ATT_STAGES.map(([n,name],i)=>`<div class="${i<stage?'on':i===stage?'cur':''}"><b>${n}</b>${name}</div>`).join('');
@@ -1270,7 +1359,9 @@ function renderLevel(){
     opt('머리', 'gender', [['f','여자'],['m','남자']]) +
     opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), (v,t)=>`<i style="background:${TOPS[v]}"></i>${t}`) +
     opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
+    opt('팬츠 / 웻수트', 'bottom', Object.keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), (v,t)=>`<i style="background:${BOTTOMS[v]}"></i>${t}`) +
     opt('보드', 'board', [['long','롱보드'],['short','숏보드']]) +
+    opt('보드 색', 'boardc', Object.keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), (v,t)=>`<i style="background:${BOARDC[v]}"></i>${t}`) +
     (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) : '');
   $('bld-opts').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; setProfile({[x.dataset.k]:v}); });
   const mine = allCards().filter(c=>c.to===ME.name).sort((a,b)=>b.date.localeCompare(a.date));
@@ -1312,7 +1403,7 @@ function enter(u){
   $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
   const sb = LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
   $('practice').value = LS.get(`surf.practice.${u.id}`, '');
-  refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
+  refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); auth.refresh().then(refreshMe); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
 }
 let mode = 'in';
 const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
@@ -1372,7 +1463,7 @@ async function renderRank(){
   $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards(); renderSheet();
   const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>(b.level||0)-(a.level||0) || b.xp-a.xp || b.rides-a.rides);
   $('rank-note').textContent = remote ? `${rows.length}명 · 서핑 레벨 → XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
-  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
+  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
   rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTintOf(x.profile, x.level)));
   $('rank').querySelectorAll('.clap').forEach(b=>b.onclick=()=>openCard(b.dataset.name));
 }
