@@ -927,7 +927,7 @@ function renderChecks(b, a){
   if(a.rep.tp!=null) items.push(['타이드', `${tidePhase(a)}. ${a.tides.map(t=>`${t.type} ${t.time}`).join(' · ')||'조차 매우 작음'}`]);
   const rain = Math.max(...a.hours.slice(a.srH, a.ssH+1).map(x=>x.rain??0)); if(rain>=50) items.push(['비', `강수확률 ${rain}%. 여벌 옷 비닐에`]);
   // 이번 주 커리큘럼에서 오늘 할 것 하나
-  const d0 = getData(), wk = WEEKS.find(w=>!weekDone(d0,w)) || WEEKS[7];
+  const d0 = getData(), cw = weekOfDate(b.daily.time[state.day]), wk = (cw>=1&&cw<=8 && !weekDone(d0,WEEKS[cw-1]) ? WEEKS[cw-1] : WEEKS.find(w=>!weekDone(d0,w))) || WEEKS[7];   // 이번 주차 우선
   const sk = wk.skills.findIndex((_,i)=>!d0.skills[`${wk.n}-${i}`]);
   items.push([`${wk.n}주차 · ${wk.title}`, sk>=0 ? `오늘 물에서: ${wk.skills[sk]}` : `미션: ${wk.mission}`]);
   // 루틴은 매일 전부 보여주지 않고 요일 로테이션 2개 + 접힘
