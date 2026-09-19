@@ -288,6 +288,33 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .lvup .big{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:40px; color:var(--sun); text-shadow:4px 4px 0 var(--ink); animation:bob .6s steps(3) infinite}
 .lvup canvas{width:160px; height:160px; margin:12px auto; display:block}
 .streak{font-size:11px; color:var(--sun)}
+/* 파티 모집 바 */
+.pbar{margin-top:10px; border:4px solid var(--ink); background:var(--sun); box-shadow:4px 4px 0 var(--ink); padding:8px 10px}
+.pbar .ph{display:flex; align-items:center; gap:8px}
+.pbar .ph b{font-size:13px} .pbar .ph .cnt2{font-size:11px; color:var(--ink2); flex:1}
+.pbar .party{display:flex; align-items:center; gap:8px; border-top:2px dashed var(--grid); padding:8px 0 2px; font-size:13px; line-height:1.35}
+.pbar .party .pt{flex:1} .pbar .party .pt b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:15px}
+.pbar .party .pt span{display:block; font-size:11px; color:var(--ink2)}
+.pbar .party .who{font-size:11px; color:var(--ink2)}
+/* 체크인 */
+.ci{margin-top:10px; border:4px solid var(--ink); background:var(--paper); box-shadow:4px 4px 0 var(--ink); padding:8px 10px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.ci .avs{display:flex; gap:2px; flex-wrap:wrap} .ci .avs canvas{width:28px; height:28px}
+.ci .t{font-size:13px; flex:1; min-width:120px} .ci .t b{display:block}
+.ci .t small{color:var(--ink2); font-size:11px}
+/* 별점 */
+.stars{display:inline-flex; gap:2px; font-family:sans-serif; font-size:30px; line-height:1; user-select:none}
+.stars .st{position:relative; width:32px; height:32px; color:#D9D4C0}
+.stars .st::before{content:"★"; position:absolute; inset:0; text-align:center}
+.stars .st.f::before{color:var(--sun); -webkit-text-stroke:2px var(--ink)}
+.stars .st.h::after{content:"★"; position:absolute; inset:0; text-align:center; color:var(--sun); -webkit-text-stroke:2px var(--ink); clip-path:inset(0 50% 0 0)}
+.stars .st button{position:absolute; top:0; bottom:0; width:50%; opacity:0; border:0; padding:0; cursor:pointer}
+.stars .st button.l{left:0} .stars .st button.r{right:0}
+.rate-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.rate-row .num2{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:22px; min-width:44px}
+.rl{font-size:12px; color:var(--ink2); line-height:1.5}
+.feed{display:flex; flex-direction:column; gap:8px}
+.feed .fi{border:3px solid var(--ink); background:#fff; padding:8px 10px; font-size:13px; line-height:1.4; box-shadow:3px 3px 0 var(--ink)}
+.feed .fi b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:14px} .feed .fi small{color:var(--ink2)}
 /* RPG 대화창 온보딩 */
 .onb{position:fixed; inset:0; z-index:70; pointer-events:none}
 .onb .dim{position:absolute; inset:0; background:rgba(18,36,95,.45); pointer-events:auto}
@@ -415,8 +442,10 @@ footer a{color:var(--paper)}
 
   <!-- 탭 1: 파도 -->
   <div id="tab-wave">
+    <div class="pbar" id="pbar"><div class="ph"><b>🏄 파티원 모집</b><span class="cnt2" id="pbar-sub">아직 없어요</span><button class="btn sm ghost" type="button" id="party-new">+ 모집</button></div><div id="pbar-list"></div></div>
     <div class="days" id="days" role="group" aria-label="날짜 선택"></div>
     <div class="beaches" id="beaches" role="group" aria-label="해변 선택"></div>
+    <div class="ci" id="ci"><div class="avs" id="ci-avs"></div><div class="t" id="ci-t"><b>지금 낙산에 아무도 없어요</b><small>바다 도착하면 체크인 · 4시간 뒤 자동 해제</small></div><button class="btn sm pink" type="button" id="ci-btn">📍 체크인</button></div>
     <div id="state" class="state px"><span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p></div>
     <div id="wave-main" hidden>
       <section style="margin-top:10px">
@@ -437,6 +466,7 @@ footer a{color:var(--paper)}
         <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span> · <span id="sess-cls"></span></span><div class="total"><span id="sess-total">0</span><small id="sess-unit">번 성공</small></div><div class="lab-sm" id="sess-sub" style="margin:2px 0 0"></div></div><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
         <div class="cnt" id="sess-btns"></div>
         <div class="lab-sm" id="sess-hint" style="margin-top:8px"></div>
+        <div id="rate" style="margin-top:12px;border-top:3px dashed var(--grid);padding-top:10px"><div class="lab-sm">오늘 파도, 차트 대비 실제로는? · 0.5점 단위 · 첫 평가 +5 XP</div><div class="rate-row"><div class="stars" id="stars"></div><span class="num2" id="rate-num">–</span></div><div style="display:flex;gap:6px;margin-top:8px"><input id="rate-txt" placeholder="한 줄 (선택) — 예) 세트 간격 길고 면 좋았음" maxlength="60" style="flex:1;border:3px solid var(--ink);padding:6px 8px;font-size:13px;font-family:inherit;background:#fff"><button class="btn sm blue" type="button" id="rate-save">저장</button></div><div class="rl" id="rate-info"></div></div>
         <details id="sess-lesson" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">✎ 오늘 레슨런 적기 (이론 · 피드백 · 다음)</summary><div id="sess-lesson-form" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div></details>
         <button class="btn sm pink" type="button" onclick="openCard()" style="margin-top:10px;width:100%">👏 오늘 같이 탄 친구 칭찬하기</button>
       </div>
@@ -522,6 +552,7 @@ footer a{color:var(--paper)}
       <div class="sheet" id="sheet"></div><p class="lab-sm" style="margin-top:8px">탭해서 출석(초록)/결석(빨강) 전환. 저장은 자동. 학생 앱의 출석 도장에 반영돼요.</p></div></section>
     <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
     <div class="rank" id="rank" style="margin-top:14px"></div>
+    <section><div class="sec-h"><h2>파도 평점</h2><span class="tag">차트 vs 실제</span><span class="sub" id="feed-sub"></span></div><div class="feed" id="feed"></div></section>
   </div>
   <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
 </div>
@@ -538,6 +569,11 @@ footer a{color:var(--paper)}
   <textarea id="card-text" style="margin-top:10px;min-height:56px" placeholder="한 줄 더 (선택) — 예) 오늘 6시 세트 잡는 거 봤다"></textarea>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">보내기 +5 XP</button><button class="btn ghost" type="button" id="card-cancel">닫기</button></div></form></div>
 <div class="onb" id="onb" hidden><div class="dim"></div><div class="dlg"><div class="who"><canvas id="onb-av" data-anim></canvas><div style="flex:1;min-width:0"><div class="name" id="onb-name">양양서핑학교</div><div class="txt" id="onb-txt"></div></div></div><div class="bld" id="onb-bld"></div><div class="acts"><span class="step" id="onb-step"></span><button class="btn sm ghost" type="button" id="onb-skip">건너뛰기</button><button class="btn sm blue" type="button" id="onb-next">다음 ▶</button></div></div></div>
+<div class="modal" id="party-modal" hidden><form class="px" id="party-form"><span class="eyebrow">파티원 모집</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px;margin-top:2px">같이 가실 분?</div>
+  <div class="field"><label for="party-beach">어디</label><select id="party-beach"></select></div>
+  <div class="field"><label for="party-time">몇 시</label><input id="party-time" type="time" value="09:00" required style="border:4px solid var(--ink);padding:8px 10px;font-size:16px;font-family:inherit;background:#fff"></div>
+  <div class="field"><label for="party-note">한 마디</label><input id="party-note" placeholder="예) 낙산 주차장에서 만나요, 차 있어요" maxlength="60" style="border:4px solid var(--ink);padding:8px 10px;font-size:15px;font-family:inherit;background:#fff"></div>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">올리기 +5 XP</button><button class="btn ghost" type="button" id="party-cancel">닫기</button></div></form></div>
 <div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요 · 탭해서 닫기</div></div></div>
 <div class="gain" id="gain">+10 XP</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -783,7 +819,7 @@ const BADGES = [
 ];
 function calcXP(d){
   let xp = attN(d)*XP.attend + Object.values(d.skills).filter(Boolean).length*XP.skill + Object.values(d.missions).filter(Boolean).length*XP.mission
-         + lessonFilled(d)*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride + (ME ? cardXP() : 0) + quizXP(d) + questXP(d) + slvXP(d);
+         + lessonFilled(d)*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride + (ME ? cardXP() : 0) + quizXP(d) + questXP(d) + slvXP(d) + bonusXP(d);
   return xp;
 }
 /* 칭찬 카드: 받는 사람은 이름 기준(기기 달라도 같은 이름이면 도착). 로컬 + Supabase(설정 시) */
@@ -937,7 +973,8 @@ function renderHero(b, a){
   const win = bestLeft ? `${pad2(bestLeft.h)}~${pad2(bestLeft.h+2)}시` : `${pad2(a.best.h)}~${pad2(a.best.h+2)}시`;
   const passedNote = state.day===0 && bestLeft && bestLeft.h!==a.best.h ? ` (${pad2(a.best.h)}~${pad2(a.best.h+2)}시는 지남)` : '';
   const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : !bestLeft ? `오늘 탈 시간은 지났어요. 내일 탭을 봐요.` : `<mark>${win}</mark>가 ${nowH0>=0?'지금부터 ':''}오늘의 정답.${passedNote}`;
-  $('summary').innerHTML = `${r.h.toFixed(1)}m / ${Math.round(r.p)}초 ${a.swell} + ${windTxt}. ${a.power}. ${tail}`;
+  const snapH = chartSnap(b, a), simH = similar(b, snapH, null), avgH = simH.length ? (simH.reduce((s2,x)=>s2+(+x.stars),0)/simH.length).toFixed(1) : null;
+  $('summary').innerHTML = `${r.h.toFixed(1)}m / ${Math.round(r.p)}초 ${a.swell} + ${windTxt}. ${a.power}. ${tail}${avgH?` <span class="sc" style="background:var(--sun);border:2px solid var(--ink);padding:0 6px;font-size:12px">6기 실측 ★${avgH} (${simH.length}회)</span>`:''}`;
   const slots = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots.push({ h, s:(x.s+y.s)/2, wh:(x.h+y.h)/2, p:(x.p+y.p)/2, w:(x.w+y.w)/2, rel:x.rel, tp:x.tp, danger:x.danger||y.danger }); }
   const top = slots.slice().sort((p,q)=>q.s-p.s).slice(0,3).sort((p,q)=>p.h-q.h);
   const nowH = state.day===0 ? new Date().getHours() : -1;
@@ -1310,7 +1347,7 @@ $('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
   const b = BEACHES[state.beach], a = analyze(b, state.day);
-  renderDays(); renderBeaches(); renderHero(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
+  renderDays(); renderBeaches(); renderHero(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); pullSocial(false); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
 }
 async function bootWave(){
   const st = $('state'); st.hidden = false; $('wave-main').hidden = true;
@@ -1370,6 +1407,67 @@ function renderMission(){
   $('weeks').querySelectorAll('.wh').forEach(h=>{ const go=()=>{ const w=+h.parentElement.dataset.w; state.openWeek = state.openWeek===w ? null : w; renderMission(); }; h.addEventListener('click', go); h.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); });
 }
 
+/* ═══════════ 소셜: 파도 별점 · 체크인 · 파티 모집 (Supabase, supabase-social.sql) ═══════════ */
+state.social = { ratings:[], checkins:[], parties:[], at:0, ok:null };
+async function sbGet(table, q){ const r = await fetch(`${SUPA.url}/rest/v1/${table}?${q}`, { headers:supaH() }); if(r.status===404) throw Object.assign(new Error('notable'),{code:'notable'}); if(!r.ok) throw new Error(table+' '+r.status); return r.json(); }
+async function sbUpsert(table, row){ const r = await fetch(`${SUPA.url}/rest/v1/${table}`, { method:'POST', headers:supaH(), body:JSON.stringify(row) }); if(!r.ok) throw new Error(table+' '+r.status); }
+async function pullSocial(force){
+  if(!supaOn()) return; if(!force && Date.now()-state.social.at < 45000) return; state.social.at = Date.now();
+  try{ const [ratings, checkins, parties] = await Promise.all([ sbGet('ratings', 'select=*&order=created_at.desc&limit=500'), sbGet('checkins', `select=*&active=eq.true&at=gte.${new Date(Date.now()-4*3600e3).toISOString()}`), sbGet('parties', `select=*&date=eq.${today()}&order=time.asc`) ]);
+    state.social = { ...state.social, ratings, checkins, parties, ok:true }; }
+  catch(e){ state.social.ok = e.code==='notable' ? false : state.social.ok; }
+  if(state.tab==='wave' && state.loaded){ renderParty(); renderCheckin(); renderRate(); }
+  if(state.tab==='rank') renderFeed();
+}
+const bonusXP = d => (d.bonus||0);
+function addBonus(n, key){ const d = getData(); d.bonusKeys = d.bonusKeys||{}; if(key && d.bonusKeys[key]) return; if(key) d.bonusKeys[key] = true; d.bonus = (d.bonus||0)+n; setData(d); gain(n); refreshMe(); }
+const notReady = '서버 테이블 준비 중 (코치가 supabase-social.sql 실행하면 켜져요)';
+
+/* 별점 */
+let rateVal = 0;
+function chartSnap(b, a){ const h = state.day===0 ? new Date().getHours() : a.best.h; const x = a.hours[Math.min(23, Math.max(0,h))]; return { h:+x.h.toFixed(2), p:+x.p.toFixed(1), wdir:Math.round(x.wdir), w:Math.round(x.w), dir:Math.round(x.dir), rel:x.rel, tp:x.tp==null?null:+x.tp.toFixed(2), score:+x.s.toFixed(1), verdict:a.vd.t, hour:h }; }
+function similar(b, snap, exceptId){ return state.social.ratings.filter(r=>r.beach===b.name && r.id!==exceptId && r.chart && Math.abs((r.chart.h??0)-snap.h)<=0.3 && Math.abs((r.chart.p??0)-snap.p)<=1.5 && r.chart.rel===snap.rel); }
+function starsHTML(v){ return [1,2,3,4,5].map(i=>`<span class="st ${v>=i?'f':v>=i-0.5?'h':''}"><button type="button" class="l" data-v="${i-0.5}" aria-label="${i-0.5}점"></button><button type="button" class="r" data-v="${i}" aria-label="${i}점"></button></span>`).join(''); }
+function renderRate(){
+  if(!$('rate')) return; const b = BEACHES[state.beach], a = analyze(b, state.day), id = `${ME.id}|${b.name}|${today()}`;
+  const mine = state.social.ratings.find(r=>r.id===id); if(mine && !rateVal){ rateVal = +mine.stars; $('rate-txt').value = mine.comment||''; }
+  $('stars').innerHTML = starsHTML(rateVal); $('rate-num').textContent = rateVal ? rateVal.toFixed(1) : '–';
+  $('stars').querySelectorAll('button').forEach(x=>x.onclick=()=>{ rateVal = +x.dataset.v; $('stars').innerHTML = starsHTML(rateVal); $('rate-num').textContent = rateVal.toFixed(1); $('stars').querySelectorAll('button').forEach(y=>y.onclick=x.onclick); });
+  const snap = chartSnap(b, a), todays = state.social.ratings.filter(r=>r.beach===b.name && r.date===today()), sim = similar(b, snap, null);
+  const avg = arr => arr.length ? (arr.reduce((s,r)=>s+(+r.stars),0)/arr.length).toFixed(1) : null;
+  $('rate-info').innerHTML = state.social.ok===false ? notReady : [ mine?`내 평가 ★${(+mine.stars).toFixed(1)} 저장됨`:'', todays.length?`오늘 ${b.name} 실제 ★${avg(todays)} (${todays.length}명)`:'', sim.length?`비슷한 차트(${snap.h}m·${snap.p}초·${relKo[snap.rel]})일 때 실제 ★${avg(sim)} (${sim.length}회) vs 차트 판정 "${a.vd.t}"`:'' ].filter(Boolean).join(' · ') || '별점이 쌓이면 "차트가 이 정도면 실제로 몇 점"이 여기 뜹니다';
+  $('rate-save').onclick = async ()=>{ if(!rateVal) return toast('별을 눌러 점수부터'); const row = { id, user_id:ME.id, name:ME.name, beach:b.name, date:today(), hour:snap.hour, stars:rateVal, comment:$('rate-txt').value.trim().slice(0,60), chart:snap };
+    try{ await sbUpsert('ratings', row); state.social.ratings = [row, ...state.social.ratings.filter(r=>r.id!==id)]; addBonus(5, 'rate|'+today()); toast(`★${rateVal.toFixed(1)} 저장 · 고마워요`); renderRate(); }catch(e){ toast(state.social.ok===false?notReady:'저장 실패 · 신호 확인'); } };
+}
+/* 체크인 */
+function renderCheckin(){
+  if(!$('ci')) return; const b = BEACHES[state.beach], here = state.social.checkins.filter(c=>c.beach===b.name), me = state.social.checkins.find(c=>c.user_id===ME.id);
+  $('ci-avs').innerHTML = here.map(c=>`<canvas title="${c.name}"></canvas>`).join(''); here.forEach((c,i)=>drawSpr($('ci-avs').children[i], avatarRows(c.profile||{}), avatarTintOf(c.profile||{}, 0)));
+  const others = BEACHES.filter(x=>x.name!==b.name).map(x=>({ n:x.name, k:state.social.checkins.filter(c=>c.beach===x.name).length })).filter(x=>x.k);
+  $('ci-t').innerHTML = state.social.ok===false ? `<b>체크인</b><small>${notReady}</small>` : `<b>지금 ${b.name}에 ${here.length?here.map(c=>c.name).join(', ')+' ('+here.length+')':'아무도 없어요'}</b><small>${others.length?'다른 해변: '+others.map(o=>`${o.n} ${o.k}`).join(' · '):'바다 도착하면 체크인 · 4시간 뒤 자동 해제'}</small>`;
+  const meHere = me && me.beach===b.name; $('ci-btn').textContent = meHere ? '나왔어요' : (me ? `📍 ${b.name}으로 옮기기` : '📍 체크인'); $('ci-btn').className = 'btn sm ' + (meHere?'ghost':'pink');
+  $('ci-btn').onclick = async ()=>{ const row = { id:`${ME.id}|${today()}`, user_id:ME.id, name:ME.name, beach:b.name, at:new Date().toISOString(), active:!meHere, profile:myProfile(), updated_at:new Date().toISOString() };
+    try{ await sbUpsert('checkins', row); state.social.checkins = state.social.checkins.filter(c=>c.user_id!==ME.id).concat(row.active?[row]:[]); if(row.active) addBonus(5, 'ci|'+today()); toast(row.active?`${b.name} 체크인! 동기들이 볼 수 있어요`:'체크아웃'); renderCheckin(); }catch(e){ toast(state.social.ok===false?notReady:'실패 · 신호 확인'); } };
+}
+/* 파티 */
+function renderParty(){
+  if(!$('pbar')) return; const ps = state.social.parties;
+  $('pbar-sub').textContent = state.social.ok===false ? '서버 준비 중' : ps.length ? `오늘 ${ps.length}건` : '오늘 아직 없어요 · 먼저 올려봐요';
+  $('pbar-list').innerHTML = ps.map(p=>{ const joins = Array.isArray(p.joins)?p.joins:[], inn = joins.includes(ME.name) || p.user_id===ME.id;
+    return `<div class="party"><div class="pt"><b class="num">${p.time}</b> ${p.beach} · ${p.name}<span>${p.note||''}${joins.length?` · 같이: ${joins.join(', ')}`:''}</span></div>${p.user_id===ME.id?'<span class="who">내 모집</span>':`<button class="btn sm ${inn?'ghost':'mint'}" type="button" data-join="${p.id}">${inn?'빠지기':'같이 가요'}</button>`}</div>`; }).join('');
+  $('pbar-list').querySelectorAll('[data-join]').forEach(btn=>btn.onclick=async ()=>{ const p = ps.find(x=>x.id===btn.dataset.join); const joins = (Array.isArray(p.joins)?p.joins:[]); const next = joins.includes(ME.name) ? joins.filter(n=>n!==ME.name) : [...joins, ME.name];
+    try{ const r = await fetch(`${SUPA.url}/rest/v1/parties?id=eq.${encodeURIComponent(p.id)}`, { method:'PATCH', headers:supaH(), body:JSON.stringify({ joins:next }) }); if(!r.ok) throw 0; p.joins = next; renderParty(); toast(next.includes(ME.name)?`${p.time} ${p.beach} 같이 가요!`:'빠졌어요'); }catch(e){ toast('실패 · 신호 확인'); } });
+}
+$('party-new').onclick = ()=>{ if(state.social.ok===false) return toast(notReady); $('party-beach').innerHTML = BEACHES.map(b=>`<option ${b.id===BEACHES[state.beach].id?'selected':''}>${b.name}</option>`).join(''); $('party-modal').hidden = false; };
+$('party-cancel').onclick = ()=>$('party-modal').hidden = true;
+$('party-form').addEventListener('submit', async e=>{ e.preventDefault(); const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), beach:$('party-beach').value, time:$('party-time').value, note:$('party-note').value.trim().slice(0,60), joins:[] };
+  try{ await sbUpsert('parties', row); state.social.parties = [...state.social.parties, row].sort((a,b)=>a.time.localeCompare(b.time)); $('party-modal').hidden = true; $('party-note').value=''; addBonus(5, 'party|'+row.id); toast('모집 올렸어요 · 동기들 상단 바에 떠요'); renderParty(); }catch(e){ toast('실패 · 신호 확인'); } });
+/* 피드 (6기 탭) */
+function renderFeed(){
+  const rs = state.social.ratings.slice(0, 12); $('feed-sub').textContent = state.social.ok===false ? '서버 준비 중' : `${state.social.ratings.length}건`;
+  $('feed').innerHTML = rs.length ? rs.map(r=>`<div class="fi"><b>★${(+r.stars).toFixed(1)}</b> ${r.beach} · ${r.name} <small>${String(r.date).slice(5).replace('-','.')} ${pad2(r.hour??0)}시</small>${r.comment?`<div>${r.comment.replace(/</g,'&lt;')}</div>`:''}<small>차트 ${r.chart?.h}m·${r.chart?.p}초·${relKo[r.chart?.rel]||''} ${r.chart?.w}kts → 판정 "${r.chart?.verdict||''}"</small></div>`).join('') : `<div class="px" style="font-size:13px;color:var(--ink2)">${state.social.ok===false?notReady:'아직 평점이 없어요. 파도 탭 세션 카드에서 오늘 파도에 별점을!'}</div>`;
+}
+
 /* ═══════════ 온보딩 (첫 로그인) ═══════════ */
 const COACH_PR = { gender:'m', role:'coach', top:'k', hat:'cap', board:'long', boardc:'w', bottom:'k' };
 function builderHTML(pr, prefix){
@@ -1385,7 +1483,7 @@ function builderHTML(pr, prefix){
 const ONB = [
   { who:'교장쌤', txt:'6기 환영합니다! 먼저 라인업에서 알아볼 수 있게 캐릭터부터 만들어요. 래시가드·모자·보드 색은 언제든 "나" 탭에서 바꿀 수 있어요.', build:true, tab:'wave' },
   { who:'교장쌤', txt:'1·2주차(보드 구조, 패들링·화이트워터)는 이미 하셨죠? 완료 처리하고 XP도 드릴게요. 출석은 코치 출석부 기록을 따릅니다.', tab:'mission', done12:true },
-  { who:'매니저', txt:'【파도 탭】 아침에 열면 캠·판정 도장·추천 시간대가 바로 보여요. 물에서 나오면 "오늘 세션"에서 도전·푸쉬업·테이크오프를 세고, 바로 밑에 레슨런을 적어요.', tab:'wave' },
+  { who:'매니저', txt:'【파도 탭】 맨 위 노란 바에서 "같이 가실 분?" 파티를 올리고, 바다 도착하면 📍체크인. 물에서 나오면 "오늘 세션"에서 횟수를 세고 오늘 파도에 ★별점을 남겨요 — 별점이 쌓이면 차트가 실제로 몇 점짜리인지 6기가 알게 돼요.', tab:'wave' },
   { who:'매니저', txt:'【수업 탭】 이번 주 카드 하나만 보면 돼요: 출석 도장 → 배운 것 체크 → 미션 → 레슨런. 지난 주는 아래 "전체 과정"에서.', tab:'mission' },
   { who:'매니저', txt:'【나 탭】 서핑 레벨표(학교 공식 LV.1~10)를 자가 체크하면 레벨이 오르고 보드 색이 바뀌어요. 배지도 여기.', tab:'level' },
   { who:'교장쌤', txt:'【6기 탭】 동기들 랭킹이에요. 잘 탄 친구에게 👏 칭찬 카드 보내면 둘 다 XP. 자, 출발!', tab:'rank', last:true },
@@ -1526,7 +1624,7 @@ async function fetchRank(){
   catch(e){ return { rows:local, remote:false, err:true }; }
 }
 async function renderRank(){
-  $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards(); renderSheet();
+  $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards(); renderSheet(); pullSocial(true).then(renderFeed); renderFeed();
   const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>(b.level||0)-(a.level||0) || b.xp-a.xp || b.rides-a.rides);
   $('rank-note').textContent = remote ? `${rows.length}명 · 서핑 레벨 → XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
   $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':x.profile?.cls==='inter'?'<span class="tagc" style="background:var(--sea)">중급</span>':x.profile?.cls?'<span class="tagc" style="background:var(--mint);color:var(--ink)">비기너</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
