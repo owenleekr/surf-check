@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1B1B2F">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-title" content="파도어때">
 <title>오늘 파도 어때</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%232E6BFF'/%3E%3Cpath d='M0 5h1V4h1V3h1v1h1v1h1V4h1V3h1v1h1v1h-1v1H7v1H6V6H5V5H4v1H3v1H2V6H1V5z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
@@ -231,7 +234,8 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .week.locked .wh{filter:grayscale(1); opacity:.7}
 .att{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
 .att .stamp-att{border:4px dashed var(--ink2); padding:8px 12px; font-size:13px; color:var(--ink2); min-width:150px; text-align:center}
-.att .stamp-att.on{border-style:solid; border-color:var(--coral); color:var(--coral); font-weight:700; transform:rotate(-4deg); background:#fff}
+.att .stamp-att.on{border-style:solid; border-color:var(--coral); color:var(--coral); font-weight:700; transform:rotate(-4deg); background:#fff; animation:stamp .35s steps(4) both}
+@keyframes stamp{0%{transform:scale(1.8) rotate(-12deg); opacity:0} 100%{transform:scale(1) rotate(-4deg); opacity:1}}
 .att .undo{font-size:11px; color:var(--ink2); background:none; border:0; text-decoration:underline; padding:4px}
 .skills{display:flex; flex-direction:column; gap:8px}
 .mission{background:var(--sun); border:4px solid var(--ink); padding:10px 12px; display:flex; gap:10px; align-items:flex-start}
@@ -394,7 +398,7 @@ footer a{color:var(--paper)}
   <div class="field"><label for="uid">아이디</label><input id="uid" name="uid" inputmode="latin" autocapitalize="off" autocomplete="username" placeholder="영문·숫자 2~16자" maxlength="16" required></div>
     <div class="field" id="f-name" hidden><label for="uname">이름 (닉네임)</label><input id="uname" name="uname" placeholder="레벨 카드에 표시돼요" maxlength="12"></div>
     <div class="field" id="f-av" hidden style="display:none"><label>캐릭터</label><div class="pick" id="pick-g"><button type="button" data-g="f" aria-pressed="true"><canvas></canvas>여자</button><button type="button" data-g="m" aria-pressed="false"><canvas></canvas>남자</button></div><div class="pick" id="pick-b"><button type="button" data-b="long" aria-pressed="true"><canvas></canvas>롱보드</button><button type="button" data-b="short" aria-pressed="false"><canvas></canvas>숏보드</button></div></div>
-  <div class="field"><label for="upw">비밀번호</label><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required></div>
+  <div class="field"><label for="upw">비밀번호</label><div style="display:flex;gap:6px"><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required style="flex:1"><button type="button" class="btn sm ghost" id="pw-eye" aria-label="비밀번호 보기" onclick="const i=document.getElementById('upw'); i.type=i.type==='password'?'text':'password'; this.textContent=i.type==='password'?'👁':'🙈'">👁</button></div></div>
     <div class="err" id="err"></div>
     <div class="login-actions"><button class="btn blue" type="submit" id="submit">▶ 로그인</button></div>
     <div class="who">아이디·비밀번호는 서버에 저장되니 <b>어느 폰에서든</b> 같은 아이디로 로그인하면 진도가 따라와요. 기수 친구들은 각자 계정을 만들면 됩니다.</div>
@@ -516,7 +520,7 @@ footer a{color:var(--paper)}
     <section id="coach-sheet" hidden><div class="sec-h"><h2>출석부</h2><span class="tag">코치 전용</span><span class="sub" id="sheet-sum"></span></div>
       <div class="px"><div class="sheet-h"><input type="date" id="sheet-date"><span class="lab-sm" style="margin:0" id="sheet-week"></span><button class="btn sm mint" type="button" id="sheet-all">전원 출석</button></div>
       <div class="sheet" id="sheet"></div><p class="lab-sm" style="margin-top:8px">탭해서 출석(초록)/결석(빨강) 전환. 저장은 자동. 학생 앱의 출석 도장에 반영돼요.</p></div></section>
-    <button class="btn pink" type="button" id="card-open" style="width:100%;margin-top:12px;font-size:17px">👏 칭찬 카드 보내기</button>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
     <div class="rank" id="rank" style="margin-top:14px"></div>
   </div>
   <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
@@ -536,7 +540,7 @@ footer a{color:var(--paper)}
 <div class="onb" id="onb" hidden><div class="dim"></div><div class="dlg"><div class="who"><canvas id="onb-av" data-anim></canvas><div style="flex:1;min-width:0"><div class="name" id="onb-name">양양서핑학교</div><div class="txt" id="onb-txt"></div></div></div><div class="bld" id="onb-bld"></div><div class="acts"><span class="step" id="onb-step"></span><button class="btn sm ghost" type="button" id="onb-skip">건너뛰기</button><button class="btn sm blue" type="button" id="onb-next">다음 ▶</button></div></div></div>
 <div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요 · 탭해서 닫기</div></div></div>
 <div class="gain" id="gain">+10 XP</div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -798,6 +802,7 @@ function openCard(name){
 }
 $('card-cancel').onclick = ()=>$('card-modal').hidden = true;
 $('card-open').onclick = ()=>openCard();
+$('invite').onclick = async ()=>{ const url = 'https://surf.owenai.xyz/', text = '양양서핑학교 6기 파도 체크 앱 — 새 계정 만들고 명단에서 이름 고르면 돼요'; if(navigator.share){ try{ await navigator.share({ title:'오늘 파도 어때', text, url }); return; }catch(e){} } await copyText(url); toast('링크 복사됨 · 단톡방에 붙여넣기'); };
 $('card-form').addEventListener('submit', async e=>{
   e.preventDefault(); if(!cardTo) return;
   const c = { id: ME.id+'-'+Date.now(), from:ME.id, fromName:ME.name, to:cardTo, tpl:cardTpl, text:$('card-text').value.trim().slice(0,120), date:new Date().toISOString() };
@@ -912,7 +917,7 @@ function renderBeaches(){
   const box = $('beaches'); box.innerHTML = '';
   BEACHES.forEach((b, i)=>{
     const a = analyze(b, state.day), col = {good:'var(--good)',ok:'var(--sun)',meh:'var(--orange)',bad:'var(--bad)',warn:'var(--bad)'}[a.vd.v];
-    const btn = el('button', 'chip', `<span class="dot" style="background:${col}"></span>${b.name}`);
+    const btn = el('button', 'chip', `<span class="dot" style="background:${col}"></span>${b.name}<small style="font-weight:400;color:var(--ink2);font-size:11px">${a.rep.h.toFixed(1)}m</small>`);
     btn.type='button'; btn.setAttribute('aria-pressed', String(i===state.beach));
     btn.onclick = ()=>{ state.beach = i; LS.set('surf.beach', b.id); renderWave(); }; box.appendChild(btn);
   });
@@ -922,12 +927,18 @@ function renderHero(b, a){
   const L = dateLabel(b.daily.time[state.day]);
   $('hero-date').textContent = `${L.iso.replace(/-/g,'.')} (${L.dow}) · ${b.area}`; $('hero-name').textContent = b.name;
   const st = $('stamp'); st.dataset.v = a.vd.v; st.textContent = a.vd.t;
-  const r = a.rep, win = `${pad2(a.best.h)}~${pad2(a.best.h+2)}시`, windTxt = `${compass(r.dir)} ${relKo[r.rel]} ${Math.round(r.w)}kts`;
-  const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : `<mark>${win}</mark>가 오늘의 정답.`;
+  const r = a.rep, windTxt = `${compass(r.dir)} ${relKo[r.rel]} ${Math.round(r.w)}kts`;
+  const nowH0 = state.day===0 ? new Date().getHours() : -1;
+  const slots0 = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots0.push({ h, s:(x.s+y.s)/2 }); }
+  const left = slots0.filter(sl=>sl.h+2>nowH0), bestLeft = left.length ? left.reduce((m,x)=>x.s>m.s?x:m, left[0]) : null;
+  const win = bestLeft ? `${pad2(bestLeft.h)}~${pad2(bestLeft.h+2)}시` : `${pad2(a.best.h)}~${pad2(a.best.h+2)}시`;
+  const passedNote = state.day===0 && bestLeft && bestLeft.h!==a.best.h ? ` (${pad2(a.best.h)}~${pad2(a.best.h+2)}시는 지남)` : '';
+  const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : !bestLeft ? `오늘 탈 시간은 지났어요. 내일 탭을 봐요.` : `<mark>${win}</mark>가 ${nowH0>=0?'지금부터 ':''}오늘의 정답.${passedNote}`;
   $('summary').innerHTML = `${r.h.toFixed(1)}m / ${Math.round(r.p)}초 ${a.swell} + ${windTxt}. ${a.power}. ${tail}`;
   const slots = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots.push({ h, s:(x.s+y.s)/2, wh:(x.h+y.h)/2, p:(x.p+y.p)/2, w:(x.w+y.w)/2, rel:x.rel, tp:x.tp, danger:x.danger||y.danger }); }
   const top = slots.slice().sort((p,q)=>q.s-p.s).slice(0,3).sort((p,q)=>p.h-q.h);
-  $('slots').innerHTML = top.map((sl,i)=>`<div class="slot ${sl.h===a.best.h?'best':''}"><span class="t num">${pad2(sl.h)}~${pad2(sl.h+2)}시</span><span class="d"><b>${sl.wh.toFixed(1)}m</b> / ${Math.round(sl.p)}초 · ${Math.round(sl.w)}kts ${relKo[sl.rel]}${sl.tp!=null?` · ${sl.tp<0.33?'로우':sl.tp<0.66?'미드':'하이'}`:''}${sl.danger?' · <b style="color:var(--bad)">위험</b>':''}</span><span class="sc">${sl.s.toFixed(1)}점</span></div>`).join('');
+  const nowH = state.day===0 ? new Date().getHours() : -1;
+  $('slots').innerHTML = top.map((sl,i)=>`<div class="slot ${sl.h===a.best.h?'best':''}" ${nowH>=sl.h+2?'style="opacity:.45"':''}><span class="t num">${pad2(sl.h)}~${pad2(sl.h+2)}시${nowH>=sl.h&&nowH<sl.h+2?'<span class="sc" style="margin-left:4px;background:var(--coral);color:#fff">지금</span>':nowH>=sl.h+2?'<span class="sc" style="margin-left:4px;background:#fff">지남</span>':''}</span><span class="d"><b>${sl.wh.toFixed(1)}m</b> / ${Math.round(sl.p)}초 · ${Math.round(sl.w)}kts ${relKo[sl.rel]}${sl.tp!=null?` · ${sl.tp<0.33?'로우':sl.tp<0.66?'미드':'하이'}`:''}${sl.danger?' · <b style="color:var(--bad)">위험</b>':''}</span><span class="sc">${sl.s.toFixed(1)}점</span></div>`).join('');
 }
 function tile(spr, lab, val, memo){ return `<div class="tile px"><div class="lab"><canvas data-spr="${spr}"></canvas>${lab}</div><div class="val">${val}</div>${memo?`<div class="memo">${memo}</div>`:''}</div>`; }
 function suitFor(sst){ return sst>=24 ? '보드숏·래시가드 OK' : sst>=21 ? '스프링수트 / 1~2mm' : sst>=17 ? '3/2 풀슈트' : sst>=13 ? '4/3 + 부츠' : '5/4 후드·부츠·장갑'; }
@@ -1285,7 +1296,7 @@ function renderSession(){
 }
 function ride(k){
   const d = getData(); d.sessions = d.sessions||{}; const sx = { ...EMPTY_SESS(), ...(d.sessions[today()]||{}) };
-  sx[k] = (sx[k]||0)+1; sx.hist.push(k); sx.beach = BEACHES[state.beach].name; d.sessions[today()] = sx; setData(d);
+  sx[k] = (sx[k]||0)+1; sx.hist.push(k); sx.beach = BEACHES[state.beach].name; d.sessions[today()] = sx; setData(d); try{ navigator.vibrate?.(['t','l','r'].includes(k)?[20,40,20]:15); }catch(e){}
   if(['t','l','r'].includes(k)) gain(XP.ride); renderSession(); refreshMe();
 }
 function unride(){
@@ -1513,7 +1524,7 @@ async function renderRank(){
   $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards(); renderSheet();
   const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>(b.level||0)-(a.level||0) || b.xp-a.xp || b.rides-a.rides);
   $('rank-note').textContent = remote ? `${rows.length}명 · 서핑 레벨 → XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
-  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
+  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':x.profile?.cls==='inter'?'<span class="tagc" style="background:var(--sea)">중급</span>':x.profile?.cls?'<span class="tagc" style="background:var(--mint);color:var(--ink)">비기너</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
   rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTintOf(x.profile, x.level)));
   $('rank').querySelectorAll('.clap').forEach(b=>b.onclick=()=>openCard(b.dataset.name));
 }
