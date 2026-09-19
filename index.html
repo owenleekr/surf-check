@@ -262,6 +262,28 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .levels div.cur{font-weight:700; color:var(--sea2)}
 .levels div.cur::before{content:"▶ "}
 .io{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+/* 오늘의 퀘스트 */
+.quests{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:10px}
+.quest{border:3px solid var(--ink); background:#fff; padding:8px 10px; font-size:12px; line-height:1.3; box-shadow:3px 3px 0 var(--ink); display:flex; gap:8px; align-items:center}
+.quest b{display:block; font-size:13px} .quest span{color:var(--ink2)}
+.quest .q{width:22px; height:22px; border:3px solid var(--ink); flex:0 0 auto; display:grid; place-items:center; font-size:14px; background:#fff}
+.quest.done{background:var(--mint)} .quest.done .q{background:var(--ink); color:var(--sun)}
+/* 퀴즈 */
+.quiz .qq{font-weight:700; font-size:16px; line-height:1.4; margin-top:6px}
+.quiz .qa{display:flex; flex-direction:column; gap:6px; margin-top:10px}
+.quiz .qa button{text-align:left; border:3px solid var(--ink); background:#fff; padding:8px 10px; font-size:13px; line-height:1.4; box-shadow:3px 3px 0 var(--ink)}
+.quiz .qa button.ok{background:var(--mint)} .quiz .qa button.no{background:var(--coral); color:#fff}
+.quiz .qr{font-size:12px; color:var(--ink2); margin-top:8px; line-height:1.5}
+/* 용어 사전 */
+.gloss{display:flex; flex-direction:column; gap:12px}
+.gloss h3{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:16px; border-bottom:3px solid var(--ink); padding-bottom:4px}
+.gloss dl{margin:0; display:grid; grid-template-columns:auto 1fr; gap:6px 10px; font-size:13px}
+.gloss dt{font-weight:700; white-space:nowrap} .gloss dd{margin:0; color:var(--ink2); line-height:1.45}
+.gloss input{width:100%; border:4px solid var(--ink); padding:8px 10px; font-size:15px; margin-bottom:4px}
+.lvup{position:fixed; inset:0; z-index:60; display:grid; place-items:center; background:rgba(18,36,95,.88); text-align:center; color:var(--paper)}
+.lvup .big{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:40px; color:var(--sun); text-shadow:4px 4px 0 var(--ink); animation:bob .6s steps(3) infinite}
+.lvup canvas{width:160px; height:160px; margin:12px auto; display:block}
+.streak{font-size:11px; color:var(--sun)}
 .toast{position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--sun); border:4px solid var(--sun); padding:8px 16px; font-weight:700; font-size:14px; opacity:0; pointer-events:none; z-index:40}
 .toast.show{opacity:1}
 .state{margin-top:16px; text-align:center; font-size:16px; font-weight:700}
@@ -352,7 +374,7 @@ footer a{color:var(--paper)}
 <div class="wrap" id="app" hidden>
   <header class="hdr">
     <h1 id="app-title">오늘 파도 어때</h1>
-    <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av" data-anim></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span></div></div>
+    <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av" data-anim></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span><span class="streak" id="me-streak"></span></div></div>
   </header>
   <div class="wavebar"></div>
 
@@ -382,6 +404,7 @@ footer a{color:var(--paper)}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--ink2)">세션 끝나면 노션 복사 → 라이딩 횟수가 채워져요</span><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
         <button class="btn sm pink" type="button" onclick="openCard()" style="margin-top:10px;width:100%">👏 오늘 같이 탄 친구 칭찬하기</button>
       </div>
+      <div class="px" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center"><span class="eyebrow">오늘의 퀘스트</span><span class="lab-sm" style="margin:0" id="quest-sum"></span></div><div class="quests" id="quests"></div></div>
       <div class="px sand" id="tipbox" style="margin-top:14px;display:flex;gap:12px;align-items:flex-start"><canvas data-spr="book" width="8" height="8" style="width:32px;height:32px;flex:0 0 auto"></canvas><div><span class="eyebrow">오늘의 서핑 팁</span><div id="tip-txt" style="margin-top:4px;line-height:1.55;font-size:14px"></div><button class="undo" type="button" id="tip-next" style="margin-top:4px;padding:0">다른 팁 →</button></div></div>
       <div class="tiles" id="tiles"></div>
 
@@ -425,6 +448,8 @@ footer a{color:var(--paper)}
       <div class="t"><span class="eyebrow">6기 커리큘럼 진도</span><b id="prog-txt">0 / 8주</b><div class="bar" style="margin-top:6px"><i id="prog-bar"></i></div></div>
     </div>
     <div class="weeks" id="weeks"></div>
+    <section><div class="sec-h"><h2>용어 퀴즈</h2><span class="tag">하루 3문제</span><span class="sub">맞히면 +5 XP</span></div><div class="px quiz" id="quiz"></div></section>
+    <section><div class="sec-h"><h2>서핑 용어</h2><span class="tag" id="gloss-n"></span></div><div class="px gloss" id="gloss"></div></section>
   </div>
 
   <!-- 탭 3: 레벨 -->
@@ -471,6 +496,7 @@ footer a{color:var(--paper)}
   <div class="chips" id="card-tpls"></div>
   <textarea id="card-text" style="margin-top:10px;min-height:56px" placeholder="한 줄 더 (선택) — 예) 오늘 6시 세트 잡는 거 봤다"></textarea>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">보내기 +5 XP</button><button class="btn ghost" type="button" id="card-cancel">닫기</button></div></form></div>
+<div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요 · 탭해서 닫기</div></div></div>
 <div class="gain" id="gain">+10 XP</div>
 <div class="toast" id="toast"></div>
 
@@ -616,11 +642,13 @@ const BADGES = [
   { id:'ride10', name:'10파도',      icon:'wave',   test:d=>totalRides(d)>=10 },
   { id:'ride50', name:'50파도',      icon:'drop',   test:d=>totalRides(d)>=50 },
   { id:'both',   name:'양방향',      icon:'map',    test:d=>Object.values(d.sessions||{}).some(x=>x.l>0&&x.r>0) },
+  { id:'quiz',   name:'용어 박사',    icon:'book',   test:d=>Object.values(d.quiz||{}).filter(x=>x.ok===3).length>=3 },
+  { id:'quest',  name:'올클리어 3일', icon:'star',   test:d=>Object.keys(d.questAll||{}).length>=3 },
   { id:'wipe',   name:'와이프아웃 10', icon:'temp',  test:d=>Object.values(d.sessions||{}).reduce((s,x)=>s+(x.w||0),0)>=10 },
 ];
 function calcXP(d){
   let xp = Object.keys(d.attend).length*XP.attend + Object.values(d.skills).filter(Boolean).length*XP.skill + Object.values(d.missions).filter(Boolean).length*XP.mission
-         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride + (ME ? cardXP() : 0);
+         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride + (ME ? cardXP() : 0) + quizXP(d) + questXP(d);
   return xp;
 }
 /* 칭찬 카드: 받는 사람은 이름 기준(기기 달라도 같은 이름이면 도착). 로컬 + Supabase(설정 시) */
@@ -834,7 +862,7 @@ function renderChecks(b, a){
   $('checks').innerHTML = items.map(row).join('') + `<details class="routine"${saved.__r?' open':''}><summary>루틴 ${routine.length}개 · 오늘 당번</summary>${routine.map((it,j)=>row(it, items.length+j)).join('')}</details>`;
   items.push(...routine);
   $('checks').querySelectorAll('input').forEach(c=>c.addEventListener('change', ()=>{
-    saved[c.dataset.i] = c.checked; LS.set(key, saved);
+    saved[c.dataset.i] = c.checked; LS.set(key, saved); renderQuests();
     if(Object.values(saved).filter(Boolean).length===items.length){ const d=getData(); d.ckDone=(d.ckDone||0)+1; if(new Date().getHours()<7) d.dawn=(d.dawn||0)+1; setData(d); toast('체크리스트 완료! 1주차 미션에 반영'); refreshMe(); }
   }));
 }
@@ -872,6 +900,130 @@ async function copyNotion(){
 }
 let toastT; function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1800); }
 function gain(n){ const g = $('gain'); g.textContent = `+${n} XP`; g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
+/* ═══════════ 서핑 용어 사전 ═══════════ */
+const GLOSS = {
+  '파도': [
+    ['스웰(Swell)','먼바다에서 만들어져 밀려오는 너울. 바람이 멎어도 계속 온다'],
+    ['윈드스웰','가까운 바람이 만든 짧은 주기(~7초)의 파도. 촘촘하고 파워 약함. 동해 대부분'],
+    ['그라운드스웰','먼 저기압이 만든 긴 주기(10초+) 파도. 정돈되고 파워 있음'],
+    ['주기(Period)','파도와 파도 사이 시간(초). 길수록 파워·정돈. 같은 1m라도 6초와 10초는 다른 파도'],
+    ['세트(Set)','큰 파도가 3~7개씩 묶여 오는 것. 첫 파도는 보내고 2~3번째를 노린다'],
+    ['피크(Peak)','파도가 가장 먼저·높게 서는 지점. 여기서 테이크오프. 우선권의 기준'],
+    ['숄더(Shoulder)','피크 옆, 아직 깨지지 않은 완만한 부분. 초보가 타기 좋은 자리'],
+    ['페이스(Face)','파도의 깨지지 않은 앞면. 라이딩은 여기서'],
+    ['립(Lip)','파도 꼭대기에서 앞으로 쏟아지는 부분'],
+    ['화이트워터','이미 깨져 거품이 된 파도. 첫 라이딩 연습 구간'],
+    ['클로즈아웃','파도가 한 번에 전체 길이로 무너지는 것. 탈 면이 없다'],
+    ['레프트 / 라이트','서퍼가 파도를 보고 탈 때 가는 방향. 해변에서 보면 반대'],
+    ['온쇼어','바다→뭍으로 부는 바람. 면을 깨뜨린다'],
+    ['오프쇼어','뭍→바다로 부는 바람. 면을 정돈하고 립을 세운다'],
+    ['크로스쇼어','해변과 평행하게 부는 바람'],
+    ['조위(Tide)','바닷물 높이. 로우·미드·하이. 동해는 조차가 작아 영향 적음'],
+    ['립커런트','해변에서 바다로 빠져나가는 강한 흐름. 걸리면 해변과 평행하게 옆으로 패들'],
+    ['채널(Channel)','파도가 잘 안 깨지는 깊은 구간. 패들아웃 길. 커런트가 흐르기도'],
+  ],
+  '기술': [
+    ['패들링','엎드려 팔로 젓기. 서핑의 80%'],
+    ['패들아웃','해변에서 라인업까지 나가는 것'],
+    ['덕다이브','숏보드로 보드 앞을 눌러 파도 밑으로 잠수해 통과'],
+    ['터틀롤','롱보드를 뒤집어 파도를 밑으로 보내는 통과법'],
+    ['팝업(Pop-up)','엎드린 자세에서 한 번에 일어서기. 손 V자·팔꿈치 갈비뼈 아래·엉덩이 안 들기'],
+    ['테이크오프','파도를 잡아 일어서는 순간. 타이밍이 전부'],
+    ['앵글 테이크오프','노즈를 파도 면 쪽으로 비스듬히 두고 일어서기. 노즈다이브 방지'],
+    ['노즈다이브 / 펄링','보드 앞이 물에 박히며 넘어지는 것. 너무 늦거나 앞으로 쏠렸을 때'],
+    ['트리밍','파도 면 위에서 속도 유지하며 옆으로 달리기'],
+    ['바텀턴','파도 아래쪽에서 방향을 바꾸는 첫 턴. 모든 기술의 시작'],
+    ['탑턴','파도 위쪽(립 근처)에서 방향 바꾸기'],
+    ['컷백','파도의 파워존으로 되돌아가는 턴'],
+    ['풀아웃 / 킥아웃','라이딩을 끝내고 파도 뒤로 안전하게 빠져나가기'],
+    ['와이프아웃','넘어지는 것. 머리 감싸고 보드 반대편으로'],
+    ['레귤러 / 구피','왼발이 앞이면 레귤러, 오른발이 앞이면 구피'],
+    ['스탠스','보드 위 발 위치와 자세. 무릎 굽히고 중심은 보드 중앙'],
+  ],
+  '장비': [
+    ['노즈 / 테일','보드의 앞 / 뒤'],
+    ['레일(Rail)','보드 옆 모서리. 턴은 레일을 물에 담그는 것'],
+    ['데크 / 바텀','보드 윗면(왁스 칠하는 곳) / 바닥면'],
+    ['스트링거','보드 중앙을 세로로 지나는 나무심. 강도용. 리쉬 체크 때 테일 쪽도 확인'],
+    ['핀(Fin)','바닥 뒤쪽 지느러미. 방향성과 그립. 싱글·트윈·쓰러스터(3)'],
+    ['리쉬(Leash)','발목과 보드를 잇는 줄. 매 세션 마모 확인. 끊기면 남의 사고'],
+    ['왁스','데크에 칠하는 미끄럼 방지제. 수온별로 종류가 다름'],
+    ['롱보드','9피트 이상. 부력 크고 안정. 일찍·멀리서 잡힘'],
+    ['미드랭스 / 펀보드','7~9피트. 롱과 숏의 중간'],
+    ['숏보드','7피트 이하. 빠르고 예민. 늦게·가파른 곳에서'],
+    ['볼륨(L)','보드 부력. 초보는 몸무게(kg)의 60~80% 리터'],
+    ['웻수트 3/2','몸통 3mm·팔다리 2mm 두께. 수온 17~21도용'],
+  ],
+  '에티켓': [
+    ['우선권','피크에 가장 가까운 사람이 그 파도를 탄다'],
+    ['드롭인','이미 타고 있는 사람 앞으로 끼어드는 것. 최악의 매너'],
+    ['스네이킹','우선권을 뺏으려 뒤로 돌아 피크로 파고드는 것'],
+    ['라인업','서퍼들이 파도를 기다리며 모여 있는 위치·줄'],
+    ['패들아웃 매너','라이더가 오면 화이트워터 쪽으로 피한다. 면 쪽으로 가지 말 것'],
+    ['로컬','그 해변을 오래 탄 사람들. 인사하고 순서를 존중'],
+  ],
+};
+const GLOSS_ALL = Object.entries(GLOSS).flatMap(([c,arr])=>arr.map(([t,d])=>({c,t,d})));
+function renderGloss(q=''){
+  const k = q.trim().toLowerCase();
+  const box = $('gloss'); if(!box.querySelector('input')) box.innerHTML = `<input id="gloss-q" placeholder="용어 검색 — 예) 온쇼어, 팝업, 리쉬">`;
+  box.querySelectorAll('h3,dl').forEach(e=>e.remove());
+  let n = 0;
+  Object.entries(GLOSS).forEach(([c,arr])=>{
+    const rows = arr.filter(([t,d])=>!k || (t+d).toLowerCase().includes(k)); if(!rows.length) return; n += rows.length;
+    box.insertAdjacentHTML('beforeend', `<h3>${c}</h3><dl>${rows.map(([t,d])=>`<dt>${t}</dt><dd>${d}</dd>`).join('')}</dl>`);
+  });
+  $('gloss-n').textContent = `${n}개`;
+  const inp = $('gloss-q'); if(!inp._on){ inp._on = true; inp.addEventListener('input', ()=>renderGloss(inp.value)); }
+}
+
+/* ═══════════ 용어 퀴즈: 하루 3문제, 날짜 시드로 고정 ═══════════ */
+function seeded(seed){ let x = seed % 2147483647; return ()=>(x = x*16807 % 2147483647)/2147483647; }
+function quizToday(){
+  const rnd = seeded(Math.floor(Date.now()/864e5) + 7), pool = GLOSS_ALL.slice(), qs = [];
+  for(let i=0;i<3;i++){ const idx = Math.floor(rnd()*pool.length), q = pool.splice(idx,1)[0];
+    const wrong = GLOSS_ALL.filter(x=>x.c===q.c && x.t!==q.t).sort(()=>rnd()-0.5).slice(0,2);
+    qs.push({ q, opts:[q, ...wrong].sort(()=>rnd()-0.5) }); }
+  return qs;
+}
+function renderQuiz(){
+  const d = getData(), key = today(), st = (d.quiz||{})[key] || { i:0, ok:0, done:false }, qs = quizToday(), box = $('quiz');
+  if(st.done){ box.innerHTML = `<div class="qq">오늘 퀴즈 끝 · ${st.ok}/3 정답</div><div class="qr">내일 새 문제가 나와요. 아래 용어 사전으로 복습!</div>`; return; }
+  const cur = qs[st.i];
+  box.innerHTML = `<div class="lab-sm">${st.i+1} / 3 · ${cur.q.c}</div><div class="qq">"${cur.q.t}" 는 무엇일까요?</div><div class="qa">${cur.opts.map((o,k)=>`<button type="button" data-k="${k}">${o.d}</button>`).join('')}</div><div class="qr" id="quiz-r"></div>`;
+  box.querySelectorAll('.qa button').forEach(b=>b.onclick=()=>{
+    const pick = cur.opts[+b.dataset.k], right = pick.t===cur.q.t;
+    box.querySelectorAll('.qa button').forEach(x=>{ x.disabled = true; if(cur.opts[+x.dataset.k].t===cur.q.t) x.classList.add('ok'); });
+    if(!right) b.classList.add('no'); else { st.ok++; gain(5); }
+    $('quiz-r').textContent = right ? '정답! +5 XP' : `아쉽! 정답은 "${cur.q.t} — ${cur.q.d}"`;
+    st.i++; if(st.i>=3) st.done = true; d.quiz = d.quiz||{}; d.quiz[key] = st; setData(d);
+    setTimeout(()=>{ renderQuiz(); refreshMe(); }, 1400);
+  });
+}
+function quizXP(d){ return Object.values(d.quiz||{}).reduce((s,x)=>s+(x.ok||0),0)*5; }
+
+/* ═══════════ 오늘의 퀘스트 ═══════════ */
+function questList(){
+  const d = getData(), k = today(), sx = (d.sessions||{})[k] || {l:0,r:0}, cards = allCards().filter(c=>c.from===ME.id && c.date.slice(0,10)===k).length;
+  const ck = Object.values(LS.get(`surf.ck.${ME.id}.${k}.${BEACHES[state.beach].id}`, {})).filter(Boolean).length;
+  const wk = WEEKS.find(w=>!weekDone(d,w));
+  return [
+    { t:'컨디션 체크', s:'체크리스트 3개 이상', done: ck>=3 },
+    { t:'파도 3개', s:'오늘 세션 라이딩 3개', done: (sx.l+sx.r)>=3 },
+    { t:'칭찬 1장', s:'동기에게 칭찬 카드', done: cards>=1 },
+    { t:'용어 퀴즈', s:'미션 탭에서 3문제', done: !!(d.quiz||{})[k]?.done },
+    ...(wk ? [{ t:`${wk.n}주차 출석`, s:wk.title, done: !!d.attend[wk.n] }] : []),
+  ];
+}
+function renderQuests(){
+  const qs = questList(), n = qs.filter(q=>q.done).length;
+  $('quests').innerHTML = qs.map(q=>`<div class="quest ${q.done?'done':''}"><span class="q">${q.done?'✓':''}</span><div><b>${q.t}</b><span>${q.s}</span></div></div>`).join('');
+  $('quest-sum').textContent = `${n}/${qs.length}` + (n===qs.length ? ' · 올클리어! +20' : '');
+  const d = getData(); if(n===qs.length && !(d.questAll||{})[today()]){ d.questAll = d.questAll||{}; d.questAll[today()] = true; setData(d); gain(20); toast('오늘 퀘스트 올클리어! +20 XP'); }
+}
+function questXP(d){ return Object.keys(d.questAll||{}).length*20; }
+function streakOf(d){ const ws = Object.keys(d.attend).map(Number).sort((a,b)=>b-a); let n = ws.length?1:0; for(let i=0;i+1<ws.length;i++){ if(ws[i]-1===ws[i+1]) n++; else break; } return n; }
+
 const TIPS = [
   ['팝업','손은 갈비뼈 옆 V자, 팔꿈치는 갈비뼈 아래. 엉덩이를 먼저 들면 노즈가 박힌다 — 가슴을 먼저 들고 한 번에.'],
   ['팝업','육상 팝업 20회를 매일. 물에서 100번보다 바닥에서 500번이 빠르다.'],
@@ -921,7 +1073,7 @@ $('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
   const b = BEACHES[state.beach], a = analyze(b, state.day);
-  renderDays(); renderBeaches(); renderHero(b, a); renderTip(); renderSession(); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
+  renderDays(); renderBeaches(); renderHero(b, a); renderTip(); renderQuests(); renderSession(); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
 }
 async function bootWave(){
   const st = $('state'); st.hidden = false; $('wave-main').hidden = true;
@@ -999,6 +1151,11 @@ function refreshMe(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp);
   $('me-name').textContent = ME.name; $('me-lv').textContent = `LV.${L} ${LEVELS[L][1]} · ${xp} XP`;
   ['me-av','prog-av','lv-av'].forEach(id=>drawSpr($(id), avatarRows(myProfile()), avatarTint(L)));
+  const st = streakOf(d); $('me-streak').textContent = st>=2 ? `🔥 ${st}주 연속 출석` : '';
+  const prevL = LS.get(`surf.lv.${ME.id}`, null);
+  if(prevL!=null && L>prevL){ $('lvup-t').textContent = `LV.${L} ${LEVELS[L][1]}`; drawSpr($('lvup-av'), avatarRows(myProfile()), avatarTint(L)); $('lvup').hidden = false; }
+  LS.set(`surf.lv.${ME.id}`, L);
+  if(state.tab==='wave' && state.loaded) renderQuests();
   syncUp();
   if(state.tab==='level') renderLevel();
 }
@@ -1008,7 +1165,7 @@ function showTab(t){
   if(t!=='wave' && camPlaying) camStop(); if(t==='wave' && state.loaded && !camPlaying) setTimeout(()=>camPlay(BEACHES[state.beach]), 300);
   state.tab = t; ['wave','mission','level','rank'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
-  if(t==='mission') renderMission(); if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0, behavior:'instant'});
+  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0, behavior:'instant'});
   const tb = $('tab-'+t); tb.style.animation='none'; void tb.offsetWidth; tb.style.animation='';
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
