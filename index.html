@@ -121,7 +121,7 @@ html{scroll-behavior:smooth}
 .chip[aria-pressed="true"]{background:var(--sun)}
 
 /* 히어로 */
-.hero{margin-top:10px; position:relative}
+.hero{margin-top:14px; position:relative}
 .hero-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
 .hero .place{font-size:13px; color:var(--ink2)}
 .hero .place b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:30px; line-height:1; color:var(--ink); margin-top:4px}
@@ -191,7 +191,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .cam-btn .live::before{content:""; width:10px; height:10px; background:var(--bad); animation:blink 1.2s steps(2,start) infinite}
 .cam-btn .t{font-weight:700; font-size:16px; line-height:1.25} .cam-btn .t span{display:block; font-weight:400; font-size:12px; opacity:.9; margin-top:2px}
 .cam-btn .arrow{margin-left:auto; font-size:22px; font-family:sans-serif}
-.camwrap{border:4px solid var(--ink); background:var(--ink); box-shadow:4px 4px 0 var(--ink); position:relative; margin-bottom:10px}
+.camwrap{border:4px solid var(--ink); background:var(--ink); box-shadow:4px 4px 0 var(--ink); position:relative; margin-bottom:0}
 .camwrap video{display:block; width:100%; aspect-ratio:16/9; background:#000}
 .camwrap .cover{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--paper); text-align:center; padding:16px; background:repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 4px), var(--deep)}
 .camwrap .cover small{font-size:11px; color:var(--sand); line-height:1.5}
@@ -403,6 +403,12 @@ footer a{color:var(--paper)}
     <div class="beaches" id="beaches" role="group" aria-label="해변 선택"></div>
     <div id="state" class="state px"><span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p></div>
     <div id="wave-main" hidden>
+      <section style="margin-top:10px">
+        <div class="sec-h" style="margin-bottom:6px"><h2 style="font-size:18px">라이브캠</h2><span class="tag">지금 바다</span><span class="sub" id="cam-sub"></span></div>
+        <div class="camwrap"><video id="cam-video" playsinline muted controls preload="none"></video><div class="cover" id="cam-cover"><button class="btn pink" type="button" id="cam-play">▶ <span id="cam-play-name">낙산</span> 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small></div><span class="badge-live" id="cam-live" hidden>LIVE</span><button class="btn sm ghost" type="button" id="cam-off" style="position:absolute;right:10px;top:10px" onclick="camStop()">끄기</button></div>
+        <a id="cam-btn" href="#" target="_blank" rel="noopener" hidden></a>
+        <div class="cam-more" style="margin-top:8px"><a id="cam-link" href="#" target="_blank" rel="noopener">↗ WSB FARM에서 크게</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
+      </section>
       <article class="hero px">
         <div class="hero-head">
           <div class="place"><span id="hero-date">—</span><b id="hero-name">낙산</b></div>
@@ -411,12 +417,6 @@ footer a{color:var(--paper)}
         <p class="summary" id="summary"></p>
         <div class="lab-sm" style="margin-top:14px">추천 시간대 · 파고 / 주기 / 바람</div><div class="slots" id="slots"></div>
       </article>
-      <section style="margin-top:14px">
-        <div class="sec-h"><h2>라이브캠</h2><span class="tag">눈으로 확인</span></div>
-        <div class="camwrap"><video id="cam-video" playsinline muted controls preload="none"></video><div class="cover" id="cam-cover"><button class="btn pink" type="button" id="cam-play">▶ <span id="cam-play-name">낙산</span> 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small></div><span class="badge-live" id="cam-live" hidden>LIVE</span><button class="btn sm ghost" type="button" id="cam-off" style="position:absolute;right:10px;top:10px" onclick="camStop()">끄기</button></div>
-        <a class="cam-btn px" id="cam-btn" href="#" target="_blank" rel="noopener"><span class="live">LIVE</span><span class="t"><span id="cam-name">낙산 웨이브캠</span><span id="cam-src">WSB FARM</span></span><span class="arrow">→</span></a>
-        <div class="cam-more"><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
-      </section>
       <div class="px sess" id="sess">
         <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span></span><div class="total"><span id="sess-total">0</span><small>개 탔다</small></div></div><div style="text-align:right;font-size:12px;color:var(--ink2)">레프트 <b id="sess-l">0</b> · 라이트 <b id="sess-r">0</b><br>와이프아웃 <b id="sess-w">0</b> · 라이딩 1개 +2 XP</div></div>
         <div class="cnt"><button type="button" class="l" data-ride="l"><b>+1</b>레프트</button><button type="button" class="r" data-ride="r"><b>+1</b>라이트</button><button type="button" class="w" data-ride="w"><b>+1</b>와이프아웃</button></div>
@@ -958,7 +958,7 @@ function renderCam(b){
   $('cam-cover').innerHTML = `<button class="btn pink" type="button" id="cam-play">▶ ${b.name} 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 소리 없음</small>`;
   $('cam-play').onclick = ()=>camPlay(b);
   if(state.tab==='wave' && !$('tab-wave').hidden) setTimeout(()=>{ if(camPlaying!==b.id) camPlay(b); }, 300);
-  $('cam-btn').href = CAM_URL(b.cam); $('cam-name').textContent = `${b.name} 웨이브캠`; $('cam-src').textContent = (b.camNote || 'WSB FARM 웨이브캠') + ' · 새 창'; }
+  $('cam-btn').href = CAM_URL(b.cam); $('cam-link').href = CAM_URL(b.cam); $('cam-sub').textContent = b.camNote || 'WSB FARM 웨이브캠'; }
 function renderCompare(){
   const rows = BEACHES.map((b,i)=>({ b, i, a:analyze(b, state.day) })); $('cmp-sub').textContent = `${['오늘','내일','모레'][state.day]} 권장 시간대 기준`;
   $('cmp').innerHTML = `<table><thead><tr><th>해변</th><th>파도</th><th>바람</th><th>입수</th><th>판정</th><th>캠</th></tr></thead><tbody>` + rows.map(({b,i,a})=>{ const r=a.rep; return `<tr role="button" tabindex="0" data-i="${i}" class="${i===state.beach?'cur':''}"><td class="name">${b.name}<small>${b.area}</small></td><td class="num">${r.h.toFixed(1)}m · ${Math.round(r.p)}초</td><td class="num">${Math.round(r.w)}kts ${compass8(r.dir)} <span style="color:var(--ink2)">${relKo[r.rel]}</span></td><td class="num">${pad2(a.best.h)}~${pad2(a.best.h+2)}</td><td><span class="mini" data-v="${a.vd.v}">${a.vd.t}</span></td><td><a href="${CAM_URL(b.cam)}" target="_blank" rel="noopener" title="${b.name} 캠" style="text-decoration:none">▶</a></td></tr>`; }).join('') + `</tbody></table>`;
