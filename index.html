@@ -90,7 +90,7 @@ canvas{image-rendering:pixelated; image-rendering:crisp-edges}
 .hdr{display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--paper); text-shadow:2px 2px 0 var(--ink); padding-block:4px 8px}
 .hdr h1{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:26px; line-height:1}
 .hdr .me{display:flex; align-items:center; gap:8px; font-size:13px}
-.hdr .me canvas{width:32px; height:32px}
+.hdr .me canvas{width:44px; height:44px}
 .hdr .me b{display:block; font-size:14px}
 .hdr .me .lv{font-size:11px; color:var(--sun)}
 
@@ -123,6 +123,12 @@ canvas{image-rendering:pixelated; image-rendering:crisp-edges}
 .summary{margin-top:12px; font-size:15px; line-height:1.6}
 .summary mark{background:var(--sun); color:var(--ink); padding:0 4px}
 .window{margin-top:12px; display:inline-flex; align-items:center; gap:8px; border:4px solid var(--ink); padding:6px 12px; background:var(--mint); font-weight:700; font-size:15px; box-shadow:3px 3px 0 var(--ink)}
+.slots{display:flex; flex-direction:column; gap:8px; margin-top:12px}
+.slot{display:flex; align-items:center; gap:10px; border:3px solid var(--ink); background:#fff; padding:6px 10px; font-size:13px; box-shadow:3px 3px 0 var(--ink)}
+.slot.best{background:var(--mint)}
+.slot .t{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:18px; min-width:82px}
+.slot .d{flex:1; line-height:1.35; color:var(--ink2)} .slot .d b{color:var(--ink)}
+.slot .sc{border:2px solid var(--ink); padding:0 6px; font-size:11px; background:var(--sun)}
 .hero-art{position:absolute; right:14px; bottom:12px; opacity:.9; pointer-events:none}
 .hero-art canvas{width:48px; height:48px}
 
@@ -180,6 +186,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .camwrap video{display:block; width:100%; aspect-ratio:16/9; background:#000}
 .camwrap .cover{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--paper); text-align:center; padding:16px; background:repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 2px, transparent 2px 4px), var(--deep)}
 .camwrap .cover small{font-size:11px; color:var(--sand); line-height:1.5}
+.camwrap #cam-off{display:none} .camwrap:has(.cover[hidden]) #cam-off{display:inline-flex}
 .camwrap .badge-live{position:absolute; left:10px; top:10px; background:var(--bad); color:#fff; font-size:11px; font-weight:700; padding:2px 7px; border:2px solid var(--ink)}
 .cam-more{display:flex; gap:8px; flex-wrap:wrap; font-size:12px; margin-top:10px}
 .cam-more a{border:3px solid var(--ink); padding:4px 9px; text-decoration:none; background:var(--paper); box-shadow:2px 2px 0 var(--ink)}
@@ -197,7 +204,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 
 /* 미션 */
 .prog{display:flex; align-items:center; gap:12px}
-.prog canvas{width:64px; height:64px; flex:0 0 auto}
+.prog canvas{width:80px; height:80px; flex:0 0 auto}
 .prog .t{flex:1}
 .prog .t b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:20px; display:block}
 .bar{height:18px; border:4px solid var(--ink); background:#fff; box-shadow:inset 3px 3px 0 rgba(27,27,47,.12); position:relative; overflow:hidden}
@@ -229,7 +236,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 
 /* 레벨 */
 .card{display:flex; gap:14px; align-items:center}
-.card canvas{width:96px; height:96px; flex:0 0 auto; background:var(--sky); border:4px solid var(--ink)}
+.card canvas{width:128px; height:128px; flex:0 0 auto; background:var(--sky); border:4px solid var(--ink)}
 .card .ct b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:24px; display:block; line-height:1.1}
 .card .ct .lvname{color:var(--sea2); font-weight:700; font-size:16px}
 .card .ct .meta{font-size:12px; color:var(--ink2); margin-top:4px}
@@ -271,7 +278,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .rrow{display:flex; align-items:center; gap:10px; border:4px solid var(--ink); background:#fff; padding:8px 10px; box-shadow:3px 3px 0 var(--ink)}
 .rrow.me{background:var(--sun)}
 .rrow .pos{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:22px; min-width:36px}
-.rrow canvas{width:36px; height:36px; flex:0 0 auto}
+.rrow canvas{width:48px; height:48px; flex:0 0 auto}
 .rrow .rn{flex:1; line-height:1.25} .rrow .rn b{display:block; font-size:15px} .rrow .rn span{font-size:11px; color:var(--ink2)}
 .rrow .rx{text-align:right; line-height:1.2} .rrow .rx b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:18px} .rrow .rx span{font-size:11px; color:var(--ink2)}
 .ladder{display:flex; gap:6px; margin-top:10px}
@@ -279,8 +286,8 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .ladder div b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:16px}
 .ladder div.on{opacity:1; background:var(--mint)} .ladder div.cur{opacity:1; background:var(--sun)}
 /* 캐릭터 빌더 */
-.builder{display:flex; gap:14px; align-items:flex-start}
-.builder canvas{width:112px; height:112px; flex:0 0 auto; background:var(--sky); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink)}
+.builder{display:flex; flex-direction:column; gap:14px; align-items:stretch}
+.builder canvas{width:192px; height:192px; margin:0 auto; background:var(--sky); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink)}
 .opts{flex:1; display:flex; flex-direction:column; gap:8px; min-width:0}
 .opt .lab-sm{margin-bottom:4px}
 .opt .row{display:flex; flex-wrap:wrap; gap:6px}
@@ -352,13 +359,14 @@ footer a{color:var(--paper)}
           <div class="stamp" id="stamp" data-v="ok">탈 만함</div>
         </div>
         <p class="summary" id="summary"></p>
-        <div class="window" id="window">▶ 입수 권장 <span class="num" id="window-t">06~08시</span></div>
+        <div class="lab-sm" style="margin-top:14px">추천 시간대 · 파고 / 주기 / 바람</div><div class="slots" id="slots"></div>
       </article>
       <div class="px sess" id="sess">
         <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span></span><div class="total"><span id="sess-total">0</span><small>개 탔다</small></div></div><div style="text-align:right;font-size:12px;color:var(--ink2)">레프트 <b id="sess-l">0</b> · 라이트 <b id="sess-r">0</b><br>와이프아웃 <b id="sess-w">0</b> · 라이딩 1개 +2 XP</div></div>
         <div class="cnt"><button type="button" class="l" data-ride="l"><b>+1</b>레프트</button><button type="button" class="r" data-ride="r"><b>+1</b>라이트</button><button type="button" class="w" data-ride="w"><b>+1</b>와이프아웃</button></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--ink2)">세션 끝나면 노션 복사 → 라이딩 횟수가 채워져요</span><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
       </div>
+      <div class="px sand" id="tipbox" style="margin-top:14px;display:flex;gap:12px;align-items:flex-start"><canvas data-spr="book" width="8" height="8" style="width:32px;height:32px;flex:0 0 auto"></canvas><div><span class="eyebrow">오늘의 서핑 팁</span><div id="tip-txt" style="margin-top:4px;line-height:1.55;font-size:14px"></div><button class="undo" type="button" id="tip-next" style="margin-top:4px;padding:0">다른 팁 →</button></div></div>
       <div class="tiles" id="tiles"></div>
 
       <section>
@@ -383,7 +391,7 @@ footer a{color:var(--paper)}
 
       <section>
         <div class="sec-h"><h2>라이브캠</h2><span class="tag">눈으로 확인</span></div>
-        <div class="camwrap"><video id="cam-video" playsinline muted controls preload="none"></video><div class="cover" id="cam-cover"><button class="btn pink" type="button" id="cam-play">▶ <span id="cam-play-name">낙산</span> 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small></div><span class="badge-live" id="cam-live" hidden>LIVE</span></div>
+        <div class="camwrap"><video id="cam-video" playsinline muted controls preload="none"></video><div class="cover" id="cam-cover"><button class="btn pink" type="button" id="cam-play">▶ <span id="cam-play-name">낙산</span> 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small></div><span class="badge-live" id="cam-live" hidden>LIVE</span><button class="btn sm ghost" type="button" id="cam-off" style="position:absolute;right:10px;top:10px" onclick="camStop()">끄기</button></div>
         <a class="cam-btn px" id="cam-btn" href="#" target="_blank" rel="noopener"><span class="live">LIVE</span><span class="t"><span id="cam-name">낙산 웨이브캠</span><span id="cam-src">WSB FARM</span></span><span class="arrow">→</span></a>
         <div class="cam-more"><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
       </section>
@@ -422,7 +430,7 @@ footer a{color:var(--paper)}
     </div>
     <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
     <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av"></canvas><div class="opts" id="bld-opts"></div></div></section>
-    <section><div class="sec-h"><h2>받은 칭찬 카드</h2><span class="tag" id="cards-n">0</span><span class="sub">6기 탭에서 친구에게 보내기</span></div><div class="cards" id="cards-in"></div></section>
+    <section><div class="sec-h"><h2>받은 칭찬 카드</h2><span class="tag" id="cards-n">0</span></div><div class="cards" id="cards-in"></div><button class="btn sm pink" type="button" style="margin-top:10px" onclick="openCard()">👏 나도 보내기</button></section>
     <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
     <section><div class="sec-h"><h2>레벨 표</h2></div><div class="px levels" id="levels"></div></section>
     <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
@@ -436,6 +444,7 @@ footer a{color:var(--paper)}
   <!-- 탭 4: 6기 랭킹 -->
   <div id="tab-rank" hidden>
     <div class="px sand"><span class="eyebrow">양양서핑학교 6기</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:22px;line-height:1.1;margin-top:4px">6기 랭킹</div><p class="lab-sm" id="rank-note" style="margin-top:6px"></p></div>
+    <button class="btn pink" type="button" id="card-open" style="width:100%;margin-top:12px;font-size:17px">👏 칭찬 카드 보내기</button>
     <div class="rank" id="rank" style="margin-top:14px"></div>
   </div>
   <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
@@ -448,6 +457,7 @@ footer a{color:var(--paper)}
   <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>6기</button>
 </nav>
 <div class="modal" id="card-modal" hidden><form class="px" id="card-form"><span class="eyebrow">칭찬 카드</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px;margin-top:2px"><span id="card-to">—</span> 에게</div>
+  <div class="field" id="card-pick"><label for="card-sel">받는 사람</label><select id="card-sel"></select></div>
   <div class="chips" id="card-tpls"></div>
   <textarea id="card-text" style="margin-top:10px;min-height:56px" placeholder="한 줄 더 (선택) — 예) 오늘 6시 세트 잡는 거 봤다"></textarea>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">보내기 +5 XP</button><button class="btn ghost" type="button" id="card-cancel">닫기</button></div></form></div>
@@ -481,8 +491,8 @@ const SPR = {
 };
 /* 캐릭터 = 몸(성별) + 보드(종류). y = 보드색(레벨에 따라 바뀜) */
 const BODY = {
-  m:[ '......kkk.......','.....khhhk......','.....kssske.....','.....ksskk......','......kss.......','....kkrrrkk.....','...krkrrrkrk....','...ks.krr.sk....','......krr.......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....'],
-  f:[ '.....kkkkk......','....khhhhhk.....','....khsssek.....','....khsskhk.....','....kh.ss.hk....','....kkrrrkk.....','...krkrrrkrk....','...ks.krr.sk....','......krr.......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....'],
+  m:[ '.....kkkkk......','....khhhhhk.....','....kssssek.....','....ksssskk.....','.....kssk.......','...kkrrrrrkk....','..krrkrrrkrrk...','..ks.krrrk.sk...','.....krrrk......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....'],
+  f:[ '....kkkkkkk.....','...khhhhhhhk....','...khssssehk....','...khsssskhk....','...kh.kssk.hk...','...kkkrrrrrkkk..','..krrkrrrkrrk...','..ks.krrrk.sk...','.....krrrk......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....'],
 };
 const BOARD = {
   long: ['.yyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkk.','................'],
@@ -490,9 +500,9 @@ const BOARD = {
 };
 const HAT = {
   none:null,
-  bucket:[ '....kkkkkkkk....','...kttttttttk...','..kkkkkkkkkkkk..'],
-  cap:   [ '.....kkkkkk.....','....kccccccccck.','.....kkkkkk.....'],
-  visor: [ '................','....kkkkkkkkkk..','.....kkkkk......'],
+  bucket:[ '....kkkkkkkk....','...kttttttttk...','..kttttttttttk..','..kkkkkkkkkkkk..'],
+  cap:   [ '....kkkkkkk.....','...kqqqqqqqkkkk.','...kqqqqqqqqqqk.','....kkkkkkkkkk..'],
+  visor: [ '................','..kwwwwwwwwwwk..','..kkkkkkkkkkkkk.','................'],
 };
 const VEST = [ '....kkoookk.....','...krkowokrk....','...ks.koo.sk....','......koo.......'];   // 코치 조끼 + 호루라기(w)
 const TOPS = { r:'#FF6B6B', b:'#2E6BFF', g:'#4DE1A5', p:'#9B6BFF', y:'#FFD23F', k:'#1B1B2F' };
@@ -505,7 +515,7 @@ function avatarRows(pr){
   if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
   return rows.concat(BOARD[pr.board==='short'?'short':'long']);
 }
-const avatarTintOf = (pr, L) => ({ y: ['#FFD23F','#FFD23F','#4DE1A5','#2E6BFF','#9B6BFF','#FF6B6B'][L||0]||'#FF6B6B', r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
+const avatarTintOf = (pr, L) => ({ q:'#FF4B4B', w:'#FFFFFF', y: ['#FFD23F','#FFD23F','#4DE1A5','#2E6BFF','#9B6BFF','#FF6B6B'][L||0]||'#FF6B6B', r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
 function drawSpr(cv, name, tint){
   const rows = Array.isArray(name) ? name : SPR[name]; if(!rows||!cv) return;
   cv.width = rows[0].length; cv.height = rows.length;
@@ -596,12 +606,17 @@ function allCards(){ return LS.get('surf.cards', []).concat(state.remoteCards||[
 function cardXP(){ const cs = allCards(); return (cs.filter(c=>c.to===ME.name).length + cs.filter(c=>c.from===ME.id).length)*5; }
 let cardTo = null, cardTpl = CARD_TPL[0];
 function openCard(name){
-  cardTo = name; cardTpl = CARD_TPL[0]; $('card-to').textContent = name; $('card-text').value = '';
+  const names = [...new Set([...ROSTER.map(r=>r[0]), ...Object.values(auth.users()).map(u=>u.name), ...(state.remoteCards||[]).map(c=>c.fromName)])].filter(n=>n && n!==ME.name).sort((a,b)=>a.localeCompare(b,'ko'));
+  $('card-sel').innerHTML = names.map(n=>`<option value="${n}">${n}</option>`).join('');
+  cardTo = name || names[0]; $('card-sel').value = cardTo; $('card-pick').hidden = !!name;
+  $('card-sel').onchange = ()=>{ cardTo = $('card-sel').value; $('card-to').textContent = cardTo; };
+  cardTpl = CARD_TPL[0]; $('card-to').textContent = cardTo; $('card-text').value = '';
   $('card-tpls').innerHTML = CARD_TPL.map(t=>`<button type="button" aria-pressed="${t===cardTpl}">${t}</button>`).join('');
   $('card-tpls').querySelectorAll('button').forEach(b=>b.onclick=()=>{ cardTpl=b.textContent; $('card-tpls').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', String(x===b))); });
   $('card-modal').hidden = false;
 }
 $('card-cancel').onclick = ()=>$('card-modal').hidden = true;
+$('card-open').onclick = ()=>openCard();
 $('card-form').addEventListener('submit', async e=>{
   e.preventDefault(); if(!cardTo) return;
   const c = { id: ME.id+'-'+Date.now(), from:ME.id, fromName:ME.name, to:cardTo, tpl:cardTpl, text:$('card-text').value.trim().slice(0,120), date:new Date().toISOString() };
@@ -717,7 +732,9 @@ function renderHero(b, a){
   const r = a.rep, win = `${pad2(a.best.h)}~${pad2(a.best.h+2)}시`, windTxt = `${compass(r.dir)} ${relKo[r.rel]} ${Math.round(r.w)}kts`;
   const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : `<mark>${win}</mark>이 오늘의 정답.`;
   $('summary').innerHTML = `${r.h.toFixed(1)}m / ${Math.round(r.p)}초 ${a.swell} + ${windTxt}. ${a.power}. ${tail}`;
-  $('window-t').textContent = win; $('window').hidden = a.vd.v==='warn';
+  const slots = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots.push({ h, s:(x.s+y.s)/2, wh:(x.h+y.h)/2, p:(x.p+y.p)/2, w:(x.w+y.w)/2, rel:x.rel, tp:x.tp, danger:x.danger||y.danger }); }
+  const top = slots.slice().sort((p,q)=>q.s-p.s).slice(0,3).sort((p,q)=>p.h-q.h);
+  $('slots').innerHTML = top.map((sl,i)=>`<div class="slot ${sl.h===a.best.h?'best':''}"><span class="t num">${pad2(sl.h)}~${pad2(sl.h+2)}시</span><span class="d"><b>${sl.wh.toFixed(1)}m</b> / ${Math.round(sl.p)}초 · ${Math.round(sl.w)}kts ${relKo[sl.rel]}${sl.tp!=null?` · ${sl.tp<0.33?'로우':sl.tp<0.66?'미드':'하이'}`:''}${sl.danger?' · <b style="color:var(--bad)">위험</b>':''}</span><span class="sc">${sl.s.toFixed(1)}점</span></div>`).join('');
 }
 function tile(spr, lab, val, memo){ return `<div class="tile px"><div class="lab"><canvas data-spr="${spr}"></canvas>${lab}</div><div class="val">${val}</div>${memo?`<div class="memo">${memo}</div>`:''}</div>`; }
 function suitFor(sst){ return sst>=24 ? '보드숏·래시가드 OK' : sst>=21 ? '스프링수트 / 1~2mm' : sst>=17 ? '3/2 풀슈트' : sst>=13 ? '4/3 + 부츠' : '5/4 후드·부츠·장갑'; }
@@ -802,8 +819,9 @@ function camPlay(b){
 }
 function renderCam(b){
   if(camPlaying && camPlaying!==b.id) camStop();
-  $('cam-cover').innerHTML = `<button class="btn pink" type="button" id="cam-play">▶ ${b.name} 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 데이터 씀 · 소리 없음</small>`;
+  $('cam-cover').innerHTML = `<button class="btn pink" type="button" id="cam-play">▶ ${b.name} 캠 켜기</button><small>WSB FARM 웨이브캠 실시간 · 소리 없음</small>`;
   $('cam-play').onclick = ()=>camPlay(b);
+  if(state.tab==='wave' && !$('tab-wave').hidden) setTimeout(()=>{ if(camPlaying!==b.id) camPlay(b); }, 300);
   $('cam-btn').href = CAM_URL(b.cam); $('cam-name').textContent = `${b.name} 웨이브캠`; $('cam-src').textContent = (b.camNote || 'WSB FARM 웨이브캠') + ' · 새 창'; }
 function renderCompare(){
   const rows = BEACHES.map((b,i)=>({ b, i, a:analyze(b, state.day) })); $('cmp-sub').textContent = `${['오늘','내일','모레'][state.day]} 권장 시간대 기준`;
@@ -823,6 +841,35 @@ async function copyNotion(){
 }
 let toastT; function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1800); }
 function gain(n){ const g = $('gain'); g.textContent = `+${n} XP`; g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
+const TIPS = [
+  ['팝업','손은 갈비뼈 옆 V자, 팔꿈치는 갈비뼈 아래. 엉덩이를 먼저 들면 노즈가 박힌다 — 가슴을 먼저 들고 한 번에.'],
+  ['팝업','육상 팝업 20회를 매일. 물에서 100번보다 바닥에서 500번이 빠르다.'],
+  ['패들','손가락은 살짝 벌리고, 물을 잡아 엉덩이까지 끌어온다. 짧고 빠른 젓기보다 길고 깊은 젓기.'],
+  ['패들','보드 위 포지션은 노즈가 손가락 한 마디 뜰 정도. 노즈가 잠기면 앞으로 간 것, 뜨면 뒤로 간 것.'],
+  ['테이크오프','파도가 보드를 "밀어주는" 느낌이 오기 직전 3~4스트로크를 가장 세게. 느낌 온 뒤에 젓기 시작하면 늦다.'],
+  ['테이크오프','파도 면을 바라보며 각을 주고 일어나면(앵글 테이크오프) 노즈다이브가 확 줄어든다.'],
+  ['시선','보드를 보면 넘어진다. 가고 싶은 방향의 파도 어깨를 보면 몸이 따라간다.'],
+  ['스탠스','무릎을 굽히고 무게중심은 보드 중앙. 뒷발에 힘을 주면 속도가 죽고, 앞발에 실으면 가속한다.'],
+  ['라인업','랜드마크 두 개(건물·바위)로 삼각측량해 위치를 잡아라. 커런트에 흘러가는 걸 가장 빨리 알아차리는 법.'],
+  ['에티켓','피크에 가까운 사람이 우선. 이미 타고 있는 파도에 들어가는 드롭인은 절대 금지 — 낙산은 좁다.'],
+  ['에티켓','패들아웃 중 라이더가 오면 화이트워터 쪽(파도 깨지는 쪽)으로 피한다. 라이더 진로인 면 쪽으로 가지 말 것.'],
+  ['안전','와이프아웃 땐 머리를 팔로 감싸고 보드 반대편으로 떨어진다. 올라올 때 손부터 위로.'],
+  ['안전','립커런트에 걸리면 해변과 평행하게 옆으로 패들. 정면으로 돌아오려 하면 지친다.'],
+  ['안전','리쉬는 매번 입수 전 끈과 스트링 마모를 확인. 끊어진 리쉬는 남의 사고가 된다.'],
+  ['파도 읽기','주기(초)가 파워다. 같은 1m라도 6초와 10초는 다른 파도. 짧은 주기는 윈드스웰, 긴 주기는 그라운드스웰.'],
+  ['파도 읽기','오프쇼어(뭍에서 바다로)는 면을 정돈하고, 온쇼어는 면을 깨뜨린다. 동해는 새벽·아침 바람이 약해 면이 좋다.'],
+  ['파도 읽기','세트는 보통 3~7개. 첫 파도는 지켜보고, 두세 번째가 크고 정돈되기 쉽다.'],
+  ['타이드','동해는 조차가 작아 시간대보다 바람이 더 중요하다. 그래도 미드타이드가 브레이크가 가장 부드럽다.'],
+  ['체력','서핑의 80%는 패들. 주중에 수영이나 풀업으로 등·어깨를 만들어 두면 주말 세션이 달라진다.'],
+  ['멘탈','파도 안 잡히는 날은 라인업 위치와 세트 타이밍만 연습해도 남는 장사. 기록에 "본 것"을 적어라.'],
+  ['롱보드','롱보드는 일찍, 멀리서 잡힌다. 파도가 서기 전에 미리 저어 두고, 노즈 무게로 밀어 내려가라.'],
+  ['숏보드','숏보드는 늦게, 가파른 곳에서. 파도 어깨가 서는 순간 각을 주고 일어나야 속도가 붙는다.'],
+  ['장비','수온 21도 밑이면 스프링수트, 17도 밑이면 3/2 풀슈트. 추워서 굳으면 팝업이 안 된다.'],
+  ['기록','세션 후 3분 안에 라이딩 횟수·느낀 점을 적어라. 하루 지나면 절반이 사라진다.'],
+];
+let tipIdx = Math.floor(Date.now()/864e5) % TIPS.length;
+function renderTip(){ const [k,t] = TIPS[tipIdx % TIPS.length]; $('tip-txt').innerHTML = `<b>[${k}]</b> ${t}`; }
+$('tip-next').onclick = ()=>{ tipIdx++; renderTip(); };
 const today = () => new Date().toISOString().slice(0,10);
 function session(){ const d = getData(); d.sessions = d.sessions||{}; return d.sessions[today()] || { l:0, r:0, w:0, hist:[] }; }
 function renderSession(){
@@ -843,7 +890,7 @@ $('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
   const b = BEACHES[state.beach], a = analyze(b, state.day);
-  renderDays(); renderBeaches(); renderHero(b, a); renderSession(); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
+  renderDays(); renderBeaches(); renderHero(b, a); renderTip(); renderSession(); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
 }
 async function bootWave(){
   const st = $('state'); st.hidden = false; $('wave-main').hidden = true;
@@ -927,7 +974,7 @@ function refreshMe(){
 
 /* ═══════════ 탭 · 로그인 · 부팅 ═══════════ */
 function showTab(t){
-  if(t!=='wave' && camPlaying) camStop();
+  if(t!=='wave' && camPlaying) camStop(); if(t==='wave' && state.loaded && !camPlaying) setTimeout(()=>camPlay(BEACHES[state.beach]), 300);
   state.tab = t; ['wave','mission','level','rank'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
   if(t==='mission') renderMission(); if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0});
