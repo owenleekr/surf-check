@@ -518,7 +518,7 @@ footer a{color:var(--paper)}
   <div id="tab-rank" hidden>
     <div class="px sand"><span class="eyebrow">양양서핑학교 6기</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:22px;line-height:1.1;margin-top:4px">6기 랭킹</div><p class="lab-sm" id="rank-note" style="margin-top:6px"></p></div>
     <section id="coach-sheet" hidden><div class="sec-h"><h2>출석부</h2><span class="tag">코치 전용</span><span class="sub" id="sheet-sum"></span></div>
-      <div class="px"><div class="sheet-h"><input type="date" id="sheet-date"><span class="lab-sm" style="margin:0" id="sheet-week"></span><button class="btn sm mint" type="button" id="sheet-all">전원 출석</button></div>
+      <div class="px"><div class="sheet-h"><input type="date" id="sheet-date"><span class="lab-sm" style="margin:0" id="sheet-week"></span><button class="btn sm ghost" type="button" data-qd="6">이번 주 토</button><button class="btn sm ghost" type="button" data-qd="0">이번 주 일</button><button class="btn sm mint" type="button" id="sheet-all">전원 출석</button></div>
       <div class="sheet" id="sheet"></div><p class="lab-sm" style="margin-top:8px">탭해서 출석(초록)/결석(빨강) 전환. 저장은 자동. 학생 앱의 출석 도장에 반영돼요.</p></div></section>
     <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
     <div class="rank" id="rank" style="margin-top:14px"></div>
@@ -745,6 +745,7 @@ function renderSheet(){
   $('sheet-sum').textContent = `출석 ${n} / ${names.length}${rec.size?'':' · 기록 없음'}`;
   $('sheet').querySelectorAll('button').forEach(b=>b.onclick=async()=>{ const cur = rec.get(b.dataset.n); await setAttendance(b.dataset.n, date, cur===true ? false : true); renderSheet(); });
   inp.onchange = renderSheet;
+  $('coach-sheet').querySelectorAll('[data-qd]').forEach(b=>b.onclick=()=>{ const d = new Date(); const dow = d.getDay(); const sat = new Date(d); sat.setDate(d.getDate() - ((dow+1)%7)); const t = new Date(sat); if(b.dataset.qd==='0') t.setDate(sat.getDate()+1); inp.value = `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; renderSheet(); });
   $('sheet-all').onclick = async()=>{ for(const nm of names){ if(rec.get(nm)!==true) await setAttendance(nm, date, true); } renderSheet(); toast('전원 출석 처리'); };
 }
 const attOf = (d,w) => { const v = d.attend[w]; return Array.isArray(v) ? v : v ? [v] : []; };
@@ -1458,7 +1459,7 @@ function showTab(t){
   if(t!=='wave' && camPlaying) camStop(); if(t==='wave' && state.loaded && !camPlaying) setTimeout(()=>camPlay(BEACHES[state.beach]), 300);
   state.tab = t; ['wave','mission','level','rank'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
-  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0, behavior:'instant'});
+  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0, behavior:'instant'});
   const tb = $('tab-'+t); tb.style.animation='none'; void tb.offsetWidth; tb.style.animation='';
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
@@ -1529,6 +1530,8 @@ async function renderRank(){
   const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>(b.level||0)-(a.level||0) || b.xp-a.xp || b.rides-a.rides);
   $('rank-note').textContent = remote ? `${rows.length}명 · 서핑 레벨 → XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
   $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':x.profile?.cls==='inter'?'<span class="tagc" style="background:var(--sea)">중급</span>':x.profile?.cls?'<span class="tagc" style="background:var(--mint);color:var(--ink)">비기너</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
+  const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
+  if(missing.length) $('rank').insertAdjacentHTML('beforeend', `<div class="px" style="font-size:12px;color:var(--ink2)"><b style="color:var(--ink)">아직 안 온 동기 ${missing.length}명</b> · ${missing.join(' · ')}<br>"친구 초대"로 링크 보내주세요</div>`);
   rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTintOf(x.profile, x.level)));
   $('rank').querySelectorAll('.clap').forEach(b=>b.onclick=()=>openCard(b.dataset.name));
 }
