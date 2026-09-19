@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1B1B2F">
+<title>오늘 파도 어때</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%232E6BFF'/%3E%3Cpath d='M0 5h1V4h1V3h1v1h1v1h1V4h1V3h1v1h1v1h-1v1H7v1H6V6H5V5H4v1H3v1H2V6H1V5z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   오늘 파도 어때 — 양양서핑학교 6기 파도 체크 · 미션 · 레벨
+   룩: 8비트 도트. 갈무리 픽셀 폰트, 4px 테두리, 하드 섀도, 캔버스 스프라이트
+   데이터: Open-Meteo Marine + Forecast (키 없음). 캠: WSB FARM 웨이브캠
+   계정·진도: 이 기기(브라우저)에만 저장. 기기 바꿀 땐 레벨 탭 → 데이터 옮기기
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --sky:#8FD3FF; --sky2:#5FB8FF; --sea:#2E6BFF; --sea2:#1A47C9; --deep:#12245F;
+  --sand:#F7DC8F; --sand2:#E2B96A; --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B;
+  --sun:#FFD23F; --coral:#FF6B6B; --mint:#4DE1A5; --grape:#9B6BFF; --orange:#FF9F1C;
+  --good:#2FD07A; --warn:#FFB020; --bad:#FF4B4B;
+  --grid:rgba(27,27,47,.15);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--deep);
+  /* 포스터라이즈된 하늘: 하드 스톱 밴드 */
+  background-image:linear-gradient(to bottom, var(--sky) 0 120px, var(--sky2) 120px 240px, var(--sea) 240px 520px, var(--sea2) 520px 900px, var(--deep) 900px);
+  background-repeat:no-repeat; background-attachment:scroll;
+  color:var(--ink); font-family:"Galmuri11","Galmuri9","DotGothic16",-apple-system,"Apple SD Gothic Neo",sans-serif;
+  font-size:15px; line-height:1.55; -webkit-text-size-adjust:100%; -webkit-font-smoothing:none;
+  image-rendering:pixelated;
+}
+.wrap{max-width:680px; margin:0 auto; padding-inline:14px; padding-block:10px calc(92px + env(safe-area-inset-bottom,0px))}
+h1,h2,h3,p{margin:0}
+button,input,textarea{font:inherit; color:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:4px solid var(--sun); outline-offset:2px}
+canvas{image-rendering:pixelated; image-rendering:crisp-edges}
+[hidden]{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+
+/* 픽셀 박스 */
+.px{background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink), inset -4px -4px 0 rgba(27,27,47,.12), inset 4px 4px 0 rgba(255,255,255,.7); padding:14px}
+.px.dark{background:var(--ink); color:var(--paper); box-shadow:4px 4px 0 var(--deep), inset -4px -4px 0 rgba(0,0,0,.4), inset 4px 4px 0 rgba(255,255,255,.12)}
+.px.sand{background:var(--sand)}
+.px.sun{background:var(--sun)}
+.px.mint{background:var(--mint)}
+.px.coral{background:var(--coral); color:#fff}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:4px solid var(--ink); background:var(--sun); color:var(--ink); padding:10px 16px; font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:700; box-shadow:4px 4px 0 var(--ink); text-decoration:none; line-height:1.2; user-select:none}
+.btn:active{transform:translate(4px,4px); box-shadow:0 0 0 var(--ink)}
+.btn.blue{background:var(--sea); color:#fff} .btn.pink{background:var(--coral); color:#fff} .btn.mint{background:var(--mint)} .btn.ghost{background:var(--paper)} .btn.grape{background:var(--grape); color:#fff}
+.btn.sm{padding:6px 10px; font-size:13px; border-width:3px; box-shadow:3px 3px 0 var(--ink)}
+.btn[disabled]{opacity:.5; cursor:not-allowed}
+.eyebrow{font-family:"Galmuri9",sans-serif; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink2)}
+.px.dark .eyebrow{color:var(--sand)}
+.blink{animation:blink 1s steps(2,start) infinite}
+@keyframes blink{to{visibility:hidden}}
+
+/* 픽셀 파도 띠 (steps 애니메이션) */
+.wavebar{height:16px; margin:0 -14px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 4h2V2h2V0h2v2h2v2h2v2h2v2h2v2h-2v-2h-2v-2h-2V4h-2v2H4V4H2v2H0z' fill='%23FFF9E6'/%3E%3C/svg%3E") repeat-x 0 0/32px 16px; animation:wave 1.2s steps(8) infinite}
+@keyframes wave{to{background-position:-64px 0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* 로그인 */
+#login{min-height:100svh; display:flex; flex-direction:column; justify-content:center; gap:16px; padding-block:24px}
+.title{ text-align:center; color:var(--paper); text-shadow:4px 4px 0 var(--ink); font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:clamp(34px,10vw,52px); line-height:1.05; letter-spacing:-.02em}
+.title small{display:block; font-family:"Galmuri11",sans-serif; font-size:15px; letter-spacing:.2em; text-shadow:2px 2px 0 var(--ink); margin-bottom:8px}
+.title-art{display:flex; justify-content:center; gap:16px; align-items:flex-end; margin-top:10px}
+.field{display:flex; flex-direction:column; gap:6px; margin-top:10px}
+.field label{font-size:13px; color:var(--ink2)}
+.field input{border:4px solid var(--ink); background:#fff; padding:10px 12px; font-size:16px; box-shadow:inset 4px 4px 0 rgba(27,27,47,.12)}
+.field input:focus{outline:4px solid var(--sea); outline-offset:0}
+.login-actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap}
+.login-actions .btn{flex:1 1 140px}
+.err{margin-top:10px; color:var(--bad); font-size:13px; min-height:1.4em}
+.mode{display:flex; gap:0; margin-bottom:6px}
+.mode button{flex:1; border:4px solid var(--ink); background:var(--paper); padding:8px; font-weight:700; font-size:14px}
+.mode button + button{border-left:0}
+.mode button[aria-pressed="true"]{background:var(--ink); color:var(--sun)}
+.who{font-size:13px; color:var(--ink2); margin-top:12px; line-height:1.6}
+
+/* 앱 헤더 */
+.hdr{display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--paper); text-shadow:2px 2px 0 var(--ink); padding-block:4px 8px}
+.hdr h1{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:26px; line-height:1}
+.hdr .me{display:flex; align-items:center; gap:8px; font-size:13px}
+.hdr .me canvas{width:32px; height:32px}
+.hdr .me b{display:block; font-size:14px}
+.hdr .me .lv{font-size:11px; color:var(--sun)}
+
+/* 하단 탭 */
+.nav{position:fixed; left:0; right:0; bottom:0; z-index:20; background:var(--ink); border-top:4px solid var(--sun); padding:6px 10px calc(6px + env(safe-area-inset-bottom,0px)); display:flex; justify-content:center; gap:6px}
+.nav button{flex:1; max-width:220px; border:0; background:transparent; color:var(--sand); padding:6px 4px; font-size:12px; display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1}
+.nav button canvas{width:24px; height:24px}
+.nav button[aria-pressed="true"]{color:var(--sun); background:rgba(255,255,255,.08)}
+.nav button[aria-pressed="true"]::after{content:""; width:24px; height:3px; background:var(--sun); margin-top:2px}
+
+/* 날짜·해변 */
+.days{display:flex; gap:8px; margin-top:6px}
+.day{flex:1; border:4px solid var(--ink); background:var(--paper); padding:5px 4px; font-size:12px; line-height:1.15; text-align:center; box-shadow:3px 3px 0 var(--ink)}
+.day b{display:block; font-size:15px}
+.day[aria-pressed="true"]{background:var(--ink); color:var(--sun)}
+.day.weekend b{color:var(--coral)} .day[aria-pressed="true"].weekend b{color:var(--sun)}
+.beaches{display:flex; gap:8px; overflow-x:auto; padding-block:12px 6px; margin-inline:-14px; padding-inline:14px; scrollbar-width:none}
+.beaches::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto; border:4px solid var(--ink); padding:5px 12px; background:var(--paper); font-size:14px; font-weight:700; box-shadow:3px 3px 0 var(--ink); display:flex; gap:7px; align-items:center}
+.chip .dot{width:10px; height:10px; border:2px solid var(--ink); background:var(--ink2)}
+.chip[aria-pressed="true"]{background:var(--sun)}
+
+/* 히어로 */
+.hero{margin-top:10px; position:relative}
+.hero-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px}
+.hero .place{font-size:13px; color:var(--ink2)}
+.hero .place b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:30px; line-height:1; color:var(--ink); margin-top:4px}
+.stamp{flex:0 0 auto; border:4px solid var(--ink); padding:8px 12px; transform:rotate(-5deg); font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:22px; line-height:1; color:var(--ink); box-shadow:4px 4px 0 var(--ink); white-space:nowrap}
+.stamp[data-v="good"]{background:var(--good)} .stamp[data-v="ok"]{background:var(--sun)} .stamp[data-v="meh"]{background:var(--orange)} .stamp[data-v="bad"],.stamp[data-v="warn"]{background:var(--bad); color:#fff}
+.summary{margin-top:12px; font-size:15px; line-height:1.6}
+.summary mark{background:var(--sun); color:var(--ink); padding:0 4px}
+.window{margin-top:12px; display:inline-flex; align-items:center; gap:8px; border:4px solid var(--ink); padding:6px 12px; background:var(--mint); font-weight:700; font-size:15px; box-shadow:3px 3px 0 var(--ink)}
+.hero-art{position:absolute; right:14px; bottom:12px; opacity:.9; pointer-events:none}
+.hero-art canvas{width:48px; height:48px}
+
+/* 타일 */
+.tiles{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:20px}
+@media (min-width:600px){.tiles{grid-template-columns:repeat(3,1fr)}}
+.tile{padding:10px 12px}
+.tile .lab{font-size:12px; color:var(--ink2); display:flex; align-items:center; gap:6px}
+.tile .lab canvas{width:14px; height:14px}
+.tile .val{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:24px; line-height:1.1; margin-top:6px; word-break:keep-all}
+.tile .val small{font-size:12px; color:var(--ink2); margin-left:2px; font-weight:400}
+.tile .memo{font-size:12px; color:var(--ink2); margin-top:6px; line-height:1.45}
+.tile .memo b{color:var(--ink)}
+
+/* 섹션 */
+section{margin-top:26px}
+.sec-h{display:flex; align-items:center; gap:10px; margin-bottom:10px; color:var(--paper); text-shadow:2px 2px 0 var(--ink)}
+.sec-h h2{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:22px; line-height:1}
+.sec-h .tag{font-size:11px; border:3px solid var(--ink); padding:1px 7px; background:var(--sun); color:var(--ink); text-shadow:none; transform:rotate(-3deg)}
+.sec-h .sub{font-size:12px; margin-left:auto; text-shadow:1px 1px 0 var(--ink)}
+
+/* 차트 */
+.chart{padding:12px 10px 8px; overflow:hidden; position:relative}
+.chart svg{display:block; width:100%; height:auto}
+.chart .row-h{font-size:12px; color:var(--ink2); margin:8px 0 2px; display:flex; justify-content:space-between}
+.winds{display:grid; gap:0; margin-top:4px; font-size:10px; text-align:center; color:var(--ink2)}
+.winds .w{display:flex; flex-direction:column; align-items:center; gap:1px; line-height:1.1}
+.winds .w b{font-size:16px; display:inline-block; color:var(--ink); font-family:sans-serif}
+.winds .w.on b{color:var(--orange)} .winds .w.off b{color:var(--sea)}
+.tip{position:absolute; pointer-events:none; background:var(--ink); color:var(--paper); border:3px solid var(--sun); padding:6px 9px; font-size:11px; line-height:1.4; white-space:nowrap; transform:translate(-50%,-112%); opacity:0; z-index:3}
+.tip.show{opacity:1}
+.legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:11px; color:var(--ink2); margin-top:8px}
+.legend i{display:inline-block; width:12px; height:12px; border:2px solid var(--ink); vertical-align:-2px; margin-right:4px}
+
+/* 체크리스트 */
+.list{display:flex; flex-direction:column; gap:10px}
+.item{display:flex; gap:12px; align-items:flex-start}
+.item input{appearance:none; width:26px; height:26px; flex:0 0 auto; border:4px solid var(--ink); background:#fff; margin:0; position:relative; cursor:pointer; box-shadow:inset 3px 3px 0 rgba(27,27,47,.12)}
+.item input:checked{background:var(--mint)}
+.item input:checked::after{content:""; position:absolute; left:5px; top:1px; width:6px; height:11px; border:solid var(--ink); border-width:0 4px 4px 0; transform:rotate(45deg)}
+.item label{flex:1; cursor:pointer}
+.item label b{font-weight:700} .item label span{display:block; font-size:12px; color:var(--ink2); line-height:1.45}
+.item input:checked + label{text-decoration:line-through; text-decoration-thickness:3px; text-decoration-color:var(--coral); opacity:.75}
+.practice{margin-top:12px}
+textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 12px; background:#fff; color:var(--ink); resize:vertical; box-shadow:inset 4px 4px 0 rgba(27,27,47,.12); font-size:14px}
+.lab-sm{font-size:12px; color:var(--ink2); margin-bottom:6px}
+
+/* 캠 */
+.cam-btn{display:flex; align-items:center; gap:12px; text-decoration:none; background:var(--coral); color:#fff}
+.cam-btn .live{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:18px; line-height:1; background:var(--ink); color:var(--sun); padding:6px 9px; display:flex; align-items:center; gap:8px}
+.cam-btn .live::before{content:""; width:10px; height:10px; background:var(--bad); animation:blink 1.2s steps(2,start) infinite}
+.cam-btn .t{font-weight:700; font-size:16px; line-height:1.25} .cam-btn .t span{display:block; font-weight:400; font-size:12px; opacity:.9; margin-top:2px}
+.cam-btn .arrow{margin-left:auto; font-size:22px; font-family:sans-serif}
+.cam-more{display:flex; gap:8px; flex-wrap:wrap; font-size:12px; margin-top:10px}
+.cam-more a{border:3px solid var(--ink); padding:4px 9px; text-decoration:none; background:var(--paper); box-shadow:2px 2px 0 var(--ink)}
+
+/* 비교표 */
+.cmp{overflow-x:auto; padding:4px 0}
+.cmp table{border-collapse:collapse; width:100%; min-width:540px; font-size:13px}
+.cmp th{font-size:12px; text-align:left; padding:8px 10px; color:var(--ink2); border-bottom:4px solid var(--ink)}
+.cmp td{padding:9px 10px; border-bottom:2px dashed var(--grid); vertical-align:middle}
+.cmp tr.cur td{background:rgba(255,210,63,.35)}
+.cmp tr[role="button"]{cursor:pointer}
+.cmp .name{font-weight:700; font-size:14px} .cmp .name small{font-weight:400; font-size:11px; color:var(--ink2); margin-left:4px}
+.mini{display:inline-block; border:3px solid var(--ink); padding:1px 7px; font-weight:700; font-size:12px; color:var(--ink); transform:rotate(-3deg)}
+.mini[data-v="good"]{background:var(--good)} .mini[data-v="ok"]{background:var(--sun)} .mini[data-v="meh"]{background:var(--orange)} .mini[data-v="bad"],.mini[data-v="warn"]{background:var(--bad); color:#fff}
+
+/* 미션 */
+.prog{display:flex; align-items:center; gap:12px}
+.prog canvas{width:64px; height:64px; flex:0 0 auto}
+.prog .t{flex:1}
+.prog .t b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:20px; display:block}
+.bar{height:18px; border:4px solid var(--ink); background:#fff; box-shadow:inset 3px 3px 0 rgba(27,27,47,.12); position:relative; overflow:hidden}
+.bar i{position:absolute; inset:0; width:0; background:repeating-linear-gradient(90deg, var(--mint) 0 8px, #3BC98F 8px 10px); transition:width .5s steps(12)}
+.bar[data-c="sun"] i{background:repeating-linear-gradient(90deg, var(--sun) 0 8px, var(--orange) 8px 10px)}
+.weeks{display:flex; flex-direction:column; gap:16px; margin-top:14px}
+.week{padding:0; overflow:hidden}
+.week .wh{display:flex; align-items:center; gap:10px; padding:12px 14px; background:var(--sand); border-bottom:4px solid var(--ink); cursor:pointer; user-select:none}
+.week .wh .n{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:22px; line-height:1; min-width:54px}
+.week .wh .tt{flex:1; font-weight:700; font-size:15px; line-height:1.3} .week .wh .tt span{display:block; font-weight:400; font-size:12px; color:var(--ink2)}
+.week .wh .st{font-size:11px; border:3px solid var(--ink); padding:2px 6px; background:var(--paper); white-space:nowrap}
+.week .wh .st.done{background:var(--mint)} .week .wh .st.now{background:var(--sun)}
+.week .wb{padding:12px 14px 14px; display:none; flex-direction:column; gap:14px}
+.week.open .wb{display:flex}
+.week.locked .wh{filter:grayscale(1); opacity:.7}
+.att{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.att .stamp-att{border:4px dashed var(--ink2); padding:8px 12px; font-size:13px; color:var(--ink2); min-width:150px; text-align:center}
+.att .stamp-att.on{border-style:solid; border-color:var(--coral); color:var(--coral); font-weight:700; transform:rotate(-4deg); background:#fff}
+.att .undo{font-size:11px; color:var(--ink2); background:none; border:0; text-decoration:underline; padding:4px}
+.skills{display:flex; flex-direction:column; gap:8px}
+.mission{background:var(--sun); border:4px solid var(--ink); padding:10px 12px; display:flex; gap:10px; align-items:flex-start}
+.mission canvas{width:28px; height:28px; flex:0 0 auto; margin-top:2px}
+.mission .mt{flex:1; font-size:14px; line-height:1.45} .mission .mt b{display:block}
+.mission.done{background:var(--mint)}
+.xp{font-size:11px; color:var(--ink2); margin-left:auto; white-space:nowrap}
+.gain{position:fixed; left:50%; top:40%; transform:translateX(-50%); font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:34px; color:var(--sun); text-shadow:4px 4px 0 var(--ink); pointer-events:none; opacity:0; z-index:30}
+.gain.go{animation:gain 1.1s steps(6) forwards}
+@keyframes gain{0%{opacity:1; transform:translate(-50%,0)} 100%{opacity:0; transform:translate(-50%,-80px)}}
+
+/* 레벨 */
+.card{display:flex; gap:14px; align-items:center}
+.card canvas{width:96px; height:96px; flex:0 0 auto; background:var(--sky); border:4px solid var(--ink)}
+.card .ct b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:24px; display:block; line-height:1.1}
+.card .ct .lvname{color:var(--sea2); font-weight:700; font-size:16px}
+.card .ct .meta{font-size:12px; color:var(--ink2); margin-top:4px}
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:14px}
+.stat{border:4px solid var(--ink); background:#fff; padding:8px; text-align:center; box-shadow:3px 3px 0 var(--ink)}
+.stat b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:22px; line-height:1}
+.stat span{font-size:11px; color:var(--ink2)}
+.badges{display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+.badge{border:4px solid var(--ink); background:#fff; padding:8px 4px; text-align:center; font-size:11px; line-height:1.3; box-shadow:3px 3px 0 var(--ink)}
+.badge canvas{width:32px; height:32px; display:block; margin:0 auto 4px}
+.badge.lock{opacity:.4; filter:grayscale(1)}
+.levels{display:flex; flex-direction:column; gap:6px; font-size:13px}
+.levels div{display:flex; justify-content:space-between; gap:8px; padding:4px 0; border-bottom:2px dashed var(--grid)}
+.levels div.cur{font-weight:700; color:var(--sea2)}
+.levels div.cur::before{content:"▶ "}
+.io{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+.toast{position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--ink); color:var(--sun); border:4px solid var(--sun); padding:8px 16px; font-weight:700; font-size:14px; opacity:0; pointer-events:none; z-index:40}
+.toast.show{opacity:1}
+.state{margin-top:16px; text-align:center; font-size:16px; font-weight:700}
+.state p{margin-top:6px; font-size:12px; color:var(--ink2); font-weight:400}
+footer{margin-top:32px; font-size:11px; color:var(--sand); line-height:1.6; text-shadow:1px 1px 0 var(--ink)}
+footer a{color:var(--paper)}
+</style>
+</head>
+<body>
+
+<!-- ───────── 로그인 ───────── -->
+<div class="wrap" id="login">
+  <div class="title"><small>YANGYANG SURF SCHOOL · 6기</small>오늘 파도 어때</div>
+  <div class="title-art"><canvas data-spr="sun" width="8" height="8" style="width:40px;height:40px"></canvas><canvas data-spr="surfer" width="16" height="16" style="width:96px;height:96px"></canvas><canvas data-spr="wave" width="16" height="8" style="width:80px;height:40px"></canvas></div>
+  <div class="wavebar"></div>
+  <form class="px" id="login-form" autocomplete="off">
+    <div class="mode"><button type="button" id="m-in" aria-pressed="true">로그인</button><button type="button" id="m-new" aria-pressed="false">새 계정</button></div>
+    <div class="field"><label for="uid">아이디</label><input id="uid" name="uid" inputmode="latin" autocapitalize="off" autocomplete="username" placeholder="영문·숫자 2~16자" maxlength="16" required></div>
+    <div class="field" id="f-name" hidden><label for="uname">이름 (닉네임)</label><input id="uname" name="uname" placeholder="레벨 카드에 표시돼요" maxlength="12"></div>
+    <div class="field"><label for="upw">비밀번호</label><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required></div>
+    <div class="err" id="err"></div>
+    <div class="login-actions"><button class="btn blue" type="submit" id="submit">▶ 로그인</button></div>
+    <div class="who">계정과 진도는 <b>이 기기(브라우저)에만</b> 저장돼요. 기수 친구들은 각자 폰에서 계정을 만들면 됩니다. 폰을 바꿀 땐 레벨 탭의 "데이터 옮기기"로 가져가세요.</div>
+  </form>
+</div>
+
+<!-- ───────── 앱 ───────── -->
+<div class="wrap" id="app" hidden>
+  <header class="hdr">
+    <h1 id="app-title">오늘 파도 어때</h1>
+    <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av"></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span></div></div>
+  </header>
+  <div class="wavebar"></div>
+
+  <!-- 탭 1: 파도 -->
+  <div id="tab-wave">
+    <div class="days" id="days" role="group" aria-label="날짜 선택"></div>
+    <div class="beaches" id="beaches" role="group" aria-label="해변 선택"></div>
+    <div id="state" class="state px"><span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p></div>
+    <div id="wave-main" hidden>
+      <article class="hero px">
+        <div class="hero-head">
+          <div class="place"><span id="hero-date">—</span><b id="hero-name">낙산</b></div>
+          <div class="stamp" id="stamp" data-v="ok">탈 만함</div>
+        </div>
+        <p class="summary" id="summary"></p>
+        <div class="window" id="window">▶ 입수 권장 <span class="num" id="window-t">06~08시</span></div>
+      </article>
+      <div class="tiles" id="tiles"></div>
+
+      <section>
+        <div class="sec-h"><h2>시간대별</h2><span class="tag">05~19시</span><span class="sub">막대 파고 · 선 조위 · 화살표 바람</span></div>
+        <div class="chart px" id="chart">
+          <div class="row-h"><span>파고 m</span><span id="chart-swell"></span></div>
+          <svg id="svg-wave" viewBox="0 0 600 150" role="img" aria-label="시간대별 파고"></svg>
+          <div class="row-h"><span>조위 (해면 기준)</span><span id="chart-tide"></span></div>
+          <svg id="svg-tide" viewBox="0 0 600 90" role="img" aria-label="시간대별 조위"></svg>
+          <div class="row-h"><span>바람 kts</span><span>화살표 = 바람이 가는 방향</span></div>
+          <div class="winds" id="winds"></div>
+          <div class="legend"><span><i style="background:var(--sun)"></i>입수 권장</span><span><i style="background:var(--sea)"></i>파고</span><span><i style="background:var(--grape)"></i>조위</span><span><b style="color:var(--orange);font-family:sans-serif">↓</b> 온쇼어</span><span><b style="color:var(--sea);font-family:sans-serif">↓</b> 오프쇼어</span></div>
+          <div class="tip" id="tip"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h2>체크리스트</h2><span class="tag">오늘 조건</span></div>
+        <div class="list px" id="checks"></div>
+        <div class="practice"><div class="lab-sm" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">오늘 연습할 기술 / 포인트</div><textarea id="practice" placeholder="예) 팝업 — 손 V자, 팔꿈치 갈비뼈 아래, 엉덩이 안 들기"></textarea></div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h2>라이브캠</h2><span class="tag">눈으로 확인</span></div>
+        <a class="cam-btn px" id="cam-btn" href="#" target="_blank" rel="noopener"><span class="live">LIVE</span><span class="t"><span id="cam-name">낙산 웨이브캠</span><span id="cam-src">WSB FARM</span></span><span class="arrow">→</span></a>
+        <div class="cam-more"><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h2>어디 갈까</h2><span class="tag">8곳 비교</span><span class="sub" id="cmp-sub"></span></div>
+        <div class="cmp px" id="cmp"></div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h2>노션에 붙이기</h2><span class="tag">서핑 일지</span></div>
+        <div class="px"><button class="btn grape" id="copy" type="button">▤ 오늘 일지 마크다운 복사</button><p class="lab-sm" style="margin-top:10px">기본 정보·서핑 전 항목은 채워지고 서핑 후는 비워둬요. 복사하면 +10 XP.</p></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- 탭 2: 미션 -->
+  <div id="tab-mission" hidden>
+    <div class="px sand prog">
+      <canvas data-spr="surfer" width="16" height="16" id="prog-av"></canvas>
+      <div class="t"><span class="eyebrow">6기 커리큘럼 진도</span><b id="prog-txt">0 / 8주</b><div class="bar" style="margin-top:6px"><i id="prog-bar"></i></div></div>
+    </div>
+    <div class="weeks" id="weeks"></div>
+  </div>
+
+  <!-- 탭 3: 레벨 -->
+  <div id="tab-level" hidden>
+    <div class="px card">
+      <canvas data-spr="surfer" width="16" height="16" id="lv-av"></canvas>
+      <div class="ct"><span class="eyebrow">양양서핑학교 6기</span><b id="lv-name">—</b><span class="lvname" id="lv-title">LV.0 물멍</span><div class="meta" id="lv-meta"></div></div>
+    </div>
+    <div class="px" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)"><span id="xp-txt">0 XP</span><span id="xp-next"></span></div>
+      <div class="bar" data-c="sun" style="margin-top:6px"><i id="xp-bar"></i></div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
+    <section><div class="sec-h"><h2>레벨 표</h2></div><div class="px levels" id="levels"></div></section>
+    <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
+      <div class="px"><p class="lab-sm">계정과 진도는 이 브라우저에만 있어요. 코드를 복사해 새 폰의 같은 화면에 붙여 넣으면 옮겨집니다.</p>
+        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm pink" id="logout" type="button">로그아웃</button></div>
+        <textarea id="io-box" style="margin-top:10px;min-height:50px" placeholder="가져올 땐 여기에 코드를 붙여넣고 '가져오기'"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
+</div>
+
+<nav class="nav" id="nav" hidden>
+  <button type="button" data-tab="wave" aria-pressed="true"><canvas data-spr="wave" width="16" height="8"></canvas>파도</button>
+  <button type="button" data-tab="mission" aria-pressed="false"><canvas data-spr="flag" width="8" height="8"></canvas>미션</button>
+  <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>레벨</button>
+</nav>
+<div class="gain" id="gain">+10 XP</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════ 스프라이트 (문자 = 팔레트 키, . = 투명) ═══════════ */
+const PAL = { k:'#1B1B2F', w:'#FFF9E6', s:'#F7C59F', h:'#3A2A1E', r:'#FF6B6B', b:'#2E6BFF', y:'#FFD23F', g:'#4DE1A5', p:'#9B6BFF', o:'#FF9F1C', c:'#8FD3FF', d:'#1A47C9', t:'#E2B96A' };
+const SPR = {
+  surfer:[ '......kkk.......','.....khhhk......','.....kssske.....','.....ksskk......','......kss.......','....kkrrrkk.....','...krkrrrkrk....','...ks.krr.sk....','......krr.......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....','.yyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkk.','................'],
+  wave:[ '......ww........','....wwcw........','...wccccw.......','..wcccccbw......','.wccccbbbbw.....','wcbbbbbbbbbwwww.','bbbbbbbbbbbbbbbb','dddddddddddddddd'],
+  sun:[ '.y....y.','..yyyy..','.yyyyyy.','yyyyyyyy','yyyyyyyy','.yyyyyy.','..yyyy..','.y....y.'],
+  flag:[ 'kr......','krrrr...','krrrrrr.','krrrrrr.','krrrr...','kr......','kr......','kr......'],
+  star:[ '...yy...','...yy...','.yyyyyy.','..yyyy..','..yyyy..','.yy..yy.','.y....y.','........'],
+  stamp:['.rrrrrr.','rrwwwwrr','rwrrrrwr','rwrwwrwr','rwrwwrwr','rwrrrrwr','rrwwwwrr','.rrrrrr.'],
+  fire:[ '...o....','..oo.o..','.oooo.o.','.oyooo..','oyyoooo.','oyyyoyo.','.oyyyo..','..ooo...'],
+  moon:[ '..yyyy..','.yyy....','yyy.....','yyy.....','yyy.....','yyy.....','.yyy....','..yyyy..'],
+  book:[ 'kkkkkkkk','kwwwkwwk','kwwwkwwk','kwwwkwwk','kwwwkwwk','kwwwkwwk','kwwwkwwk','kkkkkkkk'],
+  crown:['y......y','yy.yy.yy','yyyyyyyy','yyryyryy','yyyyyyyy','.yyyyyy.','.yyyyyy.','........'],
+  map:[ 'gggggggg','gccgggcg','gcccgccg','ggccccgg','gggccggg','ggccccgg','gccggccg','gggggggg'],
+  board:['...bb...','..bbbb..','..bwbb..','..bwbb..','..bbbb..','..bbbb..','..bbbb..','...bb...'],
+  drop:[ '...k....','..kck...','..kck...','.kcbck..','.kbbbk..','.kbbbk..','..kkk...','........'],
+  sunrise:['........','...yy...','..yyyy..','.yyyyyy.','yyyyyyyy','kkkkkkkk','cbcbcbcb','bcbcbcbc'],
+  rec:[ '........','.rrrrrr.','.rwwrwr.','.rwrrwr.','.rwwrwr.','.rrrrrr.','........','........'],
+  temp:['...rr...','..r..r..','..r..r..','..r..r..','..rrrr..','.rrrrrr.','.rrrrrr.','..rrrr..'],
+  wind:['........','.cccc...','....c...','.cccccc.','.......c','.ccccccc','........','........'],
+  tide:['........','..pp..pp','.p..pp..','........','..pp..pp','.p..pp..','........','........'],
+  clock:['..kkkk..','.k....k.','k...k..k','k...k..k','k..kk..k','k......k','.k....k.','..kkkk..'],
+};
+function drawSpr(cv, name, tint){
+  const rows = SPR[name]; if(!rows||!cv) return;
+  cv.width = rows[0].length; cv.height = rows.length;
+  const g = cv.getContext('2d'); g.clearRect(0,0,cv.width,cv.height);
+  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ if(ch==='.') return; g.fillStyle = (tint&&tint[ch])||PAL[ch]||ch; g.fillRect(x,y,1,1); }));
+}
+function paintAll(root=document){ root.querySelectorAll('canvas[data-spr]').forEach(c=>drawSpr(c, c.dataset.spr)); }
+
+/* ═══════════ 계정 (이 기기에만 저장) ═══════════ */
+const LS = { get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} }, set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+async function hash(str){
+  if(crypto?.subtle){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)); return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+  let h=5381; for(const c of str) h=((h<<5)+h+c.charCodeAt(0))|0; return 'djb2:'+(h>>>0).toString(16);   // file:// 등 subtle 없을 때
+}
+const auth = {
+  users(){ return LS.get('surf.users', {}); },
+  async create(id, name, pw){
+    const u = auth.users(); if(u[id]) throw new Error('이미 있는 아이디예요');
+    const salt = Math.random().toString(36).slice(2,10);
+    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', createdAt: new Date().toISOString() };
+    LS.set('surf.users', u); return u[id];
+  },
+  async login(id, pw){
+    const u = auth.users()[id]; if(!u) throw new Error('없는 아이디예요. "새 계정"으로 만들어 주세요');
+    if(u.hash !== await hash(u.salt+pw)) throw new Error('비밀번호가 달라요');
+    return u;
+  },
+};
+let ME = null;   // {id, name}
+function dataKey(){ return `surf.data.${ME.id}`; }
+function getData(){ return LS.get(dataKey(), { attend:{}, skills:{}, missions:{}, notes:{}, logs:0, first:null }); }
+function setData(d){ LS.set(dataKey(), d); }
+
+/* ═══════════ 커리큘럼 · XP · 레벨 ═══════════ */
+const XP = { attend:30, skill:10, mission:40, note:10, log:10 };
+const WEEKS = [
+  { n:1, title:'보드와 바다 읽기', sub:'장비를 알아야 바다에 들어간다', skills:['보드 구조: 스트링거·핀·리쉬 위치와 역할','보드 종류 구분: 롱보드(9ft+) / 미드·펀보드 / 숏보드(7ft-)','리쉬코드 + 테일 스트링 마모 체크','파도·바람·조위 읽고 입수 시간 정하기'], mission:'입수 전 체크리스트를 3번 끝까지 완료하기', icon:'board' },
+  { n:2, title:'패들링 & 화이트워터', sub:'보드 위에 눕는 법부터', skills:['보드 위 포지션: 노즈가 손가락 한 마디 뜨게','패들 자세: 가슴 들고 시선 앞, 긴 스트로크','터틀롤 / 푸시스루로 거품 넘기','화이트워터 프론 라이딩'], mission:'화이트워터 프론 라이딩 5회 성공', icon:'wave' },
+  { n:3, title:'팝업', sub:'손 V자, 팔꿈치 갈비뼈 아래, 엉덩이 안 들기', skills:['손 V자로 갈비뼈 옆에 짚기','팔꿈치 갈비뼈 아래로 모으기','엉덩이 들지 않고 한 번에 일어서기','육상 팝업 20회 연속 (매일)'], mission:'화이트워터에서 팝업 스탠딩 3회', icon:'fire' },
+  { n:4, title:'테이크오프 타이밍', sub:'파도를 고르고, 가속하고, 각을 잡는다', skills:['탈 파도 고르기: 피크 위치와 브레이크 방향 읽기','패들 가속: 파도가 보드를 밀기 직전 3~4스트로크','앵글 테이크오프: 노즈를 파도 면 쪽으로','늦은 테이크오프 = 노즈다이브, 원인 알기'], mission:'그린웨이브 테이크오프 1회', icon:'sunrise' },
+  { n:5, title:'라인업 & 에티켓', sub:'우선권과 커런트', skills:['라인업 위치 잡기: 랜드마크 2개로 삼각측량','우선권 규칙: 피크에 가까운 사람, 드롭인 금지','채널·커런트 읽고 패들아웃 경로 정하기','파도 놓친 뒤 빠르게 라인업 복귀'], mission:'라인업에서 세트 기다렸다가 1회 잡기', icon:'map' },
+  { n:6, title:'트리밍 & 스탠스', sub:'레프트, 라이트 방향 잡기', skills:['스탠스: 무릎 굽히고 무게중심 보드 중앙','시선 = 가고 싶은 방향','레프트/라이트 방향으로 트리밍','속도 유지: 파도 면 위쪽 라인 타기'], mission:'레프트 1회 + 라이트 1회 라이딩', icon:'drop' },
+  { n:7, title:'턴 기초', sub:'레일을 쓰기 시작한다', skills:['바텀턴 준비: 압축 → 시선 → 어깨 회전','레일 담그기: 뒷발 압력','풀아웃(빠져나오기)으로 안전하게 마무리','와이프아웃 시 보드 방향과 머리 보호'], mission:'방향 전환 시도 3회 (성공 여부 무관)', icon:'star' },
+  { n:8, title:'셀프 세션', sub:'혼자 판단하고, 들어가고, 기록한다', skills:['앱으로 컨디션 판단 후 해변 스스로 고르기','입수·퇴수 시간 스스로 정하기','서핑 일지 작성 (라이딩 횟수·느낀 점)','다음 회차 연습 포인트 정하기'], mission:'셀프 세션 1회 + 일지 작성', icon:'crown' },
+];
+const LEVELS = [ [0,'물멍'], [100,'폼보더'], [250,'화이트워터'], [450,'라인업'], [700,'그린웨이브'], [1000,'로컬'] ];
+const BADGES = [
+  { id:'first',  name:'첫 출석',     icon:'stamp',  test:d=>Object.keys(d.attend).length>=1 },
+  { id:'streak', name:'3주 연속',    icon:'fire',   test:d=>{ const w=Object.keys(d.attend).map(Number).sort((a,b)=>a-b); for(let i=0;i+2<w.length;i++) if(w[i+1]===w[i]+1&&w[i+2]===w[i]+2) return true; return false; } },
+  { id:'popup',  name:'팝업 마스터', icon:'board',  test:d=>WEEKS[2].skills.every((_,i)=>d.skills[`3-${i}`]) },
+  { id:'dawn',   name:'새벽형',      icon:'sunrise',test:d=>(d.dawn||0)>=1 },
+  { id:'note5',  name:'기록왕',      icon:'book',   test:d=>Object.values(d.notes).filter(x=>x&&x.trim()).length>=5 },
+  { id:'log3',   name:'일지 3회',    icon:'rec',    test:d=>(d.logs||0)>=3 },
+  { id:'half',   name:'반환점',      icon:'flag',   test:d=>Object.keys(d.attend).length>=4 },
+  { id:'full',   name:'8주 개근',    icon:'crown',  test:d=>Object.keys(d.attend).length>=8 },
+];
+function calcXP(d){
+  let xp = Object.keys(d.attend).length*XP.attend + Object.values(d.skills).filter(Boolean).length*XP.skill + Object.values(d.missions).filter(Boolean).length*XP.mission
+         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log;
+  return xp;
+}
+function levelOf(xp){ let L=0; LEVELS.forEach(([min],i)=>{ if(xp>=min) L=i; }); return L; }
+
+/* ═══════════ 해변 · 데이터 ═══════════ */
+const BEACHES = [
+  {id:'naksan',   name:'낙산',           area:'양양', lat:38.121, lon:128.632, facing:95,  cam:'YNS1', camNote:'WSB FARM × 양양서핑학교 캠'},
+  {id:'ingu',     name:'인구',           area:'양양', lat:37.965, lon:128.766, facing:90,  cam:'IJ1'},
+  {id:'jukdo',    name:'죽도',           area:'양양', lat:37.972, lon:128.765, facing:100, cam:'JD1'},
+  {id:'gisamun',  name:'기사문',         area:'양양', lat:38.019, lon:128.727, facing:80,  cam:'GSM1'},
+  {id:'surfyy',   name:'서피비치·하조대', area:'양양', lat:38.038, lon:128.720, facing:85,  cam:'YHJD1'},
+  {id:'namae',    name:'남애',           area:'양양', lat:37.945, lon:128.787, facing:100, cam:'NA1'},
+  {id:'gyeongpo', name:'경포',           area:'강릉', lat:37.805, lon:128.909, facing:75,  cam:'GGP1'},
+  {id:'geumjin',  name:'금진',           area:'강릉', lat:37.640, lon:129.045, facing:100, cam:'GJ1'},
+];
+const CAM_URL = c => `https://www.wsbfarm.com/wavecam/WaveCamView?beach=${c}`;
+const DAYS = 3, H0 = 5, H1 = 19;
+const state = { day:0, beach:0, loaded:false, fetchedAt:null, tab:'wave' };
+
+async function load(){
+  const lat = BEACHES.map(b=>b.lat).join(','), lon = BEACHES.map(b=>b.lon).join(',');
+  const marine = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,wind_wave_height,sea_surface_temperature,sea_level_height_msl&timezone=Asia%2FSeoul&forecast_days=${DAYS}`;
+  const fc = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation_probability,weather_code&daily=sunrise,sunset&wind_speed_unit=kn&timezone=Asia%2FSeoul&forecast_days=${DAYS}`;
+  const [m, f] = await Promise.all([fetch(marine).then(r=>{ if(!r.ok) throw new Error('marine '+r.status); return r.json(); }), fetch(fc).then(r=>{ if(!r.ok) throw new Error('forecast '+r.status); return r.json(); })]);
+  const ma = Array.isArray(m)?m:[m], fa = Array.isArray(f)?f:[f];
+  BEACHES.forEach((b,i)=>{ b.m = ma[i].hourly; b.f = fa[i].hourly; b.daily = fa[i].daily; });
+  state.loaded = true; state.fetchedAt = new Date();
+}
+
+/* ═══════════ 계산 ═══════════ */
+const COMPASS = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const compass = d => COMPASS[Math.round(((d%360)+360)%360/22.5)%16];
+const compass8 = d => ['N','NE','E','SE','S','SW','W','NW'][Math.round(((d%360)+360)%360/45)%8];
+const hhmm = iso => iso.slice(11,16), pad2 = n => String(n).padStart(2,'0'), DOW = ['일','월','화','수','목','금','토'];
+function windRel(from, facing){ const d = Math.abs(((from - facing) + 540) % 360 - 180); return d <= 45 ? 'on' : d >= 135 ? 'off' : 'cross'; }
+const relKo = { on:'온쇼어', off:'오프쇼어', cross:'크로스' };
+function tides(b, day){
+  const y = b.m.sea_level_height_msl, out = [];
+  for(let i=1;i<y.length-1;i++){
+    if(y[i]==null||y[i-1]==null||y[i+1]==null) continue;
+    const hi = y[i]>=y[i-1] && y[i]>y[i+1], lo = y[i]<=y[i-1] && y[i]<y[i+1];
+    if(!hi && !lo) continue;
+    const den = y[i-1]-2*y[i]+y[i+1], off = den ? 0.5*(y[i-1]-y[i+1])/den : 0;
+    const mins = Math.round((i + off)*60); if(Math.floor(mins/1440)!==day) continue;
+    const mm = mins % 1440; out.push({ type: hi?'만조':'간조', time:`${pad2(Math.floor(mm/60))}:${pad2(mm%60)}`, h:y[i] });
+  }
+  return out;
+}
+function hourScore(b, i, tidePos){
+  const h = b.m.wave_height[i] ?? 0, p = b.m.wave_period[i] ?? 0, w = b.f.wind_speed_10m[i] ?? 0, rel = windRel(b.f.wind_direction_10m[i] ?? 0, b.facing);
+  let s = 0;
+  if(h<0.3) s += 0; else if(h<0.6) s += 1 + (h-0.3)/0.3*2; else if(h<=1.5) s += 4; else if(h<=2) s += 3; else if(h<=2.5) s += 1.5;
+  s += p<6 ? 0 : p<8 ? 1 : p<10 ? 2 : 3;
+  if(w<=5) s += 3; else if(rel==='off') s += w<=12 ? 3 : w<=18 ? 1.5 : 0; else if(rel==='cross') s += w<=10 ? 1 : w<=16 ? 0 : -1; else s += w<=8 ? 1 : w<=15 ? -1 : -3;
+  if(w>20) s -= 2;
+  if(tidePos!=null && tidePos>0.25 && tidePos<0.75) s += 1;
+  return { s: Math.max(0, s), danger: h>2.5 || w>25 || (b.f.weather_code[i]>=95), h, p, w, rel };
+}
+function verdict(avg, danger){ if(danger) return { v:'warn', t:'위험' }; if(avg>=8) return { v:'good', t:'굿!' }; if(avg>=5.5) return { v:'ok', t:'탈 만함' }; if(avg>=3.5) return { v:'meh', t:'애매' }; return { v:'bad', t:'노노' }; }
+function analyze(b, day){
+  const base = day*24, sr = new Date(b.daily.sunrise[day]), ss = new Date(b.daily.sunset[day]);
+  const srH = sr.getHours(), ssH = ss.getHours() + (ss.getMinutes()>30?1:0);
+  const lv = b.m.sea_level_height_msl.slice(base, base+24).filter(v=>v!=null), lmin = Math.min(...lv), lmax = Math.max(...lv);
+  const hours = [];
+  for(let h=0; h<24; h++){
+    const i = base+h, lvl = b.m.sea_level_height_msl[i], tp = (lmax>lmin && lvl!=null) ? (lvl-lmin)/(lmax-lmin) : null;
+    hours.push({ hr:h, i, ...hourScore(b, i, tp), lvl, tp, temp:b.f.temperature_2m[i], dir:b.f.wind_direction_10m[i], gust:b.f.wind_gusts_10m[i], wdir:b.m.wave_direction[i], swH:b.m.swell_wave_height[i], swP:b.m.swell_wave_period[i], wwH:b.m.wind_wave_height[i], sst:b.m.sea_surface_temperature[i], rain:b.f.precipitation_probability[i], wx:b.f.weather_code[i] });
+  }
+  let best = null;
+  for(let h=Math.max(0,srH); h+1<=Math.min(23,ssH); h++){ const sum = hours[h].s + hours[h+1].s; if(!best || sum>best.sum) best = { h, sum, danger: hours[h].danger||hours[h+1].danger }; }
+  if(!best) best = { h:srH, sum:hours[srH].s*2, danger:hours[srH].danger };
+  const rep = hours[best.h], vd = verdict(best.sum/2, best.danger);
+  const swell = rep.p<7 ? '짧은 윈드스웰' : (rep.wwH ?? 0) >= (rep.swH ?? 0) ? '윈드스웰' : '그라운드스웰';
+  const power = rep.h<0.5 ? '파워 거의 없음, 롱보드 데이' : rep.h<1 ? '파워는 약하지만 탈 만함' : rep.h<1.6 ? '파워 적당' : '파워 있음, 커런트 주의';
+  const dayT = hours.slice(5,20).map(x=>x.temp);
+  return { hours, best, rep, vd, swell, power, sr, ss, srH, ssH, tides: tides(b, day), lmin, lmax, tempMin:Math.min(...dayT), tempMax:Math.max(...dayT) };
+}
+
+/* ═══════════ 렌더: 파도 탭 ═══════════ */
+const $ = id => document.getElementById(id);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className = cls; if(html!=null) e.innerHTML = html; return e; };
+function dateLabel(iso){ const d = new Date(iso+'T00:00'); return { md:`${d.getMonth()+1}/${d.getDate()}`, dow:DOW[d.getDay()], we:d.getDay()===0||d.getDay()===6, iso }; }
+function renderDays(){
+  const box = $('days'); box.innerHTML = '';
+  BEACHES[0].daily.time.forEach((iso, i)=>{
+    const L = dateLabel(iso), btn = el('button', 'day' + (L.we?' weekend':''), `${i===0?'오늘':i===1?'내일':'모레'}<b>${L.md} ${L.dow}</b>`);
+    btn.type='button'; btn.setAttribute('aria-pressed', String(i===state.day)); btn.onclick = ()=>{ state.day = i; renderWave(); }; box.appendChild(btn);
+  });
+}
+function renderBeaches(){
+  const box = $('beaches'); box.innerHTML = '';
+  BEACHES.forEach((b, i)=>{
+    const a = analyze(b, state.day), col = {good:'var(--good)',ok:'var(--sun)',meh:'var(--orange)',bad:'var(--bad)',warn:'var(--bad)'}[a.vd.v];
+    const btn = el('button', 'chip', `<span class="dot" style="background:${col}"></span>${b.name}`);
+    btn.type='button'; btn.setAttribute('aria-pressed', String(i===state.beach));
+    btn.onclick = ()=>{ state.beach = i; LS.set('surf.beach', b.id); renderWave(); }; box.appendChild(btn);
+  });
+  const cur = box.children[state.beach]; if(cur) cur.scrollIntoView({ inline:'nearest', block:'nearest' });
+}
+function renderHero(b, a){
+  const L = dateLabel(b.daily.time[state.day]);
+  $('hero-date').textContent = `${L.iso.replace(/-/g,'.')} (${L.dow}) · ${b.area}`; $('hero-name').textContent = b.name;
+  const st = $('stamp'); st.dataset.v = a.vd.v; st.textContent = a.vd.t;
+  const r = a.rep, win = `${pad2(a.best.h)}~${pad2(a.best.h+2)}시`, windTxt = `${compass(r.dir)} ${relKo[r.rel]} ${Math.round(r.w)}kts`;
+  const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : `<mark>${win}</mark>이 오늘의 정답.`;
+  $('summary').innerHTML = `${r.h.toFixed(1)}m / ${Math.round(r.p)}초 ${a.swell} + ${windTxt}. ${a.power}. ${tail}`;
+  $('window-t').textContent = win; $('window').hidden = a.vd.v==='warn';
+}
+function tile(spr, lab, val, memo){ return `<div class="tile px"><div class="lab"><canvas data-spr="${spr}"></canvas>${lab}</div><div class="val">${val}</div>${memo?`<div class="memo">${memo}</div>`:''}</div>`; }
+function suitFor(sst){ return sst>=24 ? '보드숏·래시가드 OK' : sst>=21 ? '스프링수트 / 1~2mm' : sst>=17 ? '3/2 풀슈트' : sst>=13 ? '4/3 + 부츠' : '5/4 후드·부츠·장갑'; }
+function tidePhase(a){
+  const tp = a.rep.tp, next = a.hours[a.best.h+1]?.tp ?? tp, lvl = tp==null ? '' : tp<0.33 ? '로우' : tp<0.66 ? '미드' : '하이';
+  const trend = next==null||tp==null ? '' : next>tp+0.03 ? ' → 채워지는 중' : next<tp-0.03 ? ' → 빠지는 중' : ' → 정체'; return lvl + trend;
+}
+function wxKo(c){ if(c==null) return ''; if(c<=1) return '맑음'; if(c===2) return '구름 조금'; if(c===3) return '흐림'; if(c<=48) return '안개'; if(c<=57) return '이슬비'; if(c<=67) return '비'; if(c<=77) return '눈'; if(c<=82) return '소나기'; if(c<=86) return '눈소나기'; return '뇌우'; }
+function renderTiles(b, a){
+  const r = a.rep, sst = r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000), rain = Math.max(...a.hours.slice(5,20).map(x=>x.rain??0));
+  const tideTxt = a.tides.length ? a.tides.map(t=>`<b>${t.type}</b> ${t.time}`).join('<br>') : '극값 없음';
+  $('tiles').innerHTML =
+    tile('sunrise','일출 / 일몰', `<span class="num">${hhmm(b.daily.sunrise[state.day])}</span><small>~</small><span class="num">${hhmm(b.daily.sunset[state.day])}</span>`, `실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())}`) +
+    tile('tide','만조 / 간조', `<span style="font-size:17px;line-height:1.4" class="num">${tideTxt}</span>`, `조차 ${(a.lmax-a.lmin).toFixed(2)}m · 입수 시 ${tidePhase(a)}`) +
+    tile('drop','수온', `${sst.toFixed(1)}<small>°C</small>`, `<b>${suitFor(sst)}</b>`) +
+    tile('temp','기온', `${Math.round(a.tempMin)}<small>~</small>${Math.round(a.tempMax)}<small>°C</small>`, `${wxKo(r.wx)} · 강수 ${rain}%${a.tempMin<=18?' · 새벽엔 서늘, 겉옷':''}`) +
+    tile('wave','파도', `${r.h.toFixed(1)}<small>m</small> / ${Math.round(r.p)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
+    tile('wind','바람', `${Math.round(r.w)}<small>kts</small> ${compass(r.dir)}`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 면 깨짐, 촘촘한 결':r.rel==='off'?' · 면 정돈':''} · 돌풍 ${Math.round(r.gust)}kts`);
+  paintAll($('tiles'));
+}
+function renderChart(b, a){
+  const hrs = a.hours.slice(H0, H1+1), n = hrs.length, W=600, padL=34, padR=10, colW=(W-padL-padR)/n, nowH = state.day===0 ? new Date().getHours() : -1;
+  const H=150, top=22, bottom=H-24, maxH = Math.max(1, Math.ceil(Math.max(...hrs.map(x=>x.h))*2)/2), yW = v => bottom - (v/maxH)*(bottom-top);
+  let s = `<rect x="${padL + (a.best.h-H0)*colW}" y="${top-10}" width="${colW*2}" height="${bottom-top+10}" fill="var(--sun)" opacity=".6"/>`;
+  for(let g=0; g<=maxH; g+=0.5) s += `<line x1="${padL}" x2="${W-padR}" y1="${yW(g)}" y2="${yW(g)}" stroke="var(--grid)" stroke-width="2" stroke-dasharray="4 4"/><text x="${padL-6}" y="${yW(g)+4}" font-size="10" text-anchor="end" fill="var(--ink2)">${g.toFixed(1)}</text>`;
+  const peak = hrs.reduce((m,x)=>x.h>m.h?x:m, hrs[0]);
+  hrs.forEach((x,k)=>{
+    const cx = padL + k*colW + colW/2, bw = Math.max(6, colW-8), y = Math.round(yW(x.h));
+    s += `<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${bottom-y}" fill="${x.danger?'var(--bad)':'var(--sea)'}" stroke="var(--ink)" stroke-width="3" shape-rendering="crispEdges"/>`;
+    if(x===peak) s += `<text x="${cx}" y="${y-6}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">${x.h.toFixed(1)}</text>`;
+    s += `<text x="${cx}" y="${H-7}" font-size="11" text-anchor="middle" fill="var(--ink2)" font-weight="${x.hr===nowH?700:400}">${pad2(x.hr)}</text>`;
+    if(x.hr===nowH) s += `<rect x="${cx-5}" y="${top-16}" width="10" height="8" fill="var(--coral)" stroke="var(--ink)" stroke-width="2" shape-rendering="crispEdges"/>`;
+    s += `<rect class="hit" data-k="${k}" x="${padL+k*colW}" y="0" width="${colW}" height="${H}" fill="transparent"/>`;
+  });
+  s += `<line x1="${padL}" x2="${W-padR}" y1="${bottom}" y2="${bottom}" stroke="var(--ink)" stroke-width="3"/>`;
+  $('svg-wave').innerHTML = s; $('chart-swell').textContent = `주기 ${Math.round(Math.min(...hrs.map(x=>x.p)))}~${Math.round(Math.max(...hrs.map(x=>x.p)))}초`;
+  const H2=90, t2=12, b2=H2-20, lv = hrs.map(x=>x.lvl ?? 0), lmin=Math.min(...lv), lmax=Math.max(...lv), span=Math.max(0.02, lmax-lmin), yT = v => b2 - ((v-lmin)/span)*(b2-t2);
+  let t = `<rect x="${padL + (a.best.h-H0)*colW}" y="${t2-6}" width="${colW*2}" height="${b2-t2+6}" fill="var(--sun)" opacity=".6"/>`;
+  const pts = hrs.map((x,k)=>`${padL + k*colW + colW/2},${yT(x.lvl??0)}`);
+  t += `<path d="M${pts.join(' L')} L${padL+(n-1)*colW+colW/2},${b2} L${padL+colW/2},${b2} Z" fill="var(--grape)" opacity=".2"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--grape)" stroke-width="4" stroke-linejoin="miter"/>`;
+  a.tides.forEach(td=>{ const [hh,mm] = td.time.split(':').map(Number), xh = hh+mm/60; if(xh<H0||xh>H1+1) return; const cx = padL + (xh-H0)*colW + colW/2, cy = yT(td.h), ly = td.type==='만조' ? Math.max(10, cy-11) : Math.min(H2-8, cy+18);
+    t += `<rect x="${cx-5}" y="${cy-5}" width="10" height="10" fill="${td.type==='만조'?'var(--coral)':'var(--mint)'}" stroke="var(--ink)" stroke-width="2" shape-rendering="crispEdges"/><text x="${cx}" y="${ly}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">${td.type} ${td.time}</text>`; });
+  t += `<line x1="${padL}" x2="${W-padR}" y1="${b2}" y2="${b2}" stroke="var(--ink)" stroke-width="3"/>`;
+  hrs.forEach((x,k)=>{ t += `<rect class="hit" data-k="${k}" x="${padL+k*colW}" y="0" width="${colW}" height="${H2}" fill="transparent"/>`; });
+  $('svg-tide').innerHTML = t; $('chart-tide').textContent = `${lmin.toFixed(2)} ~ ${lmax.toFixed(2)}m`;
+  const wb = $('winds'); wb.style.gridTemplateColumns = `${padL/W*100}% repeat(${n},1fr) ${padR/W*100}%`;
+  wb.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w ${x.rel}" title="${compass(x.dir)} ${relKo[x.rel]}"><b style="transform:rotate(${Math.round(x.dir)}deg)">↓</b><span class="num">${Math.round(x.w)}</span></div>`).join('') + `<span></span>`;
+  const tip = $('tip'), box = $('chart');
+  const show = (k, evt)=>{ const x = hrs[k]; if(!x) return;
+    tip.innerHTML = `<b>${pad2(x.hr)}:00</b> · ${x.h.toFixed(2)}m ${Math.round(x.p)}초 ${compass(x.wdir)}<br>바람 ${Math.round(x.w)}kts ${compass(x.dir)} ${relKo[x.rel]} · 조위 ${(x.lvl??0).toFixed(2)}m<br>기온 ${Math.round(x.temp)}°C · 수온 ${(x.sst??0).toFixed(1)}°C · 점수 ${x.s.toFixed(1)}`;
+    const r = box.getBoundingClientRect(); tip.style.left = Math.min(Math.max(evt.clientX - r.left, 100), r.width-100) + 'px'; tip.style.top = (evt.clientY - r.top) + 'px'; tip.classList.add('show'); };
+  box.querySelectorAll('.hit').forEach(h=>{ h.addEventListener('pointermove', e=>show(+h.dataset.k, e)); h.addEventListener('pointerdown', e=>show(+h.dataset.k, e)); });
+  box.onpointerleave = ()=>tip.classList.remove('show');
+}
+function renderChecks(b, a){
+  const r = a.rep, sst = r.sst ?? a.hours[9].sst, items = [];
+  items.push(['슈트', `수온 ${sst.toFixed(1)}°C → ${suitFor(sst)}`]);
+  if(a.tempMin<=10) items.push(['방한', `새벽 기온 ${Math.round(a.tempMin)}°C. 판초·핫팩·따뜻한 물`]); else if(a.tempMin<=18) items.push(['겉옷', `새벽 기온 ${Math.round(a.tempMin)}°C. 입수 전후 서늘하니 판초나 후드`]); else items.push(['자외선', `기온 ${Math.round(a.tempMax)}°C까지. 선크림·물 넉넉히`]);
+  if(a.vd.v==='warn') items.push(['입수 금지', `파고 ${r.h.toFixed(1)}m / 바람 ${Math.round(r.w)}kts${r.wx>=95?' / 뇌우':''}. 오늘은 캠으로만`]); else if(r.h>=1.5) items.push(['커런트', `파고 ${r.h.toFixed(1)}m. 채널 위치 먼저 확인, 랜드마크 잡고 위치 체크`]);
+  if(r.rel==='on' && r.w>8) items.push(['바람 타이밍', `${compass(r.dir)} 온쇼어 ${Math.round(r.w)}kts. 면 깨지기 전 ${pad2(a.best.h)}시 전후 입수`]); else if(r.rel==='off') items.push(['오프쇼어', `면 정돈됨. 립이 서고 테이크오프가 늦어지니 한 템포 더 패들`]);
+  if(r.p<7) items.push(['짧은 주기', `${Math.round(r.p)}초 윈드스웰. 파워 약하고 간격 짧음 → 세트 기다리지 말고 자주 잡기`]); else if(r.p>=10) items.push(['긴 주기', `${Math.round(r.p)}초. 세트 간격 길고 파워 있음 → 세트 사이 패들아웃`]);
+  if(a.rep.tp!=null) items.push(['타이드', `${tidePhase(a)}. ${a.tides.map(t=>`${t.type} ${t.time}`).join(' · ')||'조차 매우 작음'}`]);
+  const rain = Math.max(...a.hours.slice(a.srH, a.ssH+1).map(x=>x.rain??0)); if(rain>=50) items.push(['비', `강수확률 ${rain}%. 여벌 옷 비닐에`]);
+  items.push(['장비 점검', `리쉬코드 끈·스트링 마모, 테일 쪽 스트링 확인. 핀 조임, 왁스`]);
+  items.push(['기상특보', `<a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a>에서 강원 동해안 풍랑·너울 확인`]);
+  const day = b.daily.time[state.day], key = `surf.ck.${ME.id}.${day}.${b.id}`, saved = LS.get(key, {});
+  $('checks').innerHTML = items.map((it,i)=>`<div class="item"><input type="checkbox" id="ck-${i}" data-i="${i}" ${saved[i]?'checked':''}><label for="ck-${i}"><b>${it[0]}</b><span>${it[1]}</span></label></div>`).join('');
+  $('checks').querySelectorAll('input').forEach(c=>c.addEventListener('change', ()=>{
+    saved[c.dataset.i] = c.checked; LS.set(key, saved);
+    if(Object.values(saved).filter(Boolean).length===items.length){ const d=getData(); d.ckDone=(d.ckDone||0)+1; if(new Date().getHours()<7) d.dawn=(d.dawn||0)+1; setData(d); toast('체크리스트 완료! 1주차 미션에 반영'); refreshMe(); }
+  }));
+}
+function renderCam(b){ $('cam-btn').href = CAM_URL(b.cam); $('cam-name').textContent = `${b.name} 웨이브캠`; $('cam-src').textContent = (b.camNote || 'WSB FARM 웨이브캠') + ' · 새 창'; }
+function renderCompare(){
+  const rows = BEACHES.map((b,i)=>({ b, i, a:analyze(b, state.day) })); $('cmp-sub').textContent = `${['오늘','내일','모레'][state.day]} 권장 시간대 기준`;
+  $('cmp').innerHTML = `<table><thead><tr><th>해변</th><th>파도</th><th>바람</th><th>입수</th><th>판정</th><th>캠</th></tr></thead><tbody>` + rows.map(({b,i,a})=>{ const r=a.rep; return `<tr role="button" tabindex="0" data-i="${i}" class="${i===state.beach?'cur':''}"><td class="name">${b.name}<small>${b.area}</small></td><td class="num">${r.h.toFixed(1)}m · ${Math.round(r.p)}초</td><td class="num">${Math.round(r.w)}kts ${compass8(r.dir)} <span style="color:var(--ink2)">${relKo[r.rel]}</span></td><td class="num">${pad2(a.best.h)}~${pad2(a.best.h+2)}</td><td><span class="mini" data-v="${a.vd.v}">${a.vd.t}</span></td><td><a href="${CAM_URL(b.cam)}" target="_blank" rel="noopener" title="${b.name} 캠" style="text-decoration:none">▶</a></td></tr>`; }).join('') + `</tbody></table>`;
+  $('cmp').querySelectorAll('tr[role="button"]').forEach(tr=>{ const go = e=>{ if(e.target.closest('a')) return; state.beach = +tr.dataset.i; LS.set('surf.beach', BEACHES[state.beach].id); renderWave(); window.scrollTo({top:0, behavior:'smooth'}); };
+    tr.addEventListener('click', go); tr.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(e); } }); });
+}
+function notionMarkdown(b, a){
+  const r = a.rep, d = b.daily.time[state.day], hi = a.tides.filter(t=>t.type==='만조').map(t=>t.time).join(', '), lo = a.tides.filter(t=>t.type==='간조').map(t=>t.time).join(', '), sst = r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000);
+  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 |  |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) |  |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n`;
+}
+async function copyText(md){ try{ await navigator.clipboard.writeText(md); }catch(e){ const ta = document.createElement('textarea'); ta.value = md; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); } }
+async function copyNotion(){
+  const b = BEACHES[state.beach], a = analyze(b, state.day); await copyText(notionMarkdown(b, a));
+  const d = getData(), today = new Date().toISOString().slice(0,10);
+  if(d.lastLog!==today){ d.logs=(d.logs||0)+1; d.lastLog=today; setData(d); gain(XP.log); } toast('일지 마크다운 복사됐어요'); refreshMe();
+}
+let toastT; function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1800); }
+function gain(n){ const g = $('gain'); g.textContent = `+${n} XP`; g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
+function renderWave(){
+  if(!state.loaded) return;
+  const b = BEACHES[state.beach], a = analyze(b, state.day);
+  renderDays(); renderBeaches(); renderHero(b, a); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
+}
+async function bootWave(){
+  const st = $('state'); st.hidden = false; $('wave-main').hidden = true;
+  st.innerHTML = `<span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p>`;
+  try{ await load(); st.hidden = true; $('wave-main').hidden = false; renderWave(); }
+  catch(e){ st.innerHTML = `데이터 못 받아왔어요<p>${e.message}. 바다 앞 신호가 약할 때 그래요. 데이터 켜고 다시 시도.</p><p style="margin-top:10px"><button class="btn sm" type="button" onclick="bootWave()">↻ 다시 시도</button></p>`; }
+}
+
+/* ═══════════ 렌더: 미션 탭 ═══════════ */
+function weekDone(d, w){ return !!d.attend[w.n] && w.skills.every((_,i)=>d.skills[`${w.n}-${i}`]) && !!d.missions[w.n]; }
+function renderMission(){
+  const d = getData(), doneN = WEEKS.filter(w=>weekDone(d,w)).length, attN = Object.keys(d.attend).length;
+  $('prog-txt').textContent = `${doneN} / 8주 완료 · 출석 ${attN}회`; $('prog-bar').style.width = (doneN/8*100)+'%';
+  const nextW = WEEKS.find(w=>!weekDone(d,w))?.n ?? 8;
+  const openW = state.openWeek ?? nextW;
+  $('weeks').innerHTML = WEEKS.map(w=>{
+    const done = weekDone(d,w), att = d.attend[w.n], locked = w.n>1 && !d.attend[w.n-1] && !att;
+    const stTxt = done ? '완료' : att ? '진행 중' : locked ? '이전 주차 출석 후' : w.n===nextW ? '이번 주' : '대기';
+    return `<article class="week px ${w.n===openW?'open':''} ${locked?'locked':''}" data-w="${w.n}">
+      <div class="wh" role="button" tabindex="0" aria-expanded="${w.n===openW}"><span class="n">${w.n}주</span><div class="tt">${w.title}<span>${w.sub}</span></div><span class="st ${done?'done':att?'now':''}">${stTxt}</span></div>
+      <div class="wb">
+        <div class="att"><div class="stamp-att ${att?'on':''}">${att?`출석 ${att.replace(/-/g,'.')}`:'출석 도장 없음'}</div>${att?`<button class="undo" type="button" data-act="unatt">취소</button>`:`<button class="btn sm pink" type="button" data-act="att">출석 도장 찍기 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`}</div>
+        <div><div class="lab-sm">이번 주 배운 것 · 각 +${XP.skill} XP</div><div class="skills">${w.skills.map((s,i)=>`<div class="item"><input type="checkbox" id="sk-${w.n}-${i}" data-act="skill" data-k="${w.n}-${i}" ${d.skills[`${w.n}-${i}`]?'checked':''}><label for="sk-${w.n}-${i}"><b>${s}</b></label></div>`).join('')}</div></div>
+        <div class="mission ${d.missions[w.n]?'done':''}"><canvas data-spr="${w.icon}"></canvas><div class="mt"><b>미션 · +${XP.mission} XP</b>${w.mission}</div>${d.missions[w.n]?`<button class="undo" type="button" data-act="unmission">취소</button>`:`<button class="btn sm blue" type="button" data-act="mission">완료</button>`}</div>
+        <div><div class="lab-sm">레슨 런 — 오늘 배운 것 / 느낀 점 · 첫 저장 +${XP.note} XP</div><textarea data-act="note" data-w="${w.n}" placeholder="예) 팝업할 때 엉덩이가 자꾸 뜬다. 팔꿈치를 갈비뼈 아래로 모으니 나아짐">${d.notes[w.n]||''}</textarea></div>
+      </div></article>`;
+  }).join('');
+  paintAll($('weeks'));
+  $('weeks').querySelectorAll('.wh').forEach(h=>{ const go=()=>{ state.openWeek = +h.parentElement.dataset.w; renderMission(); }; h.addEventListener('click', go); h.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); });
+  $('weeks').querySelectorAll('[data-act]').forEach(x=>{
+    const w = +x.closest('.week').dataset.w, act = x.dataset.act;
+    if(act==='note'){ x.addEventListener('input', ()=>{ const d=getData(); const was=!!(d.notes[w]&&d.notes[w].trim()); d.notes[w]=x.value; setData(d); if(!was && x.value.trim()) gain(XP.note); refreshMe(); }); return; }
+    if(act==='skill'){ x.addEventListener('change', ()=>{ const d=getData(); d.skills[x.dataset.k]=x.checked; setData(d); if(x.checked) gain(XP.skill); refreshMe(); }); return; }
+    x.addEventListener('click', ()=>{
+      const d = getData();
+      if(act==='att'){ d.attend[w] = new Date().toISOString().slice(0,10); gain(XP.attend); toast(`${w}주차 출석!`); }
+      if(act==='unatt'){ delete d.attend[w]; }
+      if(act==='mission'){ d.missions[w] = true; gain(XP.mission); toast('미션 완료!'); }
+      if(act==='unmission'){ delete d.missions[w]; }
+      setData(d); state.openWeek = w; renderMission(); refreshMe();
+    });
+  });
+}
+
+/* ═══════════ 렌더: 레벨 탭 ═══════════ */
+function renderLevel(){
+  const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1];
+  $('lv-name').textContent = ME.name; $('lv-title').textContent = `LV.${L} ${LEVELS[L][1]}`;
+  $('lv-meta').textContent = `@${ME.id} · 가입 ${(auth.users()[ME.id]?.createdAt||'').slice(0,10).replace(/-/g,'.')}`;
+  $('xp-txt').textContent = `${xp} XP`; $('xp-next').textContent = next ? `다음 레벨 ${next[1]}까지 ${next[0]-xp} XP` : '최고 레벨!';
+  const lo = LEVELS[L][0], hi = next ? next[0] : lo+1; $('xp-bar').style.width = Math.min(100, (xp-lo)/(hi-lo)*100)+'%';
+  const skN = Object.values(d.skills).filter(Boolean).length, total = WEEKS.reduce((s,w)=>s+w.skills.length,0);
+  $('stats').innerHTML = [[Object.keys(d.attend).length+'/8','출석'],[skN+'/'+total,'배운 것'],[Object.values(d.missions).filter(Boolean).length+'/8','미션'],[Object.values(d.notes).filter(x=>x&&x.trim()).length,'레슨 런'],[d.logs||0,'일지 복사'],[d.ckDone||0,'체크리스트']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('badges').innerHTML = BADGES.map(b=>`<div class="badge ${b.test(d)?'':'lock'}"><canvas data-spr="${b.icon}"></canvas>${b.name}</div>`).join(''); paintAll($('badges'));
+  $('levels').innerHTML = LEVELS.map(([min,name],i)=>`<div class="${i===L?'cur':''}"><span>LV.${i} ${name}</span><span class="num">${min} XP</span></div>`).join('');
+}
+function avatarTint(L){ const boards = ['y','y','g','b','p','r']; const c = boards[L]||'r'; return { y: PAL[c] }; }
+function refreshMe(){
+  const d = getData(), xp = calcXP(d), L = levelOf(xp);
+  $('me-name').textContent = ME.name; $('me-lv').textContent = `LV.${L} ${LEVELS[L][1]} · ${xp} XP`;
+  ['me-av','prog-av','lv-av'].forEach(id=>drawSpr($(id), 'surfer', avatarTint(L)));
+  if(state.tab==='level') renderLevel();
+}
+
+/* ═══════════ 탭 · 로그인 · 부팅 ═══════════ */
+function showTab(t){
+  state.tab = t; ['wave','mission','level'].forEach(x=>$('tab-'+x).hidden = x!==t);
+  $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
+  if(t==='mission') renderMission(); if(t==='level') renderLevel(); window.scrollTo({top:0});
+}
+$('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
+function enter(u){
+  ME = { id:u.id, name:u.name }; LS.set('surf.session', u.id);
+  $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
+  const sb = LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
+  $('practice').value = LS.get(`surf.practice.${u.id}`, '');
+  refreshMe(); showTab('wave'); if(!state.loaded) bootWave();
+}
+let mode = 'in';
+const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
+$('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
+$('login-form').addEventListener('submit', async e=>{
+  e.preventDefault(); const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value, name = $('uname').value.trim();
+  try{
+    if(!/^[a-z0-9_]{2,16}$/.test(id)) throw new Error('아이디는 영문 소문자·숫자·_ 2~16자');
+    if(pw.length<4) throw new Error('비밀번호는 4자 이상');
+    const u = mode==='new' ? await auth.create(id, name, pw) : await auth.login(id, pw);
+    if(mode==='new'){ toast(`${u.name} 님, 6기 환영!`); }
+    enter({ id, name:u.name });
+  }catch(err){ $('err').textContent = err.message; }
+});
+$('logout').onclick = ()=>{ try{ localStorage.removeItem('surf.session'); }catch(e){} location.reload(); };
+$('copy').addEventListener('click', copyNotion);
+$('practice').addEventListener('input', e=>LS.set(`surf.practice.${ME.id}`, e.target.value));
+$('exp').onclick = async ()=>{ const users = auth.users(); const pack = { v:1, id:ME.id, user:users[ME.id], data:getData(), practice:LS.get(`surf.practice.${ME.id}`,'') }; const code = 'SURF6:' + btoa(unescape(encodeURIComponent(JSON.stringify(pack)))); $('io-box').value = code; await copyText(code); toast('코드 복사됨. 새 폰에 붙여넣기'); };
+$('imp').onclick = ()=>{ try{ const raw = $('io-box').value.trim(); if(!raw.startsWith('SURF6:')) throw new Error('코드 형식이 아니에요');
+    const pack = JSON.parse(decodeURIComponent(escape(atob(raw.slice(6))))); const users = auth.users(); users[pack.id] = pack.user; LS.set('surf.users', users); LS.set(`surf.data.${pack.id}`, pack.data); LS.set(`surf.practice.${pack.id}`, pack.practice||''); toast(`${pack.user.name} 데이터 가져옴. 로그인하세요`); if(pack.id===ME.id) refreshMe(); }
+  catch(e){ toast('가져오기 실패: '+e.message); } };
+
+paintAll();
+(function boot(){
+  const sid = LS.get('surf.session', null), u = sid && auth.users()[sid];
+  if(u) enter({ id:sid, name:u.name }); else setMode(Object.keys(auth.users()).length ? 'in' : 'new');
+})();
+</script>
+</body>
+</html>
