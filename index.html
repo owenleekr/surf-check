@@ -243,6 +243,34 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .toast.show{opacity:1}
 .state{margin-top:16px; text-align:center; font-size:16px; font-weight:700}
 .state p{margin-top:6px; font-size:12px; color:var(--ink2); font-weight:400}
+/* 캐릭터 고르기 */
+.pick{display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:6px}
+.pick button{border:4px solid var(--ink); background:#fff; padding:8px; display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; box-shadow:3px 3px 0 var(--ink)}
+.pick button canvas{width:32px; height:32px; flex:0 0 auto}
+.pick button[aria-pressed="true"]{background:var(--sun)}
+/* 오늘 세션 카운터 */
+.sess{margin-top:14px}
+.sess .head{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.sess .total{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:34px; line-height:1}
+.sess .total small{font-size:13px; font-weight:400; color:var(--ink2); margin-left:4px}
+.cnt{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+.cnt button{border:4px solid var(--ink); background:#fff; padding:8px 4px; font-weight:700; font-size:13px; box-shadow:3px 3px 0 var(--ink); line-height:1.2}
+.cnt button b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:22px}
+.cnt button:active{transform:translate(3px,3px); box-shadow:0 0 0 var(--ink)}
+.cnt .l{background:var(--mint)} .cnt .r{background:var(--sky)} .cnt .w{background:var(--sand)}
+.sess .undo{font-size:11px; color:var(--ink2); background:none; border:0; text-decoration:underline; padding:4px}
+/* 랭킹 */
+.rank{display:flex; flex-direction:column; gap:8px}
+.rrow{display:flex; align-items:center; gap:10px; border:4px solid var(--ink); background:#fff; padding:8px 10px; box-shadow:3px 3px 0 var(--ink)}
+.rrow.me{background:var(--sun)}
+.rrow .pos{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:22px; min-width:36px}
+.rrow canvas{width:36px; height:36px; flex:0 0 auto}
+.rrow .rn{flex:1; line-height:1.25} .rrow .rn b{display:block; font-size:15px} .rrow .rn span{font-size:11px; color:var(--ink2)}
+.rrow .rx{text-align:right; line-height:1.2} .rrow .rx b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:18px} .rrow .rx span{font-size:11px; color:var(--ink2)}
+.ladder{display:flex; gap:6px; margin-top:10px}
+.ladder div{flex:1; border:4px solid var(--ink); background:#fff; padding:6px 2px; text-align:center; font-size:11px; line-height:1.2; opacity:.45}
+.ladder div b{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:16px}
+.ladder div.on{opacity:1; background:var(--mint)} .ladder div.cur{opacity:1; background:var(--sun)}
 footer{margin-top:32px; font-size:11px; color:var(--sand); line-height:1.6; text-shadow:1px 1px 0 var(--ink)}
 footer a{color:var(--paper)}
 </style>
@@ -258,7 +286,8 @@ footer a{color:var(--paper)}
     <div class="mode"><button type="button" id="m-in" aria-pressed="true">로그인</button><button type="button" id="m-new" aria-pressed="false">새 계정</button></div>
     <div class="field"><label for="uid">아이디</label><input id="uid" name="uid" inputmode="latin" autocapitalize="off" autocomplete="username" placeholder="영문·숫자 2~16자" maxlength="16" required></div>
     <div class="field" id="f-name" hidden><label for="uname">이름 (닉네임)</label><input id="uname" name="uname" placeholder="레벨 카드에 표시돼요" maxlength="12"></div>
-    <div class="field"><label for="upw">비밀번호</label><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required></div>
+    <div class="field" id="f-av" hidden><label>캐릭터</label><div class="pick" id="pick-g"><button type="button" data-g="f" aria-pressed="true"><canvas></canvas>여자</button><button type="button" data-g="m" aria-pressed="false"><canvas></canvas>남자</button></div><div class="pick" id="pick-b"><button type="button" data-b="long" aria-pressed="true"><canvas></canvas>롱보드</button><button type="button" data-b="short" aria-pressed="false"><canvas></canvas>숏보드</button></div></div>
+  <div class="field"><label for="upw">비밀번호</label><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required></div>
     <div class="err" id="err"></div>
     <div class="login-actions"><button class="btn blue" type="submit" id="submit">▶ 로그인</button></div>
     <div class="who">계정과 진도는 <b>이 기기(브라우저)에만</b> 저장돼요. 기수 친구들은 각자 폰에서 계정을 만들면 됩니다. 폰을 바꿀 땐 레벨 탭의 "데이터 옮기기"로 가져가세요.</div>
@@ -287,6 +316,11 @@ footer a{color:var(--paper)}
         <p class="summary" id="summary"></p>
         <div class="window" id="window">▶ 입수 권장 <span class="num" id="window-t">06~08시</span></div>
       </article>
+      <div class="px sess" id="sess">
+        <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span></span><div class="total"><span id="sess-total">0</span><small>개 탔다</small></div></div><div style="text-align:right;font-size:12px;color:var(--ink2)">레프트 <b id="sess-l">0</b> · 라이트 <b id="sess-r">0</b><br>와이프아웃 <b id="sess-w">0</b> · 라이딩 1개 +2 XP</div></div>
+        <div class="cnt"><button type="button" class="l" data-ride="l"><b>+1</b>레프트</button><button type="button" class="r" data-ride="r"><b>+1</b>라이트</button><button type="button" class="w" data-ride="w"><b>+1</b>와이프아웃</button></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px"><span style="font-size:11px;color:var(--ink2)">세션 끝나면 노션 복사 → 라이딩 횟수가 채워져요</span><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
+      </div>
       <div class="tiles" id="tiles"></div>
 
       <section>
@@ -347,6 +381,8 @@ footer a{color:var(--paper)}
       <div class="bar" data-c="sun" style="margin-top:6px"><i id="xp-bar"></i></div>
       <div class="stats" id="stats"></div>
     </div>
+    <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
+    <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">바꾸기</span></div><div class="px"><div class="pick" id="edit-g"><button type="button" data-g="f"><canvas></canvas>여자</button><button type="button" data-g="m"><canvas></canvas>남자</button></div><div class="pick" id="edit-b"><button type="button" data-b="long"><canvas></canvas>롱보드</button><button type="button" data-b="short"><canvas></canvas>숏보드</button></div></div></section>
     <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
     <section><div class="sec-h"><h2>레벨 표</h2></div><div class="px levels" id="levels"></div></section>
     <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
@@ -357,6 +393,11 @@ footer a{color:var(--paper)}
     </section>
   </div>
 
+  <!-- 탭 4: 6기 랭킹 -->
+  <div id="tab-rank" hidden>
+    <div class="px sand"><span class="eyebrow">양양서핑학교 6기</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:22px;line-height:1.1;margin-top:4px">6기 랭킹</div><p class="lab-sm" id="rank-note" style="margin-top:6px"></p></div>
+    <div class="rank" id="rank" style="margin-top:14px"></div>
+  </div>
   <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
 </div>
 
@@ -364,6 +405,7 @@ footer a{color:var(--paper)}
   <button type="button" data-tab="wave" aria-pressed="true"><canvas data-spr="wave" width="16" height="8"></canvas>파도</button>
   <button type="button" data-tab="mission" aria-pressed="false"><canvas data-spr="flag" width="8" height="8"></canvas>미션</button>
   <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>레벨</button>
+  <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>6기</button>
 </nav>
 <div class="gain" id="gain">+10 XP</div>
 <div class="toast" id="toast"></div>
@@ -392,8 +434,18 @@ const SPR = {
   tide:['........','..pp..pp','.p..pp..','........','..pp..pp','.p..pp..','........','........'],
   clock:['..kkkk..','.k....k.','k...k..k','k...k..k','k..kk..k','k......k','.k....k.','..kkkk..'],
 };
+/* 캐릭터 = 몸(성별) + 보드(종류). y = 보드색(레벨에 따라 바뀜) */
+const BODY = {
+  m:[ '......kkk.......','.....khhhk......','.....kssske.....','.....ksskk......','......kss.......','....kkrrrkk.....','...krkrrrkrk....','...ks.krr.sk....','......krr.......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....'],
+  f:[ '.....kkkkk......','....khhhhhk.....','....khsssek.....','....khsskhk.....','....kh.ss.hk....','....kkrrrkk.....','...krkrrrkrk....','...ks.krr.sk....','......krr.......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....'],
+};
+const BOARD = {
+  long: ['.yyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkk.','................'],
+  short:['....yyyyyyy.....','..kyyyyyyyyyyk..','...kkkkkkkkkk...','................'],
+};
+const avatarRows = pr => BODY[pr?.gender==='m'?'m':'f'].concat(BOARD[pr?.board==='short'?'short':'long']);
 function drawSpr(cv, name, tint){
-  const rows = SPR[name]; if(!rows||!cv) return;
+  const rows = Array.isArray(name) ? name : SPR[name]; if(!rows||!cv) return;
   cv.width = rows[0].length; cv.height = rows.length;
   const g = cv.getContext('2d'); g.clearRect(0,0,cv.width,cv.height);
   rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ if(ch==='.') return; g.fillStyle = (tint&&tint[ch])||PAL[ch]||ch; g.fillRect(x,y,1,1); }));
@@ -411,7 +463,7 @@ const auth = {
   async create(id, name, pw){
     const u = auth.users(); if(u[id]) throw new Error('이미 있는 아이디예요');
     const salt = Math.random().toString(36).slice(2,10);
-    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', createdAt: new Date().toISOString() };
+    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', profile:{ gender:pick.gender, board:pick.board }, createdAt: new Date().toISOString() };
     LS.set('surf.users', u); return u[id];
   },
   async login(id, pw){
@@ -421,12 +473,17 @@ const auth = {
   },
 };
 let ME = null;   // {id, name}
+const pick = { gender:'f', board:'long' };   // 가입 화면 선택값
+function myProfile(){ return auth.users()[ME.id]?.profile || { gender:'f', board:'long' }; }
+function setProfile(pr){ const u = auth.users(); if(!u[ME.id]) return; u[ME.id].profile = { ...myProfile(), ...pr }; LS.set('surf.users', u); refreshMe(); renderLevel(); syncUp(); }
 function dataKey(){ return `surf.data.${ME.id}`; }
 function getData(){ return LS.get(dataKey(), { attend:{}, skills:{}, missions:{}, notes:{}, logs:0, first:null }); }
 function setData(d){ LS.set(dataKey(), d); }
 
 /* ═══════════ 커리큘럼 · XP · 레벨 ═══════════ */
-const XP = { attend:30, skill:10, mission:40, note:10, log:10 };
+const XP = { attend:30, skill:10, mission:40, note:10, log:10, ride:2 };
+const XP_RIDE = XP.ride;
+const ATT_STAGES = [[0,'신입'],[1,'첫 입수'],[3,'적응'],[5,'단골'],[8,'개근']];
 const WEEKS = [
   { n:1, title:'보드와 바다 읽기', sub:'장비를 알아야 바다에 들어간다', skills:['보드 구조: 스트링거·핀·리쉬 위치와 역할','보드 종류 구분: 롱보드(9ft+) / 미드·펀보드 / 숏보드(7ft-)','리쉬코드 + 테일 스트링 마모 체크','파도·바람·조위 읽고 입수 시간 정하기'], mission:'입수 전 체크리스트를 3번 끝까지 완료하기', icon:'board' },
   { n:2, title:'패들링 & 화이트워터', sub:'보드 위에 눕는 법부터', skills:['보드 위 포지션: 노즈가 손가락 한 마디 뜨게','패들 자세: 가슴 들고 시선 앞, 긴 스트로크','터틀롤 / 푸시스루로 거품 넘기','화이트워터 프론 라이딩'], mission:'화이트워터 프론 라이딩 5회 성공', icon:'wave' },
@@ -447,12 +504,17 @@ const BADGES = [
   { id:'log3',   name:'일지 3회',    icon:'rec',    test:d=>(d.logs||0)>=3 },
   { id:'half',   name:'반환점',      icon:'flag',   test:d=>Object.keys(d.attend).length>=4 },
   { id:'full',   name:'8주 개근',    icon:'crown',  test:d=>Object.keys(d.attend).length>=8 },
+  { id:'ride10', name:'10파도',      icon:'wave',   test:d=>totalRides(d)>=10 },
+  { id:'ride50', name:'50파도',      icon:'drop',   test:d=>totalRides(d)>=50 },
+  { id:'both',   name:'양방향',      icon:'map',    test:d=>Object.values(d.sessions||{}).some(x=>x.l>0&&x.r>0) },
+  { id:'wipe',   name:'와이프아웃 10', icon:'temp',  test:d=>Object.values(d.sessions||{}).reduce((s,x)=>s+(x.w||0),0)>=10 },
 ];
 function calcXP(d){
   let xp = Object.keys(d.attend).length*XP.attend + Object.values(d.skills).filter(Boolean).length*XP.skill + Object.values(d.missions).filter(Boolean).length*XP.mission
-         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log;
+         + Object.values(d.notes).filter(x=>x&&x.trim()).length*XP.note + (d.logs||0)*XP.log + totalRides(d)*XP.ride;
   return xp;
 }
+function totalRides(d){ return Object.values(d.sessions||{}).reduce((s,x)=>s+(x.l||0)+(x.r||0),0); }
 function levelOf(xp){ let L=0; LEVELS.forEach(([min],i)=>{ if(xp>=min) L=i; }); return L; }
 
 /* ═══════════ 해변 · 데이터 ═══════════ */
@@ -639,7 +701,7 @@ function renderCompare(){
 }
 function notionMarkdown(b, a){
   const r = a.rep, d = b.daily.time[state.day], hi = a.tides.filter(t=>t.type==='만조').map(t=>t.time).join(', '), lo = a.tides.filter(t=>t.type==='간조').map(t=>t.time).join(', '), sst = r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000);
-  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 |  |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) |  |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n`;
+  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 | ${myProfile().board==='short'?'숏보드':'롱보드'} |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) | ${(()=>{const sx=session();return sx.l+sx.r?`${sx.l} / ${sx.r} (와이프아웃 ${sx.w})`:''})()} |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n`;
 }
 async function copyText(md){ try{ await navigator.clipboard.writeText(md); }catch(e){ const ta = document.createElement('textarea'); ta.value = md; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); } }
 async function copyNotion(){
@@ -649,10 +711,27 @@ async function copyNotion(){
 }
 let toastT; function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1800); }
 function gain(n){ const g = $('gain'); g.textContent = `+${n} XP`; g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
+const today = () => new Date().toISOString().slice(0,10);
+function session(){ const d = getData(); d.sessions = d.sessions||{}; return d.sessions[today()] || { l:0, r:0, w:0, hist:[] }; }
+function renderSession(){
+  const sx = session(); $('sess-beach').textContent = sx.beach || BEACHES[state.beach].name;
+  $('sess-total').textContent = sx.l + sx.r; $('sess-l').textContent = sx.l; $('sess-r').textContent = sx.r; $('sess-w').textContent = sx.w;
+}
+function ride(k){
+  const d = getData(); d.sessions = d.sessions||{}; const sx = d.sessions[today()] || { l:0, r:0, w:0, hist:[] };
+  sx[k]++; sx.hist.push(k); sx.beach = BEACHES[state.beach].name; d.sessions[today()] = sx; setData(d);
+  if(k!=='w') gain(XP.ride); renderSession(); refreshMe();
+}
+function unride(){
+  const d = getData(); const sx = d.sessions?.[today()]; if(!sx||!sx.hist.length) return;
+  const k = sx.hist.pop(); sx[k] = Math.max(0, sx[k]-1); setData(d); renderSession(); refreshMe();
+}
+$('sess').querySelectorAll('[data-ride]').forEach(b=>b.addEventListener('click', ()=>ride(b.dataset.ride)));
+$('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
   const b = BEACHES[state.beach], a = analyze(b, state.day);
-  renderDays(); renderBeaches(); renderHero(b, a); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
+  renderDays(); renderBeaches(); renderHero(b, a); renderSession(); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
 }
 async function bootWave(){
   const st = $('state'); st.hidden = false; $('wave-main').hidden = true;
@@ -705,23 +784,30 @@ function renderLevel(){
   $('xp-txt').textContent = `${xp} XP`; $('xp-next').textContent = next ? `다음 레벨 ${next[1]}까지 ${next[0]-xp} XP` : '최고 레벨!';
   const lo = LEVELS[L][0], hi = next ? next[0] : lo+1; $('xp-bar').style.width = Math.min(100, (xp-lo)/(hi-lo)*100)+'%';
   const skN = Object.values(d.skills).filter(Boolean).length, total = WEEKS.reduce((s,w)=>s+w.skills.length,0);
-  $('stats').innerHTML = [[Object.keys(d.attend).length+'/8','출석'],[skN+'/'+total,'배운 것'],[Object.values(d.missions).filter(Boolean).length+'/8','미션'],[Object.values(d.notes).filter(x=>x&&x.trim()).length,'레슨 런'],[d.logs||0,'일지 복사'],[d.ckDone||0,'체크리스트']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  $('stats').innerHTML = [[Object.keys(d.attend).length+'/8','출석'],[skN+'/'+total,'배운 것'],[Object.values(d.missions).filter(Boolean).length+'/8','미션'],[totalRides(d),'탄 파도'],[Object.values(d.notes).filter(x=>x&&x.trim()).length,'레슨 런'],[d.logs||0,'일지 복사']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
   $('badges').innerHTML = BADGES.map(b=>`<div class="badge ${b.test(d)?'':'lock'}"><canvas data-spr="${b.icon}"></canvas>${b.name}</div>`).join(''); paintAll($('badges'));
+  const attN = Object.keys(d.attend).length; let stage = 0; ATT_STAGES.forEach(([n],i)=>{ if(attN>=n) stage=i; });
+  $('ladder').innerHTML = ATT_STAGES.map(([n,name],i)=>`<div class="${i<stage?'on':i===stage?'cur':''}"><b>${n}</b>${name}</div>`).join('');
+  const nx = ATT_STAGES[stage+1]; $('ladder-txt').textContent = `출석 ${attN}회 · ${ATT_STAGES[stage][1]}${nx?` → ${nx[1]}까지 ${nx[0]-attN}회 남음`:' · 다 채웠어요!'}`;
+  const pr = myProfile();
+  $('edit-g').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.g===pr.gender)); drawSpr(x.querySelector('canvas'), avatarRows({gender:x.dataset.g, board:pr.board})); x.onclick = ()=>setProfile({gender:x.dataset.g}); });
+  $('edit-b').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.b===pr.board)); drawSpr(x.querySelector('canvas'), avatarRows({gender:pr.gender, board:x.dataset.b})); x.onclick = ()=>setProfile({board:x.dataset.b}); });
   $('levels').innerHTML = LEVELS.map(([min,name],i)=>`<div class="${i===L?'cur':''}"><span>LV.${i} ${name}</span><span class="num">${min} XP</span></div>`).join('');
 }
 function avatarTint(L){ const boards = ['y','y','g','b','p','r']; const c = boards[L]||'r'; return { y: PAL[c] }; }
 function refreshMe(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp);
   $('me-name').textContent = ME.name; $('me-lv').textContent = `LV.${L} ${LEVELS[L][1]} · ${xp} XP`;
-  ['me-av','prog-av','lv-av'].forEach(id=>drawSpr($(id), 'surfer', avatarTint(L)));
+  ['me-av','prog-av','lv-av'].forEach(id=>drawSpr($(id), avatarRows(myProfile()), avatarTint(L)));
+  syncUp();
   if(state.tab==='level') renderLevel();
 }
 
 /* ═══════════ 탭 · 로그인 · 부팅 ═══════════ */
 function showTab(t){
-  state.tab = t; ['wave','mission','level'].forEach(x=>$('tab-'+x).hidden = x!==t);
+  state.tab = t; ['wave','mission','level','rank'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
-  if(t==='mission') renderMission(); if(t==='level') renderLevel(); window.scrollTo({top:0});
+  if(t==='mission') renderMission(); if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0});
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
 function enter(u){
@@ -732,7 +818,7 @@ function enter(u){
   refreshMe(); showTab('wave'); if(!state.loaded) bootWave();
 }
 let mode = 'in';
-const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
+const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
 $('login-form').addEventListener('submit', async e=>{
   e.preventDefault(); const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value, name = $('uname').value.trim();
@@ -751,6 +837,44 @@ $('exp').onclick = async ()=>{ const users = auth.users(); const pack = { v:1, i
 $('imp').onclick = ()=>{ try{ const raw = $('io-box').value.trim(); if(!raw.startsWith('SURF6:')) throw new Error('코드 형식이 아니에요');
     const pack = JSON.parse(decodeURIComponent(escape(atob(raw.slice(6))))); const users = auth.users(); users[pack.id] = pack.user; LS.set('surf.users', users); LS.set(`surf.data.${pack.id}`, pack.data); LS.set(`surf.practice.${pack.id}`, pack.practice||''); toast(`${pack.user.name} 데이터 가져옴. 로그인하세요`); if(pack.id===ME.id) refreshMe(); }
   catch(e){ toast('가져오기 실패: '+e.message); } };
+
+/* ═══════════ 가입 화면 캐릭터 고르기 ═══════════ */
+function paintPick(){
+  $('pick-g').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.g===pick.gender)); drawSpr(x.querySelector('canvas'), avatarRows({gender:x.dataset.g, board:pick.board})); });
+  $('pick-b').querySelectorAll('button').forEach(x=>{ x.setAttribute('aria-pressed', String(x.dataset.b===pick.board)); drawSpr(x.querySelector('canvas'), avatarRows({gender:pick.gender, board:x.dataset.b})); });
+}
+$('pick-g').querySelectorAll('button').forEach(x=>x.onclick=()=>{ pick.gender=x.dataset.g; paintPick(); });
+$('pick-b').querySelectorAll('button').forEach(x=>x.onclick=()=>{ pick.board=x.dataset.b; paintPick(); });
+paintPick();
+
+/* ═══════════ 6기 랭킹 · 공유 동기화 (Supabase) ═══════════
+   비워두면 이 기기의 계정들만 랭킹에 보인다. README의 SQL로 테이블을 만들고 url·key를 채우면
+   기수 전원이 한 랭킹을 본다. anon key는 공개돼도 되는 키(행 단위 보안은 RLS가 담당). */
+const SUPA = { url:'', key:'', table:'surfers' };
+const supaOn = () => !!(SUPA.url && SUPA.key);
+const supaH = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' });
+function snapshot(id){
+  const u = auth.users()[id]; if(!u) return null; const d = LS.get(`surf.data.${id}`, {attend:{},skills:{},missions:{},notes:{},sessions:{}}), xp = calcXP(d);
+  return { id, cohort:u.cohort||'6기', name:u.name, profile:u.profile||{gender:'f',board:'long'}, xp, level:levelOf(xp), attend:Object.keys(d.attend).length, rides:totalRides(d), missions:Object.values(d.missions).filter(Boolean).length, updated_at:new Date().toISOString() };
+}
+let syncT; function syncUp(){
+  if(!supaOn()||!ME) return; clearTimeout(syncT);
+  syncT = setTimeout(()=>{ fetch(`${SUPA.url}/rest/v1/${SUPA.table}`, { method:'POST', headers:supaH(), body:JSON.stringify(snapshot(ME.id)) }).catch(()=>{}); }, 1200);
+}
+async function fetchRank(){
+  const local = Object.keys(auth.users()).map(snapshot).filter(Boolean);
+  if(!supaOn()) return { rows:local, remote:false };
+  try{ const r = await fetch(`${SUPA.url}/rest/v1/${SUPA.table}?cohort=eq.6기&select=*&order=xp.desc&limit=100`, { headers:supaH() }); if(!r.ok) throw 0; const rows = await r.json();
+    const map = new Map(rows.map(x=>[x.id,x])); local.forEach(x=>map.set(x.id, x)); return { rows:[...map.values()], remote:true }; }
+  catch(e){ return { rows:local, remote:false, err:true }; }
+}
+async function renderRank(){
+  $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>';
+  const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>b.xp-a.xp || b.rides-a.rides);
+  $('rank-note').textContent = remote ? `${rows.length}명 · XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
+  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}"></canvas><div class="rn"><b>${x.name}</b><span>LV.${x.level} ${LEVELS[x.level]?.[1]||''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div></div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
+  rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTint(x.level)));
+}
 
 paintAll();
 (function boot(){
