@@ -6,43 +6,13 @@
 - 캠: WSB FARM 웨이브캠 링크
 - 계정·진도: 브라우저 localStorage (기기별). 레벨 탭 "데이터 옮기기"로 이전
 
-## 6기 랭킹 공유 (선택)
+## 6기 랭킹·칭찬 카드 공유 (Supabase)
 
-기본은 각자 폰에만 저장된다. 기수 전원이 한 랭킹을 보려면 Supabase 무료 프로젝트를 하나 만들고:
+기본은 각자 폰에만 저장된다. 기수 전원이 같은 랭킹과 카드를 보려면:
 
-1. SQL Editor에 아래를 실행
-```sql
-create table surfers (
-  id text primary key, cohort text, name text, profile jsonb,
-  xp int, level int, attend int, rides int, missions int, updated_at timestamptz
-);
-alter table surfers enable row level security;
-create policy "read all" on surfers for select using (true);
-create policy "upsert" on surfers for insert with check (true);
-create policy "update" on surfers for update using (true);
-```
-2. `index.html`의 `const SUPA = { url:'', key:'' }`에 프로젝트 URL과 anon key를 넣고 push.
+1. supabase.com → New project (무료) 생성
+2. SQL Editor → `supabase.sql` 내용 전체 붙여넣고 Run
+3. Project Settings → API 의 **Project URL** 과 **anon public** key를 `config.js`에 넣고 push
 
-앱은 진도가 바뀔 때마다 자기 행을 upsert하고, 6기 탭에서 XP 순으로 읽는다. 친구 그룹용이라 행 보호는 느슨하다(누구나 갱신 가능).
-
-칭찬 카드도 공유하려면 테이블 하나 더:
-```sql
-create table cards (
-  id text primary key, from_id text, from_name text, to_name text,
-  tpl text, text text, created_at timestamptz
-);
-alter table cards enable row level security;
-create policy "read all" on cards for select using (true);
-create policy "insert" on cards for insert with check (true);
-```
-
-칭찬 카드도 공유하려면 테이블 하나 더:
-```sql
-create table cards (
-  id text primary key, from_id text, from_name text, to_name text,
-  tpl text, text text, created_at timestamptz
-);
-alter table cards enable row level security;
-create policy "read all" on cards for select using (true);
-create policy "insert" on cards for insert with check (true);
-```
+앱은 진도가 바뀔 때마다 자기 행을 upsert하고, 6기 탭에서 XP 순으로 읽는다. 칭찬 카드는 받는 사람 이름 기준으로 도착한다.
+친구 그룹용이라 행 보호는 느슨하다(누구나 갱신 가능). 로그인 자체는 여전히 기기별이며, 폰을 바꾸면 레벨 탭 "데이터 옮기기"로 옮긴다.
