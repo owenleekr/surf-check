@@ -527,6 +527,7 @@ footer a{color:var(--paper)}
 
 <script>
 const $ = id => document.getElementById(id);
+const state = { day:0, beach:0, loaded:false, fetchedAt:null, tab:'wave', attRecords:[] };
 /* ═══════════ 스프라이트 (문자 = 팔레트 키, . = 투명) ═══════════ */
 const PAL = { k:'#1B1B2F', w:'#FFF9E6', s:'#F7C59F', h:'#3A2A1E', r:'#FF6B6B', b:'#2E6BFF', y:'#FFD23F', g:'#4DE1A5', p:'#9B6BFF', o:'#FF9F1C', c:'#8FD3FF', d:'#1A47C9', t:'#E2B96A' };
 const SPR = {
@@ -772,7 +773,6 @@ const BEACHES = [
 ];
 const CAM_URL = c => `https://www.wsbfarm.com/wavecam/WaveCamView?beach=${c}`;
 const DAYS = 3, H0 = 5, H1 = 19;
-const state = { day:0, beach:0, loaded:false, fetchedAt:null, tab:'wave', attRecords:[] };
 
 async function load(){
   const lat = BEACHES.map(b=>b.lat).join(','), lon = BEACHES.map(b=>b.lon).join(',');
@@ -972,8 +972,8 @@ function notionMarkdown(b, a){
 async function copyText(md){ try{ await navigator.clipboard.writeText(md); }catch(e){ const ta = document.createElement('textarea'); ta.value = md; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); } }
 async function copyNotion(){
   const b = BEACHES[state.beach], a = analyze(b, state.day); await copyText(notionMarkdown(b, a));
-  const d = getData(), today = new Date().toISOString().slice(0,10);
-  if(d.lastLog!==today){ d.logs=(d.logs||0)+1; d.lastLog=today; setData(d); gain(XP.log); } toast('일지 마크다운 복사됐어요'); refreshMe();
+  const d = getData(), td = today();
+  if(d.lastLog!==td){ d.logs=(d.logs||0)+1; d.lastLog=td; setData(d); gain(XP.log); } toast('일지 마크다운 복사됐어요'); refreshMe();
 }
 let toastT; function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1800); }
 function gain(n){ const g = $('gain'); g.textContent = `+${n} XP`; g.classList.remove('go'); void g.offsetWidth; g.classList.add('go'); }
@@ -1184,7 +1184,7 @@ const TIPS = [
 let tipIdx = Math.floor(Date.now()/864e5) % TIPS.length;
 function renderTip(){ const [k,t] = TIPS[tipIdx % TIPS.length]; $('tip-txt').innerHTML = `<b>[${k}]</b> ${t}`; }
 $('tip-next').onclick = ()=>{ tipIdx++; renderTip(); };
-const today = () => new Date().toISOString().slice(0,10);
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; };   // 로컬(KST) 날짜 — UTC 쓰면 새벽에 어제로 찍힌다
 function session(){ const d = getData(); d.sessions = d.sessions||{}; return d.sessions[today()] || { l:0, r:0, w:0, hist:[] }; }
 function renderSession(){
   const sx = session(); $('sess-beach').textContent = sx.beach || BEACHES[state.beach].name;
@@ -1221,12 +1221,13 @@ function renderMission(){
   const nextW = WEEKS.find(w=>!weekDone(d,w))?.n ?? 8;
   const openW = state.openWeek ?? nextW;
   $('weeks').innerHTML = WEEKS.map(w=>{
-    const done = weekDone(d,w), atts = attOf(d,w.n), att = atts.length>0, locked = w.n>1 && attOf(d,w.n-1).length===0 && !att;
-    const stTxt = done ? '완료' : att ? '진행 중' : locked ? '이전 주차 출석 후' : w.n===nextW ? '이번 주' : '대기';
+    const done = weekDone(d,w), atts = attOf(d,w.n), att = atts.length>0, curW = weekOfDate(today()), locked = w.n>curW;
+    const canStamp = w.n===curW && atts.length<PER_WEEK && !atts.includes(today()) && [0,6].includes(new Date().getDay());
+    const stTxt = done ? '완료' : w.n===curW ? '이번 주' : w.n<curW ? (att ? `출석 ${atts.length}/${PER_WEEK}` : '결석') : '예정';
     return `<article class="week px ${w.n===openW?'open':''} ${locked?'locked':''}" data-w="${w.n}">
       <div class="wh" role="button" tabindex="0" aria-expanded="${w.n===openW}"><span class="n">${w.n}주</span><div class="tt">${w.title}<span>${w.sub}</span></div><span class="st ${done?'done':att?'now':''}">${stTxt}</span></div>
       <div class="wb">
-        <div class="att">${[0,1].map(i=>atts[i]?`<div class="stamp-att on">${i+1}회차 ${atts[i].slice(5).replace('-','.')}</div>`:`<div class="stamp-att">${i+1}회차 도장 없음</div>`).join('')}${atts.length<PER_WEEK?`<button class="btn sm pink" type="button" data-act="att">출석 도장 찍기 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`:''}${att?`<button class="undo" type="button" data-act="unatt">마지막 취소</button>`:''}</div>
+        <div class="att">${[0,1].map(i=>atts[i]?`<div class="stamp-att on">${i+1}회차 ${atts[i].slice(5).replace('-','.')}</div>`:`<div class="stamp-att">${i+1}회차 ${w.n<curW?'결석':w.n>curW?'예정':'도장 없음'}</div>`).join('')}${canStamp?`<button class="btn sm pink" type="button" data-act="att">오늘 출석 도장 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`:''}${att && w.n===curW && atts.includes(today())?`<button class="undo" type="button" data-act="unatt">오늘 도장 취소</button>`:''}</div>
         <div><div class="lab-sm">이번 주 배운 것 · 각 +${XP.skill} XP</div><div class="skills">${w.skills.map((s,i)=>`<div class="item"><input type="checkbox" id="sk-${w.n}-${i}" data-act="skill" data-k="${w.n}-${i}" ${d.skills[`${w.n}-${i}`]?'checked':''}><label for="sk-${w.n}-${i}"><b>${s}</b></label></div>`).join('')}</div></div>
         <div class="mission ${d.missions[w.n]?'done':''}"><canvas data-spr="${w.icon}"></canvas><div class="mt"><b>미션 · +${XP.mission} XP</b>${w.mission}</div>${d.missions[w.n]?`<button class="undo" type="button" data-act="unmission">취소</button>`:`<button class="btn sm blue" type="button" data-act="mission">완료</button>`}</div>
         <div><div class="lab-sm">레슨 런 — 오늘 배운 것 / 느낀 점 · 첫 저장 +${XP.note} XP</div><textarea data-act="note" data-w="${w.n}" placeholder="예) 팝업할 때 엉덩이가 자꾸 뜬다. 팔꿈치를 갈비뼈 아래로 모으니 나아짐">${d.notes[w.n]||''}</textarea></div>
@@ -1240,8 +1241,8 @@ function renderMission(){
     if(act==='skill'){ x.addEventListener('change', ()=>{ const d=getData(); d.skills[x.dataset.k]=x.checked; setData(d); if(x.checked) gain(XP.skill); refreshMe(); }); return; }
     x.addEventListener('click', ()=>{
       const d = getData();
-      if(act==='att'){ const arr = attOf(d,w); if(arr.length<PER_WEEK){ arr.push(today()); d.attend[w] = arr; gain(XP.attend); toast(`${w}주차 ${arr.length}회차 출석!`); } }
-      if(act==='unatt'){ const arr = attOf(d,w); arr.pop(); if(arr.length) d.attend[w] = arr; else delete d.attend[w]; }
+      if(act==='att'){ const arr = attOf(d,w); if(w===weekOfDate(today()) && arr.length<PER_WEEK && !arr.includes(today())){ arr.push(today()); arr.sort(); d.attend[w] = arr; gain(XP.attend); toast(`${w}주차 ${arr.length}회차 출석!`); } else toast('이번 주 오늘만 찍을 수 있어요'); }
+      if(act==='unatt'){ const arr = attOf(d,w).filter(x=>x!==today()); if(arr.length) d.attend[w] = arr; else delete d.attend[w]; }
       if(act==='mission'){ d.missions[w] = true; gain(XP.mission); toast('미션 완료!'); }
       if(act==='unmission'){ delete d.missions[w]; }
       setData(d); state.openWeek = w; renderMission(); refreshMe();
