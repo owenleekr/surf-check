@@ -45,11 +45,11 @@ a{color:inherit}
 canvas{image-rendering:pixelated; image-rendering:crisp-edges}
 [hidden]{display:none!important}
 html{scroll-behavior:smooth}
-#tab-wave,#tab-mission,#tab-level,#tab-rank{animation:tabin .25s steps(5) both}
+#tab-wave,#tab-mission,#tab-level,#tab-rank{animation:tabin .25s steps(5)}
 @keyframes tabin{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
 .btn,.chip,.day,.cnt button,.opt button,.chips button,.clap{transition:transform .08s steps(2), box-shadow .08s steps(2)}
 .chip:active,.day:active,.opt button:active,.chips button:active,.clap:active{transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink)}
-.tile,.slot,.rrow,.week,.cardc{animation:popin .3s steps(4) both}
+.tile,.slot,.rrow,.week,.cardc{animation:popin .3s steps(4)}
 @keyframes popin{from{opacity:0; transform:scale(.96)} to{opacity:1; transform:none}}
 .num{font-variant-numeric:tabular-nums}
 
@@ -284,6 +284,18 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .lvup .big{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:40px; color:var(--sun); text-shadow:4px 4px 0 var(--ink); animation:bob .6s steps(3) infinite}
 .lvup canvas{width:160px; height:160px; margin:12px auto; display:block}
 .streak{font-size:11px; color:var(--sun)}
+/* RPG 대화창 온보딩 */
+.onb{position:fixed; inset:0; z-index:70; pointer-events:none}
+.onb .dim{position:absolute; inset:0; background:rgba(18,36,95,.45); pointer-events:auto}
+.onb .dlg{position:absolute; left:12px; right:12px; bottom:calc(16px + env(safe-area-inset-bottom,0px)); background:#fff; border:4px solid var(--ink); box-shadow:inset 0 0 0 3px var(--paper), 6px 6px 0 var(--ink); padding:14px 14px 12px; pointer-events:auto; max-height:80svh; overflow:auto}
+.onb .who{display:flex; gap:12px; align-items:flex-start}
+.onb .who canvas{width:64px; height:64px; flex:0 0 auto; background:var(--sky); border:3px solid var(--ink)}
+.onb .name{font-size:11px; color:var(--ink2); letter-spacing:.06em}
+.onb .txt{font-size:15px; line-height:1.6; min-height:3.2em; white-space:pre-line}
+.onb .txt::after{content:"▼"; font-size:10px; margin-left:4px; animation:blink 1s steps(2,start) infinite}
+.onb .acts{display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap}
+.onb .step{font-size:11px; color:var(--ink2); margin-right:auto; align-self:center}
+.onb .bld{margin-top:10px}
 .slv{display:flex; flex-direction:column; gap:10px}
 .slv details{border:4px solid var(--ink); background:#fff; box-shadow:3px 3px 0 var(--ink)}
 .slv summary{list-style:none; cursor:pointer; padding:10px 12px; display:flex; align-items:center; gap:10px; background:var(--sand)}
@@ -381,7 +393,7 @@ footer a{color:var(--paper)}
   <div class="field" id="f-class" hidden><label>반</label><div class="role"><button type="button" data-cls="beginner" aria-pressed="true">비기너반</button><button type="button" data-cls="inter" aria-pressed="false">중급반</button></div></div>
   <div class="field"><label for="uid">아이디</label><input id="uid" name="uid" inputmode="latin" autocapitalize="off" autocomplete="username" placeholder="영문·숫자 2~16자" maxlength="16" required></div>
     <div class="field" id="f-name" hidden><label for="uname">이름 (닉네임)</label><input id="uname" name="uname" placeholder="레벨 카드에 표시돼요" maxlength="12"></div>
-    <div class="field" id="f-av" hidden><label>캐릭터</label><div class="pick" id="pick-g"><button type="button" data-g="f" aria-pressed="true"><canvas></canvas>여자</button><button type="button" data-g="m" aria-pressed="false"><canvas></canvas>남자</button></div><div class="pick" id="pick-b"><button type="button" data-b="long" aria-pressed="true"><canvas></canvas>롱보드</button><button type="button" data-b="short" aria-pressed="false"><canvas></canvas>숏보드</button></div></div>
+    <div class="field" id="f-av" hidden style="display:none"><label>캐릭터</label><div class="pick" id="pick-g"><button type="button" data-g="f" aria-pressed="true"><canvas></canvas>여자</button><button type="button" data-g="m" aria-pressed="false"><canvas></canvas>남자</button></div><div class="pick" id="pick-b"><button type="button" data-b="long" aria-pressed="true"><canvas></canvas>롱보드</button><button type="button" data-b="short" aria-pressed="false"><canvas></canvas>숏보드</button></div></div>
   <div class="field"><label for="upw">비밀번호</label><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required></div>
     <div class="err" id="err"></div>
     <div class="login-actions"><button class="btn blue" type="submit" id="submit">▶ 로그인</button></div>
@@ -464,17 +476,12 @@ footer a{color:var(--paper)}
 
   <!-- 탭 2: 미션 -->
   <div id="tab-mission" hidden>
-    <section style="margin-top:0"><div class="sec-h"><h2>이번 주 레슨런</h2><span class="tag" id="lesson-w"></span><span class="sub">물에서 나와 3분 안에</span></div>
-      <div class="px" id="lesson-top" style="display:flex;flex-direction:column;gap:10px"></div>
-      <details class="px" id="lesson-past" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">지난 레슨런 모아보기</summary><div id="lesson-past-list" style="margin-top:10px;display:flex;flex-direction:column;gap:10px;font-size:13px"></div></details>
+    <div class="px" id="thisweek"></div>
+    <section><div class="sec-h"><h2>전체 과정</h2><span class="tag">8주</span><span class="sub" id="prog-txt"></span></div><div class="bar" style="margin-bottom:10px"><i id="prog-bar"></i></div><div class="weeks" id="weeks"></div></section>
+    <section><div class="sec-h"><h2>더 배우기</h2><span class="tag">퀴즈 · 용어</span></div>
+      <details class="px" id="more-quiz"><summary style="cursor:pointer;font-weight:700">용어 퀴즈 · 하루 3문제 · 맞히면 +5 XP</summary><div class="quiz" id="quiz" style="margin-top:10px"></div></details>
+      <details class="px" id="more-gloss" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">서핑 용어 사전 <span class="tag" id="gloss-n"></span></summary><div class="gloss" id="gloss" style="margin-top:10px"></div></details>
     </section>
-    <div class="px sand prog" style="margin-top:14px">
-      <canvas data-spr="surfer" width="16" height="16" id="prog-av" data-anim></canvas>
-      <div class="t"><span class="eyebrow">6기 커리큘럼 진도</span><b id="prog-txt">0 / 8주</b><div class="bar" style="margin-top:6px"><i id="prog-bar"></i></div></div>
-    </div>
-    <div class="weeks" id="weeks"></div>
-    <section><div class="sec-h"><h2>용어 퀴즈</h2><span class="tag">하루 3문제</span><span class="sub">맞히면 +5 XP</span></div><div class="px quiz" id="quiz"></div></section>
-    <section><div class="sec-h"><h2>서핑 용어</h2><span class="tag" id="gloss-n"></span></div><div class="px gloss" id="gloss"></div></section>
   </div>
 
   <!-- 탭 3: 레벨 -->
@@ -497,7 +504,7 @@ footer a{color:var(--paper)}
     <section><div class="sec-h"><h2>6기 자료</h2></div><div class="px cam-more" style="margin-top:0"><a href="https://naver.me/FmGtUQAq" target="_blank" rel="noopener">STC 네이버 카페 (영상 업로드)</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 캠</a><span class="lab-sm" style="width:100%;margin-top:6px">수업 영상 구글드라이브 링크는 단톡방 공지에서 (공개 리포라 여기 안 넣음)</span></div></section>
     <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
       <div class="px"><p class="lab-sm">서버 계정이면 새 폰에서 그냥 로그인하면 돼요. 이 코드는 서버 없이 옮길 때 예비용.</p>
-        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm pink" id="logout" type="button">로그아웃</button><button class="btn sm ghost" id="wipe" type="button">이 기기 데이터 전부 지우기</button></div>
+        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm pink" id="logout" type="button">로그아웃</button><button class="btn sm ghost" type="button" onclick="onbStart()">튜토리얼 다시</button><button class="btn sm ghost" id="wipe" type="button">이 기기 데이터 전부 지우기</button></div>
         <textarea id="io-box" style="margin-top:10px;min-height:50px" placeholder="가져올 땐 여기에 코드를 붙여넣고 '가져오기'"></textarea>
       </div>
     </section>
@@ -517,8 +524,8 @@ footer a{color:var(--paper)}
 
 <nav class="nav" id="nav" hidden>
   <button type="button" data-tab="wave" aria-pressed="true"><canvas data-spr="wave" width="16" height="8"></canvas>파도</button>
-  <button type="button" data-tab="mission" aria-pressed="false"><canvas data-spr="flag" width="8" height="8"></canvas>미션</button>
-  <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>레벨</button>
+  <button type="button" data-tab="mission" aria-pressed="false"><canvas data-spr="flag" width="8" height="8"></canvas>수업</button>
+  <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>나</button>
   <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>6기</button>
 </nav>
 <div class="modal" id="card-modal" hidden><form class="px" id="card-form"><span class="eyebrow">칭찬 카드</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px;margin-top:2px"><span id="card-to">—</span> 에게</div>
@@ -526,6 +533,7 @@ footer a{color:var(--paper)}
   <div class="chips" id="card-tpls"></div>
   <textarea id="card-text" style="margin-top:10px;min-height:56px" placeholder="한 줄 더 (선택) — 예) 오늘 6시 세트 잡는 거 봤다"></textarea>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">보내기 +5 XP</button><button class="btn ghost" type="button" id="card-cancel">닫기</button></div></form></div>
+<div class="onb" id="onb" hidden><div class="dim"></div><div class="dlg"><div class="who"><canvas id="onb-av" data-anim></canvas><div style="flex:1;min-width:0"><div class="name" id="onb-name">양양서핑학교</div><div class="txt" id="onb-txt"></div></div></div><div class="bld" id="onb-bld"></div><div class="acts"><span class="step" id="onb-step"></span><button class="btn sm ghost" type="button" id="onb-skip">건너뛰기</button><button class="btn sm blue" type="button" id="onb-next">다음 ▶</button></div></div></div>
 <div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요 · 탭해서 닫기</div></div></div>
 <div class="gain" id="gain">+10 XP</div>
 <div class="toast" id="toast"></div>
@@ -802,15 +810,18 @@ async function pullCards(){
     state.remoteCards = (await r.json()).map(x=>({ id:x.id, from:x.from_id, fromName:x.from_name, to:x.to_name, tpl:x.tpl, text:x.text||'', date:x.created_at })); }catch(e){}
 }
 /* 레슨런: 주차별 {theory, feedback, next}. 옛 notes 문자열은 theory로 승격 */
-const LESSON_F = [['theory','이론수업에서 배운 것','예) 테일 종류 — 라운드는 안정, 스퀘어는 회전. 콕킹으로 첫 패들 3~4회 절약'],['feedback','코치 피드백 받은 것','예) 푸쉬업에서 중심 잡고 천천히. 레일은 가슴 바로 옆. 시선 앞'],['next','다음 세션에 해볼 것','예) 파도 넘을 때만 푸쉬, 바로 엎드려 패들. 하체 낮추고 상체 세우기']];
-function lessonOf(d, w){ const L = (d.lesson||{})[w] || {}; return { theory: L.theory ?? (d.notes||{})[w] ?? '', feedback: L.feedback||'', next: L.next||'' }; }
+const LESSON_F = [['note','레슨런 — 배운 것 · 피드백 · 다음에 해볼 것','예) 이론: 테일 종류, 콕킹으로 첫 패들 3~4회 절약\n피드백: 푸쉬업에서 중심 잡고 천천히, 레일은 가슴 옆\n다음: 시선 앞, 하체 낮추고 상체 세우기']];
+function lessonOf(d, w){ const L = (d.lesson||{})[w] || {}; if(L.note!=null) return { note:L.note };
+  const parts = [['이론',L.theory ?? (d.notes||{})[w]],['피드백',L.feedback],['다음',L.next]].filter(([,v])=>v&&v.trim()).map(([k,v])=>`${k}: ${v.trim()}`); return { note: parts.join('\n') }; }
 function lessonFilled(d){ let n = 0; for(let w=1; w<=8; w++){ const L = lessonOf(d,w); LESSON_F.forEach(([k])=>{ if((L[k]||'').trim()) n++; }); } return n; }
 function setLesson(w, k, v){ const d = getData(); d.lesson = d.lesson||{}; const cur = lessonOf(d,w), was = !!(cur[k]||'').trim(); d.lesson[w] = { ...cur, [k]: v }; setData(d); if(!was && v.trim()) gain(XP.note); refreshMe(); }
 function lessonForm(w, compact){
   const L = lessonOf(getData(), w);
-  return LESSON_F.map(([k,label,ph])=>`<div><div class="lab-sm">${label}${(L[k]||'').trim()?'':` · +${XP.note} XP`}</div><textarea data-lesson="${k}" data-w="${w}" style="min-height:${compact?48:64}px" placeholder="${ph}">${L[k]||''}</textarea></div>`).join('');
+  return LESSON_F.map(([k,label,ph])=>`<div><div class="lab-sm" style="display:flex;justify-content:space-between"><span>${label}${(L[k]||'').trim()?'':` · +${XP.note} XP`}</span><span class="chips" style="margin:0;gap:4px">${['이론','피드백','다음'].map(c=>`<button type="button" data-chip="${c}" data-w="${w}" style="padding:1px 6px;font-size:11px;box-shadow:none">${c}+</button>`).join('')}</span></div><textarea data-lesson="${k}" data-w="${w}" style="min-height:${compact?64:96}px" placeholder="${ph}">${L[k]||''}</textarea></div>`).join('');
 }
-function bindLesson(root){ root.querySelectorAll('textarea[data-lesson]').forEach(t=>{ t.oninput = ()=>{ setLesson(+t.dataset.w, t.dataset.lesson, t.value); document.querySelectorAll(`textarea[data-lesson="${t.dataset.lesson}"][data-w="${t.dataset.w}"]`).forEach(o=>{ if(o!==t) o.value = t.value; }); }; }); }
+function bindLesson(root){
+  root.querySelectorAll('button[data-chip]').forEach(b=>b.onclick=()=>{ const ta = b.closest('div').parentElement.querySelector('textarea'); const line = `${b.dataset.chip}: `; ta.value = (ta.value ? ta.value.replace(/\s*$/,'') + '\n' : '') + line; ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); ta.dispatchEvent(new Event('input')); });
+  root.querySelectorAll('textarea[data-lesson]').forEach(t=>{ t.oninput = ()=>{ setLesson(+t.dataset.w, t.dataset.lesson, t.value); document.querySelectorAll(`textarea[data-lesson="${t.dataset.lesson}"][data-w="${t.dataset.w}"]`).forEach(o=>{ if(o!==t) o.value = t.value; }); }; }); }
 function totalRides(d){ return Object.values(d.sessions||{}).reduce((s,x)=>s+(x.l||0)+(x.r||0)+(x.t||0),0); }   // 성공 = 테이크오프(비기너) + 레프트/라이트(중급)
 function levelOf(xp){ let L=0; LEVELS.forEach(([min],i)=>{ if(xp>=min) L=i; }); return L; }
 
@@ -1021,7 +1032,7 @@ function renderCompare(){
 }
 function notionMarkdown(b, a){
   const r = a.rep, d = b.daily.time[state.day], hi = a.tides.filter(t=>t.type==='만조').map(t=>t.time).join(', '), lo = a.tides.filter(t=>t.type==='간조').map(t=>t.time).join(', '), sst = r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000);
-  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 | ${myProfile().board==='short'?'숏보드':'롱보드'} |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) | ${(()=>{const sx=session(); if(sx.t||sx.a||sx.p) return `테이크오프 ${sx.t} / 도전 ${sx.a} (푸쉬업 ${sx.p})`; return sx.l+sx.r?`${sx.l} / ${sx.r} (와이프아웃 ${sx.w})`:''})()} |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n\n### 강의노트 (${Math.min(8, Math.max(1, weekOfDate(today())))}주차)\n\n${LESSON_F.map(([k,label])=>`**${label}**\n${(lessonOf(getData(), Math.min(8, Math.max(1, weekOfDate(today()))))[k]||'-')}\n`).join('\n')}`;
+  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 | ${myProfile().board==='short'?'숏보드':'롱보드'} |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) | ${(()=>{const sx=session(); if(sx.t||sx.a||sx.p) return `테이크오프 ${sx.t} / 도전 ${sx.a} (푸쉬업 ${sx.p})`; return sx.l+sx.r?`${sx.l} / ${sx.r} (와이프아웃 ${sx.w})`:''})()} |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n\n### 강의노트 (${Math.min(8, Math.max(1, weekOfDate(today())))}주차)\n\n${lessonOf(getData(), Math.min(8, Math.max(1, weekOfDate(today())))).note||'-'}\n`;
 }
 async function copyText(md){ try{ await navigator.clipboard.writeText(md); }catch(e){ const ta = document.createElement('textarea'); ta.value = md; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); } }
 async function copyNotion(){
@@ -1296,48 +1307,93 @@ async function bootWave(){
 
 /* ═══════════ 렌더: 미션 탭 ═══════════ */
 function weekDone(d, w){ return attOf(d,w.n).length>=PER_WEEK && w.skills.every((_,i)=>d.skills[`${w.n}-${i}`]) && !!d.missions[w.n]; }
-function renderLessonTop(){
-  const d = getData(), cw = Math.min(8, Math.max(1, weekOfDate(today())));
-  $('lesson-w').textContent = `${cw}주차 · ${WEEKS[cw-1].title}`;
-  $('lesson-top').innerHTML = lessonForm(cw, false); bindLesson($('lesson-top'));
-  const past = []; for(let w=8; w>=1; w--){ if(w===cw) continue; const L = lessonOf(d,w); if(LESSON_F.some(([k])=>(L[k]||'').trim())) past.push(`<div style="border-left:4px solid var(--ink);padding-left:10px"><b>${w}주차 · ${WEEKS[w-1].title}</b>${LESSON_F.map(([k,label])=>(L[k]||'').trim()?`<div style="margin-top:4px"><span style="color:var(--ink2)">${label.slice(0,2)}</span> ${L[k].replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`:'').join('')}</div>`); }
-  $('lesson-past-list').innerHTML = past.join('') || '<span style="color:var(--ink2)">아직 없어요</span>';
+const curWeek = () => Math.min(8, Math.max(1, weekOfDate(today())));
+function weekAttHTML(d, w){
+  const atts = attOf(d,w), cw = curWeek(), isClassDay = [0,6].includes(new Date().getDay());
+  const canStamp = w===cw && atts.length<PER_WEEK && !atts.includes(today()) && isClassDay;
+  return `<div class="att">${[0,1].map(i=>atts[i]?`<div class="stamp-att on">${i+1}회차 ${atts[i].slice(5).replace('-','.')}</div>`:`<div class="stamp-att">${i+1}회차 ${w<cw?'결석':w>cw?'예정':(isClassDay?'오늘':'주말에')}</div>`).join('')}${canStamp?`<button class="btn sm pink" type="button" data-act="att" data-w="${w}">오늘 출석 도장 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`:''}${atts.includes(today())?`<button class="undo" type="button" data-act="unatt" data-w="${w}">오늘 도장 취소</button>`:''}</div>`;
 }
-function renderMission(){
-  renderLessonTop();
-  const d = getData(), doneN = WEEKS.filter(w=>weekDone(d,w)).length;
-  $('prog-txt').textContent = `${doneN} / 8주 완료 · 출석 ${attN(d)}/${TOTAL_ATT}회`; $('prog-bar').style.width = (doneN/8*100)+'%';
-  const nextW = WEEKS.find(w=>!weekDone(d,w))?.n ?? 8;
-  const openW = state.openWeek ?? nextW;
-  $('weeks').innerHTML = WEEKS.map(w=>{
-    const done = weekDone(d,w), atts = attOf(d,w.n), att = atts.length>0, curW = weekOfDate(today()), locked = w.n>curW;
-    const canStamp = w.n===curW && atts.length<PER_WEEK && !atts.includes(today()) && [0,6].includes(new Date().getDay());
-    const stTxt = done ? '완료' : w.n===curW ? '이번 주' : w.n<curW ? (att ? `출석 ${atts.length}/${PER_WEEK}` : '결석') : '예정';
-    return `<article class="week px ${w.n===openW?'open':''} ${locked?'locked':''}" data-w="${w.n}">
-      <div class="wh" role="button" tabindex="0" aria-expanded="${w.n===openW}"><span class="n">${w.n}주</span><div class="tt">${w.title}<span>${w.sub}</span></div><span class="st ${done?'done':att?'now':''}">${stTxt}</span></div>
-      <div class="wb">
-        <div class="att">${[0,1].map(i=>atts[i]?`<div class="stamp-att on">${i+1}회차 ${atts[i].slice(5).replace('-','.')}</div>`:`<div class="stamp-att">${i+1}회차 ${w.n<curW?'결석':w.n>curW?'예정':'도장 없음'}</div>`).join('')}${canStamp?`<button class="btn sm pink" type="button" data-act="att">오늘 출석 도장 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`:''}${att && w.n===curW && atts.includes(today())?`<button class="undo" type="button" data-act="unatt">오늘 도장 취소</button>`:''}</div>
-        <div><div class="lab-sm">이번 주 배운 것 · 각 +${XP.skill} XP</div><div class="skills">${w.skills.map((s,i)=>`<div class="item"><input type="checkbox" id="sk-${w.n}-${i}" data-act="skill" data-k="${w.n}-${i}" ${d.skills[`${w.n}-${i}`]?'checked':''}><label for="sk-${w.n}-${i}"><b>${s}</b></label></div>`).join('')}</div></div>
-        <div class="mission ${d.missions[w.n]?'done':''}"><canvas data-spr="${w.icon}"></canvas><div class="mt"><b>미션 · +${XP.mission} XP</b>${w.mission}</div>${d.missions[w.n]?`<button class="undo" type="button" data-act="unmission">취소</button>`:`<button class="btn sm blue" type="button" data-act="mission">완료</button>`}</div>
-        <div style="display:flex;flex-direction:column;gap:8px"><div class="eyebrow">레슨런</div>${lessonForm(w.n, true)}</div>
-      </div></article>`;
-  }).join('');
-  paintAll($('weeks')); bindLesson($('weeks'));
-  $('weeks').querySelectorAll('.wh').forEach(h=>{ const go=()=>{ state.openWeek = +h.parentElement.dataset.w; renderMission(); }; h.addEventListener('click', go); h.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); });
-  $('weeks').querySelectorAll('[data-act]').forEach(x=>{
-    const w = +x.closest('.week').dataset.w, act = x.dataset.act;
-    if(act==='note'){ return; }
-    if(act==='skill'){ x.addEventListener('change', ()=>{ const d=getData(); d.skills[x.dataset.k]=x.checked; setData(d); if(x.checked) gain(XP.skill); refreshMe(); }); return; }
-    x.addEventListener('click', ()=>{
+function weekBodyHTML(d, wk, compact){
+  const w = wk.n;
+  return `${weekAttHTML(d, w)}
+    <div><div class="lab-sm">배운 것 체크 · 각 +${XP.skill} XP</div><div class="skills">${wk.skills.map((t,i)=>`<div class="item"><input type="checkbox" id="sk-${w}-${i}" data-act="skill" data-k="${w}-${i}" ${d.skills[`${w}-${i}`]?'checked':''}><label for="sk-${w}-${i}"><b>${t}</b></label></div>`).join('')}</div></div>
+    <div class="mission ${d.missions[w]?'done':''}"><canvas data-spr="${wk.icon}"></canvas><div class="mt"><b>미션 · +${XP.mission} XP</b>${wk.mission}</div>${d.missions[w]?`<button class="undo" type="button" data-act="unmission" data-w="${w}">취소</button>`:`<button class="btn sm blue" type="button" data-act="mission" data-w="${w}">완료</button>`}</div>
+    ${lessonForm(w, compact)}`;
+}
+function bindWeekActs(root){
+  root.querySelectorAll('[data-act]').forEach(x=>{
+    const w = +x.dataset.w, act = x.dataset.act;
+    if(act==='skill'){ x.onchange = ()=>{ const d=getData(); d.skills[x.dataset.k]=x.checked; setData(d); if(x.checked) gain(XP.skill); refreshMe(); renderMission(); }; return; }
+    x.onclick = ()=>{
       const d = getData();
-      if(act==='att'){ const arr = attOf(d,w); if(w===weekOfDate(today()) && arr.length<PER_WEEK && !arr.includes(today())){ arr.push(today()); arr.sort(); d.attend[w] = arr; gain(XP.attend); toast(`${w}주차 ${arr.length}회차 출석!`); } else toast('이번 주 오늘만 찍을 수 있어요'); }
+      if(act==='att'){ const arr = attOf(d,w); if(w===curWeek() && arr.length<PER_WEEK && !arr.includes(today())){ arr.push(today()); arr.sort(); d.attend[w] = arr; gain(XP.attend); toast(`${w}주차 ${arr.length}회차 출석!`); } else toast('이번 주 오늘만 찍을 수 있어요'); }
       if(act==='unatt'){ const arr = attOf(d,w).filter(x=>x!==today()); if(arr.length) d.attend[w] = arr; else delete d.attend[w]; }
       if(act==='mission'){ d.missions[w] = true; gain(XP.mission); toast('미션 완료!'); }
       if(act==='unmission'){ delete d.missions[w]; }
-      setData(d); state.openWeek = w; renderMission(); refreshMe();
-    });
+      setData(d); renderMission(); refreshMe();
+    };
   });
 }
+function renderMission(){
+  const d = getData(), cw = curWeek(), wk = WEEKS[cw-1], doneN = WEEKS.filter(w=>weekDone(d,w)).length;
+  // 이번 주 카드
+  $('thisweek').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><canvas data-spr="${wk.icon}" style="width:32px;height:32px"></canvas><div style="flex:1"><span class="eyebrow">이번 주 · ${cw}주차</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:22px;line-height:1.1">${wk.title}</div><div class="lab-sm" style="margin:2px 0 0">${wk.sub}</div></div><span class="st ${weekDone(d,wk)?'done':'now'}" style="font-size:11px;border:3px solid var(--ink);padding:2px 6px;background:${weekDone(d,wk)?'var(--mint)':'var(--sun)'}">${weekDone(d,wk)?'완료':'진행 중'}</span></div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-top:14px">${weekBodyHTML(d, wk, false)}</div>`;
+  paintAll($('thisweek')); bindLesson($('thisweek')); bindWeekActs($('thisweek'));
+  // 전체 과정
+  $('prog-txt').textContent = `${doneN}/8주 완료 · 출석 ${attN(d)}/${TOTAL_ATT}`; $('prog-bar').style.width = (doneN/8*100)+'%';
+  const openW = state.openWeek;
+  $('weeks').innerHTML = WEEKS.map(w=>{
+    const done = weekDone(d,w), atts = attOf(d,w.n), att = atts.length>0, locked = w.n>cw, isCur = w.n===cw;
+    const stTxt = done ? '완료' : isCur ? '이번 주' : w.n<cw ? (att ? `출석 ${atts.length}/${PER_WEEK}` : '결석') : '예정';
+    return `<article class="week px ${w.n===openW?'open':''} ${locked?'locked':''}" data-w="${w.n}">
+      <div class="wh" role="button" tabindex="0" aria-expanded="${w.n===openW}"><span class="n">${w.n}주</span><div class="tt">${w.title}<span>${w.sub}</span></div><span class="st ${done?'done':isCur?'now':''}">${stTxt}</span></div>
+      <div class="wb">${isCur ? '<div class="lab-sm">위 "이번 주" 카드에서 기록해요</div>' : weekBodyHTML(d, w, true)}</div></article>`;
+  }).join('');
+  paintAll($('weeks')); bindLesson($('weeks')); bindWeekActs($('weeks'));
+  $('weeks').querySelectorAll('.wh').forEach(h=>{ const go=()=>{ const w=+h.parentElement.dataset.w; state.openWeek = state.openWeek===w ? null : w; renderMission(); }; h.addEventListener('click', go); h.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(); } }); });
+}
+
+/* ═══════════ 온보딩 (첫 로그인) ═══════════ */
+const COACH_PR = { gender:'m', role:'coach', top:'k', hat:'cap', board:'long', boardc:'w', bottom:'k' };
+function builderHTML(pr, prefix){
+  const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
+  return opt('머리', 'gender', [['f','여자'],['m','남자']]) +
+    opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), (v,t)=>`<i style="background:${TOPS[v]}"></i>${t}`) +
+    opt('팬츠 / 웻수트', 'bottom', Object.keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), (v,t)=>`<i style="background:${BOTTOMS[v]}"></i>${t}`) +
+    opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
+    opt('보드', 'board', [['long','롱보드'],['short','숏보드']]) +
+    opt('보드 색', 'boardc', Object.keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), (v,t)=>`<i style="background:${BOARDC[v]}"></i>${t}`) +
+    (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) : '');
+}
+const ONB = [
+  { who:'교장쌤', txt:'6기 환영합니다! 먼저 라인업에서 알아볼 수 있게 캐릭터부터 만들어요. 래시가드·모자·보드 색은 언제든 "나" 탭에서 바꿀 수 있어요.', build:true, tab:'wave' },
+  { who:'교장쌤', txt:'1·2주차(보드 구조, 패들링·화이트워터)는 이미 하셨죠? 완료 처리하고 XP도 드릴게요. 출석은 코치 출석부 기록을 따릅니다.', tab:'mission', done12:true },
+  { who:'매니저', txt:'【파도 탭】 아침에 열면 캠·판정 도장·추천 시간대가 바로 보여요. 물에서 나오면 "오늘 세션"에서 도전·푸쉬업·테이크오프를 세고, 바로 밑에 레슨런을 적어요.', tab:'wave' },
+  { who:'매니저', txt:'【수업 탭】 이번 주 카드 하나만 보면 돼요: 출석 도장 → 배운 것 체크 → 미션 → 레슨런. 지난 주는 아래 "전체 과정"에서.', tab:'mission' },
+  { who:'매니저', txt:'【나 탭】 서핑 레벨표(학교 공식 LV.1~10)를 자가 체크하면 레벨이 오르고 보드 색이 바뀌어요. 배지도 여기.', tab:'level' },
+  { who:'교장쌤', txt:'【6기 탭】 동기들 랭킹이에요. 잘 탄 친구에게 👏 칭찬 카드 보내면 둘 다 XP. 자, 출발!', tab:'rank', last:true },
+];
+let onbI = 0, onbPr = null, typeT = null;
+function typeInto(el, text){ clearInterval(typeT); el.textContent = ''; let k = 0; typeT = setInterval(()=>{ el.textContent = text.slice(0, ++k); if(k>=text.length) clearInterval(typeT); }, 18); el.onclick = ()=>{ clearInterval(typeT); el.textContent = text; }; }
+function onbShow(){
+  const st = ONB[onbI]; $('onb').hidden = false; showTab(st.tab);
+  $('onb-name').textContent = st.who; typeInto($('onb-txt'), st.txt); drawSpr($('onb-av'), avatarRows(COACH_PR), avatarTintOf(COACH_PR, 5));
+  $('onb-step').textContent = `${onbI+1} / ${ONB.length}`; $('onb-next').textContent = st.last ? '출발! 🏄' : '다음 ▶';
+  if(st.build){ onbPr = { ...myProfile() }; const paintB = ()=>{ $('onb-bld').innerHTML = `<canvas id="onb-me" data-anim style="width:128px;height:128px;display:block;margin:0 auto 8px;background:var(--sky);border:4px solid var(--ink)"></canvas><div class="opts">${builderHTML(onbPr)}</div>`; drawSpr($('onb-me'), avatarRows(onbPr), avatarTintOf(onbPr, 0)); $('onb-bld').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; onbPr[x.dataset.k] = v; paintB(); }); }; paintB(); }
+  else $('onb-bld').innerHTML = '';
+  $('onb-txt').parentElement.scrollIntoView?.();
+}
+function onbNext(){
+  const st = ONB[onbI];
+  if(st.build && onbPr){ setProfile(onbPr); }
+  if(st.done12){ const d = getData(); [1,2].forEach(w=>{ WEEKS[w-1].skills.forEach((_,i)=>d.skills[`${w}-${i}`]=true); d.missions[w]=true; }); setData(d); gain(2*XP.mission + (WEEKS[0].skills.length+WEEKS[1].skills.length)*XP.skill); toast('1·2주차 완료 처리'); refreshMe(); }
+  if(st.last){ onbEnd(); return; }
+  onbI++; onbShow();
+}
+function onbEnd(){ clearInterval(typeT); $('onb').hidden = true; const d = getData(); d.onboarded = true; setData(d); showTab('wave'); toast('준비 끝. 오늘 파도 어때?'); }
+function onbStart(){ onbI = 0; onbShow(); }
+$('onb-next').onclick = onbNext; $('onb-skip').onclick = ()=>{ if(ONB[onbI].build && onbPr) setProfile(onbPr); onbEnd(); };
 
 /* ═══════════ 렌더: 레벨 탭 ═══════════ */
 function renderLevel(){
@@ -1355,14 +1411,7 @@ function renderLevel(){
   const nx = ATT_STAGES[stage+1]; $('ladder-txt').textContent = `출석 ${an}회 · ${ATT_STAGES[stage][1]}${nx?` → ${nx[1]}까지 ${nx[0]-an}회 남음`:' · 다 채웠어요!'}`;
   const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTint());
   const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
-  $('bld-opts').innerHTML =
-    opt('머리', 'gender', [['f','여자'],['m','남자']]) +
-    opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), (v,t)=>`<i style="background:${TOPS[v]}"></i>${t}`) +
-    opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
-    opt('팬츠 / 웻수트', 'bottom', Object.keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), (v,t)=>`<i style="background:${BOTTOMS[v]}"></i>${t}`) +
-    opt('보드', 'board', [['long','롱보드'],['short','숏보드']]) +
-    opt('보드 색', 'boardc', Object.keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), (v,t)=>`<i style="background:${BOARDC[v]}"></i>${t}`) +
-    (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) : '');
+  $('bld-opts').innerHTML = builderHTML(pr);
   $('bld-opts').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; setProfile({[x.dataset.k]:v}); });
   const mine = allCards().filter(c=>c.to===ME.name).sort((a,b)=>b.date.localeCompare(a.date));
   $('cards-n').textContent = mine.length;
@@ -1403,7 +1452,7 @@ function enter(u){
   $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
   const sb = LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
   $('practice').value = LS.get(`surf.practice.${u.id}`, '');
-  refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); auth.refresh().then(refreshMe); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
+  refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
 }
 let mode = 'in';
 const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
