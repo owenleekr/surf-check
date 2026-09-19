@@ -23,3 +23,14 @@ create policy "surfers insert" on surfers for insert with check (true);
 create policy "surfers update" on surfers for update using (true);
 create policy "cards read"     on cards   for select using (true);
 create policy "cards insert"   on cards   for insert with check (true);
+
+-- 코치 출석부 (2차 추가)
+create table if not exists attendance (
+  id text primary key,            -- 이름|날짜
+  name text, date date, present boolean, week int, by_id text,
+  updated_at timestamptz default now()
+);
+alter table attendance enable row level security;
+create policy "att read"   on attendance for select using (true);
+create policy "att insert" on attendance for insert with check (true);
+create policy "att update" on attendance for update using (true);
