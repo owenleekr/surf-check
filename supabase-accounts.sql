@@ -14,7 +14,7 @@ create table if not exists accounts (
 alter table accounts enable row level security;   -- 정책 없음 = anon 직접 조회 불가
 
 create or replace function signup(p_id text, p_name text, p_pw text, p_profile jsonb)
-returns text language plpgsql security definer set search_path = public as $$
+returns text language plpgsql security definer set search_path = public, extensions as $$
 declare t text;
 begin
   if p_id !~ '^[a-z0-9_]{2,16}$' then raise exception 'badid'; end if;
@@ -26,7 +26,7 @@ begin
 end $$;
 
 create or replace function login(p_id text, p_pw text)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare r accounts; t text;
 begin
   select * into r from accounts where id = p_id;
@@ -38,7 +38,7 @@ begin
 end $$;
 
 create or replace function save_data(p_id text, p_token text, p_data jsonb, p_profile jsonb, p_name text)
-returns boolean language plpgsql security definer set search_path = public as $$
+returns boolean language plpgsql security definer set search_path = public, extensions as $$
 begin
   update accounts set data = coalesce(p_data, data), profile = coalesce(p_profile, profile), name = coalesce(p_name, name), updated_at = now()
    where id = p_id and token = p_token;
@@ -47,7 +47,7 @@ begin
 end $$;
 
 create or replace function load_data(p_id text, p_token text)
-returns jsonb language plpgsql security definer set search_path = public as $$
+returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare r accounts;
 begin
   select * into r from accounts where id = p_id and token = p_token;
@@ -56,7 +56,7 @@ begin
 end $$;
 
 create or replace function change_pw(p_id text, p_token text, p_old text, p_new text)
-returns boolean language plpgsql security definer set search_path = public as $$
+returns boolean language plpgsql security definer set search_path = public, extensions as $$
 declare r accounts;
 begin
   select * into r from accounts where id = p_id and token = p_token;
