@@ -488,7 +488,7 @@ footer a{color:var(--paper)}
     <section><div class="sec-h"><h2>받은 칭찬 카드</h2><span class="tag" id="cards-n">0</span></div><div class="cards" id="cards-in"></div><button class="btn sm pink" type="button" style="margin-top:10px" onclick="openCard()">👏 나도 보내기</button></section>
     <section><div class="sec-h"><h2>서핑 레벨표</h2><span class="tag">양양서핑학교</span><span class="sub" id="slv-sum"></span></div><div class="slv" id="slv"></div><p class="lab-sm" style="margin-top:8px;color:var(--paper);text-shadow:1px 1px 0 var(--ink)">교육 항목을 다 채우면 그 레벨 인정. 항목 +3 XP. 코치 확인은 다음 버전에.</p></section>
     <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
-    <section><div class="sec-h"><h2>레벨 표</h2></div><div class="px levels" id="levels"></div></section>
+    <section><div class="sec-h"><h2>내 서핑 레벨</h2><span class="tag">레벨표 기준</span></div><div class="px levels" id="levels"></div></section>
     <section><div class="sec-h"><h2>6기 자료</h2></div><div class="px cam-more" style="margin-top:0"><a href="https://naver.me/FmGtUQAq" target="_blank" rel="noopener">STC 네이버 카페 (영상 업로드)</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 캠</a><span class="lab-sm" style="width:100%;margin-top:6px">수업 영상 구글드라이브 링크는 단톡방 공지에서 (공개 리포라 여기 안 넣음)</span></div></section>
     <section><div class="sec-h"><h2>데이터 옮기기</h2><span class="tag">폰 바꿀 때</span></div>
       <div class="px"><p class="lab-sm">계정과 진도는 이 브라우저에만 있어요. 코드를 복사해 새 폰의 같은 화면에 붙여 넣으면 옮겨집니다.</p>
@@ -576,7 +576,8 @@ function avatarRows(pr){
   if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
   return rows.concat(BOARD[pr.board==='short'?'short':'long']);
 }
-const avatarTintOf = (pr, L) => ({ q:'#FF4B4B', w:'#FFFFFF', y: ['#FFD23F','#FFD23F','#4DE1A5','#2E6BFF','#9B6BFF','#FF6B6B'][L||0]||'#FF6B6B', r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
+const SLV_COLORS = ['#FFD23F','#A6F542','#4DE1A5','#2ED3E6','#2E6BFF','#9B6BFF','#FF6B6B','#FF9F1C','#F7C59F','#FFFFFF','#1B1B2F'];   // 서핑 LV.0~10 보드 색
+const avatarTintOf = (pr, L) => ({ q:'#FF4B4B', w:'#FFFFFF', y: SLV_COLORS[Math.min(10, L||0)], r: TOPS[pr?.top]||TOPS.r, t:'#F7DC8F' });
 let frame = 0; setInterval(()=>{ frame ^= 1; document.querySelectorAll('canvas[data-anim]').forEach(c=>{ if(c._rows) paint(c, c._rows, c._tint, frame); }); }, 550);
 function paint(cv, rows, tint, f){
   const W = rows[0].length, H = rows.length, anim = cv.dataset.anim!=null, pad = anim ? 1 : 0;
@@ -1250,11 +1251,11 @@ function renderMission(){
 
 /* ═══════════ 렌더: 레벨 탭 ═══════════ */
 function renderLevel(){
-  const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1];
-  $('lv-name').textContent = ME.name; $('lv-title').textContent = `LV.${L} ${LEVELS[L][1]} · ${slvStat(d).label}`;
+  const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1], st = slvStat(d), curL = SLV[st.cur], nextL = SLV[st.cur] ;
+  $('lv-name').textContent = ME.name; $('lv-title').textContent = `${st.label}${st.cur?` · ${SLV[st.cur-1].g}`:' · 입문'} · 칭호 ${LEVELS[L][1]}`;
   const ro = rosterOf(ME.name), pr0 = myProfile();
   $('lv-meta').textContent = (pr0.role==='coach' ? '코치 · ' : ro&&ro[1] ? `서핑 시작 ${ro[1]} · 첫 파도 ${ro[2]} · ` : '') + `@${ME.id}`;
-  $('xp-txt').textContent = `${xp} XP`; $('xp-next').textContent = next ? `다음 레벨 ${next[1]}까지 ${next[0]-xp} XP` : '최고 레벨!';
+  $('xp-txt').textContent = `${xp} XP · 칭호 ${LEVELS[L][1]}`; $('xp-next').textContent = next ? `다음 칭호 ${next[1]}까지 ${next[0]-xp} XP` : '최고 칭호!';
   const lo = LEVELS[L][0], hi = next ? next[0] : lo+1; $('xp-bar').style.width = Math.min(100, (xp-lo)/(hi-lo)*100)+'%';
   const skN = Object.values(d.skills).filter(Boolean).length, total = WEEKS.reduce((s,w)=>s+w.skills.length,0);
   $('stats').innerHTML = [[attN(d)+'/'+TOTAL_ATT,'출석'],[skN+'/'+total,'배운 것'],[Object.values(d.missions).filter(Boolean).length+'/8','미션'],[totalRides(d),'탄 파도'],[Object.values(d.notes).filter(x=>x&&x.trim()).length,'레슨 런'],[d.logs||0,'일지 복사']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
@@ -1262,7 +1263,7 @@ function renderLevel(){
   const an = attN(d); let stage = 0; ATT_STAGES.forEach(([n],i)=>{ if(an>=n) stage=i; });
   $('ladder').innerHTML = ATT_STAGES.map(([n,name],i)=>`<div class="${i<stage?'on':i===stage?'cur':''}"><b>${n}</b>${name}</div>`).join('');
   const nx = ATT_STAGES[stage+1]; $('ladder-txt').textContent = `출석 ${an}회 · ${ATT_STAGES[stage][1]}${nx?` → ${nx[1]}까지 ${nx[0]-an}회 남음`:' · 다 채웠어요!'}`;
-  const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTintOf(pr, L));
+  const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTint());
   const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
   $('bld-opts').innerHTML =
     opt('머리', 'gender', [['f','여자'],['m','남자']]) +
@@ -1275,16 +1276,21 @@ function renderLevel(){
   $('cards-n').textContent = mine.length;
   $('cards-in').innerHTML = mine.map(c=>`<div class="cardc"><div class="tpl">${c.tpl}</div>${c.text?`<div class="txt">${c.text.replace(/</g,'&lt;')}</div>`:''}<div class="meta">${c.fromName} · ${c.date.slice(0,10).replace(/-/g,'.')}</div></div>`).join('') || '<div class="px" style="font-size:13px;color:var(--ink2)">아직 없어요. 먼저 보내면 돌아와요.</div>';
   renderSLV();
-  $('levels').innerHTML = LEVELS.map(([min,name],i)=>`<div class="${i===L?'cur':''}"><span>LV.${i} ${name}</span><span class="num">${min} XP</span></div>`).join('');
+  const lv = d.lvl||{};
+  $('levels').innerHTML = SLV.map((Lv,li)=>{ const eN = Lv.edu.filter((_,i)=>lv[slvKey(li,'e',i)]).length; return `<div class="${li===st.cur?'cur':''}" style="${li<st.cur?'opacity:.6':''}"><span>서핑 LV.${Lv.n} <small style="color:var(--ink2)">${Lv.g}</small></span><span class="num">${li<st.cur?'달성':`교육 ${eN}/${Lv.edu.length}`}</span></div>`; }).join('')
+    + `<div style="border:0;margin-top:6px;font-size:12px;color:var(--ink2)">칭호(XP): ${LEVELS.map(([m,n],i)=>`${i===L?'<b>':''}${n}${i===L?'</b>':''}`).join(' → ')}</div>`;
 }
-function avatarTint(L){ return avatarTintOf(myProfile(), L); }
+function avatarTint(){ return avatarTintOf(myProfile(), slvStat(getData()).cur); }
 function refreshMe(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp);
-  $('me-name').textContent = ME.name; $('me-lv').textContent = `LV.${L} ${LEVELS[L][1]} · ${slvStat(d).label.replace('서핑 ','S')} · ${xp}XP`;
-  ['me-av','prog-av','lv-av'].forEach(id=>drawSpr($(id), avatarRows(myProfile()), avatarTint(L)));
+  $('me-name').textContent = ME.name; $('me-lv').textContent = `${slvStat(d).label} · ${LEVELS[L][1]} · ${xp}XP`;
+  ['me-av','prog-av','lv-av'].forEach(id=>drawSpr($(id), avatarRows(myProfile()), avatarTint()));
   const st = streakOf(d); $('me-streak').textContent = st>=2 ? `🔥 ${st}주 연속 출석` : '';
+  const sl = slvStat(d).cur, prevS = LS.get(`surf.slv.${ME.id}`, null);
+  if(prevS!=null && sl>prevS){ $('lvup-t').textContent = `서핑 LV.${SLV[sl-1].n}`; drawSpr($('lvup-av'), avatarRows(myProfile()), avatarTint()); $('lvup').hidden = false; }
+  LS.set(`surf.slv.${ME.id}`, sl);
   const prevL = LS.get(`surf.lv.${ME.id}`, null);
-  if(prevL!=null && L>prevL){ $('lvup-t').textContent = `LV.${L} ${LEVELS[L][1]}`; drawSpr($('lvup-av'), avatarRows(myProfile()), avatarTint(L)); $('lvup').hidden = false; }
+  if(prevL!=null && L>prevL){ toast(`새 칭호: ${LEVELS[L][1]}!`); }
   LS.set(`surf.lv.${ME.id}`, L);
   if(state.tab==='wave' && state.loaded) renderQuests();
   syncUp();
@@ -1348,7 +1354,7 @@ const supaOn = () => !!(SUPA.url && SUPA.key);
 const supaH = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' });
 function snapshot(id){
   const u = auth.users()[id]; if(!u) return null; const d = LS.get(`surf.data.${id}`, {attend:{},skills:{},missions:{},notes:{},sessions:{}}), xp = calcXP(d);
-  return { id, cohort:u.cohort||'6기', name:u.name, profile:{ ...(u.profile||{gender:'f',board:'long'}), slevel: slvStat(d).label }, xp, level:levelOf(xp), attend:attN(d), rides:totalRides(d), missions:Object.values(d.missions).filter(Boolean).length, updated_at:new Date().toISOString() };
+  return { id, cohort:u.cohort||'6기', name:u.name, profile:{ ...(u.profile||{gender:'f',board:'long'}), slevel: slvStat(d).label }, xp, level:slvStat(d).cur, attend:attN(d), rides:totalRides(d), missions:Object.values(d.missions).filter(Boolean).length, updated_at:new Date().toISOString() };
 }
 let syncT; function syncUp(){
   if(!supaOn()||!ME) return; clearTimeout(syncT);
@@ -1363,9 +1369,9 @@ async function fetchRank(){
 }
 async function renderRank(){
   $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards(); renderSheet();
-  const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>b.xp-a.xp || b.rides-a.rides);
-  $('rank-note').textContent = remote ? `${rows.length}명 · XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
-  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>LV.${x.level} ${LEVELS[x.level]?.[1]||''}${x.profile?.slevel?` · ${x.profile.slevel}`:''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
+  const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>(b.level||0)-(a.level||0) || b.xp-a.xp || b.rides-a.rides);
+  $('rank-note').textContent = remote ? `${rows.length}명 · 서핑 레벨 → XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
+  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 파도 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
   rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTintOf(x.profile, x.level)));
   $('rank').querySelectorAll('.clap').forEach(b=>b.onclick=()=>openCard(b.dataset.name));
 }
