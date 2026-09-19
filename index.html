@@ -94,11 +94,11 @@ html{scroll-behavior:smooth}
 .who{font-size:13px; color:var(--ink2); margin-top:12px; line-height:1.6}
 
 /* 앱 헤더 */
-.hdr{display:flex; align-items:center; justify-content:space-between; gap:10px; color:var(--paper); text-shadow:2px 2px 0 var(--ink); padding-block:4px 8px}
+.hdr{display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--paper); text-shadow:2px 2px 0 var(--ink); padding-block:4px 8px}
 .hdr h1{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:24px; line-height:1; white-space:nowrap}
-.hdr .me{display:flex; align-items:center; gap:8px; font-size:12px; min-width:0} .hdr .me>div{min-width:0} .hdr .me .lv{white-space:nowrap}
+.hdr .me{display:flex; align-items:center; gap:8px; font-size:12px; min-width:0; flex:0 1 auto} .hdr .me>div{min-width:0; text-align:right} .hdr .me .lv{display:block; white-space:normal; line-height:1.25; max-width:160px; font-size:11px}
 .hdr .me canvas{width:44px; height:44px}
-.hdr .me b{display:block; font-size:14px}
+.hdr .me b{display:block; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .hdr .me .lv{font-size:11px; color:var(--sun)}
 
 /* 하단 탭 */
@@ -1090,7 +1090,7 @@ function questList(){
     { t:'파도 3개', s:'오늘 세션 라이딩 3개', done: (sx.l+sx.r)>=3 },
     { t:'칭찬 1장', s:'동기에게 칭찬 카드', done: cards>=1 },
     { t:'용어 퀴즈', s:'미션 탭에서 3문제', done: !!(d.quiz||{})[k]?.done },
-    ...(wk ? [{ t:`${wk.n}주차 출석`, s:`${attOf(d,wk.n).length}/${PER_WEEK}회 · ${wk.title}`, done: attOf(d,wk.n).includes(k) }] : []),
+    ...((()=>{ const cw = weekOfDate(k); return cw>=1&&cw<=8 && [0,6].includes(new Date().getDay()) ? [{ t:`${cw}주차 출석`, s:`${attOf(d,cw).length}/${PER_WEEK}회 · ${WEEKS[cw-1].title}`, done: attOf(d,cw).includes(k) }] : []; })()),
   ];
 }
 const CLASS_TIME = {
