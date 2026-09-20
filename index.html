@@ -106,7 +106,7 @@ html{scroll-behavior:smooth}
 
 /* 하단 탭 */
 .nav{position:fixed; left:0; right:0; bottom:0; z-index:20; background:var(--ink); border-top:4px solid var(--sun); padding:6px 10px calc(6px + env(safe-area-inset-bottom,0px)); display:flex; justify-content:center; gap:6px}
-.nav button{flex:1; max-width:220px; border:0; background:transparent; color:var(--sand); padding:6px 4px; font-size:12px; display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1}
+.nav button{flex:1; max-width:160px; border:0; background:transparent; color:var(--sand); padding:6px 4px; font-size:12px; display:flex; flex-direction:column; align-items:center; gap:2px; line-height:1}
 .nav button canvas{width:24px; height:24px}
 .nav button[aria-pressed="true"]{color:var(--sun); background:rgba(255,255,255,.08)}
 .nav button[aria-pressed="true"]::after{content:""; width:24px; height:3px; background:var(--sun); margin-top:2px}
@@ -624,6 +624,16 @@ footer a{color:var(--paper)}
     <div id="rank" hidden></div><div id="rank-note" hidden></div>
   </div>
 
+  <!-- 탭 5: 장비 -->
+  <div id="tab-gear" hidden>
+    <div class="px sand" id="gear-me"></div>
+    <section><div class="sec-h"><h2>오늘 뭐 입지</h2><span class="tag">수온 기준</span></div><div class="px" id="gear-today"></div></section>
+    <section><div class="sec-h"><h2>웻슈트 제대로 고르기</h2><span class="tag">가이드</span></div><div id="gear-guide" style="display:flex;flex-direction:column;gap:10px"></div></section>
+    <section><div class="sec-h"><h2>브랜드</h2><span class="tag">일본 · 서퍼스 이큅먼트</span></div><div id="gear-brands" style="display:flex;flex-direction:column;gap:10px"></div></section>
+    <section><div class="sec-h"><h2>목적별 추천</h2></div><div class="px" id="gear-pick"></div></section>
+    <section><div class="sec-h"><h2>관리</h2><span class="tag">슈트 수명</span></div><div class="px" id="gear-care"></div></section>
+  </div>
+
   <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
 </div>
 
@@ -632,6 +642,7 @@ footer a{color:var(--paper)}
   <button type="button" data-tab="mission" aria-pressed="false"><canvas data-spr="flag" width="8" height="8"></canvas>수업</button>
   <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>나</button>
   <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>마을</button>
+  <button type="button" data-tab="gear" aria-pressed="false"><canvas data-spr="board" width="8" height="8"></canvas>장비</button>
 </nav>
 <div class="modal" id="card-modal" hidden><form class="px" id="card-form"><span class="eyebrow">칭찬 카드</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px;margin-top:2px"><span id="card-to">—</span> 에게</div>
   <div class="field" id="card-pick"><label for="card-sel">받는 사람</label><select id="card-sel"></select></div>
@@ -1585,6 +1596,35 @@ const bonusXP = d => (d.bonus||0);
 function addBonus(n, key){ const d = getData(); d.bonusKeys = d.bonusKeys||{}; if(key && d.bonusKeys[key]) return; if(key) d.bonusKeys[key] = true; d.bonus = (d.bonus||0)+n; setData(d); gain(n); refreshMe(); }
 const notReady = '서버 테이블 준비 중 (코치가 supabase-social.sql 실행하면 켜져요)';
 
+/* ═══════════ 장비 탭 (일본 웻슈트 브랜드 총정리 2026-09-20 + 슈트 추천) ═══════════ */
+const SEQK = 'https://smartstore.naver.com/surfersequipment?utm_source=owen&utm_medium=referral&utm_campaign=jp_wetsuit_guide&utm_content=brand_roundup';
+const GUIDE = [
+  ['두께 표기 읽기', `<b>5/3mm</b> = 몸통 5mm + 팔 3mm (겨울 세미드라이) · <b>3/2mm</b> = 몸통 3 + 팔 2 (봄가을) · 서핑용은 3mm가 가장 흔함.<br>두꺼울수록 보온↑ 운동성↓ 부력↑. 같은 3mm라도 생지 품질·기모 유무로 체감이 한 단계 달라짐 → <b>숫자만 보면 안 됨</b>.`],
+  ['표면 마감 4종', `<table style="width:100%;font-size:12px;border-collapse:collapse"><tr><th style="text-align:left">종류</th><th style="text-align:left">특징</th><th style="text-align:left">약점</th></tr><tr><td><b>스킨(러버)</b></td><td>매끈한 고무. 바람·물 차단, 보온 우수</td><td>착탈 어렵고 찢어지기 쉬움</td></tr><tr><td><b>저지</b></td><td>고무에 니트. 강도·신축 균형</td><td>천이 물을 머금어 육상에서 체온 손실</td></tr><tr><td><b>기모</b></td><td>안감 털. 들어온 물을 데움, 가장 따뜻</td><td>가격↑ 건조 느림</td></tr><tr><td>슬라이스 스킨</td><td>기포 노출로 미끄럼 방지</td><td>겉감 부적합</td></tr></table><div class="lab-sm" style="margin-top:6px">스킨 = 보온·밀착 / 저지 = 내구·관리. 첫 겨울 슈트면 <b>올저지 + 목 스킨</b>이 현실적 (CURVAIN 26FW 어포더블이 이 조합).</div>`],
+  ['봉제 공법 — 물은 목·지퍼·솔기로 들어온다', `<table style="width:100%;font-size:12px;border-collapse:collapse"><tr><th style="text-align:left">방식</th><th style="text-align:left">침수</th><th style="text-align:left">위치</th></tr><tr><td>플랫록/오버록</td><td>많음</td><td>여름 저가</td></tr><tr><td><b>GBS(스쿠이누이)</b></td><td>적음</td><td>현재 표준</td></tr><tr><td>GBS + 심테이프</td><td>매우 적음</td><td>겨울 상급</td></tr><tr><td><b>무봉제(노소잉)</b></td><td>이론상 0</td><td>최상급</td></tr></table><div class="lab-sm" style="margin-top:6px">무봉제는 접착 품질에 100% 의존 → 자사공장 브랜드를 고르는 이유. 가랑이·어깨·겨드랑이부터 새면 박리 신호. 심테이프는 저지끼리만 붙고 스킨엔 녹음 — 관통 손상은 웻본드 먼저.</div>`],
+  ['지퍼', `방수는 <b>논집 &gt; 체스트집 &gt; 백집</b>, 착탈 편의는 그 반대. 초보는 백집이 편하고, 겨울 세미드라이는 체스트집이 무난.`],
+  ['원단 — 야마모토(일본)', `일본 웻슈트 원단의 사실상 표준. 석회석 유래 고무(가볍고 부드러움), ISO13485 공장, 표면 티탄 합금 층(타이타늄 α) → "얇은데 따뜻하다"는 평의 근거.`],
+  ['주문 전 체크리스트', `① 계절·수온으로 타입(겨울 5/3 → 봄가을 3/2 → 여름 스프링) ② 겨울이면 안감 기모 필수 ③ 겉감 스킨/저지 ④ 봉제 공법 — 전신 무봉제인지 주요 부위만인지 ⑤ 지퍼 ⑥ 납기 — 일본 오더 2~4주, 시즌 마감(봄 3월·가을겨울 8~9월) ⑦ A/S — 국내 복원 되는지`],
+];
+const BRANDS = [
+  { n:'서퍼스 이큅먼트 코리아 (SEQK)', t:'일본 웻슈트·액세서리 공식 스토어 · 양서학 슈트 설명회(9/21) 진행', d:'CURVAIN·NEXT LEVEL·TAVARUA·WOODY PRESS·BGZ·R2 취급. SEQK 자체 라인 롱존&롱제인 백집 99,000원(28%↓).', links:[['스마트스토어',SEQK],['인스타','https://www.instagram.com/surfers.eqk/']] },
+  { n:'CURVAIN 커베인', t:'일본 에히메 자사공장 직판 · 장인 30년+', d:'도매 마진 없는 공장직판. 국내 A/S(커베인 코리아 복원). <b>26FW 세미드라이 어포더블 539,100원</b>(10%↓) — 타 일본 프리미엄 79~89만 원보다 한 단계 아래. 26SS LSS 280,000원, SS 3mm 어포더블 363,000~396,000원. 2026 FW 어포더블은 <b>올저지 + 목 스킨</b>으로 전환(내구성↑, 첫 겨울 슈트에 적합). 풀오더 커스텀 가능.', links:[['커베인 코리아 인스타','https://www.instagram.com/curvain_wetsuits_korea/'],['공식(일본)','https://curvain.myshopify.com/']] },
+  { n:'NEXT LEVEL — ROCKHOPPER · WAVE WARRIORS', t:'치바 가츠우라 비치프론트 자사공장 · 1980년~', d:'로고는 바위뛰기펭귄. 소재 <b>X-SILL</b>(주력 3mm), <b>Ge.ESPA</b>(1mm 극박, 추우면 보온·더우면 냉각). <b>ROCKHOPPER PREMIUM LTD</b>는 무봉제(노소잉) 사양. 일본 정가 CLASSIC 3mm 74,800엔 · LONGCHEST 3mm 92,400엔 · PREMIUM PRO 1mm 87,890엔. 부츠 라인 <b>SURFLITE</b>(Made in Japan, 심리스).', links:[['공식(일본)','https://next-level.co.jp/']] },
+  { n:'TAVARUA 타바루아', t:'서프햇 원조 · UV 케어', d:'세계 최초 서프햇에서 출발. 스탠다드 TM1001은 일본제 원단·메시·네오프렌, UPF50+, 턱끈이 귀 뒤에도 달려 파도 맞아도 안 벗겨짐. 네오프렌 사코슈 58,000 · 서프백 L 53,000 / S 48,000.', links:[['공식(일본)','https://www.dukeint.co.jp/']] },
+  { n:'WOODY PRESS', t:'가성비 서프스케이트 (일본)', d:'1~2만 엔대. 카버 CX에 가까운 부드러운 필링, 초보 기본 동작 연습에 적합. 카버·YOW(4~5만 엔) 대비 압도적 가성비 — 파도 없는 날 랜드서핑용.', links:[] },
+  { n:'BGZ · R2', t:'방수 토트백 · X-DRY 행어', d:'BGZ: 겨울 슈트 두 벌 들어가는 강력 방수 토트 — 젖은 슈트 차에 실을 때. R2 X-DRY 행어: 건조·보관이 슈트 수명을 좌우.', links:[] },
+];
+const PICKS = [['첫 겨울 세미드라이, 관리 자신 없음','CURVAIN 26FW 어포더블 (올저지+목 스킨)'],['커스텀 사이즈','CURVAIN 풀오더'],['퍼포먼스 · 무봉제 최상급','ROCKHOPPER PREMIUM LTD'],['극박·고신축 1mm','ROCKHOPPER Ge.ESPA'],['겨울 발 보온','SURFLITE 부츠'],['슈트 이동·보관','BGZ 토트 + R2 행어'],['파도 없는 날','WOODY PRESS 서프스케이트'],['여름 자외선','TAVARUA 서프햇'],['가을 동해 기본(지금)','3/2mm 풀슈트 — 립컬 Dawn Patrol / 빌라봉 Absolute / 오닐 Reactor II']];
+function renderGear(){
+  const pr = myProfile(), b = BEACHES[state.beach], a = state.loaded ? analyze(b, 0) : null, sst = a ? ((a.hours[new Date().getHours()].sst) ?? a.rep.sst) : null;
+  $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">내 장비</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'아직 이름표가 없어요'}</div><button class="btn sm ghost" type="button" onclick="showTab('level'); setTimeout(()=>document.querySelector('.builder')?.scrollIntoView({block:'start'}),300)">"나" 탭에서 이름표 달기</button></div></div>`;
+  drawSpr($('gear-av'), avatarRows(pr), avatarTint());
+  $('gear-today').innerHTML = sst!=null ? `<div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${suitFor(sst)} <small style="font-size:12px;font-weight:400;color:var(--ink2)">수온 ${sst.toFixed(1)}°C · ${b.name}</small></div><div style="font-size:13px;line-height:1.5;margin-top:4px">${suitWhy(sst, a.tempMin)}</div>${gearHTML(sst)}<div class="lab-sm" style="margin-top:8px">수온 24°C↑ 래시가드 · 21~24 스프링 2mm · 17~21 3/2 · 13~17 4/3+부츠 · 13°C↓ 5/4 후드·장갑</div>` : '<div class="lab-sm">파도 탭에서 데이터를 먼저 불러와요</div>';
+  $('gear-guide').innerHTML = GUIDE.map(([t,h],i)=>`<details class="px" ${i===0?'open':''}><summary style="cursor:pointer;font-weight:700">${t}</summary><div style="margin-top:8px;font-size:13px;line-height:1.55">${h}</div></details>`).join('');
+  $('gear-brands').innerHTML = BRANDS.map(x=>`<details class="px"><summary style="cursor:pointer;font-weight:700">${x.n} <span class="lab-sm" style="display:block;margin:2px 0 0;font-weight:400">${x.t}</span></summary><div style="margin-top:8px;font-size:13px;line-height:1.55">${x.d}</div>${x.links.length?`<div class="cam-more" style="margin-top:8px">${x.links.map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener">${l}</a>`).join('')}</div>`:''}</details>`).join('');
+  $('gear-pick').innerHTML = `<table style="width:100%;font-size:12px;border-collapse:collapse">${PICKS.map(([s2,r])=>`<tr><td style="padding:5px 4px;border-bottom:2px dashed var(--grid);color:var(--ink2)">${s2}</td><td style="padding:5px 4px;border-bottom:2px dashed var(--grid)"><b>${r}</b></td></tr>`).join('')}</table>`;
+  $('gear-care').innerHTML = `<div style="font-size:13px;line-height:1.6">① 세션 후 <b>민물로 헹구고 그늘에서 뒤집어 건조</b>(직사광선·드라이기 금지) ② 행어는 넓은 어깨(R2 X-DRY류), 접어두면 접힌 자국에 기포가 죽음 ③ 손톱·모래로 스킨 면 긁힘 주의 ④ 새 슈트 첫 입수 전 물 한 번 적셔 유연하게 ⑤ 찢어지면 웻본드 → 저지 면은 심테이프 보강 ⑥ 리쉬·핀·왁스도 장비: 리쉬 끈 마모 매주, 왁스는 수온별로(가을 동해 = 쿨/웜)</div>`;
+}
 /* 오늘의 기준 잡기: ① 파도 크기·간격 ② 물때(양서학 브리핑 형식) ③ 바람 */
 const toAmPm = t => { const [h,m] = t.split(':').map(Number); return `${h<12?'오전':'오후'} ${h%12||12}시 ${m?m+'분':''}`.trim(); };
 function tideEvents(b, a){
@@ -1663,7 +1703,7 @@ function renderBasis(b, a){
       <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">① 파도 크기 · 간격 — ${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b><br>${waveNote}. ${periodNote}.<br><b>스웰 ${compass(r.sdir)}</b>에서 옴 → ${b.name}은 ${compass(b.swell)} 스웰이 최고라 <b>${r.fit.ko}</b>${b.note?` — ${b.note}`:''}${r.fit.s<=0?` (${BEACHES.filter(x=>swellFit(x, r.sdir).s>=1).map(x=>x.name).slice(0,3).join('·')||'다른 해변도 비슷'}${BEACHES.some(x=>swellFit(x, r.sdir).s>=1)?'이 더 잘 받음':''})`:''}.</div>
       <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">② 물때</b><br>${ts.text} 동해안 수심은 물때에 따라 0.1~0.48m 사이를 오가고, <b>해변마다 파도가 가장 좋은 기준 수심</b>이 따로 있어요 — 별점을 남기면 그때 수심이 같이 기록돼 우리 기수만의 기준이 쌓입니다.<br><small style="color:var(--ink2)">기준: ${ts.src}</small></div>
       <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">③ 바람 — ${Math.round(r.w)}kts ${compass(r.dir)} ${relKo[r.rel]}</b><br>${r.rel==='on'?'온쇼어: 면이 깨지고 결이 촘촘해짐 → 이른 시간이 답':r.rel==='off'?'오프쇼어: 면이 정돈되고 립이 섬 → 테이크오프 한 템포 늦게':'크로스: 면에 결이 생김, 방향 따라 한쪽이 나음'}.</div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><br>${suitWhy(sstB, a.tempMin)}${gearHTML(sstB)}</div>
+      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><br>${suitWhy(sstB, a.tempMin)}${gearHTML(sstB)}<div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
     </div>
     <div class="lab-sm" style="margin-top:8px">데이터: 파도·바람 Open-Meteo(${b.name} 앞바다 격자, 매시 갱신) · 물때 ${state.social.tides[date]?'코치 입력 공식값':'조위 모델 — 코치가 바다누리 값을 입력하면 그걸 씀'}</div>
     ${isCoach ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">코치: 오늘 공식 물때 입력 (바다누리 기준)</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px"><label>만조 시각<input id="tide-hit" type="time" value="${off?.hi?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>만조 높이(m)<input id="tide-hih" type="number" step="0.01" value="${off?.hi?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 시각<input id="tide-lot" type="time" value="${off?.lo?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 높이(m)<input id="tide-loh" type="number" step="0.01" value="${off?.lo?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label></div><button class="btn sm blue" type="button" id="tide-save" style="margin-top:8px">저장 → 전원 브리핑에 반영</button></details>` : ''}`;
@@ -1769,6 +1809,7 @@ const ONB = [
   { who:'매니저', txt:'【수업 탭】 이번 주 카드 하나만 보면 돼요: 출석 도장 → 배운 것 체크 → 미션 → 레슨런. 레슨런은 "이론+ 피드백+ 다음+" 칩으로 3줄만.', tab:'mission' },
   { who:'매니저', txt:'【나 탭】 학교 공식 서핑 레벨표(LV.1~10)를 자가 체크하면 레벨이 오르고 보드 색이 바뀌어요.', tab:'level', task:{ id:'slv', label:'레벨표에서 이미 할 줄 아는 항목 1개 체크해보기 (+3 XP)', check:()=>Object.values(getData().lvl||{}).some(Boolean) } },
   { who:'교장쌤', txt:'【마을 탭】 6기 전원이 낙산 앞에 서 있어요. 첫 인사로 말풍선 한마디 남겨볼까요?', tab:'rank', mood:true },
+  { who:'매니저', txt:'【장비 탭】 오늘 수온에 맞는 슈트, 두께·소재·봉제 읽는 법, 일본 브랜드(커베인·락호퍼)와 서퍼스 이큅먼트 스토어까지. 슈트 살 때 여기부터.', tab:'gear' },
   { who:'교장쌤', txt:'끝! 오늘 할 것 세 가지 — ① 기준 잡기 확인 ② 바다 도착하면 📍체크인 ③ 나오면 ⭐별점. 퀘스트로 떠 있으니 하나씩 지워봐요. 출발!', tab:'wave', last:true },
 ];
 let onbI = 0, onbPr = null, typeT = null;
@@ -1843,9 +1884,9 @@ function refreshMe(){
 /* ═══════════ 탭 · 로그인 · 부팅 ═══════════ */
 function showTab(t){
   if(t!=='wave' && camPlaying) camStop(); if(t==='wave' && state.loaded && !camPlaying) setTimeout(()=>camPlay(BEACHES[state.beach]), 300);
-  state.tab = t; ['wave','mission','level','rank'].forEach(x=>$('tab-'+x).hidden = x!==t);
+  state.tab = t; ['wave','mission','level','rank','gear'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
-  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); window.scrollTo({top:0, behavior:'instant'});
+  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); if(t==='gear') renderGear(); window.scrollTo({top:0, behavior:'instant'});
   const tb = $('tab-'+t); tb.style.animation='none'; void tb.offsetWidth; tb.style.animation='';
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
