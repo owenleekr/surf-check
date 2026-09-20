@@ -482,8 +482,19 @@ footer a{color:var(--paper)}
   <div class="field"><label for="uid">아이디</label><input id="uid" name="uid" inputmode="latin" autocapitalize="off" autocomplete="username" placeholder="영문·숫자 2~16자" maxlength="16" required></div>
     <div class="field" id="f-name" hidden><label for="uname">이름 (닉네임)</label><input id="uname" name="uname" placeholder="레벨 카드에 표시돼요" maxlength="12"></div>
     <div class="field" id="f-av" hidden style="display:none"><label>캐릭터</label><div class="pick" id="pick-g"><button type="button" data-g="f" aria-pressed="true"><canvas></canvas>여자</button><button type="button" data-g="m" aria-pressed="false"><canvas></canvas>남자</button></div><div class="pick" id="pick-b"><button type="button" data-b="long" aria-pressed="true"><canvas></canvas>롱보드</button><button type="button" data-b="short" aria-pressed="false"><canvas></canvas>숏보드</button></div></div>
+  <div class="field" id="f-birth" hidden><label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때 재설정용</label><input id="ubirth" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="예) 881102" autocomplete="bday"></div>
   <div class="field"><label for="upw">비밀번호</label><div style="display:flex;gap:6px"><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required style="flex:1"><button type="button" class="btn sm ghost" id="pw-eye" aria-label="비밀번호 보기" onclick="const i=document.getElementById('upw'); i.type=i.type==='password'?'text':'password'; this.textContent=i.type==='password'?'👁':'🙈'">👁</button></div></div>
     <div class="err" id="err"></div>
+  <div style="text-align:right;margin-top:-4px"><button type="button" class="undo" id="reset-open">비밀번호를 잊었어요</button></div>
+  <div id="reset-box" hidden style="border:4px solid var(--ink);background:#fff;padding:10px;margin-top:8px">
+    <div class="eyebrow">비밀번호 재설정 · 가입 때 적은 생년월일로</div>
+    <div class="field"><label for="r-id">아이디</label><input id="r-id" autocapitalize="off"></div>
+    <div class="field"><label for="r-birth">생년월일 6자리</label><input id="r-birth" inputmode="numeric" maxlength="6" placeholder="881102"></div>
+    <div class="field"><label for="r-new">새 비밀번호</label><input id="r-new" type="password" minlength="4"></div>
+    <div class="err" id="r-err"></div>
+    <div style="display:flex;gap:8px"><button type="button" class="btn sm blue" id="r-go">재설정하고 로그인</button><button type="button" class="btn sm ghost" onclick="document.getElementById('reset-box').hidden=true">닫기</button></div>
+    <div class="lab-sm" style="margin-top:6px">생년월일을 안 적었던 계정은 재설정이 안 돼요 — 코치에게 말하면 서버에서 도와줄 수 있어요.</div>
+  </div>
     <div class="login-actions"><button class="btn blue" type="submit" id="submit">▶ 로그인</button></div>
     <div class="who">아이디·비밀번호는 서버에 저장되니 <b>어느 폰에서든</b> 같은 아이디로 로그인하면 진도가 따라와요. 기수 친구들은 각자 계정을 만들면 됩니다.</div>
   </form>
@@ -591,12 +602,15 @@ footer a{color:var(--paper)}
   <div id="tab-level" hidden>
     <div class="px card">
       <canvas data-spr="surfer" width="16" height="16" id="lv-av" data-anim></canvas>
-      <div class="ct"><span class="eyebrow">양양서핑학교 6기</span><b id="lv-name">—</b><span class="lvname" id="lv-title">LV.0 물멍</span><div class="meta" id="lv-meta"></div></div>
+      <div class="ct"><span class="eyebrow">양양서핑학교 6기 <button type="button" class="undo" id="logout-top" style="margin-left:6px">로그아웃</button></span><b id="lv-name">—</b><span class="lvname" id="lv-title">LV.0 물멍</span><div class="meta" id="lv-meta"></div></div>
     </div>
     <div class="px" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)"><span id="xp-txt">0 XP</span><span id="xp-next"></span></div>
       <div class="bar" data-c="sun" style="margin-top:6px"><i id="xp-bar"></i></div>
       <div class="stats" id="stats"></div>
+      <details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;font-weight:700">계정 · 생년월일(재설정용) · 비밀번호 변경</summary>
+        <div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px;font-size:12px;align-items:end"><label>생년월일 6자리<input id="acc-birth" inputmode="numeric" maxlength="6" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><button class="btn sm mint" type="button" id="acc-birth-save">저장</button>
+        <label>현재 비밀번호<input id="acc-old" type="password" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><span></span><label>새 비밀번호<input id="acc-new" type="password" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><button class="btn sm blue" type="button" id="acc-pw-save">변경</button></div><div class="lab-sm" id="acc-msg" style="margin-top:6px"></div></details>
       <div class="lab-sm" style="margin-top:12px">내 홈 해변 · 파도 탭이 이 해변으로 열려요</div><div class="chips" id="home-chips"></div>
       <div class="lab-sm" style="margin-top:12px">최근 세션</div><div class="hist" id="hist"></div>
     </div>
@@ -783,7 +797,7 @@ const auth = {
   users(){ return LS.get('surf.users', {}); },
   remember(id, u){ const all = auth.users(); all[id] = { ...(all[id]||{}), ...u }; LS.set('surf.users', all); },
   async create(id, name, pw){
-    const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y', badge: pick.role==='coach' ? (COACH_DEFAULT_BADGE[name]||'코치') : undefined };
+    const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y', badge: pick.role==='coach' ? (COACH_DEFAULT_BADGE[name]||'코치') : undefined, birth: ($('ubirth')?.value||'').trim() || undefined };
     if(supaOn()){
       try{ const token = await rpc('signup', { p_id:id, p_name:name||id, p_pw:pw, p_profile:profile });
         auth.remember(id, { name:name||id, cohort:'6기', profile, server:true, token, createdAt:new Date().toISOString() }); return auth.users()[id]; }
@@ -1759,6 +1773,12 @@ function renderHello(){
 $('quick').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const el = $(b.dataset.go); if(!el) return; if(el.tagName==='DETAILS') el.open = true; el.scrollIntoView({block:'center'}); if(b.dataset.go==='ci') $('ci-btn')?.focus(); });
 function renderHome(){
   if(!$('home-chips')) return; const home = myProfile().home || null;
+  $('acc-birth').value = myProfile().birth || '';
+  $('acc-birth-save').onclick = ()=>{ const b = $('acc-birth').value.replace(/\D/g,''); if(!/^\d{6}$/.test(b)) return $('acc-msg').textContent = '6자리로 적어주세요 (예 881102)'; setProfile({ birth:b }); $('acc-msg').textContent = '저장됨 · 비밀번호 잊으면 이걸로 재설정'; };
+  $('acc-pw-save').onclick = async ()=>{ const o = $('acc-old').value, n = $('acc-new').value; if(n.length<4) return $('acc-msg').textContent = '새 비밀번호는 4자 이상'; const u = auth.users()[ME.id];
+    try{ if(u?.token && supaOn()){ await rpc('change_pw', { p_id:ME.id, p_token:u.token, p_old:o, p_new:n }); } else { if(u.hash !== await hash(u.salt+o)) throw new Error('현재 비밀번호가 달라요'); u.hash = await hash(u.salt+n); auth.remember(ME.id, u); } $('acc-msg').textContent = '비밀번호를 바꿨어요'; $('acc-old').value=''; $('acc-new').value=''; }
+    catch(e){ $('acc-msg').textContent = e.code==='unauthorized' ? '현재 비밀번호가 달라요' : (e.message||'실패'); } };
+  $('logout-top').onclick = ()=>$('logout').click();
   $('home-chips').innerHTML = BEACHES.map(b=>`<button type="button" data-home="${b.id}" aria-pressed="${b.id===home}">${b.name}</button>`).join('');
   $('home-chips').querySelectorAll('button').forEach(x=>x.onclick=()=>{ setProfile({ home:x.dataset.home }); LS.set('surf.beach', x.dataset.home); toast(`홈 해변: ${BEACHES.find(b=>b.id===x.dataset.home).name}`); renderHome(); });
   const d = getData(), ss = Object.entries(d.sessions||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
@@ -1982,7 +2002,7 @@ function enter(u){
   refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
 }
 let mode = 'in';
-const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
+const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; $('f-birth').hidden = m!=='new'; $('reset-box').hidden = true; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
 $('login-form').addEventListener('submit', async e=>{
   e.preventDefault(); const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value;
@@ -1992,12 +2012,20 @@ $('login-form').addEventListener('submit', async e=>{
     if(!/^[a-z0-9_]{2,16}$/.test(id)) throw new Error('아이디는 영문 소문자·숫자·_ 2~16자');
     if(pw.length<4) throw new Error('비밀번호는 4자 이상');
     if(mode==='new' && !name) throw new Error('이름을 골라 주세요');
+    if(mode==='new' && !/^\d{6}$/.test($('ubirth').value.trim())) throw new Error('생년월일 6자리를 적어주세요 (비밀번호 재설정용)');
     const u = mode==='new' ? await auth.create(id, name, pw) : await auth.login(id, pw);
     if(mode==='new'){ toast(`${u.name} 님, 6기 환영!`); }
     enter({ id, name:u.name });
   }catch(err){ $('err').textContent = err.message; }
 });
 $('wipe').onclick = ()=>{ if(confirm('이 폰에 저장된 계정·진도를 전부 지웁니다. 서버 계정은 남아요. 계속?')){ try{ localStorage.clear(); }catch(e){} location.reload(); } };
+$('reset-open').onclick = ()=>{ $('reset-box').hidden = !$('reset-box').hidden; $('r-id').value = $('uid').value.trim(); };
+$('r-go').onclick = async ()=>{ const id = $('r-id').value.trim().toLowerCase(), birth = $('r-birth').value.replace(/\D/g,''), pw = $('r-new').value; $('r-err').textContent = '';
+  try{ if(!/^\d{6}$/.test(birth)) throw new Error('생년월일 6자리'); if(pw.length<4) throw new Error('새 비밀번호는 4자 이상');
+    if(supaOn()){ try{ await rpc('reset_pw', { p_id:id, p_birth:birth, p_new:pw }); }catch(e){ if(e.code==='norpc') throw new Error('재설정 기능이 아직 서버에 없어요 (코치가 SQL 실행 필요)'); throw new Error({ nouser:'없는 아이디예요', nobirth:'이 계정은 생년월일이 등록돼 있지 않아요', wrongbirth:'생년월일이 달라요', badpw:'새 비밀번호는 4자 이상' }[e.code] || e.message); } }
+    else { const u = auth.users()[id]; if(!u) throw new Error('없는 아이디예요'); if((u.profile?.birth||'')!==birth) throw new Error(u.profile?.birth ? '생년월일이 달라요' : '이 계정은 생년월일이 없어요'); u.hash = await hash(u.salt+pw); auth.remember(id, u); }
+    toast('비밀번호를 바꿨어요'); $('reset-box').hidden = true; setMode('in'); $('uid').value = id; $('upw').value = pw; $('login-form').requestSubmit();
+  }catch(e){ $('r-err').textContent = e.message; } };
 $('logout').onclick = ()=>{ try{ localStorage.removeItem('surf.session'); }catch(e){} location.reload(); };
 $('copy').addEventListener('click', copyNotion);
 $('practice').addEventListener('input', e=>LS.set(`surf.practice.${ME.id}`, e.target.value));

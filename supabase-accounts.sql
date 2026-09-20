@@ -82,3 +82,19 @@ exception when duplicate_object then null; end $$;
 
 -- ─── 전체 리셋 (테스트 데이터 지우기). 필요할 때만 주석 풀고 실행 ───
 -- delete from surfers; delete from cards; delete from attendance; delete from accounts;
+
+-- 비밀번호 재설정: 가입 때 적은 생년월일 6자리(profile.birth)와 맞으면 새 비번으로. 무차별 대입 완화용 0.7초 지연
+create or replace function reset_pw(p_id text, p_birth text, p_new text)
+returns boolean language plpgsql security definer set search_path = public, extensions as $$
+declare r accounts;
+begin
+  perform pg_sleep(0.7);
+  select * into r from accounts where id = p_id;
+  if r.id is null then raise exception 'nouser'; end if;
+  if coalesce(r.profile->>'birth','') = '' then raise exception 'nobirth'; end if;
+  if r.profile->>'birth' <> regexp_replace(p_birth, '\D', '', 'g') then raise exception 'wrongbirth'; end if;
+  if length(p_new) < 4 then raise exception 'badpw'; end if;
+  update accounts set pw = crypt(p_new, gen_salt('bf')), token = encode(gen_random_bytes(16), 'hex') where id = p_id;
+  return true;
+end $$;
+grant execute on function reset_pw(text,text,text) to anon;
