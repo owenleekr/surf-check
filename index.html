@@ -146,6 +146,7 @@ html{scroll-behavior:smooth}
 .tiles{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-top:20px}
 @media (min-width:600px){.tiles{grid-template-columns:repeat(3,1fr)}}
 .tile{padding:10px 12px}
+.tile.wide{grid-column:span 2} .tile.wide .val{font-size:20px}
 .tile .lab{font-size:12px; color:var(--ink2); display:flex; align-items:center; gap:6px}
 .tile .lab canvas{width:14px; height:14px}
 .tile .val{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:24px; line-height:1.1; margin-top:6px; word-break:keep-all}
@@ -480,7 +481,7 @@ footer a{color:var(--paper)}
         <div class="chart px" id="chart">
           <div class="row-h"><span>파고 m</span><span id="chart-swell"></span></div>
           <svg id="svg-wave" viewBox="0 0 600 150" role="img" aria-label="시간대별 파고"></svg>
-          <div class="row-h"><span>조위 (해면 기준)</span><span id="chart-tide"></span></div>
+          <div class="row-h"><span>물때 — 선이 올라가면 차오르는 중, 내려가면 빠지는 중</span><span id="chart-tide"></span></div>
           <svg id="svg-tide" viewBox="0 0 600 90" role="img" aria-label="시간대별 조위"></svg>
           <div class="row-h"><span>바람 kts</span><span>화살표 = 바람이 가는 방향</span></div>
           <div class="winds" id="winds"></div>
@@ -982,7 +983,7 @@ function renderHero(b, a){
   const nowH = state.day===0 ? new Date().getHours() : -1;
   $('slots').innerHTML = top.map((sl,i)=>`<div class="slot ${sl.h===a.best.h?'best':''}" ${nowH>=sl.h+2?'style="opacity:.45"':''}><span class="t num">${pad2(sl.h)}~${pad2(sl.h+2)}시${nowH>=sl.h&&nowH<sl.h+2?'<span class="sc" style="margin-left:4px;background:var(--coral);color:#fff">지금</span>':nowH>=sl.h+2?'<span class="sc" style="margin-left:4px;background:#fff">지남</span>':''}</span><span class="d"><b>${sl.wh.toFixed(1)}m</b> / ${Math.round(sl.p)}초 · ${Math.round(sl.w)}kts ${relKo[sl.rel]}${sl.tp!=null?` · ${sl.tp<0.33?'로우':sl.tp<0.66?'미드':'하이'}`:''}${sl.danger?' · <b style="color:var(--bad)">위험</b>':''}</span><span class="sc">${sl.s.toFixed(1)}점</span></div>`).join('');
 }
-function tile(spr, lab, val, memo){ return `<div class="tile px"><div class="lab"><canvas data-spr="${spr}"></canvas>${lab}</div><div class="val">${val}</div>${memo?`<div class="memo">${memo}</div>`:''}</div>`; }
+function tile(spr, lab, val, memo, cls){ return `<div class="tile px ${cls||''}"><div class="lab"><canvas data-spr="${spr}"></canvas>${lab}</div><div class="val">${val}</div>${memo?`<div class="memo">${memo}</div>`:''}</div>`; }
 function suitFor(sst){ return sst>=24 ? '보드숏·래시가드 OK' : sst>=21 ? '스프링수트 / 1~2mm' : sst>=17 ? '3/2 풀슈트' : sst>=13 ? '4/3 + 부츠' : '5/4 후드·부츠·장갑'; }
 function tidePhase(a){
   const tp = a.rep.tp, next = a.hours[a.best.h+1]?.tp ?? tp, lvl = tp==null ? '' : tp<0.33 ? '로우' : tp<0.66 ? '미드' : '하이';
@@ -991,10 +992,20 @@ function tidePhase(a){
 function wxKo(c){ if(c==null) return ''; if(c<=1) return '맑음'; if(c===2) return '구름 조금'; if(c===3) return '흐림'; if(c<=48) return '안개'; if(c<=57) return '이슬비'; if(c<=67) return '비'; if(c<=77) return '눈'; if(c<=82) return '소나기'; if(c<=86) return '눈소나기'; return '뇌우'; }
 function renderTiles(b, a){
   const r = a.rep, nowSst = state.day===0 ? a.hours[new Date().getHours()].sst : null, sst = nowSst ?? r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000), rain = Math.max(...a.hours.slice(5,20).map(x=>x.rain??0));
-  const tideTxt = a.tides.length ? a.tides.map(t=>`<b>${t.type}</b> ${t.time}`).join('<br>') : '극값 없음';
+  const tideTxt = a.tides.length ? a.tides.map(t=>`<b>${t.type}</b> ${t.time} <small>${t.h>=0?'+':''}${t.h.toFixed(2)}m</small>`).join('<br>') : '극값 없음';
+  // 지금 기준: 차오르는 중/빠지는 중, 다음 만·간조까지 남은 시간
+  let tideNow = '';
+  if(state.day===0){
+    const now = new Date(), hNow = now.getHours() + now.getMinutes()/60, i0 = Math.floor(hNow), lv0 = a.hours[i0]?.lvl, lv1 = a.hours[Math.min(23,i0+1)]?.lvl;
+    const cur = lv0!=null && lv1!=null ? lv0 + (lv1-lv0)*(hNow-i0) : lv0;
+    const next = a.tides.map(t=>{ const [hh,mm]=t.time.split(':').map(Number); return { ...t, at:hh+mm/60 }; }).find(t=>t.at>hNow);
+    const dir = lv1==null||lv0==null ? '' : lv1>lv0+0.005 ? '차오르는 중 ↑' : lv1<lv0-0.005 ? '빠지는 중 ↓' : '정체 →';
+    const left = next ? `${next.type} ${next.time}까지 ${Math.floor(next.at-hNow)}시간 ${Math.round(((next.at-hNow)%1)*60)}분` : '오늘 남은 만·간조 없음';
+    tideNow = `지금 <b>${cur!=null?(cur>=0?'+':'')+cur.toFixed(2)+'m':'-'}</b> · <b>${dir}</b> · ${left}`;
+  }
   $('tiles').innerHTML =
     tile('sunrise','일출 / 일몰', `<span class="num">${hhmm(b.daily.sunrise[state.day])}</span><small>~</small><span class="num">${hhmm(b.daily.sunset[state.day])}</span>`, `실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())}`) +
-    tile('tide','만조 / 간조', `<span style="font-size:17px;line-height:1.4" class="num">${tideTxt}</span>`, `조차 ${(a.lmax-a.lmin).toFixed(2)}m · 입수 시 ${tidePhase(a)}`) +
+    tile('tide','물때 (만조 / 간조)', `<span style="font-size:17px;line-height:1.4" class="num">${tideTxt}</span>`, `${tideNow?tideNow+'<br>':''}만조=물이 가장 찬 때, 간조=가장 빠진 때. 오늘 차이 ${(a.lmax-a.lmin).toFixed(2)}m(동해는 원래 작음)${state.day!==0?` · 입수 시 ${tidePhase(a)}`:''}`, 'wide') +
     tile('drop','수온', `${sst.toFixed(1)}<small>°C</small>`, `<b>${suitFor(sst)}</b>${nowSst!=null?` · 지금 ${pad2(new Date().getHours())}시 기준`:''}`) +
     tile('temp','기온', `${Math.round(a.tempMin)}<small>~</small>${Math.round(a.tempMax)}<small>°C</small>`, `${wxKo(r.wx)} · 강수 ${rain}%${a.tempMin<=18?' · 새벽엔 서늘, 겉옷':''}`) +
     tile('wave','파도', `${r.h.toFixed(1)}<small>m</small> / ${Math.round(r.p)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
@@ -1023,6 +1034,8 @@ function renderChart(b, a){
   t += `<path d="M${pts.join(' L')} L${padL+(n-1)*colW+colW/2},${b2} L${padL+colW/2},${b2} Z" fill="var(--grape)" opacity=".2"/><polyline points="${pts.join(' ')}" fill="none" stroke="var(--grape)" stroke-width="4" stroke-linejoin="miter"/>`;
   a.tides.forEach(td=>{ const [hh,mm] = td.time.split(':').map(Number), xh = hh+mm/60; if(xh<H0||xh>H1+1) return; const cx = padL + (xh-H0)*colW + colW/2, cy = yT(td.h), ly = td.type==='만조' ? Math.max(10, cy-11) : Math.min(H2-8, cy+18);
     t += `<rect x="${cx-5}" y="${cy-5}" width="10" height="10" fill="${td.type==='만조'?'var(--coral)':'var(--mint)'}" stroke="var(--ink)" stroke-width="2" shape-rendering="crispEdges"/><text x="${cx}" y="${ly}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">${td.type} ${td.time}</text>`; });
+  if(nowH>=H0 && nowH<=H1){ const nm = new Date().getMinutes()/60, k0 = nowH-H0, y0 = yT(hrs[k0].lvl??0), y1 = yT((hrs[k0+1]||hrs[k0]).lvl??0), cx = padL + k0*colW + colW/2 + nm*colW, cy = y0 + (y1-y0)*nm, up = y1<y0-0.5, dn = y1>y0+0.5;
+    t += `<circle cx="${cx}" cy="${cy}" r="7" fill="var(--coral)" stroke="var(--ink)" stroke-width="2"/><text x="${cx}" y="${cy-12}" font-size="11" font-weight="700" text-anchor="middle" fill="var(--ink)">지금 ${up?'↑':dn?'↓':'→'}</text>`; }
   t += `<line x1="${padL}" x2="${W-padR}" y1="${b2}" y2="${b2}" stroke="var(--ink)" stroke-width="3"/>`;
   hrs.forEach((x,k)=>{ t += `<rect class="hit" data-k="${k}" x="${padL+k*colW}" y="0" width="${colW}" height="${H2}" fill="transparent"/>`; });
   $('svg-tide').innerHTML = t; $('chart-tide').textContent = `${lmin.toFixed(2)} ~ ${lmax.toFixed(2)}m`;
