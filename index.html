@@ -610,7 +610,6 @@ footer a{color:var(--paper)}
   <div id="tab-rank" hidden>
     <div class="sec-h" style="margin-top:0"><h2>6기 마을</h2><span class="tag">낙산 앞</span><span class="sub" id="village-sub"></span></div>
     <div class="village" id="village"><canvas class="sun2" data-spr="sun" width="8" height="8"></canvas><div class="wv"></div><div class="vgrid" id="vgrid"></div></div>
-    <div class="px sand" id="mvp-box" style="margin-top:10px"></div>
     <div class="lab-sm" id="mood-q" style="margin-top:10px;color:var(--paper);text-shadow:1px 1px 0 var(--ink)"></div>
     <div class="mood" style="margin-top:4px"><input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!"><button class="btn sm blue" type="button" id="mood-save">말풍선</button></div>
     <div style="display:flex;gap:8px;margin-top:10px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
@@ -626,8 +625,20 @@ footer a{color:var(--paper)}
 
   <!-- 탭 5: 장비 -->
   <div id="tab-gear" hidden>
-    <div class="px sand" id="gear-me"></div>
+    <section style="margin-top:0"><div class="sec-h"><h2>내 옷장</h2><span class="tag">보유 장비</span><span class="sub" id="closet-sub"></span></div>
+      <div class="px sand" id="gear-me"></div>
+      <div class="px" id="closet" style="margin-top:10px"></div>
+      <details class="px" id="closet-add" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">+ 장비 추가</summary>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px">
+          <label>종류<select id="c-type" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"><option value="board">보드</option><option value="suit">슈트</option><option value="leash">리쉬</option><option value="fin">핀</option><option value="acc">악세서리(햇·부츠·가방)</option></select></label>
+          <label>이름(별명)<input id="c-name" maxlength="14" placeholder="노랑이" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label>
+          <label>브랜드·모델<input id="c-model" maxlength="24" placeholder="립컬 Dawn Patrol 3/2" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label>
+          <label>사이즈·길이<input id="c-size" maxlength="10" placeholder="9'0 / M" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label>
+          <label style="grid-column:span 2">메모<input id="c-note" maxlength="40" placeholder="2025.6 구입 · 노즈 살짝 찍힘" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label>
+        </div><button class="btn sm mint" type="button" id="c-save" style="margin-top:8px">옷장에 넣기</button></details>
+    </section>
     <section><div class="sec-h"><h2>오늘 뭐 입지</h2><span class="tag">수온 기준</span></div><div class="px" id="gear-today"></div></section>
+    <div class="sec-h" style="margin-top:28px"><h2>쇼핑 · 가이드</h2><span class="tag">내 장비와 별개</span></div>
     <section><div class="sec-h"><h2>웻슈트 제대로 고르기</h2><span class="tag">가이드</span></div><div id="gear-guide" style="display:flex;flex-direction:column;gap:10px"></div></section>
     <section><div class="sec-h"><h2>브랜드</h2><span class="tag">일본 · 서퍼스 이큅먼트</span></div><div id="gear-brands" style="display:flex;flex-direction:column;gap:10px"></div></section>
     <section><div class="sec-h"><h2>목적별 추천</h2></div><div class="px" id="gear-pick"></div></section>
@@ -705,6 +716,8 @@ const VEST = [ '....kkoookk.....','...krkowokrk....','...ks.koo.sk....','......k
 const TOPS = { r:'#FF6B6B', b:'#2E6BFF', g:'#4DE1A5', p:'#9B6BFF', y:'#FFD23F', k:'#1B1B2F' };
 const TOP_KO = { r:'코랄', b:'블루', g:'민트', p:'퍼플', y:'옐로', k:'블랙' };
 const HAT_KO = { none:'없음', bucket:'서프햇', cap:'캡', visor:'바이저' };
+const COACH_BADGES = ['교장','헤드코치','코치','강사','매니저','라이프가드','촬영','조교'];
+const roleTag = pr => pr?.role==='coach' ? `<span class="tagc">${pr.badge||'코치'}</span>` : pr?.cls==='inter' ? '<span class="tagc" style="background:var(--sea)">중급</span>' : pr?.cls ? '<span class="tagc" style="background:var(--mint);color:var(--ink)">비기너</span>' : '';
 function overlay(rows, ov, y0){ rows = rows.slice(); ov.forEach((r,i)=>{ const y=y0+i; if(!rows[y]) return; rows[y] = [...rows[y]].map((c,x)=> r[x] && r[x]!=='.' ? r[x] : c).join(''); }); return rows; }
 function avatarRows(pr){
   pr = pr||{}; let rows = BODY[pr.gender==='m'?'m':'f'].slice();
@@ -895,7 +908,6 @@ const BADGES = [
   { id:'ride10', name:'10파도',      icon:'wave',   test:d=>totalRides(d)>=10 },
   { id:'ride50', name:'50파도',      icon:'drop',   test:d=>totalRides(d)>=50 },
   { id:'both',   name:'양방향',      icon:'map',    test:d=>Object.values(d.sessions||{}).some(x=>x.l>0&&x.r>0) },
-  { id:'mvp',    name:'주간 MVP',     icon:'crown',  test:d=>[1,2,3,4,5,6,7,8].some(w=>(mvpTally(String(w))[0]||[])[0]===ME?.name && mvpTally(String(w))[0][1]>=2) },
   { id:'cert',   name:'코치 인증',    icon:'stamp',  test:d=>certOf(ME?.name)>=1 },
   { id:'quiz',   name:'용어 박사',    icon:'book',   test:d=>Object.values(d.quiz||{}).filter(x=>x.ok===3).length>=3 },
   { id:'quest',  name:'올클리어 3일', icon:'star',   test:d=>Object.keys(d.questAll||{}).length>=3 },
@@ -909,7 +921,7 @@ function calcXP(d){
 /* 칭찬 카드: 받는 사람은 이름 기준(기기 달라도 같은 이름이면 도착). 로컬 + Supabase(설정 시) */
 const CARD_TPL = ['오늘 팝업 미쳤다','패들 파워 굿','라인업 매너 최고','와이프아웃도 멋있었어','새벽 입수 근성','세트 읽기 정확','첫 그린웨이브 축하','오늘 MVP'];
 function allCards(){ return LS.get('surf.cards', []).concat(state.remoteCards||[]).filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i); }
-function cardXP(){ const cs = allCards().filter(c=>!['MVP','인증'].includes(c.tpl)); return (cs.filter(c=>c.to===ME.name).length + cs.filter(c=>c.from===ME.id).length)*5 + allCards().filter(c=>c.tpl==='MVP'&&c.to===ME.name).length*10; }
+function cardXP(){ const cs = allCards().filter(c=>!['MVP','인증'].includes(c.tpl)); return (cs.filter(c=>c.to===ME.name).length + cs.filter(c=>c.from===ME.id).length)*5; }
 let cardTo = null, cardTpl = CARD_TPL[0];
 function openCard(name){
   const names = [...new Set([...ROSTER.map(r=>r[0]), ...Object.values(auth.users()).map(u=>u.name), ...(state.remoteCards||[]).map(c=>c.fromName)])].filter(n=>n && n!==ME.name).sort((a,b)=>a.localeCompare(b,'ko'));
@@ -1617,9 +1629,8 @@ const BRANDS = [
 const PICKS = [['첫 겨울 세미드라이, 관리 자신 없음','CURVAIN 26FW 어포더블 (올저지+목 스킨)'],['커스텀 사이즈','CURVAIN 풀오더'],['퍼포먼스 · 무봉제 최상급','ROCKHOPPER PREMIUM LTD'],['극박·고신축 1mm','ROCKHOPPER Ge.ESPA'],['겨울 발 보온','SURFLITE 부츠'],['슈트 이동·보관','BGZ 토트 + R2 행어'],['파도 없는 날','WOODY PRESS 서프스케이트'],['여름 자외선','TAVARUA 서프햇'],['가을 동해 기본(지금)','3/2mm 풀슈트 — 립컬 Dawn Patrol / 빌라봉 Absolute / 오닐 Reactor II']];
 function renderGear(){
   const pr = myProfile(), b = BEACHES[state.beach], a = state.loaded ? analyze(b, 0) : null, sst = a ? ((a.hours[new Date().getHours()].sst) ?? a.rep.sst) : null;
-  $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">내 장비</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'아직 이름표가 없어요'}</div><button class="btn sm ghost" type="button" onclick="showTab('level'); setTimeout(()=>document.querySelector('.builder')?.scrollIntoView({block:'start'}),300)">"나" 탭에서 이름표 달기</button></div></div>`;
-  drawSpr($('gear-av'), avatarRows(pr), avatarTint());
-  $('gear-today').innerHTML = sst!=null ? `<div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${suitFor(sst)} <small style="font-size:12px;font-weight:400;color:var(--ink2)">수온 ${sst.toFixed(1)}°C · ${b.name}</small></div><div style="font-size:13px;line-height:1.5;margin-top:4px">${suitWhy(sst, a.tempMin)}</div>${gearHTML(sst)}<div class="lab-sm" style="margin-top:8px">수온 24°C↑ 래시가드 · 21~24 스프링 2mm · 17~21 3/2 · 13~17 4/3+부츠 · 13°C↓ 5/4 후드·장갑</div>` : '<div class="lab-sm">파도 탭에서 데이터를 먼저 불러와요</div>';
+  renderGearMe(); renderCloset();
+  $('gear-today').innerHTML = sst!=null ? `<div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${suitFor(sst)} <small style="font-size:12px;font-weight:400;color:var(--ink2)">수온 ${sst.toFixed(1)}°C · ${b.name}</small></div><div style="font-size:13px;line-height:1.5;margin-top:4px">${suitWhy(sst, a.tempMin)}</div><div class="lab-sm" style="margin-top:8px">수온 24°C↑ 래시가드 · 21~24 스프링 2mm · 17~21 3/2 · 13~17 4/3+부츠 · 13°C↓ 5/4 후드·장갑</div>` : '<div class="lab-sm">파도 탭에서 데이터를 먼저 불러와요</div>';
   $('gear-guide').innerHTML = GUIDE.map(([t,h],i)=>`<details class="px" ${i===0?'open':''}><summary style="cursor:pointer;font-weight:700">${t}</summary><div style="margin-top:8px;font-size:13px;line-height:1.55">${h}</div></details>`).join('');
   $('gear-brands').innerHTML = BRANDS.map(x=>`<details class="px"><summary style="cursor:pointer;font-weight:700">${x.n} <span class="lab-sm" style="display:block;margin:2px 0 0;font-weight:400">${x.t}</span></summary><div style="margin-top:8px;font-size:13px;line-height:1.55">${x.d}</div>${x.links.length?`<div class="cam-more" style="margin-top:8px">${x.links.map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener">${l}</a>`).join('')}</div>`:''}</details>`).join('');
   $('gear-pick').innerHTML = `<table style="width:100%;font-size:12px;border-collapse:collapse">${PICKS.map(([s2,r])=>`<tr><td style="padding:5px 4px;border-bottom:2px dashed var(--grid);color:var(--ink2)">${s2}</td><td style="padding:5px 4px;border-bottom:2px dashed var(--grid)"><b>${r}</b></td></tr>`).join('')}</table>`;
@@ -1703,7 +1714,7 @@ function renderBasis(b, a){
       <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">① 파도 크기 · 간격 — ${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b><br>${waveNote}. ${periodNote}.<br><b>스웰 ${compass(r.sdir)}</b>에서 옴 → ${b.name}은 ${compass(b.swell)} 스웰이 최고라 <b>${r.fit.ko}</b>${b.note?` — ${b.note}`:''}${r.fit.s<=0?` (${BEACHES.filter(x=>swellFit(x, r.sdir).s>=1).map(x=>x.name).slice(0,3).join('·')||'다른 해변도 비슷'}${BEACHES.some(x=>swellFit(x, r.sdir).s>=1)?'이 더 잘 받음':''})`:''}.</div>
       <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">② 물때</b><br>${ts.text} 동해안 수심은 물때에 따라 0.1~0.48m 사이를 오가고, <b>해변마다 파도가 가장 좋은 기준 수심</b>이 따로 있어요 — 별점을 남기면 그때 수심이 같이 기록돼 우리 기수만의 기준이 쌓입니다.<br><small style="color:var(--ink2)">기준: ${ts.src}</small></div>
       <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">③ 바람 — ${Math.round(r.w)}kts ${compass(r.dir)} ${relKo[r.rel]}</b><br>${r.rel==='on'?'온쇼어: 면이 깨지고 결이 촘촘해짐 → 이른 시간이 답':r.rel==='off'?'오프쇼어: 면이 정돈되고 립이 섬 → 테이크오프 한 템포 늦게':'크로스: 면에 결이 생김, 방향 따라 한쪽이 나음'}.</div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><br>${suitWhy(sstB, a.tempMin)}${gearHTML(sstB)}<div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
+      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><br>${suitWhy(sstB, a.tempMin)}<div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
     </div>
     <div class="lab-sm" style="margin-top:8px">데이터: 파도·바람 Open-Meteo(${b.name} 앞바다 격자, 매시 갱신) · 물때 ${state.social.tides[date]?'코치 입력 공식값':'조위 모델 — 코치가 바다누리 값을 입력하면 그걸 씀'}</div>
     ${isCoach ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">코치: 오늘 공식 물때 입력 (바다누리 기준)</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px"><label>만조 시각<input id="tide-hit" type="time" value="${off?.hi?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>만조 높이(m)<input id="tide-hih" type="number" step="0.01" value="${off?.hi?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 시각<input id="tide-lot" type="time" value="${off?.lo?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 높이(m)<input id="tide-loh" type="number" step="0.01" value="${off?.lo?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label></div><button class="btn sm blue" type="button" id="tide-save" style="margin-top:8px">저장 → 전원 브리핑에 반영</button></details>` : ''}`;
@@ -1727,7 +1738,7 @@ function buildAlerts(){
   // 수업일 아침
   { const cw = weekOfDate(today()), dow = new Date().getDay(), pr = myProfile(); if([0,6].includes(dow) && cw>=1 && cw<=8 && new Date().getHours()<13 && pr.role!=='coach') out.push({ id:`class|${today()}`, ic:'🎒', tx:`오늘 <b>${cw}주차 ${WEEKS[cw-1].title}</b> · ${pr.cls==='inter'?'중급반 13:30':'비기너반 09:00'} · 수건·리쉬 챙겼나요?`, go:()=>showTab('mission') }); }
   // 칭찬 카드 (오늘 받은 것)
-  allCards().filter(c=>c.to===ME.name && c.date.slice(0,10)===today()).forEach(c=>out.push(c.tpl==='MVP' ? { id:`card|${c.id}`, ic:'🏆', tx:`<b>${c.fromName}</b>가 나에게 MVP 한 표!`, go:()=>showTab('rank') } : c.tpl==='인증' ? { id:`card|${c.id}`, ic:'✅', tx:`코치 <b>${c.fromName}</b>가 서핑 ${c.text} 인증`, go:()=>showTab('level') } : { id:`card|${c.id}`, ic:'👏', tx:`<b>${c.fromName}</b>가 칭찬 카드 — "${c.tpl}"`, go:()=>showTab('level') }));
+  allCards().filter(c=>c.to===ME.name && c.date.slice(0,10)===today() && c.tpl!=='MVP').forEach(c=>out.push(c.tpl==='MVP' ? null : c.tpl==='인증' ? { id:`card|${c.id}`, ic:'✅', tx:`코치 <b>${c.fromName}</b>가 서핑 ${c.text} 인증`, go:()=>showTab('level') } : { id:`card|${c.id}`, ic:'👏', tx:`<b>${c.fromName}</b>가 칭찬 카드 — "${c.tpl}"`, go:()=>showTab('level') }));
   // 체크인 (나 말고)
   const byBeach = {}; state.social.checkins.filter(c=>c.user_id!==ME.id).forEach(c=>{ (byBeach[c.beach]=byBeach[c.beach]||[]).push(c.name); });
   Object.entries(byBeach).forEach(([beach, names])=>out.push({ id:`ci|${beach}|${names.length}`, ic:'📍', tx:`<b>${names.join(', ')}</b> 지금 ${beach}에 있어요`, go:()=>{ const i=BEACHES.findIndex(b=>b.name===beach); if(i>=0){ state.beach=i; state.day=0; renderWave(); } } }));
@@ -1797,7 +1808,7 @@ function builderHTML(pr, prefix){
     opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
     opt('보드', 'board', [['long','롱보드 9ft+'],['fun','펀·미드 7~9ft'],['short','숏보드']]) +
     opt('보드 색', 'boardc', Object.keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), (v,t)=>`<i style="background:${BOARDC[v]}"></i>${t}`) +
-    (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) : '');
+    (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) + opt('내 뱃지 · 마을·채팅에 표시', 'badge', COACH_BADGES.map(b=>[b,b])) : '');
 }
 const MANAGER_PR = { gender:'f', role:'coach', top:'y', hat:'bucket', board:'fun', boardc:'c', bottom:'k', vest:false };
 const ONB = [
@@ -1853,8 +1864,7 @@ function renderLevel(){
   const nx = ATT_STAGES[stage+1]; $('ladder-txt').textContent = `출석 ${an}회 · ${ATT_STAGES[stage][1]}${nx?` → ${nx[1]}까지 ${nx[0]-an}회 남음`:' · 다 채웠어요!'}`;
   const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTint());
   const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
-  $('bld-opts').innerHTML = builderHTML(pr) + `<div class="opt"><div class="lab-sm">내 장비 이름표 · 마을에서 서로 보여요</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><input id="g-board" placeholder="보드 이름 (예: 노랑이)" value="${pr.boardName||''}" maxlength="14" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"><input id="g-len" placeholder="길이 (예: 9'0)" value="${pr.boardLen||''}" maxlength="6" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"><input id="g-suit" placeholder="슈트 (예: 립컬 3/2)" value="${pr.suit||''}" maxlength="16" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"><input id="g-suitName" placeholder="슈트 이름 (예: 검둥이)" value="${pr.suitName||''}" maxlength="14" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"></div><button class="btn sm mint" type="button" id="g-save" style="margin-top:6px">장비 저장</button></div>`;
-  $('g-save').onclick = ()=>{ setProfile({ boardName:$('g-board').value.trim(), boardLen:$('g-len').value.trim(), suit:$('g-suit').value.trim(), suitName:$('g-suitName').value.trim() }); toast('장비 저장 · 마을 카드에 표시'); };
+  $('bld-opts').innerHTML = builderHTML(pr) + `<div class="lab-sm" style="margin-top:4px">보유 장비(보드·슈트·리쉬)는 <a href="#" onclick="showTab('gear');return false">장비 탭 → 내 옷장</a>에서</div>`;
   $('bld-opts').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; setProfile({[x.dataset.k]:v}); });
   const mine = allCards().filter(c=>c.to===ME.name && !['MVP','인증'].includes(c.tpl)).sort((a,b)=>b.date.localeCompare(a.date));
   $('cards-n').textContent = mine.length;
@@ -1971,7 +1981,19 @@ async function certify(name, lv){
   if(supaOn()) fetch(`${SUPA.url}/rest/v1/cards`, { method:'POST', headers:supaH(), body:JSON.stringify({ id:c.id, from_id:c.from, from_name:c.fromName, to_name:c.to, tpl:c.tpl, text:c.text, created_at:c.date }) }).catch(()=>{});
   toast(`${name} 서핑 LV.${lv} 인증`); chatSys(`✅ 코치 인증: ${name} 서핑 LV.${lv}`); renderVillage();
 }
-const gearLine = pr => [pr?.boardName, pr?.boardLen, pr?.board==='long'?'롱보드':pr?.board==='fun'?'펀보드':pr?.board==='short'?'숏보드':'', pr?.suit, pr?.suitName].filter(Boolean).join(' · ');
+const CTYPE = { board:'🏄 보드', suit:'🧥 슈트', leash:'➰ 리쉬', fin:'🔻 핀', acc:'🎒 악세서리' };
+const closetOf = pr => Array.isArray(pr?.closet) ? pr.closet : [];
+const mainOf = (pr, type) => closetOf(pr).find(x=>x.type===type && x.main) || closetOf(pr).find(x=>x.type===type);
+const gearLine = pr => { const b = mainOf(pr,'board'), su = mainOf(pr,'suit'); const parts = [ b ? [b.name, b.size, b.model].filter(Boolean).join(' ') : (pr?.boardName ? [pr.boardName, pr.boardLen].filter(Boolean).join(' ') : ''), su ? [su.name, su.model].filter(Boolean).join(' ') : (pr?.suit ? [pr.suit, pr.suitName].filter(Boolean).join(' ') : '') ].filter(Boolean); return parts.join(' · '); };
+function renderCloset(){
+  const pr = myProfile(), items = closetOf(pr);
+  $('closet-sub').textContent = `${items.length}개`;
+  $('closet').innerHTML = items.length ? items.map((x,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:2px dashed var(--grid);font-size:13px"><span style="flex:0 0 auto">${CTYPE[x.type]||x.type}</span><div style="flex:1;line-height:1.35"><b>${x.name||x.model||'-'}</b>${x.main?' <span class="tagc" style="background:var(--sun);color:var(--ink)">주력</span>':''}<br><small style="color:var(--ink2)">${[x.model, x.size, x.note].filter(Boolean).join(' · ')}</small></div><button class="btn sm ghost" type="button" data-main="${i}" style="padding:3px 6px;font-size:11px">${x.main?'주력 해제':'주력'}</button><button class="undo" type="button" data-del="${i}">삭제</button></div>`).join('') : '<div class="lab-sm">아직 비어 있어요. 아래 "+ 장비 추가"로 보드·슈트·리쉬를 넣어두면 마을 카드에 주력 장비가 보여요.</div>';
+  $('closet').querySelectorAll('[data-main]').forEach(b=>b.onclick=()=>{ const it = closetOf(myProfile()).map(x=>({...x})); const i=+b.dataset.main; const t = it[i].type; const on = !it[i].main; it.forEach(x=>{ if(x.type===t) x.main=false; }); it[i].main = on; setProfile({ closet:it }); renderCloset(); renderGearMe(); });
+  $('closet').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ if(!confirm('옷장에서 뺄까요?')) return; const it = closetOf(myProfile()).filter((_,i)=>i!==+b.dataset.del); setProfile({ closet:it }); renderCloset(); renderGearMe(); });
+  $('c-save').onclick = ()=>{ const it = { type:$('c-type').value, name:$('c-name').value.trim(), model:$('c-model').value.trim(), size:$('c-size').value.trim(), note:$('c-note').value.trim() }; if(!it.name && !it.model) return toast('이름이나 모델은 적어주세요'); const cur = closetOf(myProfile()).map(x=>({...x})); if(!cur.some(x=>x.type===it.type)) it.main = true; cur.push(it); setProfile({ closet:cur }); ['c-name','c-model','c-size','c-note'].forEach(id=>$(id).value=''); $('closet-add').open = false; toast('옷장에 넣었어요'); renderCloset(); renderGearMe(); };
+}
+function renderGearMe(){ const pr = myProfile(); $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">주력 장비 · 마을 카드에 표시</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'옷장에서 주력을 골라주세요'}</div></div></div>`; drawSpr($('gear-av'), avatarRows(pr), avatarTint()); }
 async function renderRank(){   // = 마을
   renderSheet(); pullSocial(true).then(()=>{ renderFeed(); renderVillage(); }); renderFeed(); renderVillage(); pullChat(true); startChatPoll();
 }
@@ -1979,19 +2001,15 @@ async function renderVillage(){
   const { rows } = await fetchRank(); const here = new Map(state.social.checkins.map(c=>[c.user_id, c.beach]));
   rows.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
   $('village-sub').textContent = `${rows.length}명 · 탭하면 카드`;
-  const lastMVP = (mvpTally(String(+weekKey()-1))[0]||[])[0];
-  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}">${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name===lastMVP?'👑 ':''}${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
+  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}">${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
   rows.forEach(x=>drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile||{}), avatarTintOf(x.profile||{}, x.level)));
   $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
-    const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b>${x.profile?.role==='coach'?' <span class="tagc">코치</span>':''} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>${[0,6,1].includes(new Date().getDay())?`<button class="btn sm" type="button" data-mvp="${x.name}">🏆 MVP</button>`:''}`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
+    const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
     $('village').appendChild(c); c.querySelector('[data-close]').onclick=()=>c.remove(); c.querySelector('[data-clap]')?.addEventListener('click', ()=>{ openCard(x.name); c.remove(); });
-    c.querySelector('[data-mvp]')?.addEventListener('click', ()=>{ voteMVP(x.name); c.remove(); });
     c.querySelector('[data-cert]')?.addEventListener('change', e=>{ if(e.target.value){ certify(x.name, +e.target.value); c.remove(); } });
     c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 ${x.name}님 안녕!`, profile:myProfile(), created_at:new Date().toISOString() }; try{ await sbUpsert('chat', row); state.chat.push(row); renderChat(); toast(`${x.name}에게 손 흔들었어요`); }catch(e){ toast('채팅 서버 준비 중'); } c.remove(); }); });
   const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
   $('village-sub').textContent += missing.length ? ` · 아직 안 온 동기 ${missing.length}명` : '';
-  const w = weekKey(), tally = mvpTally(w), prev = mvpTally(String(+w-1));
-  const mvpBox = $('mvp-box'); if(mvpBox) mvpBox.innerHTML = `<span class="eyebrow">이번 주 MVP 투표 · ${[0,6,1].includes(new Date().getDay())?'토~월 열림':'토요일에 열려요'}</span><div style="font-size:13px;margin-top:4px">${tally.length?tally.slice(0,3).map(([n,k],i)=>`${i===0?'🏆':'·'} <b>${n}</b> ${k}표`).join(' &nbsp; '):'아직 표 없음 — 마을에서 캐릭터 탭 → 🏆 MVP'}</div>${prev.length?`<div class="lab-sm" style="margin-top:4px">지난주 MVP: 🏆 ${prev[0][0]} (${prev[0][1]}표)</div>`:''}`;
   $('mood').value = myProfile().mood || '';
   const QS = ['오늘 가장 잘 된 동작은?','이번 주 목표 한 줄?','오늘 파도 한 단어로?','다음 주 타고 싶은 해변은?','오늘 코치 피드백 중 기억나는 것?','서핑 시작한 이유는?','요즘 제일 어려운 건?','같이 타고 싶은 사람 지목!'];
   $('mood-q').textContent = '오늘의 질문 · ' + QS[Math.floor(Date.now()/864e5) % QS.length];
@@ -2007,13 +2025,13 @@ async function pullChat(force){
 function renderChat(){
   if(!$('chat')) return; const box = $('chat'), atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
   $('chat-sub').textContent = state.chatOk===false ? '서버 준비 중 (supabase-village.sql)' : `${state.chat.length}개 · 5초마다 갱신`;
-  box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}"><canvas data-av="${m.id}"></canvas><div class="b"><b>${m.name}</b> ${String(m.text).replace(/</g,'&lt;')}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small></div></div>`).join('') || `<div class="lab-sm">${state.chatOk===false?'코치가 supabase-village.sql 실행하면 켜져요':'첫 메시지를 남겨봐요'}</div>`;
+  box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}"><canvas data-av="${m.id}"></canvas><div class="b"><b>${m.name}</b>${m.profile?.role==='coach'?` <span class="tagc">${m.profile.badge||'코치'}</span>`:''} ${String(m.text).replace(/</g,'&lt;')}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small></div></div>`).join('') || `<div class="lab-sm">${state.chatOk===false?'코치가 supabase-village.sql 실행하면 켜져요':'첫 메시지를 남겨봐요'}</div>`;
   state.chat.forEach(m=>drawSpr(box.querySelector(`canvas[data-av="${m.id}"]`), avatarRows(m.profile||{}), avatarTintOf(m.profile||{}, 0)));
   if(atBottom || chatLast!==state.chat.length){ box.scrollTop = box.scrollHeight; chatLast = state.chat.length; }
 }
 function startChatPoll(){ clearInterval(chatT); chatT = setInterval(()=>{ if(state.tab==='rank' && !document.hidden) pullChat(); else if(state.tab!=='rank') clearInterval(chatT); }, 5000); }
 function chatSys(text){ if(!supaOn() || state.chatOk===false || !ME) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text, profile:myProfile(), created_at:new Date().toISOString() }; sbUpsert('chat', row).then(()=>{ state.chat.push(row); if(state.tab==='rank') renderChat(); }).catch(()=>{}); }
-async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200), profile:{ gender:myProfile().gender, hat:myProfile().hat, top:myProfile().top, bottom:myProfile().bottom, board:myProfile().board, boardc:myProfile().boardc, role:myProfile().role }, created_at:new Date().toISOString() };
+async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200), profile:{ gender:myProfile().gender, hat:myProfile().hat, top:myProfile().top, bottom:myProfile().bottom, board:myProfile().board, boardc:myProfile().boardc, role:myProfile().role, badge:myProfile().badge }, created_at:new Date().toISOString() };
   try{ await sbUpsert('chat', row); $('chat-in').value=''; state.chat.push(row); renderChat(); }catch(e){ toast(state.chatOk===false?'서버 준비 중':'전송 실패 · 신호 확인'); } }
 $('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏'].map(e=>`<button type="button" style="padding:3px 8px;font-family:sans-serif">${e}</button>`).join('');
 $('chat-emo').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=$('chat-in'); i.value += b.textContent; i.focus(); });
