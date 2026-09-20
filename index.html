@@ -531,7 +531,7 @@ footer a{color:var(--paper)}
       <article class="hero px">
         <div class="hero-head">
           <div class="place"><span id="hero-date">—</span><b id="hero-name">낙산</b></div>
-          <div class="stamp" id="stamp" data-v="ok">탈 만함</div>
+          <div class="stamp" id="stamp" data-v="ok">보통</div>
         </div>
         <p class="summary" id="summary"></p>
         <div class="pgauge" id="pgauge"></div>
@@ -1176,7 +1176,7 @@ function renderTiles(b, a){
     tile('tide','물때 (만조 / 간조)', `<span style="font-size:17px;line-height:1.4" class="num">${tideTxt}</span>`, `${tideNow?tideNow+'<br>':''}만조=물이 가장 찬 때, 간조=가장 빠진 때. 오늘 차이 ${(a.lmax-a.lmin).toFixed(2)}m(동해는 원래 작음)${state.day!==0?` · 입수 시 ${tidePhase(a)}`:''}`, 'wide') +
     tile('drop','수온', `${sst.toFixed(1)}<small>°C</small>`, `<b>${suitFor(sst)}</b>${nowSst!=null?` · 지금 ${pad2(new Date().getHours())}시 기준`:''}`) +
     tile('temp','기온', `${Math.round(a.tempMin)}<small>~</small>${Math.round(a.tempMax)}<small>°C</small>`, `${wxKo(r.wx)} · 강수 ${rain}%${a.tempMin<=18?' · 새벽엔 서늘, 겉옷':''}`) +
-    tile('wave','파도 크기 · 간격', `${r.h.toFixed(1)}<small>m</small> / ${r.p.toFixed(1)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
+    tile('wave','파고 · 피리어드', `${r.h.toFixed(1)}<small>m</small> / ${r.p.toFixed(1)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
     tile('wind','바람', `${Math.round(r.w)}<small>kts</small> ${compass(r.dir)}`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 초피':r.rel==='off'?' · 글래시':''} · 돌풍 ${Math.round(r.gust)}kts`);
   paintAll($('tiles'));
 }
@@ -1220,7 +1220,7 @@ function renderChart(b, a){
   wb.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w ${x.rel}" title="${compass(x.dir)} ${relKo[x.rel]}"><b style="transform:rotate(${Math.round(x.dir)}deg)">↓</b><span class="num">${Math.round(x.w)}</span></div>`).join('') + `<span></span>`;
   const pb = $('pers'); pb.style.gridTemplateColumns = wb.style.gridTemplateColumns;
   pb.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w" title="${pad2(x.hr)}시 ${x.p.toFixed(1)}초 · ${PZ(x.p)[0]}"><span class="num" style="font-weight:700;color:${pColor(x.p)}">${x.p.toFixed(1)}</span></div>`).join('') + `<span></span>`;
-  $('chart-per').textContent = `${Math.min(...hrs.map(x=>x.p)).toFixed(1)}~${Math.max(...hrs.map(x=>x.p)).toFixed(1)}초 · 주황=짧음 초록=최적 파랑=긴 간격`;
+  $('chart-per').textContent = `${Math.min(...hrs.map(x=>x.p)).toFixed(1)}~${Math.max(...hrs.map(x=>x.p)).toFixed(1)}초 · 주황=단주기 초록=최적 파랑=장주기`;
   const sb2 = $('ssts'); sb2.style.gridTemplateColumns = wb.style.gridTemplateColumns;
   const ssts = hrs.map(x=>x.sst??0), sMin = Math.min(...ssts), sMax = Math.max(...ssts);
   sb2.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w" title="${pad2(x.hr)}시 수온 ${(x.sst??0).toFixed(1)}°C · 기온 ${Math.round(x.temp)}°C"><span class="num" style="font-weight:700;color:${(x.sst??0)>=sMax-0.05?'var(--coral)':(x.sst??0)<=sMin+0.05?'var(--sea)':'var(--ink)'}">${(x.sst??0).toFixed(1)}</span><span class="num" style="font-size:9px;color:var(--ink2)">${Math.round(x.temp)}°</span></div>`).join('') + `<span></span>`;
@@ -1419,7 +1419,7 @@ function questList(){
   const wk = WEEKS.find(w=>!weekDone(d,w));
   return [
     ...([1,2,3,4].includes(new Date().getDay()) ? [{ t:'참석 투표', s:'단톡방 투표 · 목 18시까지', done: !!(d.vote||{})[weekOfDate(k)] , act:'vote' }] : []),
-    { t:'기준 잡기', s:'파도 크기·간격 → 물때 → 바람', done: !!LS.get(`surf.basis.${ME.id}.${k}.${BEACHES[state.beach].id}`, false) },
+    { t:'기준 잡기', s:'파고·피리어드 → 물때 → 바람', done: !!LS.get(`surf.basis.${ME.id}.${k}.${BEACHES[state.beach].id}`, false) },
     { t:'컨디션 체크', s:'체크리스트 3개 이상', done: ck>=3 },
     { t:'성공 3번', s:'테이크오프·라이딩 3번', done: ((sx.l||0)+(sx.r||0)+(sx.t||0))>=3 },
     { t:'칭찬 1장', s:'동기에게 칭찬 카드', done: cards>=1 },
