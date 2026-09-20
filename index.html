@@ -493,6 +493,7 @@ footer a{color:var(--paper)}
 <div class="wrap" id="app" hidden>
   <header class="hdr">
     <h1 id="app-title">라인업</h1>
+    <button class="btn sm ghost" type="button" id="bgm" title="배경음악" aria-pressed="false" style="padding:4px 8px;font-family:sans-serif;font-size:14px;margin-right:6px">🎵</button>
     <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av" data-anim></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span><span class="streak" id="me-streak"></span></div></div>
   </header>
   <div class="wavebar"></div>
@@ -624,6 +625,8 @@ footer a{color:var(--paper)}
     <section><div class="sec-h"><h2>마을 채팅</h2><span class="tag">실시간</span><span class="sub" id="chat-sub"></span></div>
       <div class="px"><div class="chat" id="chat"></div><div class="chips" id="chat-emo" style="margin-top:8px">${''}</div><div class="chat-in"><input id="chat-in" maxlength="200" placeholder="메시지" autocomplete="off"><button class="btn sm pink" type="button" id="chat-send">보내기</button></div></div>
     </section>
+    <section><div class="sec-h"><h2>오늘의 서퍼</h2><span class="tag">매일 한 명</span></div><div class="px sand" id="surfer-day"></div></section>
+    <section><div class="sec-h"><h2>서핑 소식</h2><span class="tag">매일</span><span class="sub" id="news-sub"></span></div><div class="feed" id="news"></div><details class="px" id="news-arch" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">지난 소식 아카이브</summary><div id="news-arch-list" style="margin-top:8px;font-size:12px"></div></details></section>
     <section id="coach-sheet" hidden><div class="sec-h"><h2>출석부</h2><span class="tag">코치 전용</span><span class="sub" id="sheet-sum"></span></div>
       <div class="px"><div class="sheet-h"><input type="date" id="sheet-date"><span class="lab-sm" style="margin:0" id="sheet-week"></span><button class="btn sm ghost" type="button" data-qd="6">이번 주 토</button><button class="btn sm ghost" type="button" data-qd="0">이번 주 일</button><button class="btn sm mint" type="button" id="sheet-all">전원 출석</button></div>
       <div class="sheet" id="sheet"></div><p class="lab-sm" style="margin-top:8px">탭해서 출석(초록)/결석(빨강) 전환. 저장은 자동. 학생 앱의 출석 도장에 반영돼요.</p></div></section>
@@ -780,7 +783,7 @@ const auth = {
   users(){ return LS.get('surf.users', {}); },
   remember(id, u){ const all = auth.users(); all[id] = { ...(all[id]||{}), ...u }; LS.set('surf.users', all); },
   async create(id, name, pw){
-    const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y' };
+    const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y', badge: pick.role==='coach' ? (COACH_DEFAULT_BADGE[name]||'코치') : undefined };
     if(supaOn()){
       try{ const token = await rpc('signup', { p_id:id, p_name:name||id, p_pw:pw, p_profile:profile });
         auth.remember(id, { name:name||id, cohort:'6기', profile, server:true, token, createdAt:new Date().toISOString() }); return auth.users()[id]; }
@@ -818,8 +821,9 @@ let saveT; function saveUp(){   // 진도·프로필을 서버 계정에 저장 
 let ME = null;   // {id, name}
 const pick = { gender:'f', board:'long', role:'member', cls:'beginner' };   // 가입 화면 선택값
 /* 6기 가을학기 명단 (칠판 사진 기준: 이름 · 서핑 시작 연도 · 첫 파도 탄 곳). 틀린 글자는 여기서 고치면 된다. */
-const COACHES = ['이승대 교장','김법성 매니저','루비','Rio','Jenny','Evan'];
-const ROSTER = [['김나리','2016','죽도'],['이해룡','2016','기사문'],['이상문','2017','만리포'],['장진혁','2019','송정'],['김도훈','2018','금진'],['김태은','2025','죽도'],['심재영','2019','신항'],['이나영','2022',''],['이미진','2022','제주'],['이성현','2026','낙산'],['정선아','2021','인구'],['조혜미','2024','곽지'],['허예령','2018','남애리'],['홍미영','2026','낙산'],['최원재','2023','타이키'],['장은옥','2024','인구'],['박초롱','2026','낙산'],['이한솔','2022','이호테우'],['정유정','2024','죽도'],['전영훈','2017','사천'],['전인수','2025','낙산'],['엄주승','2026','낙산'],['장베드로','2017','죽도']];
+const COACHES = ['이승대','김나리','이해룡','이상문','장진혁','김도훈','김법성','루비','Rio','Jenny','Evan'];
+const COACH_DEFAULT_BADGE = { '이승대':'교장', '김나리':'코치', '이해룡':'코치', '이상문':'코치', '장진혁':'코치', '김도훈':'매니저', '김법성':'매니저' };
+const ROSTER = [['김태은','2025','죽도'],['심재영','2019','신항'],['이나영','2022',''],['이미진','2022','제주'],['이성현','2026','낙산'],['정선아','2021','인구'],['조혜미','2024','곽지'],['허예령','2018','남애리'],['홍미영','2026','낙산'],['최원재','2023','타이키'],['장은옥','2024','인구'],['박초롱','2026','낙산'],['이한솔','2022','이호테우'],['정유정','2024','죽도'],['전영훈','2017','사천'],['전인수','2025','낙산'],['엄주승','2026','낙산'],['장베드로','2017','죽도']];
 const rosterOf = name => ROSTER.find(r=>r[0]===name);
 function syncRoleUI(){
   const isNew = !$('f-role').hidden, member = pick.role==='member';
@@ -833,7 +837,7 @@ function initRosterUI(){
 $('f-role').querySelectorAll('button').forEach(b=>b.onclick=()=>{ pick.role=b.dataset.role; syncRoleUI(); paintPick(); });
 $('uroster').innerHTML = ROSTER.map(r=>`<option value="${r[0]}">${r[0]}${r[1]?` · ${r[1]}년 ${r[2]}`:''}</option>`).join('') + '<option value="__etc">명단에 없어요 (직접 입력)</option>';
 $('uroster').onchange = ()=>{ $('f-name').hidden = $('uroster').value!=='__etc'; };
-$('ucoach').innerHTML = COACHES.map(n=>`<option value="${n}">${n}</option>`).join('') + '<option value="__etc">명단에 없어요 (직접 입력)</option>';
+$('ucoach').innerHTML = COACHES.map(n=>`<option value="${n}">${n}${COACH_DEFAULT_BADGE[n]?` · ${COACH_DEFAULT_BADGE[n]}`:''}</option>`).join('') + '<option value="__etc">명단에 없어요 (직접 입력)</option>';
 $('ucoach').onchange = ()=>{ $('f-name').hidden = $('ucoach').value!=='__etc'; };
 $('f-class').querySelectorAll('button').forEach(b=>b.onclick=()=>{ pick.cls=b.dataset.cls; syncRoleUI(); });
 }
@@ -1616,6 +1620,68 @@ const bonusXP = d => (d.bonus||0);
 function addBonus(n, key){ const d = getData(); d.bonusKeys = d.bonusKeys||{}; if(key && d.bonusKeys[key]) return; if(key) d.bonusKeys[key] = true; d.bonus = (d.bonus||0)+n; setData(d); gain(n); refreshMe(); }
 const notReady = '서버 테이블 준비 중 (코치가 supabase-social.sql 실행하면 켜져요)';
 
+/* ═══════════ 오늘의 서퍼 · 서핑 소식 ═══════════ */
+const SURFERS = [
+  ['켈리 슬레이터','미국','WSL 월드 타이틀 11회. 파이프라인에서 50대에도 우승한 살아 있는 전설'],
+  ['스테파니 길모어','호주','월드 타이틀 8회. 흐르듯 부드러운 스타일의 교과서'],
+  ['가브리엘 메디나','브라질','월드 타이틀 3회. 에어와 파워를 한 몸에 — 브라질리언 스톰의 선봉'],
+  ['존 존 플로렌스','하와이','파이프라인 토박이. 월드 타이틀 3회. 어떤 파도든 자연스럽게 읽는 감각'],
+  ['카리사 무어','하와이','월드 타이틀 5회, 2021 도쿄 올림픽 첫 서핑 금메달'],
+  ['필리페 톨레도','브라질','2022·2023 월드 챔피언. 스몰웨이브 퍼포먼스의 끝판'],
+  ['이탈로 페헤이라','브라질','2019 월드 챔피언, 도쿄 올림픽 금메달. 폭발적인 에어'],
+  ['캐롤라인 마크스','미국','2023 월드 챔피언, 2024 파리 올림픽(타히티 테아후푸) 금메달'],
+  ['베서니 해밀턴','하와이','13살에 상어에게 왼팔을 잃고도 프로로 복귀. 다큐·영화 「소울 서퍼」'],
+  ['듀크 카하나모쿠','하와이','올림픽 수영 금메달리스트이자 현대 서핑을 세계에 알린 "서핑의 아버지"'],
+  ['톰 커렌','미국','월드 타이틀 3회. 군더더기 없는 스타일의 원형'],
+  ['믹 패닝','호주','월드 타이틀 3회. 2015 제이베이 결승 중 상어와 마주친 그 장면'],
+  ['레인 비츨리','호주','월드 타이틀 7회. 여자 서핑의 기준을 세운 사람'],
+  ['카이 레니','하와이','빅웨이브·포일·윈드서핑 다 하는 만능 워터맨. 자스(Jaws) 라이딩'],
+  ['이가라시 카노아','일본','도쿄 올림픽 은메달. 일본계 미국 서퍼, 치바 출신 부모'],
+  ['조엘 튜더','미국','롱보드 월드 챔피언. 클래식 노즈라이딩의 아이콘'],
+  ['켈리아 모니즈','하와이','롱보드 월드 챔피언 2회(2012·2013). 스타일리시한 로그 라이딩'],
+  ['몰리 피클럼','호주','2025 월드 챔피언급 신예. 파워 서핑의 다음 세대'],
+  ['잭 로빈슨','호주','파이프·테아후푸 같은 무거운 파도에서 특히 강한 스페셜리스트'],
+  ['타일러 라이트','호주','월드 타이틀 2회. 부상과 질병을 딛고 돌아온 근성'],
+];
+function renderSurferDay(){
+  if(!$('surfer-day')) return; const i = Math.floor(Date.now()/864e5) % SURFERS.length, [n,c,d] = SURFERS[i];
+  $('surfer-day').innerHTML = `<div style="display:flex;gap:12px;align-items:flex-start"><canvas data-spr="star" style="width:28px;height:28px;flex:0 0 auto"></canvas><div><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${n} <small style="font-size:12px;font-weight:400;color:var(--ink2)">${c}</small></div><div style="font-size:13px;line-height:1.5;margin-top:2px">${d}</div><div class="cam-more" style="margin-top:6px"><a href="https://www.youtube.com/results?search_query=${encodeURIComponent(n+' surfing')}" target="_blank" rel="noopener">▶ 영상 보기</a><a href="https://www.google.com/search?q=${encodeURIComponent(n+' 서퍼')}" target="_blank" rel="noopener">더 알아보기</a></div></div></div>`;
+  paintAll($('surfer-day'));
+}
+async function renderNews(){
+  if(!$('news')) return; const arch = LS.get('surf.news', {});
+  let items = null; try{ const r = await fetch('api/news', { cache:'no-store' }); if(r.ok){ items = (await r.json()).items; } }catch(e){}
+  if(items){ items.forEach(x=>{ const day = (x.d||new Date().toISOString()).slice(0,10); (arch[day] = arch[day]||[]); if(!arch[day].some(y=>y.l===x.l)) arch[day].push({ t:x.t, l:x.l, src:x.src, lang:x.lang, s:x.s }); }); Object.keys(arch).sort().slice(0,-30).forEach(k=>delete arch[k]); LS.set('surf.news', arch); }
+  const days = Object.keys(arch).sort().reverse(), todayList = days.length ? arch[days[0]] : [];
+  const pick = [...todayList.filter(x=>x.lang==='ko').slice(0,3), ...todayList.filter(x=>x.lang!=='ko').slice(0,4)];
+  $('news-sub').textContent = items ? `${days[0]?.slice(5).replace('-','.')||''} 기준 · 상업·홍보 기사 제외` : (days.length ? '저장된 소식 (서버 응답 없음)' : '');
+  $('news').innerHTML = pick.length ? pick.map(x=>`<a class="fi" href="${x.l}" target="_blank" rel="noopener" style="text-decoration:none;display:block"><b style="font-family:inherit;font-size:13px">${x.t}</b>${x.s?`<div style="color:var(--ink2);font-size:12px;margin-top:2px">${x.s}</div>`:''}<small>${x.src}${x.lang==='en'?' · EN':''}</small></a>`).join('') : `<div class="px" style="font-size:13px;color:var(--ink2)">${items===null?'소식 서버는 surf.owenai.xyz에서만 동작해요 (GitHub Pages는 지원 안 함)':'오늘 걸러진 소식이 없어요'}</div>`;
+  $('news-arch-list').innerHTML = days.slice(1, 12).map(d=>`<div style="margin-top:8px"><b>${d.slice(5).replace('-','.')}</b>${arch[d].slice(0,5).map(x=>`<div style="padding:3px 0;border-bottom:2px dashed var(--grid)"><a href="${x.l}" target="_blank" rel="noopener">${x.t}</a> <small style="color:var(--ink2)">${x.src}</small></div>`).join('')}</div>`).join('') || '<span style="color:var(--ink2)">며칠 지나면 여기 쌓여요</span>';
+}
+/* ═══════════ 배경음악: 8비트 서프 칩튠 (WebAudio로 즉석 합성 — 저작권 걱정 없음) ═══════════ */
+const BGM = (()=>{
+  let ctx = null, master = null, timer = null, track = 0, on = false, step = 0, nextT = 0;
+  const N = { C3:130.81, D3:146.83, E3:164.81, F3:174.61, G3:196.00, A3:220.00, B3:246.94, C4:261.63, D4:293.66, E4:329.63, F4:349.23, G4:392.00, A4:440.00, B4:493.88, C5:523.25, D5:587.33, E5:659.25, G5:783.99 };
+  // 트랙: [bpm, 베이스(16분 4마디), 리드(16분 4마디), 드럼패턴]
+  const TRACKS = [
+    { name:'선셋 칠', bpm:88, bass:['C3','','','C3','','','G3','','A3','','','A3','','','E3','','F3','','','F3','','','C4','','G3','','','G3','','','B3',''], lead:['E4','','G4','','C5','','','B4','','A4','','','','G4','','','A4','','C5','','','','B4','','G4','','','E4','','D4','',''], drum:'k.h.s.h.k.h.s.hh' },
+    { name:'서프 락', bpm:152, bass:['E3','E3','E3','E3','G3','G3','A3','A3','E3','E3','E3','E3','D3','D3','B3','B3','C3','C3','C3','C3','D3','D3','E3','E3','G3','G3','A3','A3','B3','B3','D4','D4'], lead:['E5','','D5','','E5','','G5','','E5','','D5','','B4','','','','C5','','D5','','E5','','D5','','C5','','B4','','A4','','G4',''], drum:'kshskshskshskssh' },
+  ];
+  function drum(kind, t){ const o = ctx.createOscillator(), g = ctx.createGain(); if(kind==='k'){ o.frequency.setValueAtTime(140,t); o.frequency.exponentialRampToValueAtTime(40,t+0.12); g.gain.setValueAtTime(.5,t); g.gain.exponentialRampToValueAtTime(.001,t+.14); }
+    else { const b = ctx.createBuffer(1, ctx.sampleRate*0.06, ctx.sampleRate), d = b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length); const n = ctx.createBufferSource(); n.buffer=b; const hp = ctx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value = kind==='h'?7000:2500; g.gain.setValueAtTime(kind==='h'?.12:.3,t); g.gain.exponentialRampToValueAtTime(.001,t+(kind==='h'?.04:.1)); n.connect(hp).connect(g).connect(master); n.start(t); return; }
+    o.connect(g).connect(master); o.start(t); o.stop(t+.2); }
+  function note(freq, t, dur, type, vol){ if(!freq) return; const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = freq;
+    if(type==='square'){ const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 6; lg.gain.value = 3; lfo.connect(lg).connect(o.frequency); lfo.start(t); lfo.stop(t+dur); }   // 비브라토 = 서프 기타 트레몰로 느낌
+    g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.001,t+dur); o.connect(g).connect(master); o.start(t); o.stop(t+dur+.02); }
+  function tick(){ const T = TRACKS[track], spb = 60/T.bpm/4; while(nextT < ctx.currentTime + 0.25){ const i = step % 32; note(N[T.bass[i]], nextT, spb*1.8, 'triangle', .22); note(N[T.lead[i]], nextT, spb*1.6, 'square', .07); const d = T.drum[i%16]; if(d!=='.') drum(d, nextT); nextT += spb; step++; } }
+  function start(){ if(!ctx){ ctx = new (window.AudioContext||window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = .5; const comp = ctx.createDynamicsCompressor(); master.connect(comp).connect(ctx.destination); } ctx.resume(); step = 0; nextT = ctx.currentTime + 0.05; clearInterval(timer); timer = setInterval(tick, 100); on = true; }
+  function stop(){ clearInterval(timer); timer = null; on = false; if(ctx) ctx.suspend(); }
+  return { toggle(){ on ? stop() : start(); return on; }, next(){ track = (track+1) % TRACKS.length; if(on) start(); return TRACKS[track].name; }, get on(){ return on; }, get name(){ return TRACKS[track].name; }, setTrack(i){ track = i % TRACKS.length; } };
+})();
+$('bgm').onclick = ()=>{ const on = BGM.toggle(); $('bgm').setAttribute('aria-pressed', String(on)); $('bgm').style.background = on ? 'var(--sun)' : ''; toast(on ? `🎵 ${BGM.name} · 길게 누르면 다음 곡` : '🎵 끔'); LS.set('surf.bgm', on); };
+let bgmHold; $('bgm').addEventListener('pointerdown', ()=>{ bgmHold = setTimeout(()=>{ toast(`🎵 ${BGM.next()}`); bgmHold = null; }, 600); }); ['pointerup','pointerleave'].forEach(ev=>$('bgm').addEventListener(ev, ()=>{ if(bgmHold){ clearTimeout(bgmHold); bgmHold = null; } }));
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && BGM.on) { BGM.toggle(); $('bgm').setAttribute('aria-pressed','false'); $('bgm').style.background=''; } });
+
 /* ═══════════ 장비 탭 (일본 웻슈트 브랜드 총정리 2026-09-20 + 슈트 추천) ═══════════ */
 const SEQK = 'https://smartstore.naver.com/surfersequipment?utm_source=owen&utm_medium=referral&utm_campaign=jp_wetsuit_guide&utm_content=brand_roundup';
 const GUIDE = [
@@ -2003,7 +2069,7 @@ function renderCloset(){
 }
 function renderGearMe(){ const pr = myProfile(); $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">주력 장비 · 마을 카드에 표시</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'옷장에서 주력을 골라주세요'}</div></div></div>`; drawSpr($('gear-av'), avatarRows(pr), avatarTint()); }
 async function renderRank(){   // = 마을
-  renderSheet(); pullSocial(true).then(()=>{ renderFeed(); renderVillage(); }); renderFeed(); renderVillage(); pullChat(true); startChatPoll();
+  renderSheet(); pullSocial(true).then(()=>{ renderFeed(); renderVillage(); }); renderFeed(); renderVillage(); pullChat(true); startChatPoll(); renderSurferDay(); renderNews();
 }
 async function renderVillage(){
   const { rows } = await fetchRank(); const here = new Map(state.social.checkins.map(c=>[c.user_id, c.beach]));
