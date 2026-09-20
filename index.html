@@ -946,7 +946,7 @@ function calcXP(d){
 }
 /* 칭찬 카드: 받는 사람은 이름 기준(기기 달라도 같은 이름이면 도착). 로컬 + Supabase(설정 시) */
 const CARD_TPL = ['오늘 팝업 미쳤다','패들 파워 굿','라인업 매너 최고','와이프아웃도 멋있었어','새벽 입수 근성','세트 읽기 정확','첫 그린웨이브 축하','오늘 MVP'];
-function allCards(){ return LS.get('surf.cards', []).concat(state.remoteCards||[]).filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i); }
+function allCards(){ return LS.get('surf.cards', []).concat(state.remoteCards||[]).filter((c,i,a)=>a.findIndex(x=>x.id===c.id)===i).filter(c=>!isTest(c.from)); }
 function cardXP(){ const cs = allCards().filter(c=>!['MVP','인증'].includes(c.tpl)); return (cs.filter(c=>c.to===ME.name).length + cs.filter(c=>c.from===ME.id).length)*5; }
 let cardTo = null, cardTpl = CARD_TPL[0];
 function openCard(name){
@@ -1625,7 +1625,7 @@ async function sbUpsert(table, row){ const r = await fetch(`${SUPA.url}/rest/v1/
 async function pullSocial(force){
   if(!supaOn()) return; if(!force && Date.now()-state.social.at < 45000) return; state.social.at = Date.now();
   try{ const [ratings, checkins, parties, tides] = await Promise.all([ sbGet('ratings', 'select=*&order=created_at.desc&limit=500'), sbGet('checkins', `select=*&active=eq.true&at=gte.${new Date(Date.now()-4*3600e3).toISOString()}`), sbGet('parties', `select=*&date=eq.${today()}&order=time.asc`), sbGet('tides', 'select=*&order=id.desc&limit=14').catch(()=>[]) ]);
-    const tmap = {}; tides.forEach(t=>tmap[t.id] = t); state.social = { ...state.social, ratings, checkins, parties, tides:tmap, ok:true }; }
+    const tmap = {}; tides.forEach(t=>tmap[t.id] = t); state.social = { ...state.social, ratings:ratings.filter(x=>!isTest(x.user_id)), checkins:checkins.filter(x=>!isTest(x.user_id)), parties:parties.filter(x=>!isTest(x.user_id)), tides:tmap, ok:true }; }
   catch(e){ state.social.ok = e.code==='notable' ? false : state.social.ok; }
   if(state.tab==='wave' && state.loaded){ renderParty(); renderCheckin(); renderRate(); renderBasis(BEACHES[state.beach], analyze(BEACHES[state.beach], state.day)); renderTopbar(); }
   if(state.tab==='rank') renderFeed();
@@ -2065,11 +2065,12 @@ let syncT; function syncUp(){
   if(!supaOn()||!ME) return; clearTimeout(syncT);
   syncT = setTimeout(()=>{ fetch(`${SUPA.url}/rest/v1/${SUPA.table}`, { method:'POST', headers:supaH(), body:JSON.stringify(snapshot(ME.id)) }).catch(()=>{}); }, 1200);
 }
+const isTest = id => typeof id==='string' && id.startsWith('zz_') && !(ME && ME.id.startsWith('zz_'));
 async function fetchRank(){
   const local = Object.keys(auth.users()).map(snapshot).filter(Boolean);
   if(!supaOn()) return { rows:local, remote:false };
   try{ const r = await fetch(`${SUPA.url}/rest/v1/${SUPA.table}?cohort=eq.6기&select=*&order=xp.desc&limit=100`, { headers:supaH() }); if(!r.ok) throw 0; const rows = await r.json();
-    const map = new Map(rows.map(x=>[x.id,x])); local.forEach(x=>map.set(x.id, x)); return { rows:[...map.values()], remote:true }; }
+    const map = new Map(rows.map(x=>[x.id,x])); local.forEach(x=>map.set(x.id, x)); return { rows:[...map.values()].filter(x=>!isTest(x.id)), remote:true }; }
   catch(e){ return { rows:local, remote:false, err:true }; }
 }
 /* 주간 MVP 투표: cards(tpl='MVP') 재사용. 토~월 투표, 1인 1표/주 */
@@ -2129,7 +2130,7 @@ $('mood').addEventListener('keydown', e=>{ if(e.key==='Enter') $('mood-save').cl
 /* 채팅: 5초 폴링(마을 탭 열려 있을 때만) */
 state.chat = []; let chatT = null, chatLast = 0;
 async function pullChat(force){
-  if(!supaOn()) return; try{ const rows = await sbGet('chat', 'select=*&order=created_at.desc&limit=60'); state.chat = rows.reverse(); state.chatOk = true; }catch(e){ if(e.code==='notable') state.chatOk = false; }
+  if(!supaOn()) return; try{ const rows = await sbGet('chat', 'select=*&order=created_at.desc&limit=80'); state.chat = rows.reverse().filter(m=>!isTest(m.user_id)); state.chatOk = true; }catch(e){ if(e.code==='notable') state.chatOk = false; }
   renderChat();
 }
 function renderChat(){
