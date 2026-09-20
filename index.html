@@ -884,6 +884,8 @@ const BADGES = [
   { id:'ride10', name:'10파도',      icon:'wave',   test:d=>totalRides(d)>=10 },
   { id:'ride50', name:'50파도',      icon:'drop',   test:d=>totalRides(d)>=50 },
   { id:'both',   name:'양방향',      icon:'map',    test:d=>Object.values(d.sessions||{}).some(x=>x.l>0&&x.r>0) },
+  { id:'mvp',    name:'주간 MVP',     icon:'crown',  test:d=>[1,2,3,4,5,6,7,8].some(w=>(mvpTally(String(w))[0]||[])[0]===ME?.name && mvpTally(String(w))[0][1]>=2) },
+  { id:'cert',   name:'코치 인증',    icon:'stamp',  test:d=>certOf(ME?.name)>=1 },
   { id:'quiz',   name:'용어 박사',    icon:'book',   test:d=>Object.values(d.quiz||{}).filter(x=>x.ok===3).length>=3 },
   { id:'quest',  name:'올클리어 3일', icon:'star',   test:d=>Object.keys(d.questAll||{}).length>=3 },
   { id:'wipe',   name:'와이프아웃 10', icon:'temp',  test:d=>Object.values(d.sessions||{}).reduce((s,x)=>s+(x.w||0),0)>=10 },
@@ -1936,7 +1938,8 @@ async function renderVillage(){
   const { rows } = await fetchRank(); const here = new Map(state.social.checkins.map(c=>[c.user_id, c.beach]));
   rows.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
   $('village-sub').textContent = `${rows.length}명 · 탭하면 카드`;
-  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}">${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
+  const lastMVP = (mvpTally(String(+weekKey()-1))[0]||[])[0];
+  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}">${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name===lastMVP?'👑 ':''}${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
   rows.forEach(x=>drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile||{}), avatarTintOf(x.profile||{}, x.level)));
   $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
     const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b>${x.profile?.role==='coach'?' <span class="tagc">코치</span>':''} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>${[0,6,1].includes(new Date().getDay())?`<button class="btn sm" type="button" data-mvp="${x.name}">🏆 MVP</button>`:''}`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
