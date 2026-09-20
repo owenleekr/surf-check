@@ -1,5 +1,5 @@
 // 네트워크 우선, 실패 시 캐시 — 바다 앞 신호 약할 때 앱 껍데기가 뜨게
-const C = 'surf-v1', FILES = ['./', './index.html', './config.js', './manifest.webmanifest', './icon-180.png', './attendance-seed.json'];
+const C = 'surf-v2', FILES = ['./', './index.html', './config.js', './manifest.webmanifest', './icon-180.png', './attendance-seed.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {

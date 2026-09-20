@@ -8,8 +8,16 @@
 <meta name="theme-color" content="#1B1B2F">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
-<meta name="apple-mobile-web-app-title" content="파도어때">
-<title>오늘 파도 어때</title>
+<meta name="apple-mobile-web-app-title" content="라인업">
+<title>라인업 — 양양서핑학교 6기</title>
+<meta name="description" content="오늘 파도 어때? 양양·강릉 10개 해변 파도·물때·바람 체크, 출석·레벨·레슨런, 6기 마을 채팅. 양양서핑학교 6기 앱 라인업.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="라인업 — 오늘 파도 어때">
+<meta property="og:description" content="양양서핑학교 6기 · 파도 체크 · 출석·레벨 · 6기 마을">
+<meta property="og:image" content="https://surf.owenai.xyz/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:url" content="https://surf.owenai.xyz/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Crect width='8' height='8' fill='%232E6BFF'/%3E%3Cpath d='M0 5h1V4h1V3h1v1h1v1h1V4h1V3h1v1h1v1h-1v1H7v1H6V6H5V5H4v1H3v1H2V6H1V5z' fill='%23fff'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js"></script>
@@ -462,7 +470,7 @@ footer a{color:var(--paper)}
 
 <!-- ───────── 로그인 ───────── -->
 <div class="wrap" id="login">
-  <div class="title"><small>YANGYANG SURF SCHOOL · 6기</small>오늘 파도 어때</div>
+  <div class="title"><small>YANGYANG SURF SCHOOL · 6기</small>라인업<span style="display:block;font-family:'Galmuri11',sans-serif;font-size:16px;letter-spacing:.05em;text-shadow:2px 2px 0 var(--ink);margin-top:10px">오늘 파도 어때</span></div>
   <div class="title-art"><canvas data-spr="sun" width="8" height="8" style="width:40px;height:40px"></canvas><canvas data-spr="surfer" data-anim width="16" height="16" style="width:108px;height:108px"></canvas><canvas data-spr="wave" width="16" height="8" style="width:80px;height:40px"></canvas></div>
   <div class="wavebar"></div>
   <form class="px" id="login-form" autocomplete="off">
@@ -484,7 +492,7 @@ footer a{color:var(--paper)}
 <!-- ───────── 앱 ───────── -->
 <div class="wrap" id="app" hidden>
   <header class="hdr">
-    <h1 id="app-title">오늘 파도 어때</h1>
+    <h1 id="app-title">라인업</h1>
     <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av" data-anim></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span><span class="streak" id="me-streak"></span></div></div>
   </header>
   <div class="wavebar"></div>
@@ -935,7 +943,7 @@ function openCard(name){
 }
 $('card-cancel').onclick = ()=>$('card-modal').hidden = true;
 $('card-open').onclick = ()=>openCard();
-$('invite').onclick = async ()=>{ const url = 'https://surf.owenai.xyz/', text = '양양서핑학교 6기 파도 체크 앱 — 새 계정 만들고 명단에서 이름 고르면 돼요'; if(navigator.share){ try{ await navigator.share({ title:'오늘 파도 어때', text, url }); return; }catch(e){} } await copyText(url); toast('링크 복사됨 · 단톡방에 붙여넣기'); };
+$('invite').onclick = async ()=>{ const url = 'https://surf.owenai.xyz/', text = '라인업 — 양양서핑학교 6기 앱. 파도 체크·출석·마을. 새 계정 만들고 명단에서 이름 고르면 돼요'; if(navigator.share){ try{ await navigator.share({ title:'라인업', text, url }); return; }catch(e){} } await copyText(url); toast('링크 복사됨 · 단톡방에 붙여넣기'); };
 $('card-form').addEventListener('submit', async e=>{
   e.preventDefault(); if(!cardTo) return;
   const c = { id: ME.id+'-'+Date.now(), from:ME.id, fromName:ME.name, to:cardTo, tpl:cardTpl, text:$('card-text').value.trim().slice(0,120), date:new Date().toISOString() };
@@ -1844,7 +1852,7 @@ function onbNext(){
   if(st.last){ onbEnd(); return; }
   onbI++; onbShow();
 }
-function onbEnd(){ clearInterval(typeT); clearInterval(state.onbPoll); $('onb').hidden = true; const d = getData(); d.onboarded = true; setData(d); showTab('wave'); toast('준비 끝. 오늘 파도 어때?'); }
+function onbEnd(){ clearInterval(typeT); clearInterval(state.onbPoll); $('onb').hidden = true; const d = getData(); d.onboarded = true; setData(d); showTab('wave'); toast('라인업 준비 끝. 오늘 파도 어때?'); }
 function onbStart(){ onbI = 0; onbShow(); }
 $('onb-next').onclick = onbNext; $('onb-skip').onclick = ()=>{ if(ONB[onbI].build && onbPr) setProfile(onbPr); onbEnd(); };
 
