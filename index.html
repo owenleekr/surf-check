@@ -535,7 +535,7 @@ footer a{color:var(--paper)}
         </div>
         <p class="summary" id="summary"></p>
         <div class="pgauge" id="pgauge"></div>
-        <div class="lab-sm" style="margin-top:14px">추천 시간대 · 파고 / 주기 / 바람</div><div class="slots" id="slots"></div>
+        <div class="lab-sm" style="margin-top:14px">추천 입수 시간대 · 파고 / 피리어드 / 바람 / 조위</div><div class="slots" id="slots"></div>
       </article>
       <div class="px sess" id="sess">
         <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span> · <span id="sess-cls"></span></span><div class="total"><span id="sess-total">0</span><small id="sess-unit">번 성공</small></div><div class="lab-sm" id="sess-sub" style="margin:2px 0 0"></div></div><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
@@ -551,20 +551,20 @@ footer a{color:var(--paper)}
       <div class="tiles" id="tiles"></div>
 
       <section>
-        <div class="sec-h"><h2>시간대별</h2><span class="tag">05~19시</span><span class="sub">막대 파고 · 선 조위 · 화살표 바람</span></div>
+        <div class="sec-h"><h2>시간대별 예보</h2><span class="tag">05~19시</span><span class="sub">막대 파고 · 선 조위 · 화살표 풍향</span></div>
         <div class="px" id="srcbox" style="margin-bottom:10px"></div>
         <div class="chart px" id="chart">
           <div class="row-h"><span>파고 m</span><span id="chart-swell"></span></div>
           <svg id="svg-wave" viewBox="0 0 600 150" role="img" aria-label="시간대별 파고"></svg>
-          <div class="row-h"><span>피리어드(간격) 초 — 7~9가 동해 최적</span><span id="chart-per"></span></div>
+          <div class="row-h"><span>피리어드(초) — 동해 최적 7~9</span><span id="chart-per"></span></div>
           <div class="winds" id="pers"></div>
-          <div class="row-h"><span>물때 — 선이 올라가면 차오르는 중, 내려가면 빠지는 중</span><span id="chart-tide"></span></div>
+          <div class="row-h"><span>조위 — 상승 = 들물(만조로), 하강 = 날물(간조로)</span><span id="chart-tide"></span></div>
           <svg id="svg-tide" viewBox="0 0 600 90" role="img" aria-label="시간대별 조위"></svg>
-          <div class="row-h"><span>바람 kts</span><span>화살표 = 바람이 가는 방향</span></div>
+          <div class="row-h"><span>풍속 kts</span><span>화살표 = 바람이 부는 방향(→)</span></div>
           <div class="winds" id="winds"></div>
           <div class="row-h"><span>수온 °C</span><span id="chart-sst"></span></div>
           <div class="winds" id="ssts"></div>
-          <div class="legend"><span><i style="background:var(--sun)"></i>입수 권장</span><span><i style="background:var(--sea)"></i>파고</span><span><i style="background:var(--grape)"></i>조위</span><span><b style="color:var(--orange);font-family:sans-serif">↓</b> 온쇼어</span><span><b style="color:var(--sea);font-family:sans-serif">↓</b> 오프쇼어</span></div>
+          <div class="legend"><span><i style="background:var(--sun)"></i>추천 입수</span><span><i style="background:var(--sea)"></i>파고</span><span><i style="background:var(--grape)"></i>조위</span><span><b style="color:var(--orange);font-family:sans-serif">↓</b> 온쇼어</span><span><b style="color:var(--sea);font-family:sans-serif">↓</b> 오프쇼어</span></div>
           <div class="tip" id="tip"></div>
         </div>
       </section>
@@ -577,7 +577,7 @@ footer a{color:var(--paper)}
 
 
       <section>
-        <div class="sec-h"><h2>어디 갈까</h2><span class="tag">10곳 비교</span><span class="sub" id="cmp-sub"></span></div>
+        <div class="sec-h"><h2>해변 비교</h2><span class="tag">10곳</span><span class="sub" id="cmp-sub"></span></div>
         <div class="cmp px" id="cmp"></div>
       </section>
 
@@ -1041,7 +1041,7 @@ const compass = d => COMPASS[Math.round(((d%360)+360)%360/22.5)%16];
 const compass8 = d => ['N','NE','E','SE','S','SW','W','NW'][Math.round(((d%360)+360)%360/45)%8];
 const hhmm = iso => iso.slice(11,16), pad2 = n => String(n).padStart(2,'0'), DOW = ['일','월','화','수','목','금','토'];
 function windRel(from, facing){ const d = Math.abs(((from - facing) + 540) % 360 - 180); return d <= 45 ? 'on' : d >= 135 ? 'off' : 'cross'; }
-const relKo = { on:'온쇼어', off:'오프쇼어', cross:'크로스' };
+const relKo = { on:'온쇼어', off:'오프쇼어', cross:'사이드쇼어' };
 function tides(b, day){
   const y = b.m.sea_level_height_msl, out = [];
   for(let i=1;i<y.length-1;i++){
@@ -1054,7 +1054,7 @@ function tides(b, day){
   }
   return out;
 }
-function swellFit(b, dir){ const d = Math.abs(((dir - b.swell) + 540) % 360 - 180); return d<=22 ? { s:2, ko:'딱 맞음 ◎' } : d<=45 ? { s:1, ko:'좋음 ○' } : d<=90 ? { s:0, ko:'보통 △' } : { s:-2, ko:'안 들어옴 ✕' }; }
+function swellFit(b, dir){ const d = Math.abs(((dir - b.swell) + 540) % 360 - 180); return d<=22 ? { s:2, ko:'정면 ◎' } : d<=45 ? { s:1, ko:'양호 ○' } : d<=90 ? { s:0, ko:'부분 △' } : { s:-2, ko:'차단 ✕' }; }
 function hourScore(b, i, tidePos){
   const h = b.m.wave_height[i] ?? 0, p = b.m.wave_period[i] ?? 0, w = b.f.wind_speed_10m[i] ?? 0, rel = windRel(b.f.wind_direction_10m[i] ?? 0, b.facing);
   let s = 0;
@@ -1066,7 +1066,7 @@ function hourScore(b, i, tidePos){
   const sdir = b.m.swell_wave_direction?.[i] ?? b.m.wave_direction[i] ?? 0, fit = swellFit(b, sdir); s += fit.s;   // 스웰 방향 궁합
   return { s: Math.max(0, s), fit, sdir, danger: h>2.5 || w>25 || (b.f.weather_code[i]>=95), h, p, w, rel };
 }
-function verdict(avg, danger){ if(danger) return { v:'warn', t:'위험' }; if(avg>=8) return { v:'good', t:'굿!' }; if(avg>=5.5) return { v:'ok', t:'탈 만함' }; if(avg>=3.5) return { v:'meh', t:'애매' }; return { v:'bad', t:'노노' }; }
+function verdict(avg, danger){ if(danger) return { v:'warn', t:'위험' }; if(avg>=8) return { v:'good', t:'좋음' }; if(avg>=5.5) return { v:'ok', t:'보통' }; if(avg>=3.5) return { v:'meh', t:'약함' }; return { v:'bad', t:'나쁨' }; }
 const _an = new Map();
 function analyze(b, day){ const k = `${b.id}|${day}|${state.model}|${state.fetchedAt?.getTime()||0}`; if(_an.has(k)) return _an.get(k); const r = analyzeRaw(b, day); if(_an.size>200) _an.clear(); _an.set(k, r); return r; }
 function analyzeRaw(b, day){
@@ -1082,8 +1082,8 @@ function analyzeRaw(b, day){
   for(let h=Math.max(0,srH); h+1<=Math.min(23,ssH); h++){ const sum = hours[h].s + hours[h+1].s; if(!best || sum>best.sum) best = { h, sum, danger: hours[h].danger||hours[h+1].danger }; }
   if(!best) best = { h:srH, sum:hours[srH].s*2, danger:hours[srH].danger };
   const rep = hours[best.h], vd = verdict(best.sum/2, best.danger);
-  const swell = rep.p<7 ? '짧은 윈드스웰' : (rep.wwH ?? 0) >= (rep.swH ?? 0) ? '윈드스웰' : '그라운드스웰';
-  const power = rep.h<0.5 ? '파워 거의 없음, 롱보드 데이' : rep.h<1 ? '파워는 약하지만 탈 만함' : rep.h<1.6 ? '파워 적당' : '파워 있음, 커런트 주의';
+  const swell = rep.p<7 ? '단주기 윈드 스웰' : rep.p<=9.5 ? ((rep.wwH ?? 0) >= (rep.swH ?? 0) ? '윈드 스웰' : '그라운드 스웰') : rep.p<=13 ? '장주기 그라운드 스웰' : '초장주기 스웰';
+  const power = rep.h<0.5 ? '파워 약함 · 롱보드 권장' : rep.h<1 ? '파워 보통 이하 · 입문 라이딩 적합' : rep.h<1.6 ? '파워 적당' : '파워 강함 · 커런트 주의';
   const dayT = hours.slice(5,20).map(x=>x.temp);
   return { hours, best, rep, vd, swell, power, sr, ss, srH, ssH, tides: tides(b, day), lmin, lmax, tempMin:Math.min(...dayT), tempMax:Math.max(...dayT) };
 }
@@ -1109,15 +1109,15 @@ function renderBeaches(){
   const cur = box.children[state.beach]; if(cur) cur.scrollIntoView({ inline:'nearest', block:'nearest' });
 }
 /* 피리어드 구간: <5 거의 없음 · 5~6.5 짧음(윈드스웰) · 6.5~9.5 동해 최적 · 9.5~13 긴 간격(파워) · 13+ 백워시 */
-const PZ = p => p<5 ? ['거의 파도 없음','#D9D4C0'] : p<6.5 ? ['짧은 간격 · 윈드스웰 · 파워 약함','var(--sun)'] : p<=9.5 ? ['동해 최적 · 파워와 정돈 균형','var(--mint)'] : p<=13 ? ['긴 간격 · 세트 파워 큼 · 세트 기다리기','var(--sky)'] : ['너무 긴 간격 · 백워시 심함','var(--coral)'];
+const PZ = p => p<5 ? ['플랫에 가까움','#D9D4C0'] : p<6.5 ? ['단주기 윈드 스웰 · 파워 약함','var(--sun)'] : p<=9.5 ? ['동해 최적 구간 · 파워·정돈 균형','var(--mint)'] : p<=13 ? ['장주기 그라운드 스웰 · 세트 파워 강함','var(--sky)'] : ['초장주기 · 백워시 주의','var(--coral)'];
 const pColor = p => p<6.5 ? 'var(--orange)' : p<=9.5 ? '#1FA366' : p<=13 ? 'var(--sea)' : 'var(--bad)';
 function renderPeriod(b, a){
   const r = a.rep, p = r.p, [zone] = PZ(p), pct = Math.min(100, Math.max(0, (p-3)/12*100));   // 3~15초 → 0~100%
-  const energy = p>=7 ? ` 6초 파도 대비 에너지 약 ${Math.round(Math.pow(p/6, 4)*10)/10}배.` : p<6.5 ? ' 8초였다면 에너지가 약 3배.' : '';
-  $('pgauge').innerHTML = `<div class="ph2"><span>피리어드(파도 간격) <b>${p.toFixed(1)}초</b></span><span>${zone}</span></div>
+  const energy = p>=7 ? ` 6초 대비 에너지 약 ${Math.round(Math.pow(p/6, 4)*10)/10}배.` : p<6.5 ? ' 같은 파고에서 8초라면 에너지 약 3배.' : '';
+  $('pgauge').innerHTML = `<div class="ph2"><span>피리어드 <b>${p.toFixed(1)}초</b></span><span>${zone}</span></div>
     <div class="bar2"><span class="mk" style="left:${pct}%"></span></div>
     <div class="lg"><span>3</span><span>5</span><span>6.5</span><span>9.5</span><span>13</span><span>15+</span></div>
-    <div class="why">같은 ${r.h.toFixed(1)}m라도 간격이 길수록 파도가 크고 힘이 세요.${energy} (교장쌤: 6초→8초면 수심 아래 원운동이 약 5배, 동해는 7~9초가 좋고 13초 넘으면 백워시)</div>`;
+    <div class="why">같은 ${r.h.toFixed(1)}m라도 피리어드가 길수록 실제 파도가 크고 에너지가 강합니다.${energy}<br><small>동해안 최적 7~9초 · 13초 초과 시 백워시 (양양서핑학교 기준)</small></div>`;
 }
 function renderHero(b, a){
   const L = dateLabel(b.daily.time[state.day]);
@@ -1128,10 +1128,10 @@ function renderHero(b, a){
   const slots0 = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots0.push({ h, s:(x.s+y.s)/2 }); }
   const left = slots0.filter(sl=>sl.h+2>nowH0), bestLeft = left.length ? left.reduce((m,x)=>x.s>m.s?x:m, left[0]) : null;
   const win = bestLeft ? `${pad2(bestLeft.h)}~${pad2(bestLeft.h+2)}시` : `${pad2(a.best.h)}~${pad2(a.best.h+2)}시`;
-  const passedNote = state.day===0 && bestLeft && bestLeft.h!==a.best.h ? ` (${pad2(a.best.h)}~${pad2(a.best.h+2)}시는 지남)` : '';
-  const tail = a.vd.v==='warn' ? `오늘은 <mark>입수 비추</mark>. 캠으로 구경만.` : a.vd.v==='bad' ? `굳이 나가면 <mark>${win}</mark>인데 기대는 말 것.` : !bestLeft ? `오늘 탈 시간은 지났어요. 내일 탭을 봐요.` : `<mark>${win}</mark>가 ${nowH0>=0?'지금부터 ':''}오늘의 정답.${passedNote}`;
+  const passedNote = state.day===0 && bestLeft && bestLeft.h!==a.best.h ? ` <small>(${pad2(a.best.h)}~${pad2(a.best.h+2)}시 경과)</small>` : '';
+  const tail = a.vd.v==='warn' ? `<mark>입수 금지</mark> · 캠으로만 확인` : a.vd.v==='bad' ? `조건 나쁨 · 입수한다면 <mark>${win}</mark>` : !bestLeft ? `오늘 입수 가능 시간대 종료 · 내일 예보 확인` : `추천 입수 <mark>${win}</mark>${passedNote}`;
   const snapH = chartSnap(b, a), simH = similar(b, snapH, null), avgH = simH.length ? (simH.reduce((s2,x)=>s2+(+x.stars),0)/simH.length).toFixed(1) : null;
-  $('summary').innerHTML = `<b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:22px">${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b> ${compass(r.sdir)} ${a.swell} <span class="sc" style="background:${r.fit.s>=1?'var(--mint)':r.fit.s<0?'var(--coral)':'#fff'};border:2px solid var(--ink);padding:0 6px;font-size:12px">${b.name} 궁합 ${r.fit.ko}</span> + ${windTxt}. ${a.power}. ${tail}${avgH?` <span class="sc" style="background:var(--sun);border:2px solid var(--ink);padding:0 6px;font-size:12px">6기 실측 ★${avgH} (${simH.length}회)</span>`:''}`;
+  $('summary').innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;line-height:1.45"><div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:22px">${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b> <span style="color:var(--ink2)">${a.swell}</span></div><div>파향 <b>${compass(r.sdir)}</b> · 노출 <span class="sc" style="background:${r.fit.s>=1?'var(--mint)':r.fit.s<0?'var(--coral)':'#fff'};border:2px solid var(--ink);padding:0 6px;font-size:12px">${r.fit.ko}</span> · 바람 <b>${compass(r.dir)} ${Math.round(r.w)}kts</b> ${relKo[r.rel]}</div><div>${a.power}</div><div>${tail}</div>${avgH?`<div><span class="sc" style="background:var(--sun);border:2px solid var(--ink);padding:0 6px;font-size:12px">6기 실측 ★${avgH} (${simH.length}회)</span></div>`:''}</div>`;
   const slots = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots.push({ h, s:(x.s+y.s)/2, wh:(x.h+y.h)/2, p:(x.p+y.p)/2, w:(x.w+y.w)/2, rel:x.rel, tp:x.tp, danger:x.danger||y.danger }); }
   const top = slots.slice().sort((p,q)=>q.s-p.s).slice(0,3).sort((p,q)=>p.h-q.h);
   const nowH = state.day===0 ? new Date().getHours() : -1;
@@ -1155,7 +1155,7 @@ function suitWhy(sst, tmin){ const core = sst>=24 ? '수온이 높아 슈트 없
   return core + (tmin<=15 ? ' · 바깥 기온이 낮으니 판초·갈아입을 옷 필수' : ''); }
 function tidePhase(a){
   const tp = a.rep.tp, next = a.hours[a.best.h+1]?.tp ?? tp, lvl = tp==null ? '' : tp<0.33 ? '로우' : tp<0.66 ? '미드' : '하이';
-  const trend = next==null||tp==null ? '' : next>tp+0.03 ? ' → 채워지는 중' : next<tp-0.03 ? ' → 빠지는 중' : ' → 정체'; return lvl + trend;
+  const trend = next==null||tp==null ? '' : next>tp+0.03 ? ' · 들물(상승)' : next<tp-0.03 ? ' · 날물(하강)' : ' · 정조'; return lvl + trend;
 }
 function wxKo(c){ if(c==null) return ''; if(c<=1) return '맑음'; if(c===2) return '구름 조금'; if(c===3) return '흐림'; if(c<=48) return '안개'; if(c<=57) return '이슬비'; if(c<=67) return '비'; if(c<=77) return '눈'; if(c<=82) return '소나기'; if(c<=86) return '눈소나기'; return '뇌우'; }
 function renderTiles(b, a){
@@ -1167,7 +1167,7 @@ function renderTiles(b, a){
     const now = new Date(), hNow = now.getHours() + now.getMinutes()/60, i0 = Math.floor(hNow), lv0 = a.hours[i0]?.lvl, lv1 = a.hours[Math.min(23,i0+1)]?.lvl;
     const cur = lv0!=null && lv1!=null ? lv0 + (lv1-lv0)*(hNow-i0) : lv0;
     const next = tev.map(t=>{ const [hh,mm]=t.time.split(':').map(Number); return { ...t, at:hh+mm/60 }; }).find(t=>t.at>hNow);
-    const dir = lv1==null||lv0==null ? '' : lv1>lv0+0.005 ? '차오르는 중 ↑' : lv1<lv0-0.005 ? '빠지는 중 ↓' : '정체 →';
+    const dir = lv1==null||lv0==null ? '' : lv1>lv0+0.005 ? '들물 ↑ (상승)' : lv1<lv0-0.005 ? '날물 ↓ (하강)' : '정조 →';
     const left = next ? `${next.type} ${next.time}까지 ${Math.floor(next.at-hNow)}시간 ${Math.round(((next.at-hNow)%1)*60)}분` : '오늘 남은 만·간조 없음';
     tideNow = `지금 <b>${cur!=null?(cur>=0?'+':'')+cur.toFixed(2)+'m':'-'}</b> · <b>${dir}</b> · ${left}`;
   }
@@ -1177,7 +1177,7 @@ function renderTiles(b, a){
     tile('drop','수온', `${sst.toFixed(1)}<small>°C</small>`, `<b>${suitFor(sst)}</b>${nowSst!=null?` · 지금 ${pad2(new Date().getHours())}시 기준`:''}`) +
     tile('temp','기온', `${Math.round(a.tempMin)}<small>~</small>${Math.round(a.tempMax)}<small>°C</small>`, `${wxKo(r.wx)} · 강수 ${rain}%${a.tempMin<=18?' · 새벽엔 서늘, 겉옷':''}`) +
     tile('wave','파도 크기 · 간격', `${r.h.toFixed(1)}<small>m</small> / ${r.p.toFixed(1)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
-    tile('wind','바람', `${Math.round(r.w)}<small>kts</small> ${compass(r.dir)}`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 면 깨짐, 촘촘한 결':r.rel==='off'?' · 면 정돈':''} · 돌풍 ${Math.round(r.gust)}kts`);
+    tile('wind','바람', `${Math.round(r.w)}<small>kts</small> ${compass(r.dir)}`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 초피':r.rel==='off'?' · 글래시':''} · 돌풍 ${Math.round(r.gust)}kts`);
   paintAll($('tiles'));
 }
 function renderSource(b, a){
@@ -1238,7 +1238,7 @@ function renderChecks(b, a){
   if(a.tempMin<=10) items.push(['방한', `새벽 기온 ${Math.round(a.tempMin)}°C. 판초·핫팩·따뜻한 물`]); else if(a.tempMin<=18) items.push(['겉옷', `새벽 기온 ${Math.round(a.tempMin)}°C. 입수 전후 서늘하니 판초나 후드`]); else items.push(['자외선', `기온 ${Math.round(a.tempMax)}°C까지. 선크림·물 넉넉히`]);
   if(a.vd.v==='warn') items.push(['입수 금지', `파고 ${r.h.toFixed(1)}m / 바람 ${Math.round(r.w)}kts${r.wx>=95?' / 뇌우':''}. 오늘은 캠으로만`]); else if(r.h>=1.5) items.push(['커런트', `파고 ${r.h.toFixed(1)}m. 채널 위치 먼저 확인, 랜드마크 잡고 위치 체크`]);
   if(r.rel==='on' && r.w>8) items.push(['바람 타이밍', `${compass(r.dir)} 온쇼어 ${Math.round(r.w)}kts. 면 깨지기 전 ${pad2(a.best.h)}시 전후 입수`]); else if(r.rel==='off') items.push(['오프쇼어', `면 정돈됨. 립이 서고 테이크오프가 늦어지니 한 템포 더 패들`]);
-  if(r.p<7) items.push(['짧은 주기', `${Math.round(r.p)}초 윈드스웰. 파워 약하고 간격 짧음 → 세트 기다리지 말고 자주 잡기`]); else if(r.p>=10) items.push(['긴 주기', `${Math.round(r.p)}초. 세트 간격 길고 파워 있음 → 세트 사이 패들아웃`]);
+  if(r.p<7) items.push(['단주기', `피리어드 ${r.p.toFixed(1)}초 윈드 스웰. 파워 약하고 촘촘함 → 세트를 기다리기보다 자주 시도`]); else if(r.p>=10) items.push(['장주기', `피리어드 ${r.p.toFixed(1)}초. 세트 간격 길고 파워 강함 → 세트 사이에 패들아웃`]);
   if(a.rep.tp!=null) items.push(['타이드', `${tidePhase(a)}. ${a.tides.map(t=>`${t.type} ${t.time}`).join(' · ')||'조차 매우 작음'}`]);
   const rain = Math.max(...a.hours.slice(a.srH, a.ssH+1).map(x=>x.rain??0)); if(rain>=50) items.push(['비', `강수확률 ${rain}%. 여벌 옷 비닐에`]);
   // 이번 주 커리큘럼에서 오늘 할 것 하나
@@ -1276,13 +1276,13 @@ function renderCam(b){
   $('cam-btn').href = CAM_URL(b.cam); $('cam-link').href = CAM_URL(b.cam); $('cam-sub').textContent = b.camNote || 'WSB FARM 웨이브캠'; }
 function renderCompare(){
   const rows = BEACHES.map((b,i)=>({ b, i, a:analyze(b, state.day) })); $('cmp-sub').textContent = `${['오늘','내일','모레'][state.day]} 권장 시간대 기준`;
-  $('cmp').innerHTML = `<table><thead><tr><th>해변</th><th>파도</th><th>스웰</th><th>바람</th><th>입수</th><th>판정</th><th>캠</th></tr></thead><tbody>` + rows.map(({b,i,a})=>{ const r=a.rep; return `<tr role="button" tabindex="0" data-i="${i}" class="${i===state.beach?'cur':''}"><td class="name">${b.name}<small>${b.area}</small></td><td class="num">${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</td><td>${compass8(r.sdir)} <span style="color:${r.fit.s>=1?'#1FA366':r.fit.s<0?'var(--bad)':'var(--ink2)'}">${r.fit.ko.slice(-1)}</span></td><td class="num">${Math.round(r.w)}kts ${compass8(r.dir)} <span style="color:var(--ink2)">${relKo[r.rel]}</span></td><td class="num">${pad2(a.best.h)}~${pad2(a.best.h+2)}</td><td><span class="mini" data-v="${a.vd.v}">${a.vd.t}</span></td><td><a href="${CAM_URL(b.cam)}" target="_blank" rel="noopener" title="${b.name} 캠" style="text-decoration:none">▶</a></td></tr>`; }).join('') + `</tbody></table>`;
+  $('cmp').innerHTML = `<table><thead><tr><th>해변</th><th>파고·피리어드</th><th>파향</th><th>바람</th><th>추천</th><th>판정</th><th>캠</th></tr></thead><tbody>` + rows.map(({b,i,a})=>{ const r=a.rep; return `<tr role="button" tabindex="0" data-i="${i}" class="${i===state.beach?'cur':''}"><td class="name">${b.name}<small>${b.area}</small></td><td class="num">${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</td><td>${compass8(r.sdir)} <span style="color:${r.fit.s>=1?'#1FA366':r.fit.s<0?'var(--bad)':'var(--ink2)'}">${r.fit.ko.slice(-1)}</span></td><td class="num">${Math.round(r.w)}kts ${compass8(r.dir)} <span style="color:var(--ink2)">${relKo[r.rel]}</span></td><td class="num">${pad2(a.best.h)}~${pad2(a.best.h+2)}</td><td><span class="mini" data-v="${a.vd.v}">${a.vd.t}</span></td><td><a href="${CAM_URL(b.cam)}" target="_blank" rel="noopener" title="${b.name} 캠" style="text-decoration:none">▶</a></td></tr>`; }).join('') + `</tbody></table>`;
   $('cmp').querySelectorAll('tr[role="button"]').forEach(tr=>{ const go = e=>{ if(e.target.closest('a')) return; state.beach = +tr.dataset.i; LS.set('surf.beach', BEACHES[state.beach].id); renderWave(); window.scrollTo({top:0, behavior:'smooth'}); };
     tr.addEventListener('click', go); tr.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(e); } }); });
 }
 function notionMarkdown(b, a){
   const r = a.rep, d = b.daily.time[state.day], hi = a.tides.filter(t=>t.type==='만조').map(t=>t.time).join(', '), lo = a.tides.filter(t=>t.type==='간조').map(t=>t.time).join(', '), sst = r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000);
-  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 | ${myProfile().board==='short'?'숏보드':'롱보드'} |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) | ${(()=>{const sx=session(); if(sx.t||sx.a||sx.p) return `테이크오프 ${sx.t} / 도전 ${sx.a} (푸쉬업 ${sx.p})`; return sx.l+sx.r?`${sx.l} / ${sx.r} (와이프아웃 ${sx.w})`:''})()} |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n버디: ${state.social.checkins.find(c=>c.user_id===ME.id)?.profile?.buddy||''}\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').textContent}\n오늘 별점: ${(()=>{const m=state.social.ratings.find(x=>x.user_id===ME.id&&x.beach===b.name&&x.date===today()); return m?`★${(+m.stars).toFixed(1)}${m.comment?' — '+m.comment:''}`:'(미평가)';})()}\n기준 잡기: 파도 ${r.h.toFixed(1)}m·${r.p.toFixed(1)}초 스웰 ${compass(r.sdir)}(${b.name} 궁합 ${r.fit.ko}) / 물때 ${tideEvents(b,a).ev.map(e=>`${e.type} ${e.time} ${e.h.toFixed(2)}m`).join(', ')||'-'} / 바람 ${Math.round(r.w)}kts ${compass(r.dir)} ${relKo[r.rel]} / 모델 ${(MODELS.find(m=>m.key===state.model)||{}).ko}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n\n### 강의노트 (${Math.min(8, Math.max(1, weekOfDate(today())))}주차)\n\n${lessonOf(getData(), Math.min(8, Math.max(1, weekOfDate(today())))).note||'-'}\n`;
+  return `## 기본 정보\n\n| 항목 | 내용 |\n| --- | --- |\n| 서프 스트렝스 트레이닝 내역 |  |\n| 일시 (양력/음력) | ${d} (${DOW[new Date(d+'T00:00').getDay()]}) |\n| 물때 | 만조 ${hi||'-'} / 간조 ${lo||'-'} |\n| 일출/일몰 시간 | ${hhmm(b.daily.sunrise[state.day])} / ${hhmm(b.daily.sunset[state.day])} |\n| 서핑 장소 | ${b.name} |\n| 서프 보드 | ${myProfile().board==='short'?'숏보드':'롱보드'} |\n\n## 서핑 전\n\n| 항목 | 내용 |\n| --- | --- |\n| 입수 시간 | ${pad2(a.best.h)}:00 (권장 ${pad2(a.best.h)}~${pad2(a.best.h+2)}시) |\n| 타이드 | ${tidePhase(a)} |\n| 바람 (방향, 속도) | ${compass(r.dir)} ${Math.round(r.w)}kts / ${relKo[r.rel]} |\n| 파도 (방향, 높이, 간격) | ${compass(r.wdir)} / ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 |\n| 연습할 기술 / 포인트 | ${$('practice').value.trim()} |\n\n## 서핑 후\n\n| 항목 | 내용 |\n| --- | --- |\n| 퇴수 시간 |  |\n| 커런트 (상/중/하) |  |\n| 라이딩 횟수 (레프트 / 라이트) | ${(()=>{const sx=session(); if(sx.t||sx.a||sx.p) return `테이크오프 ${sx.t} / 도전 ${sx.a} (푸쉬업 ${sx.p})`; return sx.l+sx.r?`${sx.l} / ${sx.r} (와이프아웃 ${sx.w})`:''})()} |\n| 롱라이딩 길이 |  |\n| 최고 속도 |  |\n\n## 서핑 버디 / 느낀점\n\n버디: ${state.social.checkins.find(c=>c.user_id===ME.id)?.profile?.buddy||''}\n\n---\n\n## 오늘의 컨디션 브리핑\n\n한 줄 요약: ${$('summary').innerText.replace(/\n+/g,' · ')}\n오늘 별점: ${(()=>{const m=state.social.ratings.find(x=>x.user_id===ME.id&&x.beach===b.name&&x.date===today()); return m?`★${(+m.stars).toFixed(1)}${m.comment?' — '+m.comment:''}`:'(미평가)';})()}\n기준 잡기: 파도 ${r.h.toFixed(1)}m·${r.p.toFixed(1)}초 파향 ${compass(r.sdir)}(${b.name} 노출 ${r.fit.ko}) / 물때 ${tideEvents(b,a).ev.map(e=>`${e.type} ${e.time} ${e.h.toFixed(2)}m`).join(', ')||'-'} / 바람 ${Math.round(r.w)}kts ${compass(r.dir)} ${relKo[r.rel]} / 모델 ${(MODELS.find(m=>m.key===state.model)||{}).ko}\n\n| 항목 | 값 | 메모 |\n| --- | --- | --- |\n| 일출 | ${hhmm(b.daily.sunrise[state.day])} |  |\n| 일몰 | ${hhmm(b.daily.sunset[state.day])} | 실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())} |\n| 만조 | ${hi||'-'} |  |\n| 간조 | ${lo||'-'} |  |\n| 수온 | ${sst.toFixed(1)}도 | ${suitFor(sst)} |\n| 기온 | ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}도 | ${a.tempMin<=18?'새벽엔 서늘, 겉옷':''} |\n| 파도 | ${r.h.toFixed(1)}m / ${Math.round(r.p)}초 / ${compass(r.wdir)} | ${a.swell} |\n| 바람 | ${Math.round(r.w)}kts ${compass(r.dir)} / ${relKo[r.rel]} | ${r.rel==='on'?'면 깨짐, 촘촘한 결':r.rel==='off'?'면 정돈':''} |\n| 기상특보 | (기상청 확인) |  |\n\n### 강의노트 (${Math.min(8, Math.max(1, weekOfDate(today())))}주차)\n\n${lessonOf(getData(), Math.min(8, Math.max(1, weekOfDate(today())))).note||'-'}\n`;
 }
 async function copyText(md){ try{ await navigator.clipboard.writeText(md); }catch(e){ const ta = document.createElement('textarea'); ta.value = md; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); } }
 async function copyNotion(){
@@ -1296,8 +1296,8 @@ function gain(n){ const g = $('gain'); g.textContent = `+${n} XP`; g.classList.r
 const GLOSS = {
   '파도': [
     ['스웰(Swell)','먼바다에서 만들어져 밀려오는 너울. 바람이 멎어도 계속 온다'],
-    ['윈드스웰','가까운 바람이 만든 짧은 주기(~7초)의 파도. 촘촘하고 파워 약함. 동해 대부분'],
-    ['그라운드스웰','먼 저기압이 만든 긴 주기(10초+) 파도. 정돈되고 파워 있음'],
+    ['윈드 스웰(Wind swell)','가까운 바람이 만든 단주기(~7초) 파도. 촘촘하고 파워 약함. 동해의 대부분'],
+    ['그라운드 스웰(Ground swell)','먼 저기압이 만든 장주기(10초+) 파도. 정돈되고 파워 강함'],
     ['피리어드 / 주기(Period)','파도와 파도 사이 시간(초). 길수록 파워·정돈. 같은 1m라도 6초와 10초는 다른 파도'],
     ['세트(Set)','작은 파도 뒤에 큰 파도가 연달아 오는 것(뉴스의 "너울성 파도"). 보통 5~10분 간격. 첫 파도는 보내고 2~3번째를 노린다'],
     ['취송거리(Fetch)','바람이 파도를 밀어 온 거리. 길수록 뒤 파도가 앞 파도를 흡수해 간격이 넓어지고 에너지가 커진다. 호수처럼 짧으면 긴 간격 파도가 안 생긴다'],
@@ -1312,8 +1312,8 @@ const GLOSS = {
     ['레프트 / 라이트','서퍼가 파도를 보고 탈 때 가는 방향. 해변에서 보면 반대'],
     ['온쇼어','바다→뭍으로 부는 바람. 면을 깨뜨린다'],
     ['오프쇼어','뭍→바다로 부는 바람. 면을 정돈하고 립을 세운다'],
-    ['크로스쇼어','해변과 평행하게 부는 바람'],
-    ['스웰 방향 궁합','해변이 바라보는 쪽으로 스웰이 들어와야 에너지가 온전히 온다. 낙산은 NE 스웰, 죽도·인구는 정동(E) 스웰이 크다'],
+    ['사이드쇼어(크로스쇼어)','해변과 평행하게 부는 바람. 페이스에 결이 생기고 바람을 등진 방향의 파도가 유리'],
+    ['파향 노출(Swell exposure)','해변이 향한 쪽으로 스웰이 들어와야 에너지가 온전히 닿는다. 낙산·동호는 NE, 죽도·인구는 정동(E) 파향에 노출'],
     ['조위(Tide)','바닷물 높이. 로우·미드·하이. 동해는 조차가 작아 영향 적음'],
     ['립커런트','해변에서 바다로 빠져나가는 강한 흐름. 걸리면 해변과 평행하게 옆으로 패들'],
     ['채널(Channel)','파도가 잘 안 깨지는 깊은 구간. 패들아웃 길. 커런트가 흐르기도'],
@@ -1530,8 +1530,8 @@ const EMPTY_SESS = () => ({ a:0, p:0, t:0, l:0, r:0, w:0, hist:[] });
 function session(){ const d = getData(); return (d.sessions||{})[today()] || EMPTY_SESS(); }
 /* 반별 카운터. 비기너: 도전 → 팝업 → 테이크오프 성공. 중급: 레프트/라이트 성공 + 와이프아웃 */
 const SESS_UI = {
-  beginner:{ unit:'번 일어섰다', btns:[['a','도전','w','파도 잡으러 감'],['p','푸쉬업','r','상체 세워 중심 잡음'],['t','테이크오프','l','일어나서 탐 +2XP']], total:sx=>sx.t, sub:sx=>`도전 ${sx.a} · 푸쉬업 ${sx.p} · 테이크오프 ${sx.t}${sx.a?` · 성공률 ${Math.round(sx.t/sx.a*100)}%`:''}`, hint:'파도 잡으러 갈 때 "도전", 푸쉬업에서 중심 잡았으면 "푸쉬업", 일어나서 탔으면 "테이크오프". 하나씩 눌러요.' },
-  inter:   { unit:'개 탔다', btns:[['l','레프트','l','+2XP'],['r','라이트','r','+2XP'],['w','와이프아웃','w','']], total:sx=>sx.l+sx.r, sub:sx=>`레프트 ${sx.l} · 라이트 ${sx.r} · 와이프아웃 ${sx.w}`, hint:'방향별로 탄 파도를 세요. 노션 복사하면 라이딩 횟수가 채워져요.' },
+  beginner:{ unit:'회 테이크오프', btns:[['a','도전','w','파도 잡으러 감'],['p','푸쉬업','r','상체 세워 중심 잡음'],['t','테이크오프','l','일어나서 탐 +2XP']], total:sx=>sx.t, sub:sx=>`도전 ${sx.a} · 푸쉬업 ${sx.p} · 테이크오프 ${sx.t}${sx.a?` · 성공률 ${Math.round(sx.t/sx.a*100)}%`:''}`, hint:'파도를 잡으러 가면 "도전", 푸쉬업 자세를 유지했으면 "푸쉬업", 일어서서 라이딩했으면 "테이크오프".' },
+  inter:   { unit:'회 라이딩', btns:[['l','레프트','l','+2XP'],['r','라이트','r','+2XP'],['w','와이프아웃','w','']], total:sx=>sx.l+sx.r, sub:sx=>`레프트 ${sx.l} · 라이트 ${sx.r} · 와이프아웃 ${sx.w}`, hint:'방향별로 탄 파도를 세요. 노션 복사하면 라이딩 횟수가 채워져요.' },
 };
 const sessUI = () => SESS_UI[myProfile().role==='coach' ? 'inter' : (myProfile().cls||'beginner')];
 function renderSession(){
@@ -1788,31 +1788,31 @@ function renderReco(){
   if(!$('reco')) return; const day = state.day, pref = myPref();
   const rows = BEACHES.map((b,i)=>({ b, i, a:analyze(b, day) })).map(x=>({ ...x, r:x.a.rep })).map(x=>({ ...x, ...recoScore(x, pref) })).sort((x,y)=>y.sc-x.sc);
   const top = rows.slice(0,3), sd = compass(rows[0].r.sdir);
-  const why = x => [ `체감 <b>${x.eff.toFixed(1)}m</b>(스웰 ${x.r.fit.ko.slice(-1)})`, `${x.r.p.toFixed(1)}초`, relKo[x.r.rel]+(x.r.rel==='off'?' 👍':x.r.rel==='on'&&x.r.w>8?' 👎':''), tasteMatch(x.r)?'<b>내 취향 ★</b>':'' ].filter(Boolean).join(' · ');
-  $('reco').innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="eyebrow">${['오늘','내일','모레'][day]}의 추천 해변</span><span class="lab-sm" style="margin:0">스웰 ${sd} ${rows[0].r.h.toFixed(1)}m → 해변 방향에 따라 체감 크기가 달라요</span></div>
+  const why = x => [ `예상 파고 <b>${x.eff.toFixed(1)}m</b> (노출 ${x.r.fit.ko.slice(-1)})`, `${x.r.p.toFixed(1)}초`, relKo[x.r.rel]+(x.r.rel==='off'?' 👍':x.r.rel==='on'&&x.r.w>8?' 👎':''), tasteMatch(x.r)?'<b>내 취향 ★</b>':'' ].filter(Boolean).join(' · ');
+  $('reco').innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="eyebrow">${['오늘','내일','모레'][day]}의 추천 해변</span><span class="lab-sm" style="margin:0">파향 ${sd} · 앞바다 ${rows[0].r.h.toFixed(1)}m → 해변 방향에 따라 실제 파고가 달라요</span></div>
     <div class="chips" style="margin-top:6px">${Object.entries(PREF).map(([k,v])=>`<button type="button" data-pref="${k}" aria-pressed="${k===pref}">${v.ko}</button>`).join('')}</div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">${top.map((x,k)=>`<button type="button" class="slot ${k===0?'best':''}" data-i="${x.i}" style="width:100%;text-align:left;font-family:inherit"><span class="t" style="min-width:auto">${k+1}. ${x.b.name}</span><span class="d">${why(x)}${x.b.note&&k===0?`<br><small>${x.b.note}</small>`:''}</span><span class="sc">${x.sc.toFixed(1)}</span></button>`).join('')}</div>
-    <div class="lab-sm" style="margin-top:6px">${pref==='small'?'비기너 기본값. 큰 스웰 날엔 정동·남동을 보는 해변이 작고 정돈돼요':pref==='big'?'NE 스웰이면 낙산·동호처럼 북동으로 열린 해변이 에너지를 100% 받아요':'보통 크기 기준. 위 버튼으로 오늘 컨디션에 맞게 바꿔요'}</div>`;
+    <div class="lab-sm" style="margin-top:6px">${pref==='small'?'비기너 기본값. 큰 스웰에는 정동·남동을 향한 해변이 작고 정돈됩니다':pref==='big'?'NE 스웰이면 낙산·동호처럼 북동으로 열린 해변이 에너지를 온전히 받습니다':'중형 기준. 위 버튼으로 오늘 컨디션에 맞게 조정'}</div>`;
   $('reco').querySelectorAll('[data-pref]').forEach(b=>b.onclick=()=>{ state.pref = b.dataset.pref; LS.set('surf.pref', state.pref); renderReco(); });
   $('reco').querySelectorAll('[data-i]').forEach(btn=>btn.onclick=()=>{ state.beach = +btn.dataset.i; LS.set('surf.beach', BEACHES[state.beach].id); renderWave(); window.scrollTo({top:0}); });
 }
 function renderBasis(b, a){
   if(!$('basis')) return; const r = a.rep, sstB = (state.day===0 ? a.hours[new Date().getHours()].sst : null) ?? r.sst ?? a.hours[9].sst, ts = tideStory(b, a), isCoach = myProfile().role==='coach', date = b.daily.time[state.day], off = state.social.tides[date];
-  const waveNote = r.h<0.6 ? '작은 파도 — 물때 영향이 큼, 타이밍이 전부' : r.h<1.2 ? '탈 만한 크기 — 간격이 짧으면(7초↓) 파워 약함' : '큰 파도 — 커런트·세트 간격 주의';
-  const periodNote = r.p<7 ? `${r.p.toFixed(1)}초는 짧은 간격(윈드스웰): 촘촘하고 파워 약함` : r.p<=9 ? `${r.p.toFixed(1)}초는 동해 최적 구간(7~9초)` : r.p<=13 ? `${r.p.toFixed(1)}초는 긴 간격: 세트 기다리기, 파워 있음` : `${r.p.toFixed(1)}초는 너무 긴 간격: 백워시 주의`;
+  const waveNote = r.h<0.6 ? '소형 — 조위 변화에 민감, 타이밍이 중요' : r.h<1.2 ? '중형 — 피리어드가 짧으면(7초 미만) 파워 약함' : '대형 — 커런트·세트 간격 주의';
+  const periodNote = r.p<7 ? `피리어드 ${r.p.toFixed(1)}초 = 단주기 윈드 스웰, 촘촘하고 파워 약함` : r.p<=9 ? `피리어드 ${r.p.toFixed(1)}초 = 동해 최적 구간(7~9초)` : r.p<=13 ? `피리어드 ${r.p.toFixed(1)}초 = 장주기 그라운드 스웰, 세트 파워 강함` : `피리어드 ${r.p.toFixed(1)}초 = 초장주기, 백워시 주의`;
   const bkey = `surf.basis.${ME.id}.${date}.${b.id}`, bchecked = LS.get(bkey, false), collapsed = bchecked && !state.basisOpen;
   const hiEv = tideEvents(b, a).ev.find(e=>e.type==='만조');
   if(collapsed){ $('basis').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;flex:1;line-height:1.4"><b>기준 ✓</b> ${r.h.toFixed(1)}m·${r.p.toFixed(1)}초 ${compass(r.sdir)} ${r.fit.ko.slice(-1)} · 만조 ${hiEv?hiEv.time:'-'} · ${Math.round(r.w)}kts ${relKo[r.rel]} · ${suitFor(sstB)}</span><button class="btn sm ghost" type="button" id="basis-open">펼치기</button></div>`; $('basis-open').onclick = ()=>{ state.basisOpen = true; renderBasis(b, a); }; return; }
   $('basis').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><span class="eyebrow" style="flex:1">오늘의 기준 잡기 · ${date.slice(5).replace('-','.')} ${b.name}</span><label class="item" style="gap:8px;font-size:13px;font-weight:700;align-items:center"><input type="checkbox" id="basis-ck" ${bchecked?'checked':''}><span>확인했어요</span></label></div>
     <div style="margin-top:8px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.55">
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">① 파도 크기 · 간격 — ${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b><br>${waveNote}. ${periodNote}.<br><b>스웰 ${compass(r.sdir)}</b>에서 옴 → ${b.name}은 ${compass(b.swell)} 스웰이 최고라 <b>${r.fit.ko}</b>${b.note?` — ${b.note}`:''}${r.fit.s<=0?` (${BEACHES.filter(x=>swellFit(x, r.sdir).s>=1).map(x=>x.name).slice(0,3).join('·')||'다른 해변도 비슷'}${BEACHES.some(x=>swellFit(x, r.sdir).s>=1)?'이 더 잘 받음':''})`:''}.</div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">② 물때</b><br>${ts.text} 동해안 수심은 물때에 따라 0.1~0.48m 사이를 오가고, <b>해변마다 파도가 가장 좋은 기준 수심</b>이 따로 있어요 — 별점을 남기면 그때 수심이 같이 기록돼 우리 기수만의 기준이 쌓입니다.<br><small style="color:var(--ink2)">기준: ${ts.src}</small></div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">③ 바람 — ${Math.round(r.w)}kts ${compass(r.dir)} ${relKo[r.rel]}</b><br>${r.rel==='on'?'온쇼어: 면이 깨지고 결이 촘촘해짐 → 이른 시간이 답':r.rel==='off'?'오프쇼어: 면이 정돈되고 립이 섬 → 테이크오프 한 템포 늦게':'크로스: 면에 결이 생김, 방향 따라 한쪽이 나음'}.</div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><br>${suitWhy(sstB, a.tempMin)}<div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
+      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">① 파고 · 피리어드 — ${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b><br>${waveNote}.<br>${periodNote}.<br><b>파향 ${compass(r.sdir)}</b> → ${b.name}의 최적 파향은 ${compass(b.swell)}, 노출 <b>${r.fit.ko}</b>${b.note?`<br><small>${b.note}</small>`:''}${r.fit.s<=0?`<br><small>이 파향에 더 열린 해변: ${BEACHES.filter(x=>swellFit(x, r.sdir).s>=1).map(x=>x.name).slice(0,3).join('·')||'없음'}</small>`:''}</div>
+      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">② 물때</b><br>${tideEvents(b,a).ev.map(e=>`<b>${e.type}</b> ${e.time} <small>${e.h>=0?'+':''}${e.h.toFixed(2)}m</small>`).join(' · ')||'극값 없음'}${state.day===0?`<br>${(()=>{ const now=new Date(), hNow=now.getHours()+now.getMinutes()/60, i0=Math.floor(hNow), lv0=a.hours[i0]?.lvl, lv1=a.hours[Math.min(23,i0+1)]?.lvl; return lv0==null||lv1==null?'':`지금 <b>${lv1>lv0+0.005?'들물 ↑':lv1<lv0-0.005?'날물 ↓':'정조 →'}</b> · `; })()}수심 한 뼘(20cm) 차이로 파도 형태가 바뀜, 작은 파도일수록 민감`:''}<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">브리핑 자세히</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${ts.text} 동해안 수심은 물때에 따라 0.1~0.48m 사이를 오가고, 해변마다 파도가 가장 좋은 기준 수심이 따로 있습니다. 별점을 남기면 그때 수심이 기록돼 6기 기준이 쌓입니다.<br><small style="color:var(--ink2)">기준: ${ts.src}</small></div></details></div>
+      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">③ 바람 — ${Math.round(r.w)}kts ${compass(r.dir)} ${relKo[r.rel]}</b><br>${r.rel==='on'?'바다→육지. 페이스가 무너져 초피 → 바람 약한 이른 시간대':r.rel==='off'?'육지→바다. 페이스 정돈·글래시 → 테이크오프 한 박자 늦게':'해안과 평행. 페이스에 결 → 바람을 등진 방향이 유리'}.</div>
+      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><details style="margin-top:2px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">왜 이 슈트?</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${suitWhy(sstB, a.tempMin)}</div></details><div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
     </div>
-    <div class="lab-sm" style="margin-top:8px">데이터: 파도·바람 Open-Meteo(${b.name} 앞바다 격자, 매시 갱신) · 물때 ${state.social.tides[date]?'코치 입력 공식값':'조위 모델 — 코치가 바다누리 값을 입력하면 그걸 씀'}</div>
+    <div class="lab-sm" style="margin-top:8px">데이터: Open-Meteo(${b.name} 앞바다, 매시 갱신) · 물때 ${state.social.tides[date]?'코치 입력 공식값':'조위 모델'}</div>
     ${isCoach ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">코치: 오늘 공식 물때 입력 (바다누리 기준)</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px"><label>만조 시각<input id="tide-hit" type="time" value="${off?.hi?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>만조 높이(m)<input id="tide-hih" type="number" step="0.01" value="${off?.hi?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 시각<input id="tide-lot" type="time" value="${off?.lo?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 높이(m)<input id="tide-loh" type="number" step="0.01" value="${off?.lo?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label></div><button class="btn sm blue" type="button" id="tide-save" style="margin-top:8px">저장 → 전원 브리핑에 반영</button></details>` : ''}`;
-  $('basis-ck').onchange = e=>{ LS.set(bkey, e.target.checked); state.basisOpen = false; if(e.target.checked){ addBonus(3, 'basis|'+date+'|'+b.id); toast('기준 잡기 완료 · 오늘의 정답 찾으러'); renderQuests(); } setTimeout(()=>renderBasis(b, a), 600); };
+  $('basis-ck').onchange = e=>{ LS.set(bkey, e.target.checked); state.basisOpen = false; if(e.target.checked){ addBonus(3, 'basis|'+date+'|'+b.id); toast('기준 잡기 완료'); renderQuests(); } setTimeout(()=>renderBasis(b, a), 600); };
   if(isCoach) $('tide-save').onclick = async ()=>{ const row = { id:date, hi: $('tide-hit').value ? [{ t:$('tide-hit').value, h:+$('tide-hih').value||0 }] : [], lo: $('tide-lot').value ? [{ t:$('tide-lot').value, h:+$('tide-loh').value||0 }] : [], by_id:ME.id, updated_at:new Date().toISOString() };
     try{ await sbUpsert('tides', row); state.social.tides[date] = row; toast('물때 기준 저장 · 전원에게 반영'); renderBasis(b, a); renderTiles(b, a); }catch(e){ toast(state.social.ok===false?notReady:'저장 실패'); } };
 }
@@ -1825,8 +1825,8 @@ function buildAlerts(){
       const longP = hrs.filter(x=>x.p>=10 && x.h>=0.5 && x.fit.s>=0); const best = hrs.reduce((m,x)=>x.s>m.s?x:m, hrs[0]);
       if(longP.length){ const x = longP.reduce((m,y)=>y.p>m.p?y:m, longP[0]); const key = `${x.p.toFixed(1)}|${x.h.toFixed(1)}|${x.hr}`; (groups[key] = groups[key] || { x, names:[], i }).names.push(b.name); }
       if(day===0 && best.s>=8.5 && (!bestOf || best.s>bestOf.best.s)) bestOf = { best, b, i }; });
-    Object.values(groups).forEach(g=>out.push({ id:`lp|${day}|${g.names[0]}`, hot:true, ic:'🔥', tx:`<b>${g.names.slice(0,3).join('·')}${g.names.length>3?' 외':''} ${day?'내일':'오늘'} 피리어드 ${g.x.p.toFixed(1)}초</b> · ${g.x.h.toFixed(1)}m ${pad2(g.x.hr)}시 — ${g.x.p>=13?'국내에서 드문 13초+ · 특별한 날, 무조건':'긴 간격, 꼭 추천'}`, go:()=>{ state.beach=g.i; state.day=day; renderWave(); } }));
-    if(bestOf) out.push({ id:`gd|${day}|${bestOf.b.id}`, ic:'👍', tx:`<b>${bestOf.b.name} 오늘 ${pad2(bestOf.best.hr)}시</b> ${bestOf.best.h.toFixed(1)}m·${bestOf.best.p.toFixed(1)}초 ${relKo[bestOf.best.rel]} — 오늘 최고 조건`, go:()=>{ state.beach=bestOf.i; state.day=0; renderWave(); } }); });
+    Object.values(groups).forEach(g=>out.push({ id:`lp|${day}|${g.names[0]}`, hot:true, ic:'🔥', tx:`<b>${g.names.slice(0,3).join('·')}${g.names.length>3?' 외':''} ${day?'내일':'오늘'} 피리어드 ${g.x.p.toFixed(1)}초</b> · ${g.x.h.toFixed(1)}m ${pad2(g.x.hr)}시 — ${g.x.p>=13?'국내 드문 13초+ 장주기 · 강력 추천':'장주기 스웰 · 추천'}`, go:()=>{ state.beach=g.i; state.day=day; renderWave(); } }));
+    if(bestOf) out.push({ id:`gd|${day}|${bestOf.b.id}`, ic:'👍', tx:`<b>${bestOf.b.name} 오늘 ${pad2(bestOf.best.hr)}시</b> ${bestOf.best.h.toFixed(1)}m·${bestOf.best.p.toFixed(1)}초 ${relKo[bestOf.best.rel]} — 오늘 최적 조건`, go:()=>{ state.beach=bestOf.i; state.day=0; renderWave(); } }); });
   // 내 취향 조건 (별점 4+ 준 날과 비슷)
   const tst = myTaste(); if(tst){ BEACHES.forEach((b,i)=>{ if(!b.m) return; const a = analyze(b, 0); const hit = a.hours.slice(a.srH, a.ssH+1).find(x=>tasteMatch(x)); if(hit) out.push({ id:`taste|${b.id}`, ic:'💛', tx:`<b>${b.name} ${pad2(hit.hr)}시</b> ${hit.h.toFixed(1)}m·${hit.p.toFixed(1)}초 ${relKo[hit.rel]} — 내가 ★4 이상 줬던 조건과 비슷`, go:()=>{ state.beach=i; state.day=0; renderWave(); } }); }); }
   // 수업일 아침
