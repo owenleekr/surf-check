@@ -610,7 +610,8 @@ footer a{color:var(--paper)}
   <div id="tab-rank" hidden>
     <div class="sec-h" style="margin-top:0"><h2>6기 마을</h2><span class="tag">낙산 앞</span><span class="sub" id="village-sub"></span></div>
     <div class="village" id="village"><canvas class="sun2" data-spr="sun" width="8" height="8"></canvas><div class="wv"></div><div class="vgrid" id="vgrid"></div></div>
-    <div class="mood"><input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!"><button class="btn sm blue" type="button" id="mood-save">말풍선</button></div>
+    <div class="lab-sm" id="mood-q" style="margin-top:10px;color:var(--paper);text-shadow:1px 1px 0 var(--ink)"></div>
+    <div class="mood" style="margin-top:4px"><input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!"><button class="btn sm blue" type="button" id="mood-save">말풍선</button></div>
     <div style="display:flex;gap:8px;margin-top:10px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
     <section><div class="sec-h"><h2>마을 채팅</h2><span class="tag">실시간</span><span class="sub" id="chat-sub"></span></div>
       <div class="px"><div class="chat" id="chat"></div><div class="chips" id="chat-emo" style="margin-top:8px">${''}</div><div class="chat-in"><input id="chat-in" maxlength="200" placeholder="메시지" autocomplete="off"><button class="btn sm pink" type="button" id="chat-send">보내기</button></div></div>
@@ -1722,7 +1723,7 @@ function renderCheckin(){
   $('ci-t').innerHTML = state.social.ok===false ? `<b>체크인</b><small>${notReady}</small>` : `<b>지금 ${b.name}에 ${here.length?here.map(c=>c.name).join(', ')+' ('+here.length+')':'아무도 없어요'}</b><small>${others.length?'다른 해변: '+others.map(o=>`${o.n} ${o.k}`).join(' · '):'바다 도착하면 체크인 · 4시간 뒤 자동 해제'}</small>`;
   const meHere = me && me.beach===b.name; $('ci-btn').textContent = meHere ? '나왔어요' : (me ? `📍 ${b.name}으로 옮기기` : '📍 체크인'); $('ci-btn').className = 'btn sm ' + (meHere?'ghost':'pink');
   $('ci-btn').onclick = async ()=>{ const row = { id:`${ME.id}|${today()}`, user_id:ME.id, name:ME.name, beach:b.name, at:new Date().toISOString(), active:!meHere, profile:myProfile(), updated_at:new Date().toISOString() };
-    try{ await sbUpsert('checkins', row); state.social.checkins = state.social.checkins.filter(c=>c.user_id!==ME.id).concat(row.active?[row]:[]); if(row.active) addBonus(5, 'ci|'+today()); toast(row.active?`${b.name} 체크인! 동기들이 볼 수 있어요`:'체크아웃'); renderCheckin(); }catch(e){ toast(state.social.ok===false?notReady:'실패 · 신호 확인'); } };
+    try{ await sbUpsert('checkins', row); state.social.checkins = state.social.checkins.filter(c=>c.user_id!==ME.id).concat(row.active?[row]:[]); if(row.active) addBonus(5, 'ci|'+today()); toast(row.active?`${b.name} 체크인! 동기들이 볼 수 있어요`:'체크아웃'); if(row.active) chatSys(`📍 ${b.name} 도착! 같이 타실 분~`); renderCheckin(); }catch(e){ toast(state.social.ok===false?notReady:'실패 · 신호 확인'); } };
 }
 /* 파티 */
 function renderParty(){
@@ -1731,12 +1732,12 @@ function renderParty(){
   $('pbar-list').innerHTML = ps.map(p=>{ const joins = Array.isArray(p.joins)?p.joins:[], inn = joins.includes(ME.name) || p.user_id===ME.id;
     return `<div class="party"><div class="pt"><b class="num">${p.time}</b> ${p.beach} · ${p.name}<span>${p.note||''}${joins.length?` · 같이: ${joins.join(', ')}`:''}</span></div>${p.user_id===ME.id?'<span class="who">내 모집</span>':`<button class="btn sm ${inn?'ghost':'mint'}" type="button" data-join="${p.id}">${inn?'빠지기':'같이 가요'}</button>`}</div>`; }).join('');
   $('pbar-list').querySelectorAll('[data-join]').forEach(btn=>btn.onclick=async ()=>{ const p = ps.find(x=>x.id===btn.dataset.join); const joins = (Array.isArray(p.joins)?p.joins:[]); const next = joins.includes(ME.name) ? joins.filter(n=>n!==ME.name) : [...joins, ME.name];
-    try{ const r = await fetch(`${SUPA.url}/rest/v1/parties?id=eq.${encodeURIComponent(p.id)}`, { method:'PATCH', headers:supaH(), body:JSON.stringify({ joins:next }) }); if(!r.ok) throw 0; p.joins = next; renderParty(); toast(next.includes(ME.name)?`${p.time} ${p.beach} 같이 가요!`:'빠졌어요'); }catch(e){ toast('실패 · 신호 확인'); } });
+    try{ const r = await fetch(`${SUPA.url}/rest/v1/parties?id=eq.${encodeURIComponent(p.id)}`, { method:'PATCH', headers:supaH(), body:JSON.stringify({ joins:next }) }); if(!r.ok) throw 0; p.joins = next; renderParty(); toast(next.includes(ME.name)?`${p.time} ${p.beach} 같이 가요!`:'빠졌어요'); if(next.includes(ME.name)) chatSys(`🏄 ${p.time} ${p.beach} 파티(${p.name}) 합류!`); }catch(e){ toast('실패 · 신호 확인'); } });
 }
 $('party-new').onclick = ()=>{ if(state.social.ok===false) return toast(notReady); $('party-beach').innerHTML = BEACHES.map(b=>`<option ${b.id===BEACHES[state.beach].id?'selected':''}>${b.name}</option>`).join(''); $('party-modal').hidden = false; };
 $('party-cancel').onclick = ()=>$('party-modal').hidden = true;
 $('party-form').addEventListener('submit', async e=>{ e.preventDefault(); const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), beach:$('party-beach').value, time:$('party-time').value, note:$('party-note').value.trim().slice(0,60), joins:[] };
-  try{ await sbUpsert('parties', row); state.social.parties = [...state.social.parties, row].sort((a,b)=>a.time.localeCompare(b.time)); $('party-modal').hidden = true; $('party-note').value=''; addBonus(5, 'party|'+row.id); toast('모집 올렸어요 · 동기들 상단 바에 떠요'); renderParty(); }catch(e){ toast('실패 · 신호 확인'); } });
+  try{ await sbUpsert('parties', row); state.social.parties = [...state.social.parties, row].sort((a,b)=>a.time.localeCompare(b.time)); $('party-modal').hidden = true; $('party-note').value=''; addBonus(5, 'party|'+row.id); toast('모집 올렸어요 · 동기들 상단 바에 떠요'); chatSys(`🏄 ${row.time} ${row.beach} 같이 가실 분? ${row.note||''}`); renderParty(); }catch(e){ toast('실패 · 신호 확인'); } });
 /* 피드 (6기 탭) */
 function renderFeed(){
   const rs = state.social.ratings.slice(0, 12); $('feed-sub').textContent = state.social.ok===false ? '서버 준비 중' : `${state.social.ratings.length}건`;
@@ -1826,7 +1827,7 @@ function refreshMe(){
   ['me-av','prog-av','lv-av'].forEach(id=>drawSpr($(id), avatarRows(myProfile()), avatarTint()));
   const st = streakOf(d); $('me-streak').textContent = st>=2 ? `🔥 ${st}주 연속 출석` : '';
   const sl = slvStat(d).cur, prevS = LS.get(`surf.slv.${ME.id}`, null);
-  if(prevS!=null && sl>prevS){ $('lvup-t').textContent = `서핑 LV.${SLV[sl-1].n}`; drawSpr($('lvup-av'), avatarRows(myProfile()), avatarTint()); $('lvup').hidden = false; }
+  if(prevS!=null && sl>prevS){ $('lvup-t').textContent = `서핑 LV.${SLV[sl-1].n}`; drawSpr($('lvup-av'), avatarRows(myProfile()), avatarTint()); $('lvup').hidden = false; chatSys(`🎉 서핑 LV.${SLV[sl-1].n} 달성!`); }
   LS.set(`surf.slv.${ME.id}`, sl);
   const prevL = LS.get(`surf.lv.${ME.id}`, null);
   if(prevL!=null && L>prevL){ toast(`새 칭호: ${LEVELS[L][1]}!`); }
@@ -1924,6 +1925,8 @@ async function renderVillage(){
   const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
   $('village-sub').textContent += missing.length ? ` · 아직 안 온 동기 ${missing.length}명` : '';
   $('mood').value = myProfile().mood || '';
+  const QS = ['오늘 가장 잘 된 동작은?','이번 주 목표 한 줄?','오늘 파도 한 단어로?','다음 주 타고 싶은 해변은?','오늘 코치 피드백 중 기억나는 것?','서핑 시작한 이유는?','요즘 제일 어려운 건?','같이 타고 싶은 사람 지목!'];
+  $('mood-q').textContent = '오늘의 질문 · ' + QS[Math.floor(Date.now()/864e5) % QS.length];
 }
 $('mood-save').onclick = ()=>{ setProfile({ mood:$('mood').value.trim().slice(0,40) }); toast('말풍선 올렸어요'); setTimeout(renderVillage, 1600); };
 $('mood').addEventListener('keydown', e=>{ if(e.key==='Enter') $('mood-save').click(); });
@@ -1941,6 +1944,7 @@ function renderChat(){
   if(atBottom || chatLast!==state.chat.length){ box.scrollTop = box.scrollHeight; chatLast = state.chat.length; }
 }
 function startChatPoll(){ clearInterval(chatT); chatT = setInterval(()=>{ if(state.tab==='rank' && !document.hidden) pullChat(); else if(state.tab!=='rank') clearInterval(chatT); }, 5000); }
+function chatSys(text){ if(!supaOn() || state.chatOk===false || !ME) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text, profile:myProfile(), created_at:new Date().toISOString() }; sbUpsert('chat', row).then(()=>{ state.chat.push(row); if(state.tab==='rank') renderChat(); }).catch(()=>{}); }
 async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200), profile:{ gender:myProfile().gender, hat:myProfile().hat, top:myProfile().top, bottom:myProfile().bottom, board:myProfile().board, boardc:myProfile().boardc, role:myProfile().role }, created_at:new Date().toISOString() };
   try{ await sbUpsert('chat', row); $('chat-in').value=''; state.chat.push(row); renderChat(); }catch(e){ toast(state.chatOk===false?'서버 준비 중':'전송 실패 · 신호 확인'); } }
 $('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏'].map(e=>`<button type="button" style="padding:3px 8px;font-family:sans-serif">${e}</button>`).join('');
