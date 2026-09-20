@@ -298,6 +298,14 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .lvup .big{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:40px; color:var(--sun); text-shadow:4px 4px 0 var(--ink); animation:bob .6s steps(3) infinite}
 .lvup canvas{width:160px; height:160px; margin:12px auto; display:block}
 .streak{font-size:11px; color:var(--sun)}
+.hello{margin-top:8px; color:var(--paper); text-shadow:2px 2px 0 var(--ink); font-size:14px; line-height:1.4}
+.hello b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:18px}
+.quick{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:8px}
+.quick button{border:3px solid var(--ink); background:var(--paper); padding:6px 2px; font-size:11px; font-weight:700; box-shadow:2px 2px 0 var(--ink); line-height:1.2; font-family:inherit}
+.quick button span{display:block; font-size:16px; font-family:sans-serif}
+.hist{display:flex; flex-direction:column; gap:6px; font-size:12px}
+.hist div{display:flex; justify-content:space-between; gap:8px; border-bottom:2px dashed var(--grid); padding:4px 0}
+.hist b{font-family:"Galmuri14","Galmuri11",sans-serif}
 /* 마을 */
 .village{position:relative; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); overflow:hidden; background:linear-gradient(to bottom, var(--sky) 0 38%, var(--sea) 38% 62%, var(--sand) 62% 100%); padding:10px 8px 8px; min-height:200px}
 .village .sun2{position:absolute; right:14px; top:10px; width:24px; height:24px}
@@ -485,6 +493,8 @@ footer a{color:var(--paper)}
   <div id="tab-wave">
     <div class="topbar" id="topbar" hidden></div>
     <div class="pbar" id="pbar"><div class="ph"><b>🏄 파티원 모집</b><span class="cnt2" id="pbar-sub">아직 없어요</span><button class="btn sm ghost" type="button" id="party-new">+ 모집</button></div><div id="pbar-list"></div></div>
+    <div class="hello" id="hello"></div>
+    <div class="quick" id="quick"><button type="button" data-go="ci"><span>📍</span>체크인</button><button type="button" data-go="sess"><span>🔢</span>세션 카운트</button><button type="button" data-go="rate"><span>⭐</span>별점</button><button type="button" data-go="sess-lesson"><span>✎</span>레슨런</button></div>
     <div class="days" id="days" role="group" aria-label="날짜 선택"></div>
     <div class="beaches" id="beaches" role="group" aria-label="해변 선택"></div>
     <div class="px sand" id="basis" style="margin-top:10px"></div>
@@ -578,6 +588,8 @@ footer a{color:var(--paper)}
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)"><span id="xp-txt">0 XP</span><span id="xp-next"></span></div>
       <div class="bar" data-c="sun" style="margin-top:6px"><i id="xp-bar"></i></div>
       <div class="stats" id="stats"></div>
+      <div class="lab-sm" style="margin-top:12px">내 홈 해변 · 파도 탭이 이 해변으로 열려요</div><div class="chips" id="home-chips"></div>
+      <div class="lab-sm" style="margin-top:12px">최근 세션</div><div class="hist" id="hist"></div>
     </div>
     <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">주 2회 × 8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
     <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av" data-anim></canvas><div class="opts" id="bld-opts"></div></div></section>
@@ -1490,7 +1502,7 @@ $('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
   const b = BEACHES[state.beach], a = analyze(b, state.day);
-  renderDays(); renderBeaches(); renderHero(b, a); renderPeriod(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); renderTopbar(); pullSocial(false); renderTiles(b, a); renderSource(b, a); renderChart(b, a); renderBasis(b, a); renderReco(); renderChecks(b, a); renderCam(b); renderCompare();
+  renderDays(); renderBeaches(); renderHello(); renderHero(b, a); renderPeriod(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); renderTopbar(); pullSocial(false); renderTiles(b, a); renderSource(b, a); renderChart(b, a); renderBasis(b, a); renderReco(); renderChecks(b, a); renderCam(b); renderCompare();
 }
 async function refreshWave(){ try{ await load(); renderWave(); toast(`파도 데이터 갱신 ${pad2(new Date().getHours())}:${pad2(new Date().getMinutes())}`); }catch(e){} }
 setInterval(()=>{ if(ME && state.loaded) refreshWave(); }, 3600e3);                                   // 매시 자동 갱신
@@ -1599,14 +1611,34 @@ function recoScore(x, pref){
   let sc = 0; if(eff>=P.lo && eff<=P.hi) sc += 4; else sc += Math.max(-4, 4 - Math.abs(eff < P.lo ? P.lo-eff : eff-P.hi)/0.25);
   sc += r.p<6.5 ? 0.5 : r.p<=9.5 ? 2.5 : r.p<=13 ? 2 : 0.5;
   sc += r.rel==='off' ? 2 : r.rel==='cross' ? 1 : (r.w>8 ? -1 : 0.5);
-  sc += r.fit.s>=1 ? 1 : 0; if(x.a.vd.v==='warn') sc -= 10;
+  sc += r.fit.s>=1 ? 1 : 0; if(x.a.vd.v==='warn') sc -= 10; sc += tasteMatch(r) * 1.5;
   return { sc, eff };
+}
+/* 개인화: 인사·홈 해변·빠른 액션·내 취향(별점 기반) */
+function myTaste(){ const mine = state.social.ratings.filter(r=>r.user_id===ME.id && r.chart && +r.stars>=4); if(mine.length<2) return null;
+  const avg = k => mine.reduce((s2,r)=>s2+(+r.chart[k]||0),0)/mine.length; const rel = ['off','cross','on'].map(k=>[k, mine.filter(r=>r.chart.rel===k).length]).sort((a,b)=>b[1]-a[1])[0][0];
+  return { h:avg('h'), p:avg('p'), rel, n:mine.length, beaches:[...new Set(mine.map(r=>r.beach))] }; }
+function tasteMatch(x){ const t = myTaste(); if(!t) return 0; return Math.abs(x.h-t.h)<=0.3 && Math.abs(x.p-t.p)<=1.5 && x.rel===t.rel ? 1 : 0; }
+function renderHello(){
+  if(!$('hello')) return; const pr = myProfile(), d = new Date(), h = d.getHours(), cw = weekOfDate(today()), dow = d.getDay(), isClass = [0,6].includes(dow) && cw>=1 && cw<=8;
+  const greet = h<5 ? '아직 캄캄' : h<9 ? '굿모닝' : h<12 ? '좋은 아침' : h<18 ? '오후' : '저녁';
+  const cls = pr.role==='coach' ? '코치' : pr.cls==='inter' ? '중급반' : '비기너반', t = pr.role==='coach' ? '' : (pr.cls==='inter' ? '13:30 이론 · 14:00 입수' : '09:00 이론 · 10:00 입수');
+  const d0 = getData(), sx = session(), left = 3 - Math.min(3, (sx.t||0)+(sx.l||0)+(sx.r||0));
+  $('hello').innerHTML = `<b>${greet}, ${ME.name}</b> · ${isClass ? `${cw}주차 ${dow===6?'토':'일'} · ${cls} ${t}` : `${cw>=1&&cw<=8?cw+'주차 주중':'학기 밖'} · 다음 수업까지 ${(6-dow+7)%7||7}일`}${isClass && left>0 ? ` · 오늘 성공 ${3-left}/3` : ''}${myTaste()?` · 내 취향 ★ ${myTaste().h.toFixed(1)}m·${myTaste().p.toFixed(1)}초 ${relKo[myTaste().rel]}`:''}`;
+}
+$('quick').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const el = $(b.dataset.go); if(!el) return; if(el.tagName==='DETAILS') el.open = true; el.scrollIntoView({block:'center'}); if(b.dataset.go==='ci') $('ci-btn')?.focus(); });
+function renderHome(){
+  if(!$('home-chips')) return; const home = myProfile().home || null;
+  $('home-chips').innerHTML = BEACHES.map(b=>`<button type="button" data-home="${b.id}" aria-pressed="${b.id===home}">${b.name}</button>`).join('');
+  $('home-chips').querySelectorAll('button').forEach(x=>x.onclick=()=>{ setProfile({ home:x.dataset.home }); LS.set('surf.beach', x.dataset.home); toast(`홈 해변: ${BEACHES.find(b=>b.id===x.dataset.home).name}`); renderHome(); });
+  const d = getData(), ss = Object.entries(d.sessions||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
+  $('hist').innerHTML = ss.length ? ss.map(([date,x])=>`<div><span>${date.slice(5).replace('-','.')} ${x.beach||''}</span><b>${x.t?`테이크오프 ${x.t}/${x.a||0}`:`L${x.l||0} R${x.r||0}`}${x.w?` · W${x.w}`:''}</b></div>`).join('') : '<div style="color:var(--ink2)">아직 세션 기록이 없어요</div>';
 }
 function renderReco(){
   if(!$('reco')) return; const day = state.day, pref = myPref();
   const rows = BEACHES.map((b,i)=>({ b, i, a:analyze(b, day) })).map(x=>({ ...x, r:x.a.rep })).map(x=>({ ...x, ...recoScore(x, pref) })).sort((x,y)=>y.sc-x.sc);
   const top = rows.slice(0,3), sd = compass(rows[0].r.sdir);
-  const why = x => [ `체감 <b>${x.eff.toFixed(1)}m</b>(스웰 ${x.r.fit.ko.slice(-1)})`, `${x.r.p.toFixed(1)}초`, relKo[x.r.rel]+(x.r.rel==='off'?' 👍':x.r.rel==='on'&&x.r.w>8?' 👎':'') ].join(' · ');
+  const why = x => [ `체감 <b>${x.eff.toFixed(1)}m</b>(스웰 ${x.r.fit.ko.slice(-1)})`, `${x.r.p.toFixed(1)}초`, relKo[x.r.rel]+(x.r.rel==='off'?' 👍':x.r.rel==='on'&&x.r.w>8?' 👎':''), tasteMatch(x.r)?'<b>내 취향 ★</b>':'' ].filter(Boolean).join(' · ');
   $('reco').innerHTML = `<div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="eyebrow">${['오늘','내일','모레'][day]}의 추천 해변</span><span class="lab-sm" style="margin:0">스웰 ${sd} ${rows[0].r.h.toFixed(1)}m → 해변 방향에 따라 체감 크기가 달라요</span></div>
     <div class="chips" style="margin-top:6px">${Object.entries(PREF).map(([k,v])=>`<button type="button" data-pref="${k}" aria-pressed="${k===pref}">${v.ko}</button>`).join('')}</div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">${top.map((x,k)=>`<button type="button" class="slot ${k===0?'best':''}" data-i="${x.i}" style="width:100%;text-align:left;font-family:inherit"><span class="t" style="min-width:auto">${k+1}. ${x.b.name}</span><span class="d">${why(x)}${x.b.note&&k===0?`<br><small>${x.b.note}</small>`:''}</span><span class="sc">${x.sc.toFixed(1)}</span></button>`).join('')}</div>
@@ -1645,6 +1677,10 @@ function buildAlerts(){
       if(day===0 && best.s>=8.5 && (!bestOf || best.s>bestOf.best.s)) bestOf = { best, b, i }; });
     Object.values(groups).forEach(g=>out.push({ id:`lp|${day}|${g.names[0]}`, hot:true, ic:'🔥', tx:`<b>${g.names.slice(0,3).join('·')}${g.names.length>3?' 외':''} ${day?'내일':'오늘'} 피리어드 ${g.x.p.toFixed(1)}초</b> · ${g.x.h.toFixed(1)}m ${pad2(g.x.hr)}시 — ${g.x.p>=13?'국내에서 드문 13초+ · 특별한 날, 무조건':'긴 간격, 꼭 추천'}`, go:()=>{ state.beach=g.i; state.day=day; renderWave(); } }));
     if(bestOf) out.push({ id:`gd|${day}|${bestOf.b.id}`, ic:'👍', tx:`<b>${bestOf.b.name} 오늘 ${pad2(bestOf.best.hr)}시</b> ${bestOf.best.h.toFixed(1)}m·${bestOf.best.p.toFixed(1)}초 ${relKo[bestOf.best.rel]} — 오늘 최고 조건`, go:()=>{ state.beach=bestOf.i; state.day=0; renderWave(); } }); });
+  // 내 취향 조건 (별점 4+ 준 날과 비슷)
+  const tst = myTaste(); if(tst){ BEACHES.forEach((b,i)=>{ if(!b.m) return; const a = analyze(b, 0); const hit = a.hours.slice(a.srH, a.ssH+1).find(x=>tasteMatch(x)); if(hit) out.push({ id:`taste|${b.id}`, ic:'💛', tx:`<b>${b.name} ${pad2(hit.hr)}시</b> ${hit.h.toFixed(1)}m·${hit.p.toFixed(1)}초 ${relKo[hit.rel]} — 내가 ★4 이상 줬던 조건과 비슷`, go:()=>{ state.beach=i; state.day=0; renderWave(); } }); }); }
+  // 수업일 아침
+  { const cw = weekOfDate(today()), dow = new Date().getDay(), pr = myProfile(); if([0,6].includes(dow) && cw>=1 && cw<=8 && new Date().getHours()<13 && pr.role!=='coach') out.push({ id:`class|${today()}`, ic:'🎒', tx:`오늘 <b>${cw}주차 ${WEEKS[cw-1].title}</b> · ${pr.cls==='inter'?'중급반 13:30':'비기너반 09:00'} · 수건·리쉬 챙겼나요?`, go:()=>showTab('mission') }); }
   // 칭찬 카드 (오늘 받은 것)
   allCards().filter(c=>c.to===ME.name && c.date.slice(0,10)===today()).forEach(c=>out.push({ id:`card|${c.id}`, ic:'👏', tx:`<b>${c.fromName}</b>가 칭찬 카드 — "${c.tpl}"`, go:()=>showTab('level') }));
   // 체크인 (나 말고)
@@ -1652,7 +1688,7 @@ function buildAlerts(){
   Object.entries(byBeach).forEach(([beach, names])=>out.push({ id:`ci|${beach}|${names.length}`, ic:'📍', tx:`<b>${names.join(', ')}</b> 지금 ${beach}에 있어요`, go:()=>{ const i=BEACHES.findIndex(b=>b.name===beach); if(i>=0){ state.beach=i; state.day=0; renderWave(); } } }));
   // 파티
   const ps = state.social.parties.filter(p=>p.user_id!==ME.id); if(ps.length) out.push({ id:`party|${ps.length}`, ic:'🏄', tx:`오늘 파티 <b>${ps.length}건</b> — ${ps[0].time} ${ps[0].beach} ${ps[0].name}${ps.length>1?' 외':''}`, go:()=>$('pbar').scrollIntoView({block:'center'}) });
-  const rank = x => x.hot ? 0 : ['👏','📍','🏄'].includes(x.ic) ? 1 : 2;
+  const rank = x => x.hot ? 0 : ['🎒','👏','📍','🏄','💛'].includes(x.ic) ? 1 : 2;
   return out.filter(x=>!dismissed[x.id]).sort((x,y)=>rank(x)-rank(y)).slice(0,5);
 }
 function renderTopbar(){
@@ -1720,6 +1756,7 @@ function builderHTML(pr, prefix){
 }
 const ONB = [
   { who:'교장쌤', txt:'6기 환영합니다! 먼저 라인업에서 알아볼 수 있게 캐릭터부터 만들어요. 래시가드·모자·보드 색은 언제든 "나" 탭에서 바꿀 수 있어요.', build:true, tab:'wave' },
+  { who:'매니저', txt:'주로 어느 해변에서 타요? 홈 해변을 고르면 앱이 그 해변으로 열려요. (나중에 "나" 탭에서 바꿀 수 있어요)', home:true, tab:'wave' },
   { who:'교장쌤', txt:'1·2주차(보드 구조, 패들링·화이트워터)는 이미 하셨죠? 완료 처리하고 XP도 드릴게요. 출석은 코치 출석부 기록을 따릅니다.', tab:'mission', done12:true },
   { who:'매니저', txt:'【파도 탭】 맨 위 노란 바에서 "같이 가실 분?" 파티를 올리고, 바다 도착하면 📍체크인. 물에서 나오면 "오늘 세션"에서 횟수를 세고 오늘 파도에 ★별점을 남겨요 — 별점이 쌓이면 차트가 실제로 몇 점짜리인지 6기가 알게 돼요.', tab:'wave' },
   { who:'매니저', txt:'【수업 탭】 이번 주 카드 하나만 보면 돼요: 출석 도장 → 배운 것 체크 → 미션 → 레슨런. 지난 주는 아래 "전체 과정"에서.', tab:'mission' },
@@ -1733,6 +1770,7 @@ function onbShow(){
   $('onb-name').textContent = st.who; typeInto($('onb-txt'), st.txt); drawSpr($('onb-av'), avatarRows(COACH_PR), avatarTintOf(COACH_PR, 5));
   $('onb-step').textContent = `${onbI+1} / ${ONB.length}`; $('onb-next').textContent = st.last ? '출발! 🏄' : '다음 ▶';
   if(st.build){ onbPr = { ...myProfile() }; const paintB = ()=>{ $('onb-bld').innerHTML = `<canvas id="onb-me" data-anim style="width:128px;height:128px;display:block;margin:0 auto 8px;background:var(--sky);border:4px solid var(--ink)"></canvas><div class="opts">${builderHTML(onbPr)}</div>`; drawSpr($('onb-me'), avatarRows(onbPr), avatarTintOf(onbPr, 0)); $('onb-bld').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; onbPr[x.dataset.k] = v; paintB(); }); }; paintB(); }
+  else if(st.home){ const home = myProfile().home || 'naksan'; $('onb-bld').innerHTML = `<div class="chips">${BEACHES.map(b=>`<button type="button" data-home="${b.id}" aria-pressed="${b.id===home}">${b.name}</button>`).join('')}</div>`; $('onb-bld').querySelectorAll('[data-home]').forEach(x=>x.onclick=()=>{ setProfile({ home:x.dataset.home }); LS.set('surf.beach', x.dataset.home); const i = BEACHES.findIndex(b=>b.id===x.dataset.home); if(i>=0){ state.beach = i; renderWave(); } onbShow(); }); }
   else $('onb-bld').innerHTML = '';
   $('onb-txt').parentElement.scrollIntoView?.();
 }
@@ -1769,7 +1807,7 @@ function renderLevel(){
   const mine = allCards().filter(c=>c.to===ME.name).sort((a,b)=>b.date.localeCompare(a.date));
   $('cards-n').textContent = mine.length;
   $('cards-in').innerHTML = mine.map(c=>`<div class="cardc"><div class="tpl">${c.tpl}</div>${c.text?`<div class="txt">${c.text.replace(/</g,'&lt;')}</div>`:''}<div class="meta">${c.fromName} · ${c.date.slice(0,10).replace(/-/g,'.')}</div></div>`).join('') || '<div class="px" style="font-size:13px;color:var(--ink2)">아직 없어요. 먼저 보내면 돌아와요.</div>';
-  renderSLV();
+  renderSLV(); renderHome();
   const lv = d.lvl||{};
   $('levels').innerHTML = SLV.map((Lv,li)=>{ const eN = Lv.edu.filter((_,i)=>lv[slvKey(li,'e',i)]).length; return `<div class="${li===st.cur?'cur':''}" style="${li<st.cur?'opacity:.6':''}"><span>서핑 LV.${Lv.n} <small style="color:var(--ink2)">${Lv.g}</small></span><span class="num">${li<st.cur?'달성':`교육 ${eN}/${Lv.edu.length}`}</span></div>`; }).join('')
     + `<div style="border:0;margin-top:6px;font-size:12px;color:var(--ink2)">칭호(XP): ${LEVELS.map(([m,n],i)=>`${i===L?'<b>':''}${n}${i===L?'</b>':''}`).join(' → ')}</div>`;
@@ -1803,7 +1841,7 @@ $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>s
 function enter(u){
   ME = { id:u.id, name:u.name }; LS.set('surf.session', u.id);
   $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
-  state.pref = LS.get('surf.pref', null); state.model = LS.get('surf.model', 'marine_best_match'); const sb = LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
+  state.pref = LS.get('surf.pref', null); state.model = LS.get('surf.model', 'marine_best_match'); const sb = (auth.users()[u.id]?.profile?.home) || LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
   $('practice').value = LS.get(`surf.practice.${u.id}`, '');
   refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
 }
