@@ -484,6 +484,8 @@ footer a{color:var(--paper)}
           <svg id="svg-tide" viewBox="0 0 600 90" role="img" aria-label="시간대별 조위"></svg>
           <div class="row-h"><span>바람 kts</span><span>화살표 = 바람이 가는 방향</span></div>
           <div class="winds" id="winds"></div>
+          <div class="row-h"><span>수온 °C</span><span id="chart-sst"></span></div>
+          <div class="winds" id="ssts"></div>
           <div class="legend"><span><i style="background:var(--sun)"></i>입수 권장</span><span><i style="background:var(--sea)"></i>파고</span><span><i style="background:var(--grape)"></i>조위</span><span><b style="color:var(--orange);font-family:sans-serif">↓</b> 온쇼어</span><span><b style="color:var(--sea);font-family:sans-serif">↓</b> 오프쇼어</span></div>
           <div class="tip" id="tip"></div>
         </div>
@@ -988,12 +990,12 @@ function tidePhase(a){
 }
 function wxKo(c){ if(c==null) return ''; if(c<=1) return '맑음'; if(c===2) return '구름 조금'; if(c===3) return '흐림'; if(c<=48) return '안개'; if(c<=57) return '이슬비'; if(c<=67) return '비'; if(c<=77) return '눈'; if(c<=82) return '소나기'; if(c<=86) return '눈소나기'; return '뇌우'; }
 function renderTiles(b, a){
-  const r = a.rep, sst = r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000), rain = Math.max(...a.hours.slice(5,20).map(x=>x.rain??0));
+  const r = a.rep, nowSst = state.day===0 ? a.hours[new Date().getHours()].sst : null, sst = nowSst ?? r.sst ?? a.hours[9].sst, light = new Date(a.ss.getTime()+17*60000), rain = Math.max(...a.hours.slice(5,20).map(x=>x.rain??0));
   const tideTxt = a.tides.length ? a.tides.map(t=>`<b>${t.type}</b> ${t.time}`).join('<br>') : '극값 없음';
   $('tiles').innerHTML =
     tile('sunrise','일출 / 일몰', `<span class="num">${hhmm(b.daily.sunrise[state.day])}</span><small>~</small><span class="num">${hhmm(b.daily.sunset[state.day])}</span>`, `실사용 광량 ~${pad2(light.getHours())}:${pad2(light.getMinutes())}`) +
     tile('tide','만조 / 간조', `<span style="font-size:17px;line-height:1.4" class="num">${tideTxt}</span>`, `조차 ${(a.lmax-a.lmin).toFixed(2)}m · 입수 시 ${tidePhase(a)}`) +
-    tile('drop','수온', `${sst.toFixed(1)}<small>°C</small>`, `<b>${suitFor(sst)}</b>`) +
+    tile('drop','수온', `${sst.toFixed(1)}<small>°C</small>`, `<b>${suitFor(sst)}</b>${nowSst!=null?` · 지금 ${pad2(new Date().getHours())}시 기준`:''}`) +
     tile('temp','기온', `${Math.round(a.tempMin)}<small>~</small>${Math.round(a.tempMax)}<small>°C</small>`, `${wxKo(r.wx)} · 강수 ${rain}%${a.tempMin<=18?' · 새벽엔 서늘, 겉옷':''}`) +
     tile('wave','파도', `${r.h.toFixed(1)}<small>m</small> / ${Math.round(r.p)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
     tile('wind','바람', `${Math.round(r.w)}<small>kts</small> ${compass(r.dir)}`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 면 깨짐, 촘촘한 결':r.rel==='off'?' · 면 정돈':''} · 돌풍 ${Math.round(r.gust)}kts`);
@@ -1026,6 +1028,10 @@ function renderChart(b, a){
   $('svg-tide').innerHTML = t; $('chart-tide').textContent = `${lmin.toFixed(2)} ~ ${lmax.toFixed(2)}m`;
   const wb = $('winds'); wb.style.gridTemplateColumns = `${padL/W*100}% repeat(${n},1fr) ${padR/W*100}%`;
   wb.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w ${x.rel}" title="${compass(x.dir)} ${relKo[x.rel]}"><b style="transform:rotate(${Math.round(x.dir)}deg)">↓</b><span class="num">${Math.round(x.w)}</span></div>`).join('') + `<span></span>`;
+  const sb2 = $('ssts'); sb2.style.gridTemplateColumns = wb.style.gridTemplateColumns;
+  const ssts = hrs.map(x=>x.sst??0), sMin = Math.min(...ssts), sMax = Math.max(...ssts);
+  sb2.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w" title="${pad2(x.hr)}시 수온 ${(x.sst??0).toFixed(1)}°C · 기온 ${Math.round(x.temp)}°C"><span class="num" style="font-weight:700;color:${(x.sst??0)>=sMax-0.05?'var(--coral)':(x.sst??0)<=sMin+0.05?'var(--sea)':'var(--ink)'}">${(x.sst??0).toFixed(1)}</span><span class="num" style="font-size:9px;color:var(--ink2)">${Math.round(x.temp)}°</span></div>`).join('') + `<span></span>`;
+  $('chart-sst').textContent = `${sMin.toFixed(1)}~${sMax.toFixed(1)}°C · 작은 숫자는 기온`;
   const tip = $('tip'), box = $('chart');
   const show = (k, evt)=>{ const x = hrs[k]; if(!x) return;
     tip.innerHTML = `<b>${pad2(x.hr)}:00</b> · ${x.h.toFixed(2)}m ${Math.round(x.p)}초 ${compass(x.wdir)}<br>바람 ${Math.round(x.w)}kts ${compass(x.dir)} ${relKo[x.rel]} · 조위 ${(x.lvl??0).toFixed(2)}m<br>기온 ${Math.round(x.temp)}°C · 수온 ${(x.sst??0).toFixed(1)}°C · 점수 ${x.s.toFixed(1)}`;
@@ -1349,6 +1355,9 @@ function renderWave(){
   const b = BEACHES[state.beach], a = analyze(b, state.day);
   renderDays(); renderBeaches(); renderHero(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); pullSocial(false); renderTiles(b, a); renderChart(b, a); renderChecks(b, a); renderCam(b); renderCompare();
 }
+async function refreshWave(){ try{ await load(); renderWave(); toast(`파도 데이터 갱신 ${pad2(new Date().getHours())}:${pad2(new Date().getMinutes())}`); }catch(e){} }
+setInterval(()=>{ if(ME && state.loaded) refreshWave(); }, 3600e3);                                   // 매시 자동 갱신
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && ME && state.loaded && state.fetchedAt && Date.now()-state.fetchedAt.getTime() > 30*60e3) refreshWave(); });
 async function bootWave(){
   const st = $('state'); st.hidden = false; $('wave-main').hidden = true;
   st.innerHTML = `<span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p>`;
