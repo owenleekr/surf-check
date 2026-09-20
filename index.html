@@ -133,6 +133,14 @@ html{scroll-behavior:smooth}
 .summary{margin-top:12px; font-size:15px; line-height:1.6}
 .summary mark{background:var(--sun); color:var(--ink); padding:0 4px}
 .window{margin-top:12px; display:inline-flex; align-items:center; gap:8px; border:4px solid var(--ink); padding:6px 12px; background:var(--mint); font-weight:700; font-size:15px; box-shadow:3px 3px 0 var(--ink)}
+.pgauge{margin-top:12px; border:3px solid var(--ink); background:#fff; padding:8px 10px}
+.pgauge .ph2{display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--ink2)}
+.pgauge .ph2 b{font-family:"Galmuri14","Galmuri11",sans-serif; font-size:20px; color:var(--ink)}
+.pgauge .bar2{position:relative; height:16px; margin-top:6px; border:3px solid var(--ink); background:linear-gradient(90deg, #D9D4C0 0 20%, var(--sun) 20% 33%, var(--mint) 33% 60%, var(--sky) 60% 86%, var(--coral) 86% 100%)}
+.pgauge .mk{position:absolute; top:-9px; width:6px; height:28px; background:var(--ink); transform:translateX(-50%)}
+.pgauge .mk::after{content:"▼"; position:absolute; top:-14px; left:50%; transform:translateX(-50%); font-size:10px; color:var(--ink)}
+.pgauge .lg{display:flex; justify-content:space-between; font-size:10px; color:var(--ink2); margin-top:4px}
+.pgauge .why{font-size:12px; line-height:1.45; margin-top:6px}
 .slots{display:flex; flex-direction:column; gap:8px; margin-top:12px}
 .slot{display:flex; align-items:center; gap:10px; border:3px solid var(--ink); background:#fff; padding:6px 10px; font-size:13px; box-shadow:3px 3px 0 var(--ink)}
 .slot.best{background:var(--mint)}
@@ -462,6 +470,7 @@ footer a{color:var(--paper)}
           <div class="stamp" id="stamp" data-v="ok">탈 만함</div>
         </div>
         <p class="summary" id="summary"></p>
+        <div class="pgauge" id="pgauge"></div>
         <div class="lab-sm" style="margin-top:14px">추천 시간대 · 파고 / 주기 / 바람</div><div class="slots" id="slots"></div>
       </article>
       <div class="px sess" id="sess">
@@ -482,6 +491,8 @@ footer a{color:var(--paper)}
         <div class="chart px" id="chart">
           <div class="row-h"><span>파고 m</span><span id="chart-swell"></span></div>
           <svg id="svg-wave" viewBox="0 0 600 150" role="img" aria-label="시간대별 파고"></svg>
+          <div class="row-h"><span>피리어드(간격) 초 — 7~9가 동해 최적</span><span id="chart-per"></span></div>
+          <div class="winds" id="pers"></div>
           <div class="row-h"><span>물때 — 선이 올라가면 차오르는 중, 내려가면 빠지는 중</span><span id="chart-tide"></span></div>
           <svg id="svg-tide" viewBox="0 0 600 90" role="img" aria-label="시간대별 조위"></svg>
           <div class="row-h"><span>바람 kts</span><span>화살표 = 바람이 가는 방향</span></div>
@@ -966,6 +977,17 @@ function renderBeaches(){
   });
   const cur = box.children[state.beach]; if(cur) cur.scrollIntoView({ inline:'nearest', block:'nearest' });
 }
+/* 피리어드 구간: <5 거의 없음 · 5~6.5 짧음(윈드스웰) · 6.5~9.5 동해 최적 · 9.5~13 긴 간격(파워) · 13+ 백워시 */
+const PZ = p => p<5 ? ['거의 파도 없음','#D9D4C0'] : p<6.5 ? ['짧은 간격 · 윈드스웰 · 파워 약함','var(--sun)'] : p<=9.5 ? ['동해 최적 · 파워와 정돈 균형','var(--mint)'] : p<=13 ? ['긴 간격 · 세트 파워 큼 · 세트 기다리기','var(--sky)'] : ['너무 긴 간격 · 백워시 심함','var(--coral)'];
+const pColor = p => p<6.5 ? 'var(--orange)' : p<=9.5 ? '#1FA366' : p<=13 ? 'var(--sea)' : 'var(--bad)';
+function renderPeriod(b, a){
+  const r = a.rep, p = r.p, [zone] = PZ(p), pct = Math.min(100, Math.max(0, (p-3)/12*100));   // 3~15초 → 0~100%
+  const energy = p>=7 ? ` 6초 파도 대비 에너지 약 ${Math.round(Math.pow(p/6, 4)*10)/10}배.` : p<6.5 ? ' 8초였다면 에너지가 약 3배.' : '';
+  $('pgauge').innerHTML = `<div class="ph2"><span>피리어드(파도 간격) <b>${p.toFixed(1)}초</b></span><span>${zone}</span></div>
+    <div class="bar2"><span class="mk" style="left:${pct}%"></span></div>
+    <div class="lg"><span>3</span><span>5</span><span>6.5</span><span>9.5</span><span>13</span><span>15+</span></div>
+    <div class="why">같은 ${r.h.toFixed(1)}m라도 간격이 길수록 파도가 크고 힘이 세요.${energy} (교장쌤: 6초→8초면 수심 아래 원운동이 약 5배, 동해는 7~9초가 좋고 13초 넘으면 백워시)</div>`;
+}
 function renderHero(b, a){
   const L = dateLabel(b.daily.time[state.day]);
   $('hero-date').textContent = `${L.iso.replace(/-/g,'.')} (${L.dow}) · ${b.area}${state.cached?` · ${pad2(state.fetchedAt.getHours())}:${pad2(state.fetchedAt.getMinutes())} 캐시`:''}`; $('hero-name').textContent = b.name;
@@ -1028,7 +1050,7 @@ function renderChart(b, a){
     s += `<rect class="hit" data-k="${k}" x="${padL+k*colW}" y="0" width="${colW}" height="${H}" fill="transparent"/>`;
   });
   s += `<line x1="${padL}" x2="${W-padR}" y1="${bottom}" y2="${bottom}" stroke="var(--ink)" stroke-width="3"/>`;
-  $('svg-wave').innerHTML = s; $('chart-swell').textContent = `주기 ${Math.round(Math.min(...hrs.map(x=>x.p)))}~${Math.round(Math.max(...hrs.map(x=>x.p)))}초`;
+  $('svg-wave').innerHTML = s; $('chart-swell').textContent = `막대 = 파고 · 최고 ${Math.max(...hrs.map(x=>x.h)).toFixed(1)}m`;
   const H2=90, t2=12, b2=H2-20, lv = hrs.map(x=>x.lvl ?? 0), lmin=Math.min(...lv), lmax=Math.max(...lv), span=Math.max(0.02, lmax-lmin), yT = v => b2 - ((v-lmin)/span)*(b2-t2);
   let t = `<rect x="${padL + (a.best.h-H0)*colW}" y="${t2-6}" width="${colW*2}" height="${b2-t2+6}" fill="var(--sun)" opacity=".6"/>`;
   const pts = hrs.map((x,k)=>`${padL + k*colW + colW/2},${yT(x.lvl??0)}`);
@@ -1042,6 +1064,9 @@ function renderChart(b, a){
   $('svg-tide').innerHTML = t; $('chart-tide').textContent = `${lmin.toFixed(2)} ~ ${lmax.toFixed(2)}m`;
   const wb = $('winds'); wb.style.gridTemplateColumns = `${padL/W*100}% repeat(${n},1fr) ${padR/W*100}%`;
   wb.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w ${x.rel}" title="${compass(x.dir)} ${relKo[x.rel]}"><b style="transform:rotate(${Math.round(x.dir)}deg)">↓</b><span class="num">${Math.round(x.w)}</span></div>`).join('') + `<span></span>`;
+  const pb = $('pers'); pb.style.gridTemplateColumns = wb.style.gridTemplateColumns;
+  pb.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w" title="${pad2(x.hr)}시 ${x.p.toFixed(1)}초 · ${PZ(x.p)[0]}"><span class="num" style="font-weight:700;color:${pColor(x.p)}">${x.p.toFixed(1)}</span></div>`).join('') + `<span></span>`;
+  $('chart-per').textContent = `${Math.min(...hrs.map(x=>x.p)).toFixed(1)}~${Math.max(...hrs.map(x=>x.p)).toFixed(1)}초 · 주황=짧음 초록=최적 파랑=긴 간격`;
   const sb2 = $('ssts'); sb2.style.gridTemplateColumns = wb.style.gridTemplateColumns;
   const ssts = hrs.map(x=>x.sst??0), sMin = Math.min(...ssts), sMax = Math.max(...ssts);
   sb2.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w" title="${pad2(x.hr)}시 수온 ${(x.sst??0).toFixed(1)}°C · 기온 ${Math.round(x.temp)}°C"><span class="num" style="font-weight:700;color:${(x.sst??0)>=sMax-0.05?'var(--coral)':(x.sst??0)<=sMin+0.05?'var(--sea)':'var(--ink)'}">${(x.sst??0).toFixed(1)}</span><span class="num" style="font-size:9px;color:var(--ink2)">${Math.round(x.temp)}°</span></div>`).join('') + `<span></span>`;
@@ -1119,7 +1144,7 @@ const GLOSS = {
     ['스웰(Swell)','먼바다에서 만들어져 밀려오는 너울. 바람이 멎어도 계속 온다'],
     ['윈드스웰','가까운 바람이 만든 짧은 주기(~7초)의 파도. 촘촘하고 파워 약함. 동해 대부분'],
     ['그라운드스웰','먼 저기압이 만든 긴 주기(10초+) 파도. 정돈되고 파워 있음'],
-    ['주기(Period)','파도와 파도 사이 시간(초). 길수록 파워·정돈. 같은 1m라도 6초와 10초는 다른 파도'],
+    ['피리어드 / 주기(Period)','파도와 파도 사이 시간(초). 길수록 파워·정돈. 같은 1m라도 6초와 10초는 다른 파도'],
     ['세트(Set)','큰 파도가 3~7개씩 묶여 오는 것. 첫 파도는 보내고 2~3번째를 노린다'],
     ['피크(Peak)','파도가 가장 먼저·높게 서는 지점. 여기서 테이크오프. 우선권의 기준'],
     ['숄더(Shoulder)','피크 옆, 아직 깨지지 않은 완만한 부분. 초보가 타기 좋은 자리'],
@@ -1368,7 +1393,7 @@ $('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
   const b = BEACHES[state.beach], a = analyze(b, state.day);
-  renderDays(); renderBeaches(); renderHero(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); pullSocial(false); renderTiles(b, a); renderChart(b, a); renderBasis(b, a); renderChecks(b, a); renderCam(b); renderCompare();
+  renderDays(); renderBeaches(); renderHero(b, a); renderPeriod(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); pullSocial(false); renderTiles(b, a); renderChart(b, a); renderBasis(b, a); renderChecks(b, a); renderCam(b); renderCompare();
 }
 async function refreshWave(){ try{ await load(); renderWave(); toast(`파도 데이터 갱신 ${pad2(new Date().getHours())}:${pad2(new Date().getMinutes())}`); }catch(e){} }
 setInterval(()=>{ if(ME && state.loaded) refreshWave(); }, 3600e3);                                   // 매시 자동 갱신
