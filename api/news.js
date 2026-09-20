@@ -7,6 +7,7 @@ const FEEDS = [
 ];
 const BLOCK = /할인|특가|세일|프로모션|이벤트 응모|분양|투자|수익|광고|협찬|쿠폰|런칭|출시 기념|sponsored|discount|% off|coupon|giveaway|promo|deal of|black friday|casino|betting|웨이브파크 티켓|리조트 특가|펜션|숙박권|골프|아파트|주식/i;
 const KEEP_KO = /서핑|서퍼|파도|양양|죽도|인구|낙산|강릉|해변|롱보드|숏보드|WSL|올림픽/;
+const KEEP_EN = /surf|wave|swell|wsl|board|shark|olympic|pipeline|tahiti|grom|line-?up|el ni|ocean|reef|coast|wetsuit|longboard|big.?wave|jaws|nazar|hawaii|bali|barrel|tube|champion/i;
 const dec = x => x.replace(/&#(\d+);/g,(m,n)=>String.fromCharCode(+n)).replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&apos;|&#39;/g,"'").replace(/&lt;/g,'<').replace(/&gt;/g,'>');
 const tag = (xml, t) => { const m = xml.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`, 'i')); return m ? dec(m[1].replace(/<!\[CDATA\[|\]\]>/g,'').replace(/<[^>]+>/g,'')).trim() : ''; };
 export default async function handler(req, res){
@@ -19,7 +20,7 @@ export default async function handler(req, res){
         const t = tag(it,'title'), l = tag(it,'link') || (it.match(/<link>([^<]+)/)||[])[1] || '', d = tag(it,'pubDate') || tag(it,'dc:date'), cats = [...it.matchAll(/<category[^>]*>([\s\S]*?)<\/category>/gi)].map(m=>m[1].replace(/<!\[CDATA\[|\]\]>/g,'').toLowerCase()).join(' ');
         const desc = tag(it,'description').slice(0,220);
         if(!t || !l) continue; if(f.cat && cats && !cats.includes(f.cat)) continue;
-        if(BLOCK.test(t+' '+desc)) continue; if(f.lang==='ko' && !KEEP_KO.test(t)) continue;
+        if(BLOCK.test(t+' '+desc)) continue; if(f.lang==='ko' && !KEEP_KO.test(t)) continue; if(f.lang==='en' && !KEEP_EN.test(t)) continue;
         out.push({ t: t.replace(/\s-\s[^-]+$/,'').slice(0,120), l, d: d ? new Date(d).toISOString() : null, src: f.lang==='ko' ? (t.match(/-\s([^-]+)$/)||[])[1]?.trim()||f.src : f.src, lang: f.lang, s: f.lang==='en' ? desc.replace(/&#8217;/g,"'").slice(0,140) : '' });
       }
     }catch(e){}
