@@ -164,7 +164,8 @@ html{scroll-behavior:smooth}
 
 /* 섹션 */
 section{margin-top:26px}
-.sec-h{display:flex; align-items:center; gap:10px; margin-bottom:10px; color:var(--paper); text-shadow:2px 2px 0 var(--ink)}
+.sec-h{display:flex; align-items:center; gap:10px; margin-bottom:10px; color:var(--paper); text-shadow:2px 2px 0 var(--ink); flex-wrap:wrap}
+.sec-h h2{white-space:nowrap}
 .sec-h h2{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:22px; line-height:1}
 .sec-h .tag{font-size:11px; border:3px solid var(--ink); padding:1px 7px; background:var(--sun); color:var(--ink); text-shadow:none; transform:rotate(-3deg)}
 .sec-h .sub{font-size:12px; margin-left:auto; text-shadow:1px 1px 0 var(--ink)}
@@ -297,6 +298,30 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .lvup .big{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:40px; color:var(--sun); text-shadow:4px 4px 0 var(--ink); animation:bob .6s steps(3) infinite}
 .lvup canvas{width:160px; height:160px; margin:12px auto; display:block}
 .streak{font-size:11px; color:var(--sun)}
+/* 마을 */
+.village{position:relative; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); overflow:hidden; background:linear-gradient(to bottom, var(--sky) 0 38%, var(--sea) 38% 62%, var(--sand) 62% 100%); padding:10px 8px 8px; min-height:200px}
+.village .sun2{position:absolute; right:14px; top:10px; width:24px; height:24px}
+.village .wv{position:absolute; left:0; right:0; top:60%; height:8px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 4h2V2h2V0h2v2h2v2h2v2h2v2h2v2h-2v-2h-2v-2h-2V4h-2v2H4V4H2v2H0z' fill='%23FFF9E6'/%3E%3C/svg%3E") repeat-x 0 0/16px 8px; animation:wave 1.2s steps(8) infinite; opacity:.8}
+.vgrid{position:relative; display:flex; flex-wrap:wrap; gap:6px 4px; justify-content:center; align-items:flex-end; margin-top:52px}
+.vp{width:64px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; position:relative}
+.vp canvas{width:44px; height:44px}
+.vp .nm{font-size:10px; font-weight:700; background:rgba(255,249,230,.85); border:2px solid var(--ink); padding:0 4px; max-width:64px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.vp .bub{position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink); padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:120px; white-space:normal; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2}
+.vp .bub::after{content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--ink)}
+.vp.me canvas{outline:3px solid var(--sun)}
+.vp.here::before{content:"📍"; position:absolute; top:-2px; right:-2px; font-size:11px; font-family:sans-serif; z-index:3}
+.mood{display:flex; gap:6px; margin-top:10px}
+.mood input{flex:1; border:4px solid var(--ink); padding:8px 10px; font-size:14px; font-family:inherit; background:#fff}
+.chat{display:flex; flex-direction:column; gap:6px; max-height:360px; overflow:auto; padding:4px 2px}
+.msg{display:flex; gap:8px; align-items:flex-start}
+.msg canvas{width:28px; height:28px; flex:0 0 auto}
+.msg .b{background:#fff; border:3px solid var(--ink); padding:6px 9px; font-size:13px; line-height:1.4; max-width:80%; box-shadow:2px 2px 0 var(--ink)}
+.msg .b small{display:block; color:var(--ink2); font-size:10px; margin-top:2px}
+.msg.me{flex-direction:row-reverse} .msg.me .b{background:var(--sun)}
+.chat-in{display:flex; gap:6px; margin-top:8px}
+.chat-in input{flex:1; border:4px solid var(--ink); padding:9px 10px; font-size:15px; font-family:inherit; background:#fff}
+.vcard{position:absolute; left:8px; right:8px; bottom:8px; background:#fff; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:10px; font-size:12px; line-height:1.45; z-index:5}
+.vcard b{font-size:14px}
 /* 파티 모집 바 */
 /* 상단 알림 바 */
 .topbar{margin-top:8px; border:4px solid var(--ink); background:var(--ink); color:var(--paper); box-shadow:4px 4px 0 var(--deep); padding:6px 10px; display:flex; flex-direction:column; gap:4px}
@@ -571,14 +596,20 @@ footer a{color:var(--paper)}
 
   <!-- 탭 4: 6기 랭킹 -->
   <div id="tab-rank" hidden>
-    <div class="px sand"><span class="eyebrow">양양서핑학교 6기</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:22px;line-height:1.1;margin-top:4px">6기 랭킹</div><p class="lab-sm" id="rank-note" style="margin-top:6px"></p></div>
+    <div class="sec-h" style="margin-top:0"><h2>6기 마을</h2><span class="tag">낙산 앞</span><span class="sub" id="village-sub"></span></div>
+    <div class="village" id="village"><canvas class="sun2" data-spr="sun" width="8" height="8"></canvas><div class="wv"></div><div class="vgrid" id="vgrid"></div></div>
+    <div class="mood"><input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!"><button class="btn sm blue" type="button" id="mood-save">말풍선</button></div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
+    <section><div class="sec-h"><h2>마을 채팅</h2><span class="tag">실시간</span><span class="sub" id="chat-sub"></span></div>
+      <div class="px"><div class="chat" id="chat"></div><div class="chat-in"><input id="chat-in" maxlength="200" placeholder="메시지" autocomplete="off"><button class="btn sm pink" type="button" id="chat-send">보내기</button></div></div>
+    </section>
     <section id="coach-sheet" hidden><div class="sec-h"><h2>출석부</h2><span class="tag">코치 전용</span><span class="sub" id="sheet-sum"></span></div>
       <div class="px"><div class="sheet-h"><input type="date" id="sheet-date"><span class="lab-sm" style="margin:0" id="sheet-week"></span><button class="btn sm ghost" type="button" data-qd="6">이번 주 토</button><button class="btn sm ghost" type="button" data-qd="0">이번 주 일</button><button class="btn sm mint" type="button" id="sheet-all">전원 출석</button></div>
       <div class="sheet" id="sheet"></div><p class="lab-sm" style="margin-top:8px">탭해서 출석(초록)/결석(빨강) 전환. 저장은 자동. 학생 앱의 출석 도장에 반영돼요.</p></div></section>
-    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
-    <div class="rank" id="rank" style="margin-top:14px"></div>
     <section><div class="sec-h"><h2>파도 평점</h2><span class="tag">차트 vs 실제</span><span class="sub" id="feed-sub"></span></div><div class="feed" id="feed"></div></section>
+    <div id="rank" hidden></div><div id="rank-note" hidden></div>
   </div>
+
   <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
 </div>
 
@@ -586,7 +617,7 @@ footer a{color:var(--paper)}
   <button type="button" data-tab="wave" aria-pressed="true"><canvas data-spr="wave" width="16" height="8"></canvas>파도</button>
   <button type="button" data-tab="mission" aria-pressed="false"><canvas data-spr="flag" width="8" height="8"></canvas>수업</button>
   <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>나</button>
-  <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>6기</button>
+  <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>마을</button>
 </nav>
 <div class="modal" id="card-modal" hidden><form class="px" id="card-form"><span class="eyebrow">칭찬 카드</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px;margin-top:2px"><span id="card-to">—</span> 에게</div>
   <div class="field" id="card-pick"><label for="card-sel">받는 사람</label><select id="card-sel"></select></div>
@@ -637,6 +668,7 @@ const BODY = {
 const BOARD = {
   long: ['.yyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkk.','................'],
   short:['....yyyyyyy.....','..kyyyyyyyyyyk..','...kkkkkkkkkk...','................'],
+  fun:  ['..yyyyyyyyyyyy..','.kyyyyyyyyyyyyk.','..kkkkkkkkkkkk..','................'],
 };
 const HAT = {
   none:null,
@@ -653,7 +685,7 @@ function avatarRows(pr){
   pr = pr||{}; let rows = BODY[pr.gender==='m'?'m':'f'].slice();
   if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 5);
   if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
-  return rows.concat(BOARD[pr.board==='short'?'short':'long']);
+  return rows.concat(BOARD[pr.board]||BOARD.long);
 }
 const SLV_COLORS = ['#FFD23F','#A6F542','#4DE1A5','#2ED3E6','#2E6BFF','#9B6BFF','#FF6B6B','#FF9F1C','#F7C59F','#FFFFFF','#1B1B2F'];   // 서핑 LV.0~10 보드 색
 const BOTTOMS = { b:'#2E6BFF', k:'#1B1B2F', r:'#FF6B6B', g:'#4DE1A5', p:'#9B6BFF', t:'#E2B96A' };
@@ -1682,7 +1714,7 @@ function builderHTML(pr, prefix){
     opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), (v,t)=>`<i style="background:${TOPS[v]}"></i>${t}`) +
     opt('팬츠 / 웻수트', 'bottom', Object.keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), (v,t)=>`<i style="background:${BOTTOMS[v]}"></i>${t}`) +
     opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
-    opt('보드', 'board', [['long','롱보드'],['short','숏보드']]) +
+    opt('보드', 'board', [['long','롱보드 9ft+'],['fun','펀·미드 7~9ft'],['short','숏보드']]) +
     opt('보드 색', 'boardc', Object.keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), (v,t)=>`<i style="background:${BOARDC[v]}"></i>${t}`) +
     (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) : '');
 }
@@ -1692,7 +1724,7 @@ const ONB = [
   { who:'매니저', txt:'【파도 탭】 맨 위 노란 바에서 "같이 가실 분?" 파티를 올리고, 바다 도착하면 📍체크인. 물에서 나오면 "오늘 세션"에서 횟수를 세고 오늘 파도에 ★별점을 남겨요 — 별점이 쌓이면 차트가 실제로 몇 점짜리인지 6기가 알게 돼요.', tab:'wave' },
   { who:'매니저', txt:'【수업 탭】 이번 주 카드 하나만 보면 돼요: 출석 도장 → 배운 것 체크 → 미션 → 레슨런. 지난 주는 아래 "전체 과정"에서.', tab:'mission' },
   { who:'매니저', txt:'【나 탭】 서핑 레벨표(학교 공식 LV.1~10)를 자가 체크하면 레벨이 오르고 보드 색이 바뀌어요. 배지도 여기.', tab:'level' },
-  { who:'교장쌤', txt:'【6기 탭】 동기들 랭킹이에요. 잘 탄 친구에게 👏 칭찬 카드 보내면 둘 다 XP. 자, 출발!', tab:'rank', last:true },
+  { who:'교장쌤', txt:'【마을 탭】 6기 전원이 낙산 앞에 서 있어요. 말풍선으로 한마디 남기고, 채팅으로 떠들고, 잘 탄 친구에겐 👏 칭찬 카드. 자, 출발!', tab:'rank', last:true },
 ];
 let onbI = 0, onbPr = null, typeT = null;
 function typeInto(el, text){ clearInterval(typeT); el.textContent = ''; let k = 0; typeT = setInterval(()=>{ el.textContent = text.slice(0, ++k); if(k>=text.length) clearInterval(typeT); }, 18); el.onclick = ()=>{ clearInterval(typeT); el.textContent = text; }; }
@@ -1720,7 +1752,7 @@ function renderLevel(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1], st = slvStat(d), curL = SLV[st.cur], nextL = SLV[st.cur] ;
   $('lv-name').textContent = ME.name; $('lv-title').textContent = `${'★'.repeat(st.cur)}${'☆'.repeat(Math.max(0,3-st.cur))} ${st.label}${st.cur?` · ${SLV[st.cur-1].g}`:' · 입문'} · 칭호 ${LEVELS[L][1]}`;
   const ro = rosterOf(ME.name), pr0 = myProfile();
-  $('lv-meta').textContent = (pr0.role==='coach' ? '코치 · ' : ro&&ro[1] ? `서핑 시작 ${ro[1]} · 첫 파도 ${ro[2]} · ` : '') + `@${ME.id}`;
+  $('lv-meta').textContent = (pr0.role==='coach' ? '코치 · ' : ro&&ro[1] ? `서핑 시작 ${ro[1]} · 첫 파도 ${ro[2]} · ` : '') + `@${ME.id}` + (pr0.boardName||pr0.suit ? ` · 🏄 ${[pr0.boardName, pr0.boardLen, pr0.suit, pr0.suitName].filter(Boolean).join(' · ')}` : '');
   $('xp-txt').textContent = `${xp} XP · 칭호 ${LEVELS[L][1]}`; $('xp-next').textContent = next ? `다음 칭호 ${next[1]}까지 ${next[0]-xp} XP` : '최고 칭호!';
   const lo = LEVELS[L][0], hi = next ? next[0] : lo+1; $('xp-bar').style.width = Math.min(100, (xp-lo)/(hi-lo)*100)+'%';
   const skN = Object.values(d.skills).filter(Boolean).length, total = WEEKS.reduce((s,w)=>s+w.skills.length,0);
@@ -1731,7 +1763,8 @@ function renderLevel(){
   const nx = ATT_STAGES[stage+1]; $('ladder-txt').textContent = `출석 ${an}회 · ${ATT_STAGES[stage][1]}${nx?` → ${nx[1]}까지 ${nx[0]-an}회 남음`:' · 다 채웠어요!'}`;
   const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTint());
   const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
-  $('bld-opts').innerHTML = builderHTML(pr);
+  $('bld-opts').innerHTML = builderHTML(pr) + `<div class="opt"><div class="lab-sm">내 장비 이름표 · 마을에서 서로 보여요</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><input id="g-board" placeholder="보드 이름 (예: 노랑이)" value="${pr.boardName||''}" maxlength="14" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"><input id="g-len" placeholder="길이 (예: 9'0)" value="${pr.boardLen||''}" maxlength="6" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"><input id="g-suit" placeholder="슈트 (예: 립컬 3/2)" value="${pr.suit||''}" maxlength="16" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"><input id="g-suitName" placeholder="슈트 이름 (예: 검둥이)" value="${pr.suitName||''}" maxlength="14" style="border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px"></div><button class="btn sm mint" type="button" id="g-save" style="margin-top:6px">장비 저장</button></div>`;
+  $('g-save').onclick = ()=>{ setProfile({ boardName:$('g-board').value.trim(), boardLen:$('g-len').value.trim(), suit:$('g-suit').value.trim(), suitName:$('g-suitName').value.trim() }); toast('장비 저장 · 마을 카드에 표시'); };
   $('bld-opts').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; setProfile({[x.dataset.k]:v}); });
   const mine = allCards().filter(c=>c.to===ME.name).sort((a,b)=>b.date.localeCompare(a.date));
   $('cards-n').textContent = mine.length;
@@ -1829,16 +1862,42 @@ async function fetchRank(){
     const map = new Map(rows.map(x=>[x.id,x])); local.forEach(x=>map.set(x.id, x)); return { rows:[...map.values()], remote:true }; }
   catch(e){ return { rows:local, remote:false, err:true }; }
 }
-async function renderRank(){
-  $('rank').innerHTML = '<div class="lab-sm" style="color:var(--paper)">불러오는 중…</div>'; await pullCards(); renderSheet(); pullSocial(true).then(renderFeed); renderFeed();
-  const { rows, remote, err } = await fetchRank(); rows.sort((a,b)=>(b.level||0)-(a.level||0) || b.xp-a.xp || b.rides-a.rides);
-  $('rank-note').textContent = remote ? `${rows.length}명 · 서핑 레벨 → XP 순 · 방금 갱신` : err ? '서버 연결 실패 — 이 기기 계정만 표시' : '아직 공유 서버가 없어 이 기기의 계정만 보여요. 기수 전원 랭킹은 README의 Supabase 설정 후 켜져요.';
-  $('rank').innerHTML = rows.map((x,i)=>`<div class="rrow ${x.id===ME.id?'me':''}"><span class="pos">${i+1}</span><canvas data-av="${x.id}" data-anim></canvas><div class="rn"><b>${x.name}${x.profile?.role==='coach'?'<span class="tagc">코치</span>':x.profile?.cls==='inter'?'<span class="tagc" style="background:var(--sea)">중급</span>':x.profile?.cls?'<span class="tagc" style="background:var(--mint);color:var(--ink)">비기너</span>':''}</b><span>${x.profile?.slevel||`서핑 LV.${x.level||0}`} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides} · 미션 ${x.missions||0}</span></div><div class="rx"><b>${x.xp}</b><span>XP</span></div>${x.name!==ME.name?`<button class="clap" type="button" data-name="${x.name}" title="칭찬 카드">👏</button>`:''}</div>`).join('') || '<div class="px">아직 아무도 없어요</div>';
-  const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
-  if(missing.length) $('rank').insertAdjacentHTML('beforeend', `<div class="px" style="font-size:12px;color:var(--ink2)"><b style="color:var(--ink)">아직 안 온 동기 ${missing.length}명</b> · ${missing.join(' · ')}<br>"친구 초대"로 링크 보내주세요</div>`);
-  rows.forEach(x=>drawSpr($('rank').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile), avatarTintOf(x.profile, x.level)));
-  $('rank').querySelectorAll('.clap').forEach(b=>b.onclick=()=>openCard(b.dataset.name));
+const gearLine = pr => [pr?.boardName, pr?.boardLen, pr?.board==='long'?'롱보드':pr?.board==='fun'?'펀보드':pr?.board==='short'?'숏보드':'', pr?.suit, pr?.suitName].filter(Boolean).join(' · ');
+async function renderRank(){   // = 마을
+  renderSheet(); pullSocial(true).then(()=>{ renderFeed(); renderVillage(); }); renderFeed(); renderVillage(); pullChat(true); startChatPoll();
 }
+async function renderVillage(){
+  const { rows } = await fetchRank(); const here = new Map(state.social.checkins.map(c=>[c.user_id, c.beach]));
+  rows.sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
+  $('village-sub').textContent = `${rows.length}명 · 탭하면 카드`;
+  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}">${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
+  rows.forEach(x=>drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(x.profile||{}), avatarTintOf(x.profile||{}, x.level)));
+  $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
+    const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b>${x.profile?.role==='coach'?' <span class="tagc">코치</span>':''} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}`:''}<div style="display:flex;gap:6px;margin-top:6px">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
+    $('village').appendChild(c); c.querySelector('[data-close]').onclick=()=>c.remove(); c.querySelector('[data-clap]')?.addEventListener('click', ()=>{ openCard(x.name); c.remove(); }); });
+  const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
+  $('village-sub').textContent += missing.length ? ` · 아직 안 온 동기 ${missing.length}명` : '';
+  $('mood').value = myProfile().mood || '';
+}
+$('mood-save').onclick = ()=>{ setProfile({ mood:$('mood').value.trim().slice(0,40) }); toast('말풍선 올렸어요'); setTimeout(renderVillage, 1600); };
+$('mood').addEventListener('keydown', e=>{ if(e.key==='Enter') $('mood-save').click(); });
+/* 채팅: 5초 폴링(마을 탭 열려 있을 때만) */
+state.chat = []; let chatT = null, chatLast = 0;
+async function pullChat(force){
+  if(!supaOn()) return; try{ const rows = await sbGet('chat', 'select=*&order=created_at.desc&limit=60'); state.chat = rows.reverse(); state.chatOk = true; }catch(e){ if(e.code==='notable') state.chatOk = false; }
+  renderChat();
+}
+function renderChat(){
+  if(!$('chat')) return; const box = $('chat'), atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  $('chat-sub').textContent = state.chatOk===false ? '서버 준비 중 (supabase-village.sql)' : `${state.chat.length}개 · 5초마다 갱신`;
+  box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}"><canvas data-av="${m.id}"></canvas><div class="b"><b>${m.name}</b> ${String(m.text).replace(/</g,'&lt;')}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small></div></div>`).join('') || `<div class="lab-sm">${state.chatOk===false?'코치가 supabase-village.sql 실행하면 켜져요':'첫 메시지를 남겨봐요'}</div>`;
+  state.chat.forEach(m=>drawSpr(box.querySelector(`canvas[data-av="${m.id}"]`), avatarRows(m.profile||{}), avatarTintOf(m.profile||{}, 0)));
+  if(atBottom || chatLast!==state.chat.length){ box.scrollTop = box.scrollHeight; chatLast = state.chat.length; }
+}
+function startChatPoll(){ clearInterval(chatT); chatT = setInterval(()=>{ if(state.tab==='rank' && !document.hidden) pullChat(); else if(state.tab!=='rank') clearInterval(chatT); }, 5000); }
+async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200), profile:{ gender:myProfile().gender, hat:myProfile().hat, top:myProfile().top, bottom:myProfile().bottom, board:myProfile().board, boardc:myProfile().boardc, role:myProfile().role }, created_at:new Date().toISOString() };
+  try{ await sbUpsert('chat', row); $('chat-in').value=''; state.chat.push(row); renderChat(); }catch(e){ toast(state.chatOk===false?'서버 준비 중':'전송 실패 · 신호 확인'); } }
+$('chat-send').onclick = sendChat; $('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
 
 paintAll();
 (function boot(){
