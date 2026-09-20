@@ -419,7 +419,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .modal .px{width:100%; max-width:520px; max-height:88svh; overflow:auto}
 .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
 .chips button{border:3px solid var(--ink); background:#fff; padding:5px 9px; font-size:13px; font-weight:700; box-shadow:2px 2px 0 var(--ink)}
-.chips button[aria-pressed="true"]{background:var(--coral); color:#fff}
+.chips button[aria-pressed="true"],.chips button.on{background:var(--coral); color:#fff}
 .rrow .clap{border:3px solid var(--ink); background:var(--sun); font-size:14px; padding:4px 7px; box-shadow:2px 2px 0 var(--ink); font-family:sans-serif}
 footer{margin-top:32px; font-size:11px; color:var(--sand); line-height:1.6; text-shadow:1px 1px 0 var(--ink)}
 footer a{color:var(--paper)}
@@ -497,6 +497,7 @@ footer a{color:var(--paper)}
 
       <section>
         <div class="sec-h"><h2>시간대별</h2><span class="tag">05~19시</span><span class="sub">막대 파고 · 선 조위 · 화살표 바람</span></div>
+        <div class="px" id="srcbox" style="margin-bottom:10px"></div>
         <div class="chart px" id="chart">
           <div class="row-h"><span>파고 m</span><span id="chart-swell"></span></div>
           <svg id="svg-wave" viewBox="0 0 600 150" role="img" aria-label="시간대별 파고"></svg>
@@ -604,7 +605,7 @@ footer a{color:var(--paper)}
 
 <script>
 const $ = id => document.getElementById(id);
-const state = { day:0, beach:0, loaded:false, fetchedAt:null, tab:'wave', attRecords:[], pref:null };
+const state = { day:0, beach:0, loaded:false, fetchedAt:null, tab:'wave', attRecords:[], pref:null, model:'marine_best_match' };
 /* ═══════════ 스프라이트 (문자 = 팔레트 키, . = 투명) ═══════════ */
 const PAL = { k:'#1B1B2F', w:'#FFF9E6', s:'#F7C59F', h:'#3A2A1E', r:'#FF6B6B', b:'#2E6BFF', y:'#FFD23F', g:'#4DE1A5', p:'#9B6BFF', o:'#FF9F1C', c:'#8FD3FF', d:'#1A47C9', t:'#E2B96A' };
 const SPR = {
@@ -907,13 +908,29 @@ const BEACHES = [
   {id:'geumjin',  name:'금진',           area:'강릉', lat:37.640, lon:129.045, facing:100, swell:100, cam:'GJ1', stream:'https://wsb.inforsurf.cn/live/geumjin_3745.m3u8'},
 ];
 const CAM_URL = c => `https://www.wsbfarm.com/wavecam/WaveCamView?beach=${c}`;
+/* 파도 예보 모델. 같은 좌표라도 모델마다 파고·주기가 다르다 → 골라 보고 비교. 수온·조위는 기본 모델 값 고정 */
+const MODELS = [
+  { key:'marine_best_match', q:'best_match',      ko:'기본 (MFWAM·고해상)', src:'Open-Meteo best match — 이 지역은 Météo-France MFWAM 1/12°' },
+  { key:'ncep_gfswave025',   q:'ncep_gfswave025', ko:'GFS Wave (NOAA)',     src:'NOAA GFS Wave 0.25° — 윈드파인더 예보가 쓰는 계열' },
+  { key:'gwam',              q:'gwam',            ko:'DWD GWAM',            src:'독일기상청 GWAM 전지구 파랑모델' },
+  { key:'meteofrance_wave',  q:'meteofrance_wave',ko:'Météo-France',        src:'MFWAM 단독' },
+];
+const WF_LINK = b => b.id==='gisamun' ? 'https://www.windfinder.com/forecast/gisamun_beach' : b.area==='강릉' ? 'https://www.windfinder.com/forecast/gangneung_virtual_buoy' : 'https://www.windfinder.com/forecast/yangyang_virtual_buoy';
 const DAYS = 3, H0 = 5, H1 = 19;
 
-function applyData(ma, fa){ BEACHES.forEach((b,i)=>{ b.m = ma[i].hourly; b.f = fa[i].hourly; b.daily = fa[i].daily; }); state.loaded = true; }
+const WAVE_VARS = ['wave_height','wave_period','wave_direction','swell_wave_height','swell_wave_period','swell_wave_direction','wind_wave_height'];
+function pickModel(){ BEACHES.forEach(b=>{ if(!b.mAll) return; const base = b.mAll['marine_best_match'] || {}, sel = b.mAll[state.model] || base;
+  b.m = { time: b.mAll.time, sea_surface_temperature: base.sea_surface_temperature, sea_level_height_msl: base.sea_level_height_msl }; WAVE_VARS.forEach(v=>{ b.m[v] = (sel[v]||[]).some(x=>x!=null) ? sel[v] : base[v]; }); }); }
+function applyData(ma, fa){
+  BEACHES.forEach((b,i)=>{ const h = ma[i].hourly, all = { time:h.time };
+    if(h.wave_height){ all['marine_best_match'] = h; }                                           // 단일 모델 응답(캐시 등)
+    else MODELS.forEach(m=>{ const o = {}; Object.keys(h).forEach(k=>{ if(k.endsWith('_'+m.key)) o[k.slice(0, -(m.key.length+1))] = h[k]; }); all[m.key] = o; });
+    b.mAll = all; b.f = fa[i].hourly; b.daily = fa[i].daily; });
+  pickModel(); state.loaded = true; }
 function loadFromCache(){ const c = LS.get('surf.cache', null); if(!c || Date.now()-c.at > 12*3600e3) return false; applyData(c.ma, c.fa); state.fetchedAt = new Date(c.at); state.cached = true; return true; }
 async function load(){
   const lat = BEACHES.map(b=>b.lat).join(','), lon = BEACHES.map(b=>b.lon).join(',');
-  const marine = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,sea_surface_temperature,sea_level_height_msl&timezone=Asia%2FSeoul&forecast_days=${DAYS}`;
+  const marine = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,wave_direction,swell_wave_height,swell_wave_period,swell_wave_direction,wind_wave_height,sea_surface_temperature,sea_level_height_msl&timezone=Asia%2FSeoul&forecast_days=${DAYS}&models=${MODELS.map(m=>m.q).join(',')}`;
   const fc = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation_probability,weather_code&daily=sunrise,sunset&wind_speed_unit=kn&timezone=Asia%2FSeoul&forecast_days=${DAYS}`;
   const [m, f] = await Promise.all([fetch(marine).then(r=>{ if(!r.ok) throw new Error('marine '+r.status); return r.json(); }), fetch(fc).then(r=>{ if(!r.ok) throw new Error('forecast '+r.status); return r.json(); })]);
   const ma = Array.isArray(m)?m:[m], fa = Array.isArray(f)?f:[f];
@@ -1051,6 +1068,15 @@ function renderTiles(b, a){
     tile('wave','파도 크기 · 간격', `${r.h.toFixed(1)}<small>m</small> / ${r.p.toFixed(1)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
     tile('wind','바람', `${Math.round(r.w)}<small>kts</small> ${compass(r.dir)}`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 면 깨짐, 촘촘한 결':r.rel==='off'?' · 면 정돈':''} · 돌풍 ${Math.round(r.gust)}kts`);
   paintAll($('tiles'));
+}
+function renderSource(b, a){
+  if(!$('srcbox')) return; const hr = state.day===0 ? new Date().getHours() : a.best.h, i = state.day*24 + hr, cur = MODELS.find(m=>m.key===state.model) || MODELS[0];
+  const cmp = MODELS.map(m=>{ const o = b.mAll?.[m.key]; const h = o?.wave_height?.[i], p = o?.wave_period?.[i]; return h==null ? null : `<button type="button" class="${m.key===state.model?'on':''}" data-model="${m.key}" title="${m.src}"><b>${m.ko.split(' ')[0]}</b> ${h.toFixed(1)}m·${p.toFixed(1)}s</button>`; }).filter(Boolean).join('');
+  $('srcbox').innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap"><span class="eyebrow">데이터 소스 · ${pad2(hr)}시 기준 모델 비교</span><span class="lab-sm" style="margin:0">탭해서 바꾸면 전체가 그 모델로</span></div>
+    <div class="chips" id="model-chips" style="margin-top:6px">${cmp}</div>
+    <div class="lab-sm" style="margin-top:8px">지금 보는 것: <b>${cur.ko}</b> — ${cur.src}. 파도·바람·수온은 ${b.name} 앞바다 격자값(Open-Meteo, 매시 갱신), 바람·기온·일출몰은 ECMWF/ICON 통합, 물때는 ${state.social?.tides?.[b.daily.time[state.day]]?'코치가 입력한 공식값':'조위 모델'}. 모델 간 차이가 크면 캠으로 확인하는 게 답.</div>
+    <div class="cam-more" style="margin-top:8px"><a href="${WF_LINK(b)}" target="_blank" rel="noopener">윈드파인더 ${b.area==='강릉'?'강릉 부이':b.id==='gisamun'?'기사문':'양양 부이'}</a><a href="https://www.weather.go.kr/w/ocean/forecast.do" target="_blank" rel="noopener">기상청 바다날씨</a><a href="https://www.khoa.go.kr/oceangrid/khoa/intro.do" target="_blank" rel="noopener">바다누리 조석</a><a href="https://open-meteo.com/en/docs/marine-weather-api" target="_blank" rel="noopener">Open-Meteo</a></div>`;
+  $('srcbox').querySelectorAll('[data-model]').forEach(x=>x.onclick=()=>{ state.model = x.dataset.model; LS.set('surf.model', state.model); pickModel(); renderWave(); toast(`모델: ${(MODELS.find(m=>m.key===state.model)||{}).ko}`); });
 }
 function renderChart(b, a){
   const hrs = a.hours.slice(H0, H1+1), n = hrs.length, W=600, padL=34, padR=10, colW=(W-padL-padR)/n, nowH = state.day===0 ? new Date().getHours() : -1;
@@ -1418,7 +1444,7 @@ $('sess-undo').addEventListener('click', unride);
 function renderWave(){
   if(!state.loaded) return;
   const b = BEACHES[state.beach], a = analyze(b, state.day);
-  renderDays(); renderBeaches(); renderHero(b, a); renderPeriod(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); renderTopbar(); pullSocial(false); renderTiles(b, a); renderChart(b, a); renderBasis(b, a); renderReco(); renderChecks(b, a); renderCam(b); renderCompare();
+  renderDays(); renderBeaches(); renderHero(b, a); renderPeriod(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); renderTopbar(); pullSocial(false); renderTiles(b, a); renderSource(b, a); renderChart(b, a); renderBasis(b, a); renderReco(); renderChecks(b, a); renderCam(b); renderCompare();
 }
 async function refreshWave(){ try{ await load(); renderWave(); toast(`파도 데이터 갱신 ${pad2(new Date().getHours())}:${pad2(new Date().getMinutes())}`); }catch(e){} }
 setInterval(()=>{ if(ME && state.loaded) refreshWave(); }, 3600e3);                                   // 매시 자동 갱신
@@ -1728,7 +1754,7 @@ $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>s
 function enter(u){
   ME = { id:u.id, name:u.name }; LS.set('surf.session', u.id);
   $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
-  state.pref = LS.get('surf.pref', null); const sb = LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
+  state.pref = LS.get('surf.pref', null); state.model = LS.get('surf.model', 'marine_best_match'); const sb = LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
   $('practice').value = LS.get(`surf.practice.${u.id}`, '');
   refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
 }
