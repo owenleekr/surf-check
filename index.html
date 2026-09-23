@@ -1812,14 +1812,37 @@ function renderPose(){
   if(!$('pose')) return; const mine = (state.poses||[]).filter(x=>x.user_id===ME.id).sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
   const isCoach = myProfile().role==='coach';
   $('pose-sub').textContent = mine.length ? `${mine.length}장` : '';
+  const metOf = x => { try{ const m = String(x.note||'').match(/\{[^}]+\}/); return m ? JSON.parse(m[0]) : (x.metrics||null); }catch(e){ return x.metrics||null; } };
+  const noteText = x => String(x.note||'').replace(/\s*\{[^}]+\}/,'').trim();
+  const withMet = mine.map(x=>({ ...x, m:metOf(x) })).filter(x=>x.m);
   const byStage = st => mine.filter(x=>x.stage===st);
   const cmp = Object.entries(STAGES).map(([st,ko])=>{ const list = byStage(st); if(!list.length) return ''; const first = list[0], last = list[list.length-1];
     return `<div style="margin-top:10px"><div class="lab-sm" style="margin-bottom:4px">${ko} · ${list.length}장</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <figure style="margin:0"><img src="${first.url}" style="width:100%;border:3px solid var(--ink);display:block"><figcaption class="lab-sm" style="margin:2px 0 0">처음 ${String(first.date).slice(5).replace('-','.')}</figcaption></figure>
       <figure style="margin:0"><img src="${last.url}" style="width:100%;border:3px solid var(--ink);display:block"><figcaption class="lab-sm" style="margin:2px 0 0">최근 ${String(last.date).slice(5).replace('-','.')}${last.week?` · ${last.week}주차`:''}</figcaption></figure></div>
-      ${last.note?`<div class="lab-sm" style="margin-top:4px">메모: ${last.note}</div>`:''}
+      ${noteText(last)?`<div class="lab-sm" style="margin-top:4px">메모: ${noteText(last)}</div>`:''}
       ${last.coach_note?`<div class="lab-sm" style="margin-top:2px">💬 ${last.coach_name||'코치'}: ${last.coach_note}</div>`:''}</div>`; }).join('');
-  $('pose').innerHTML = `<div class="lab-sm">수업 영상에서 <b>테이크오프 순간</b>을 골라 저장해요. 영상 원본은 폰에만 남고 사진만 올라갑니다.</div>
+  const trend = (key, label, unit, good) => { const pts = withMet.map(x=>+x.m[key]).filter(v=>!isNaN(v)); if(pts.length<2) return '';
+    const min = Math.min(...pts, good[0]), max = Math.max(...pts, good[1]), rng = (max-min)||1, W=260, H=44;
+    const xs = (i)=> 4 + i*(W-8)/(pts.length-1), ys = (v)=> H-6 - (v-min)/rng*(H-14);
+    const gy1 = ys(good[1]), gy2 = ys(good[0]);
+    const line = pts.map((v,i)=>`${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
+    const first = pts[0], last = pts[pts.length-1], better = Math.abs(last-(good[0]+good[1])/2) < Math.abs(first-(good[0]+good[1])/2);
+    return `<div style="margin-top:8px"><div class="lab-sm" style="margin:0">${label} <b>${first}${unit} → ${last}${unit}</b> ${better?'<span style="color:#1FA366">개선</span>':'<span style="color:var(--ink2)">유지</span>'} <span style="color:var(--ink2)">· 기준 ${good[0]}~${good[1]}${unit}</span></div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:44px;border:3px solid var(--ink);background:#fff;margin-top:2px"><rect x="0" y="${Math.min(gy1,gy2)}" width="${W}" height="${Math.abs(gy2-gy1)||2}" fill="var(--mint)" opacity=".35"/><polyline points="${line}" fill="none" stroke="var(--sea)" stroke-width="3"/>${pts.map((v,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="3.5" fill="${i===pts.length-1?'var(--coral)':'var(--ink)'}"/>`).join('')}</svg></div>`; };
+  const trends = withMet.length>=2 ? `<div class="px" style="margin-top:10px;background:#fff"><div class="eyebrow">자세 변화 (자동 측정 ${withMet.length}회)</div>${trend('knee','무릎 굽힘','°',[110,150])}${trend('lean','중심 앞뒤','',[-0.1,0.3])}${trend('stance','스탠스 폭','배',[1.0,1.8])}<div class="lab-sm" style="margin-top:6px">초록 띠가 코치 기준 범위 · 빨간 점이 최근</div></div>` : '';
+  $('pose').innerHTML = `<details class="px sand" style="margin-bottom:10px" ${mine.length?'':'open'}><summary style="cursor:pointer;font-weight:700">📹 촬영 가이드 — 이렇게 찍어야 비교가 됩니다</summary>
+      <div style="font-size:13px;line-height:1.6;margin-top:8px">
+        <b>1. 옆에서(측면) 찍기</b> — 해변에서 파도와 나란히. 앞뒤 중심·무릎 각도는 측면에서만 보입니다.<br>
+        <b>2. 몸 전체가 들어오게</b> — 머리부터 보드 테일까지. 너무 멀면 관절 인식이 안 돼요.<br>
+        <b>3. 가로(landscape)로</b> — 테이크오프 전후 움직임이 프레임 안에 남습니다.<br>
+        <b>4. 매번 같은 자리·같은 각도</b> — 주차별 비교의 핵심. 삼각대나 "그 바위 앞"처럼 기준점을 정해두기.<br>
+        <b>5. 슬로모션(120fps)</b> — 아이폰 슬로모션이면 0.1초 단위로 훨씬 잘 잡힙니다.<br>
+        <b>6. 밝을 때</b> — 역광·해질녘은 인식률이 떨어져요.<br>
+        <b>7. 한 파도에 한 클립</b> — 짧게 끊어두면 나중에 찾기 쉬워요.
+        <div class="lab-sm" style="margin-top:6px">수업 영상은 매주 월요일 구글드라이브·STC 카페에 올라옵니다 — 거기서 받아 쓰면 각도가 일정해요.</div>
+      </div></details>
+    <div class="lab-sm">수업 영상에서 <b>테이크오프 순간</b>을 골라 저장해요. 영상 원본은 폰에만 남고 사진만 올라갑니다.</div>
     <input type="file" id="pose-file" accept="video/*,image/*" style="margin-top:6px;font-size:12px;width:100%">
     <div id="pose-edit" hidden style="margin-top:8px"><video id="pose-video" playsinline muted style="width:100%;border:3px solid var(--ink);background:#000"></video>
       <input type="range" id="pose-seek" min="0" max="100" value="0" step="0.05" style="width:100%;margin-top:6px">
@@ -1829,8 +1852,9 @@ function renderPose(){
       <input id="pose-note" maxlength="40" placeholder="메모 (예: 앞발 45도 시도)" style="width:100%;border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px;margin-top:6px">
       <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sm blue" type="button" id="pose-save">이 장면 저장</button><button class="btn sm mint" type="button" id="pose-ai">🤖 자세 자동 분석</button></div>
       <div id="pose-report" class="lab-sm" style="margin-top:6px"></div></div>
+    ${trends}
     ${cmp || '<div class="lab-sm" style="margin-top:8px">아직 기록이 없어요. 수업 영상을 올려 첫 자세를 남겨보세요.</div>'}
-    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${x.url}" style="width:100%;border:3px solid var(--ink);display:block"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${x.note?` · ${x.note}`:''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
+    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${x.url}" style="width:100%;border:3px solid var(--ink);display:block"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${noteText(x)?` · ${noteText(x)}`:''}${metOf(x)?`<br><span style="color:var(--ink2)">무릎 ${metOf(x).knee}° · 중심 ${metOf(x).lean} · 스탠스 ${metOf(x).stance}</span>`:''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
   let stage = 'stand', blobUrl = null;
   const vEl = () => $('pose-video');
   $('pose-file').onchange = e=>{ const f = e.target.files[0]; if(!f) return; if(blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = URL.createObjectURL(f);
@@ -1853,6 +1877,7 @@ function renderPose(){
       const m = poseMetrics(L), rows = poseReport(m);
       $('pose-report').innerHTML = `<b>자동 측정</b> (참고용 · 각도는 촬영 각도에 따라 달라져요)` + rows.map(([ok,t,d])=>`<div style="margin-top:3px">${ok?'✅':'⚠️'} ${t} — ${d}</div>`).join('');
       state.lastMetrics = m;
+      $('pose-report').innerHTML += `<div style="margin-top:4px;color:var(--ink2)">이대로 저장하면 이 수치가 함께 기록돼 <b>주차별 변화 그래프</b>가 그려집니다.</div>`;
     }catch(e){ $('pose-report').textContent = '분석 실패 — 다른 장면으로 시도해보세요.'; }
   };
   $('pose-save').onclick = async ()=>{
@@ -1866,8 +1891,8 @@ function renderPose(){
       const up = await fetch(`${SUPA.url}/storage/v1/object/poses/${path}`, { method:'POST', headers:{ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'image/jpeg' }, body:blob });
       if(!up.ok) throw new Error('upload');
       const url = `${SUPA.url}/storage/v1/object/public/poses/${path}`;
-      const met = state.lastMetrics ? ` · 스탠스 ${state.lastMetrics.stance} 무릎 ${state.lastMetrics.knee}° 중심 ${state.lastMetrics.lean}` : '';
-      const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), week:weekOfDate(today()), stage, url, note:($('pose-note').value.trim()+met).slice(0,80) };
+      const met = state.lastMetrics ? ' ' + JSON.stringify({ knee:state.lastMetrics.knee, lean:state.lastMetrics.lean, stance:state.lastMetrics.stance }) : '';
+      const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), week:weekOfDate(today()), stage, url, note:($('pose-note').value.trim().slice(0,40)+met).slice(0,160) };
       await sbUpsert('poses', row); state.poses = [...(state.poses||[]), row]; state.lastMetrics = null;
       addBonus(5, `pose|${today()}`); toast('자세 기록 저장'); chatSys(`📸 ${STAGES[stage]} 자세 기록`); $('pose-edit').hidden = true; $('pose-file').value=''; renderPose();
     }catch(e){ toast('저장 실패 — 코치가 supabase-pose.sql 실행했는지 확인'); }
