@@ -598,13 +598,17 @@ footer a{color:var(--paper)}
   <div id="tab-mission" hidden>
     <div class="px" id="thisweek"></div>
     <section><div class="sec-h"><h2>전체 과정</h2><span class="tag">8주</span><span class="sub" id="prog-txt"></span></div><div class="bar" style="margin-bottom:10px"><i id="prog-bar"></i></div><div class="weeks" id="weeks"></div></section>
+  </div>
+
+  <!-- 탭 3: 성장 — 수업이 "이번 주 할 일"이라면 여기는 "내가 어떻게 달라지고 있나" -->
+  <div id="tab-growth" hidden>
+    <section style="margin-top:0"><div class="sec-h"><h2>코치님 말씀</h2><span class="tag">피가 되고 살이 되는</span><span class="sub" id="say-sub"></span></div><div id="says" style="display:flex;flex-direction:column;gap:10px"></div></section>
     <section><div class="sec-h"><h2>테이크오프 체크</h2><span class="tag">코치 기준</span><span class="sub" id="tko-sub"></span></div><div class="px" id="tko"></div></section>
     <section><div class="sec-h"><h2>내 자세 기록</h2><span class="tag">영상 → 사진</span><span class="sub" id="pose-sub"></span></div><div class="px" id="pose"></div></section>
-    <section id="lex-sec"><div class="sec-h"><h2>용어 검수</h2><span class="tag">코치 전용</span><span class="sub" id="lex-sub"></span></div><div class="px" id="lex"></div></section>
-    <section><div class="sec-h"><h2>코치님 말씀</h2><span class="tag">피가 되고 살이 되는</span><span class="sub" id="say-sub"></span></div><div id="says" style="display:flex;flex-direction:column;gap:10px"></div></section>
     <section><div class="sec-h"><h2>더 배우기</h2><span class="tag">퀴즈 · 용어</span></div>
       <details class="px" id="more-quiz"><summary style="cursor:pointer;font-weight:700">용어 퀴즈 · 하루 3문제 · 맞히면 +5 XP</summary><div class="quiz" id="quiz" style="margin-top:10px"></div></details>
       <details class="px" id="more-gloss" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">서핑 용어 사전 <span class="tag" id="gloss-n"></span></summary><div class="gloss" id="gloss" style="margin-top:10px"></div></details>
+      <div class="px sand" id="lex-link" style="margin-top:10px"></div>
     </section>
   </div>
 
@@ -626,6 +630,7 @@ footer a{color:var(--paper)}
     </div>
     <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">주 2회 × 8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
     <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av" data-anim></canvas><div class="opts" id="bld-opts"></div></div></section>
+    <section><div class="sec-h"><h2>같이 타는 친구</h2><span class="tag">친밀도</span><span class="sub" id="petsub"></span></div><div class="px sand" id="petcard"></div></section>
     <section><div class="sec-h"><h2>받은 칭찬 카드</h2><span class="tag" id="cards-n">0</span></div><div class="cards" id="cards-in"></div><button class="btn sm pink" type="button" style="margin-top:10px" onclick="openCard()">👏 나도 보내기</button></section>
     <section><div class="sec-h"><h2>서핑 레벨표</h2><span class="tag">양양서핑학교</span><span class="sub" id="slv-sum"></span></div><div class="slv" id="slv"></div><p class="lab-sm" style="margin-top:8px;color:var(--paper);text-shadow:1px 1px 0 var(--ink)">교육 항목을 다 채우면 그 레벨 인정. 항목 +3 XP. 코치 확인은 다음 버전에.</p></section>
     <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
@@ -686,6 +691,7 @@ footer a{color:var(--paper)}
 <nav class="nav" id="nav" hidden>
   <button type="button" data-tab="wave" aria-pressed="true"><canvas data-spr="wave" width="16" height="8"></canvas>파도</button>
   <button type="button" data-tab="mission" aria-pressed="false"><canvas data-spr="flag" width="8" height="8"></canvas>수업</button>
+  <button type="button" data-tab="growth" aria-pressed="false"><canvas data-spr="sprout" width="8" height="8"></canvas>성장</button>
   <button type="button" data-tab="level" aria-pressed="false"><canvas data-spr="star" width="8" height="8"></canvas>나</button>
   <button type="button" data-tab="rank" aria-pressed="false"><canvas data-spr="crown" width="8" height="8"></canvas>마을</button>
   <button type="button" data-tab="gear" aria-pressed="false"><canvas data-spr="board" width="8" height="8"></canvas>장비</button>
@@ -730,6 +736,7 @@ const SPR = {
   wind:['........','.cccc...','....c...','.cccccc.','.......c','.ccccccc','........','........'],
   tide:['........','..pp..pp','.p..pp..','........','..pp..pp','.p..pp..','........','........'],
   clock:['..kkkk..','.k....k.','k...k..k','k...k..k','k..kk..k','k......k','.k....k.','..kkkk..'],
+  sprout:['.....g..','..g..g..','..gg.g..','...ggg..','....g...','..kkkkk.','..ktttk.','...kkk..'],
 };
 /* ═══════════ 캐릭터 (24×24 도트) ═══════════
    레퍼런스대로 머리가 큰 치비 비율 — 머리 12줄 / 몸 8줄 / 보드 4줄.
@@ -811,6 +818,11 @@ const PET = {
   penguin:['............','...knnnnk...','..knnnnnnk..','.knnnnnnnnk.','kneewwwweenk','knnwwwwwwnnk','knnwwoowwnnk','.kkkkkkkkkk.'],
 };
 const PETBOARD = ['..wwwwwwww..','.kwwwwwwwwk.','.kwwwwwwwwk.','..kkkkkkkk..'];
+/* 친밀도가 오르면 눈에 보이는 게 하나씩 붙는다 — 숫자만 오르는 바는 아무도 안 본다.
+   모든 펫이 같은 자리에 눈(2·3열 / 8·9열)을 갖도록 그렸기 때문에 오버레이 하나로 다 맞는다. */
+const PET_ACC = [ null, { y:5, r:'.p........p.' }, { y:1, r:'........qkq.' }, { y:4, r:'.kkddkkddkk.' } ];
+const PET_STAGE = [ { at:0, ko:'처음 만남', un:'' }, { at:25, ko:'친해지는 중', un:'볼터치' }, { at:55, ko:'단짝', un:'리본' }, { at:90, ko:'베스트 버디', un:'선글라스' } ];
+const petStageOf = b => PET_STAGE.reduce((n,st,i)=> b>=st.at ? i : n, 0);
 const PET_KO = { none:'없음', rabbit:'토끼', cat:'고양이', dog:'강아지', seal:'물개', penguin:'펭귄' };
 const PETC = { p:'#FFB3D1', y:'#FFE0A0', w:'#F2F5F8', n:'#C98A5B', g:'#A8F0D8', k:'#6E687F' };
 const PETC_KO = { p:'핑크', y:'크림', w:'화이트', n:'브라운', g:'민트', k:'그레이' };
@@ -831,7 +843,9 @@ function avatarRows(pr, withPet){
   if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 12);
   if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
   if(withPet===false || !PET[pr.pet]) return rows;
-  const pet = PET[pr.pet].concat(PETBOARD), blank = '.'.repeat(12);
+  let body = PET[pr.pet];
+  for(let i=1; i<=(pr.petLv||0); i++){ const a = PET_ACC[i]; if(a) body = overlay(body, [a.r], a.y); }
+  const pet = body.concat(PETBOARD), blank = '.'.repeat(12);
   return rows.map((r,y)=> (y>=12 ? pet[y-12] : blank) + r);   // 36×24 — 펫이 옆에서 같이 달리는 한 장면
 }
 const SLV_COLORS = ['#FFD23F','#A6F542','#4DE1A5','#2ED3E6','#2E6BFF','#9B6BFF','#FF6B6B','#FF9F1C','#F7C59F','#FFFFFF','#1B1B2F'];   // 서핑 LV.0~10 보드 색
@@ -1759,25 +1773,16 @@ const SAYS = [
 ];
 const SAY_CATS = ['전체','테이크오프','푸쉬업','스탠스','패들링','라이딩·턴','매너·안전','트레이닝','이론'];
 const LEX_GROUPS = window.LEX_GROUPS;
-function renderLex(){
-  if(!$('lex-sec')) return; const isCoach = myProfile().role==='coach';
-  $('lex-sec').hidden = false;
+/* 용어 검수는 terms.html로 뺐다 — 앱 안에 두니 "오늘 파도 보러" 들어온 사람에게까지
+   코치용 편집 UI가 계속 보였다. 여기엔 현황과 바로가기만 남긴다. */
+function renderLexLink(){
+  if(!$('lex-link')) return; const isCoach = myProfile().role==='coach';
   const all = LEX_GROUPS.flatMap(([,ids])=>ids), fixes = all.filter(id=>LEX[id]?.status==='fix').length, ok = all.filter(id=>LEX[id]?.status==='approved').length;
-  $('lex-sub').textContent = state.termsOk===false ? '서버 준비 중' : `승인 ${ok} · 수정요청 ${fixes} / ${all.length}`;
-  $('lex').innerHTML = `<div class="lab-sm">앱이 쓰는 표현을 <b>학교 기준</b>으로 맞추는 곳이에요. ${isCoach?'코치는 바로 고칠 수 있고, 저장하면 앱 전체에 반영됩니다.':'이상한 표현이 보이면 "고쳐주세요"를 눌러 코치에게 알려요.'}</div>` +
-    LEX_GROUPS.map(([g,ids])=>`<details style="margin-top:8px"><summary style="cursor:pointer;font-weight:700">${g}</summary>${ids.map(id=>{ const e = LEX[id]||LEX_SEED[id]||{}; const st = e.status||'';
-      return `<div style="border-top:2px dashed var(--grid);padding:8px 0;font-size:13px" data-lex="${id}">
-        <div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap"><b>${e.ko||id}</b><span class="lab-sm" style="margin:0">${e.def||''}</span></div>
-        <div class="lab-sm" style="margin:4px 0 0">출처 ${e.src||'—'}${st==='approved'?' · <b style="color:#1FA366">코치 승인</b>':st==='fix'?` · <b style="color:var(--bad)">수정 요청</b>${e.note?` — ${e.note}`:''}`:''}${e.by?` · ${e.by}`:''}</div>
-        ${isCoach ? `<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input data-ko="${id}" value="${(e.ko||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:90px;border:3px solid var(--ink);padding:4px 6px;font-family:inherit;font-size:12px"><input data-def="${id}" value="${(e.def||'').replace(/"/g,'&quot;')}" placeholder="설명" style="flex:2;min-width:140px;border:3px solid var(--ink);padding:4px 6px;font-family:inherit;font-size:12px"><button class="btn sm mint" type="button" data-save="${id}">저장·승인</button></div>`
-                    : `<button class="btn sm ghost" type="button" data-fix="${id}" style="margin-top:6px">고쳐주세요</button>`}
-      </div>`; }).join('')}</details>`).join('');
-  $('lex').querySelectorAll('[data-save]').forEach(b=>b.onclick=async ()=>{ const id=b.dataset.save;
-    try{ await saveTerm(id, { ko:$('lex').querySelector(`[data-ko="${id}"]`).value.trim(), def:$('lex').querySelector(`[data-def="${id}"]`).value.trim(), status:'approved' }); toast('승인 · 앱에 반영'); renderLex(); if(state.loaded) renderWave(); }
-    catch(e){ toast(state.termsOk===false?'코치가 supabase-terms.sql 실행 필요':'저장 실패'); } });
-  $('lex').querySelectorAll('[data-fix]').forEach(b=>b.onclick=async ()=>{ const id=b.dataset.fix, note = prompt('학교에서는 어떻게 부르나요? (비워도 됩니다)')||'';
-    try{ await saveTerm(id, { status:'fix', note:`${note} (${ME.name})` }); toast('코치에게 전달했어요'); renderLex(); }
-    catch(e){ toast(state.termsOk===false?'코치가 supabase-terms.sql 실행 필요':'전송 실패'); } });
+  const stat = state.termsOk===false ? '<b>서버 준비 중</b> (코치가 supabase-terms.sql 실행 필요)' : `코치 승인 <b>${ok}</b> · 수정 요청 <b>${fixes}</b> / 전체 ${all.length}`;
+  $('lex-link').innerHTML = `<span class="eyebrow">용어 검수 · 별도 페이지</span>
+    <div style="font-size:13px;line-height:1.6;margin-top:2px">앱이 쓰는 표현을 <b>양양서핑학교 기준</b>으로 맞추는 곳이에요. ${stat}<br>
+    ${isCoach ? '코치는 거기서 바로 고칠 수 있고, <b>저장하면 앱 전체 표현이 즉시 바뀝니다</b>.' : '학교에서 쓰는 말과 다르면 "고쳐주세요"로 코치에게 알려주세요.'}</div>
+    <a class="btn sm blue" href="terms.html" style="display:inline-block;margin-top:8px;text-decoration:none">용어 검수 열기 ▶</a>`;
 }
 function renderSays(){
   if(!$('says')) return; const cat = state.sayCat || '전체', list = SAYS.filter(x=>cat==='전체'||x.c===cat);
@@ -2257,12 +2262,13 @@ function builderHTML(pr, prefix){
 }
 const MANAGER_PR = { role:'coach', hair:'pony', hairc:'n', top:'y', hat:'bucket', board:'fun', boardc:'c', bottom:'k', vest:false, face:'happy', pet:'seal', petc:'w' };
 const ONB = [
-  { who:'교장쌤', txt:'6기 환영합니다! 먼저 라인업에서 알아볼 수 있게 캐릭터부터 만들어요. 래시가드·모자·보드 색은 언제든 "나" 탭에서 바꿀 수 있어요.', build:true, tab:'wave' },
+  { who:'교장쌤', txt:'6기 환영합니다! 먼저 라인업에서 알아볼 수 있게 캐릭터부터 만들어요. 머리 모양이 제일 눈에 띄니 거기부터. 맨 아래 "같이 타는 친구"를 고르면 보드 옆에서 같이 달려요.', build:true, tab:'wave' },
   { who:'매니저', txt:'주로 어느 해변에서 타요? 홈 해변을 고르면 앱이 그 해변으로 열려요. (나중에 "나" 탭에서 바꿀 수 있어요)', home:true, tab:'wave' },
   { who:'교장쌤', txt:'1·2주차(보드 구조, 패들링·화이트워터)는 이미 하셨죠? 완료 처리하고 XP도 드릴게요. 출석은 코치 출석부 기록을 따릅니다.', tab:'mission', done12:true },
   { who:'교장쌤', txt:'【파도 탭】 아침 루틴은 딱 하나 — 노란 "오늘의 기준 잡기" 카드를 읽고 "확인했어요". 파도 크기·간격 → 물때 → 바람 → 슈트 순서예요.', tab:'wave', task:{ id:'basis', label:'기준 잡기 카드에서 "확인했어요" 눌러보기 (+3 XP)', check:()=>!!LS.get(`surf.basis.${ME.id}.${today()}.${BEACHES[state.beach].id}`, false) } },
   { who:'매니저', txt:'물에서 나오면 "오늘 세션"에서 도전·푸쉬업·테이크오프를 세고, 오늘 파도에 ★별점을 남겨요. 별점이 쌓이면 차트가 실제로 몇 점짜리인지 6기가 알게 돼요. 위 빠른 버튼(📍🔢⭐✎)으로 바로 가요.', tab:'wave' },
   { who:'매니저', txt:'【수업 탭】 이번 주 카드 하나만 보면 돼요: 출석 도장 → 배운 것 체크 → 미션 → 레슨런. 레슨런은 "이론+ 피드백+ 다음+" 칩으로 3줄만.', tab:'mission' },
+  { who:'Rio 코치', txt:'【성장 탭】 단톡방에 흘러간 코치 코칭을 주제별로 모아뒀어요. 테이크오프 7가지 체크, 수업 영상으로 자세 재보기, 용어 퀴즈도 여기.', tab:'growth' },
   { who:'매니저', txt:'【나 탭】 학교 공식 서핑 레벨표(LV.1~10)를 자가 체크하면 레벨이 오르고 보드 색이 바뀌어요.', tab:'level', task:{ id:'slv', label:'레벨표에서 이미 할 줄 아는 항목 1개 체크해보기 (+3 XP)', check:()=>Object.values(getData().lvl||{}).some(Boolean) } },
   { who:'교장쌤', txt:'【마을 탭】 6기 전원이 낙산 앞에 서 있어요. 첫 인사로 말풍선 한마디 남겨볼까요?', tab:'rank', mood:true },
   { who:'매니저', txt:'【장비 탭】 오늘 수온에 맞는 슈트, 두께·소재·봉제 읽는 법, 일본 브랜드(커베인·락호퍼)와 서퍼스 이큅먼트 스토어까지. 슈트 살 때 여기부터.', tab:'gear' },
@@ -2311,6 +2317,7 @@ function renderLevel(){
   const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
   $('bld-opts').innerHTML = builderHTML(pr) + `<div class="lab-sm" style="margin-top:4px">보유 장비(보드·슈트·리쉬)는 <a href="#" onclick="showTab('gear');return false">장비 탭 → 내 옷장</a>에서</div>`;
   $('bld-opts').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; setProfile({[x.dataset.k]:v}); });
+  renderPetCard();
   const mine = allCards().filter(c=>c.to===ME.name && !['MVP','인증'].includes(c.tpl)).sort((a,b)=>b.date.localeCompare(a.date));
   $('cards-n').textContent = mine.length;
   $('cards-in').innerHTML = mine.map(c=>`<div class="cardc"><div class="tpl">${c.tpl}</div>${c.text?`<div class="txt">${c.text.replace(/</g,'&lt;')}</div>`:''}<div class="meta">${c.fromName} · ${c.date.slice(0,10).replace(/-/g,'.')}</div></div>`).join('') || '<div class="px" style="font-size:13px;color:var(--ink2)">아직 없어요. 먼저 보내면 돌아와요.</div>';
@@ -2320,11 +2327,17 @@ function renderLevel(){
     + `<div style="border:0;margin-top:6px;font-size:12px;color:var(--ink2)">칭호(XP): ${LEVELS.map(([m,n],i)=>`${i===L?'<b>':''}${n}${i===L?'</b>':''}`).join(' → ')}</div>`;
 }
 function avatarTint(){ return avatarTintOf(myProfile(), slvStat(getData()).cur); }
+/* 친밀도 — 따로 먹이 주는 버튼을 만들면 앱을 두 번 열게 만드는 숙제가 된다.
+   이미 하는 것(출석·세션·성공)에 그냥 따라 오르게 했다. */
+const petBond = d => Math.min(100, Math.round(calcXP(d)/16) + attN(d)*5 + totalRides(d)*2);
 function refreshMe(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp);
   $('me-name').textContent = ME.name; $('me-lv').textContent = `${slvStat(d).label} · ${LEVELS[L][1]} · ${xp}XP`;
   drawSpr($('me-av'), avatarRows(myProfile(), false), avatarTint());                 // 헤더는 48px — 펫 빼고 서퍼만
   ['prog-av','lv-av'].forEach(id=>drawSpr($(id), avatarRows(myProfile()), avatarTint()));
+  { const pr = myProfile();                                    // 친밀도 단계가 올랐으면 프로필에 박아 마을에서도 보이게
+    if(pr.pet && pr.pet!=='none'){ const lv = petStageOf(petBond(d));
+      if((pr.petLv||0) !== lv){ const up = lv > (pr.petLv||0); setProfile({ petLv:lv }); if(up) toast(`${pr.petName||PET_KO[pr.pet]} — ${PET_STAGE[lv].ko}! ${PET_STAGE[lv].un?PET_STAGE[lv].un+' 획득':''}`); } } }
   const st = streakOf(d); $('me-streak').textContent = st>=2 ? `🔥 ${st}주 연속 출석` : '';
   const sl = slvStat(d).cur, prevS = LS.get(`surf.slv.${ME.id}`, null);
   if(prevS!=null && sl>prevS){ $('lvup-t').textContent = `서핑 LV.${SLV[sl-1].n}`; drawSpr($('lvup-av'), avatarRows(myProfile()), avatarTint()); $('lvup').hidden = false; chatSys(`🎉 서핑 LV.${SLV[sl-1].n} 달성!`); }
@@ -2340,9 +2353,13 @@ function refreshMe(){
 /* ═══════════ 탭 · 로그인 · 부팅 ═══════════ */
 function showTab(t){
   if(t!=='wave' && camPlaying) camStop(); if(t==='wave' && state.loaded && !camPlaying) setTimeout(()=>camPlay(BEACHES[state.beach]), 300);
-  state.tab = t; ['wave','mission','level','rank','gear'].forEach(x=>$('tab-'+x).hidden = x!==t);
+  state.tab = t; ['wave','mission','growth','level','rank','gear'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
-  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); renderSays(); renderTko(); renderPose(); renderLex(); pullTerms().then(()=>{ if(state.tab==='mission') renderLex(); if(state.loaded && state.tab==='wave') renderWave(); }); pullPoses().then(()=>{ if(state.tab==='mission') renderPose(); }); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); if(t==='gear') renderGear(); window.scrollTo({top:0, behavior:'instant'});
+  if(t==='mission'){ renderMission(); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); }
+  if(t==='growth'){ renderQuiz(); renderGloss($('gloss-q')?.value||''); renderSays(); renderTko(); renderPose(); renderLexLink();
+    pullTerms().then(()=>{ if(state.tab==='growth') renderLexLink(); if(state.loaded && state.tab==='wave') renderWave(); });
+    pullPoses().then(()=>{ if(state.tab==='growth') renderPose(); }); }
+  if(t==='level') renderLevel(); if(t==='rank') renderRank(); if(t==='gear') renderGear(); window.scrollTo({top:0, behavior:'instant'});
   const tb = $('tab-'+t); tb.style.animation='none'; void tb.offsetWidth; tb.style.animation='';
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
@@ -2448,6 +2465,30 @@ function renderCloset(){
   $('closet').querySelectorAll('[data-main]').forEach(b=>b.onclick=()=>{ const it = closetOf(myProfile()).map(x=>({...x})); const i=+b.dataset.main; const t = it[i].type; const on = !it[i].main; it.forEach(x=>{ if(x.type===t) x.main=false; }); it[i].main = on; setProfile({ closet:it }); renderCloset(); renderGearMe(); });
   $('closet').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ if(!confirm('옷장에서 뺄까요?')) return; const it = closetOf(myProfile()).filter((_,i)=>i!==+b.dataset.del); setProfile({ closet:it }); renderCloset(); renderGearMe(); });
   $('c-save').onclick = ()=>{ const it = { type:$('c-type').value, name:$('c-name').value.trim(), model:$('c-model').value.trim(), size:$('c-size').value.trim(), note:$('c-note').value.trim() }; if(!it.name && !it.model) return toast('이름이나 모델은 적어주세요'); const cur = closetOf(myProfile()).map(x=>({...x})); if(!cur.some(x=>x.type===it.type)) it.main = true; cur.push(it); setProfile({ closet:cur }); ['c-name','c-model','c-size','c-note'].forEach(id=>$(id).value=''); $('closet-add').open = false; toast('옷장에 넣었어요'); renderCloset(); renderGearMe(); };
+}
+function renderPetCard(){
+  if(!$('petcard')) return; const pr = myProfile(), d = getData();
+  if(!pr.pet || pr.pet==='none'){
+    $('petsub').textContent = '';
+    $('petcard').innerHTML = `<div style="font-size:13px;line-height:1.6">바다에 혼자 나가면 심심하죠. <b>내 캐릭터 → 같이 타는 친구</b>에서 하나 고르면 보드 옆에서 같이 달려요.<br>출석하고 파도 타면 친밀도가 올라 <b>볼터치 → 리본 → 선글라스</b>가 붙습니다.</div>`;
+    return;
+  }
+  const b = petBond(d), lv = petStageOf(b), st = PET_STAGE[lv], nx = PET_STAGE[lv+1];
+  const nm = pr.petName || PET_KO[pr.pet];
+  $('petsub').textContent = `${st.ko} · ${b}/100`;
+  $('petcard').innerHTML = `<div style="display:flex;gap:12px;align-items:center">
+      <canvas id="pet-av" data-anim style="height:72px;background:var(--sky);border:3px solid var(--ink)"></canvas>
+      <div style="flex:1;min-width:0"><span class="eyebrow">${PET_KO[pr.pet]}</span>
+        <div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:18px">${nm}</div>
+        <div class="lab-sm" style="margin:2px 0 0">${st.ko}${st.un?` · ${st.un} 달았어요`:''}</div></div></div>
+    <div class="bar" data-c="sun" style="margin-top:8px"><i style="width:${b}%"></i></div>
+    <div class="lab-sm" style="margin-top:4px">${nx ? `<b>${nx.ko}</b>까지 ${nx.at-b} — ${nx.un} 해금` : '끝까지 다 컸어요. 이제 진짜 버디네요'}</div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center">
+      <input id="pet-name" maxlength="8" value="${(pr.petName||'').replace(/"/g,'&quot;')}" placeholder="이름 붙여주기" style="flex:1;min-width:100px;border:3px solid var(--ink);padding:6px;font-family:inherit;font-size:13px">
+      <button class="btn sm mint" type="button" id="pet-name-save">저장</button></div>
+    <div class="lab-sm" style="margin-top:8px">친밀도는 <b>출석 · 세션 기록 · 성공한 파도</b>를 따라 저절로 올라요. 따로 먹이 줄 건 없습니다.</div>`;
+  drawSpr($('pet-av'), avatarRows(pr), avatarTint());
+  $('pet-name-save').onclick = ()=>{ setProfile({ petName: $('pet-name').value.trim().slice(0,8) }); toast('이름 저장'); renderPetCard(); };
 }
 function renderGearMe(){ const pr = myProfile(); $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">주력 장비 · 마을 카드에 표시</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'옷장에서 주력을 골라주세요'}</div></div></div>`; drawSpr($('gear-av'), avatarRows(pr), avatarTint()); }
 async function renderRank(){   // = 마을
