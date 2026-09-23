@@ -598,6 +598,7 @@ footer a{color:var(--paper)}
     <section><div class="sec-h"><h2>전체 과정</h2><span class="tag">8주</span><span class="sub" id="prog-txt"></span></div><div class="bar" style="margin-bottom:10px"><i id="prog-bar"></i></div><div class="weeks" id="weeks"></div></section>
     <section><div class="sec-h"><h2>테이크오프 체크</h2><span class="tag">코치 기준</span><span class="sub" id="tko-sub"></span></div><div class="px" id="tko"></div></section>
     <section><div class="sec-h"><h2>내 자세 기록</h2><span class="tag">영상 → 사진</span><span class="sub" id="pose-sub"></span></div><div class="px" id="pose"></div></section>
+    <section id="lex-sec"><div class="sec-h"><h2>용어 검수</h2><span class="tag">코치 전용</span><span class="sub" id="lex-sub"></span></div><div class="px" id="lex"></div></section>
     <section><div class="sec-h"><h2>코치님 말씀</h2><span class="tag">피가 되고 살이 되는</span><span class="sub" id="say-sub"></span></div><div id="says" style="display:flex;flex-direction:column;gap:10px"></div></section>
     <section><div class="sec-h"><h2>더 배우기</h2><span class="tag">퀴즈 · 용어</span></div>
       <details class="px" id="more-quiz"><summary style="cursor:pointer;font-weight:700">용어 퀴즈 · 하루 3문제 · 맞히면 +5 XP</summary><div class="quiz" id="quiz" style="margin-top:10px"></div></details>
@@ -1051,8 +1052,57 @@ const compassKo = d => COMPASS_KO[dirEn(d)];                          // 예: �
 const compass8 = d => COMPASS_KO[['N','NE','E','SE','S','SW','W','NW'][Math.round(((d%360)+360)%360/45)%8]];
 const hhmm = iso => iso.slice(11,16), pad2 = n => String(n).padStart(2,'0'), DOW = ['일','월','화','수','목','금','토'];
 function windRel(from, facing){ const d = Math.abs(((from - facing) + 540) % 360 - 180); return d <= 45 ? 'on' : d >= 135 ? 'off' : 'cross'; }
-const relKo = { on:'온쇼어', off:'오프쇼어', cross:'사이드쇼어' };
-const relKoFull = { on:'온쇼어(바다→해변)', off:'오프쇼어(해변→바다)', cross:'사이드쇼어(옆바람)' };
+/* ═══════════ 문구 레지스트리 — 학교 용어를 코치가 검수·수정하면 앱 전체에 반영 ═══════════
+   src: 강의노트 / 단톡 코칭(날짜) / 일반 용어 / 앱 제안  — '앱 제안'은 코치 확인 전이라는 뜻 */
+const LEX_SEED = {
+  'rel.on':      { ko:'온쇼어',   def:'바다에서 해변으로 부는 바람. 파도 면이 무너져 거칠어짐', src:'일반 용어' },
+  'rel.off':     { ko:'오프쇼어', def:'해변에서 바다로 부는 바람. 파도 면이 매끈해지고 립이 섬', src:'일반 용어' },
+  'rel.cross':   { ko:'사이드쇼어', def:'해변과 나란히 부는 옆바람. 파도 면에 결이 생김', src:'일반 용어' },
+  'fit.2':       { ko:'정면 ◎', def:'해변이 향한 방향으로 파도가 그대로 들어옴 (에너지 100%)', src:'단톡 코칭 09.22 · 교장쌤' },
+  'fit.1':       { ko:'양호 ○', def:'약간 비껴 들어옴 (에너지 대부분)', src:'앱 제안' },
+  'fit.0':       { ko:'부분 △', def:'옆에서 들어와 절반쯤 닿음', src:'앱 제안' },
+  'fit.-2':      { ko:'차단 ✕', def:'해변이 등진 방향 — 지형·방파제가 막음', src:'단톡 코칭 09.22 · 교장쌤' },
+  'verdict.good':{ ko:'좋음',   def:'파고·피리어드·바람이 고루 맞는 날', src:'앱 제안' },
+  'verdict.ok':  { ko:'보통',   def:'탈 만하지만 조건이 완벽하진 않음', src:'앱 제안' },
+  'verdict.meh': { ko:'약함',   def:'파워가 약하거나 바람이 방해', src:'앱 제안' },
+  'verdict.bad': { ko:'나쁨',   def:'입수해도 라이딩이 어려움', src:'앱 제안' },
+  'verdict.warn':{ ko:'위험',   def:'파고·바람·뇌우로 입수 금지', src:'앱 제안' },
+  'swell.short': { ko:'단주기 윈드 스웰', def:'가까운 바람이 만든 7초 미만 파도. 촘촘하고 힘이 약함', src:'강의노트' },
+  'swell.wind':  { ko:'윈드 스웰',       def:'바람으로 만들어진 보통 파도', src:'강의노트' },
+  'swell.ground':{ ko:'그라운드 스웰',   def:'먼바다에서 온 정돈된 파도', src:'강의노트' },
+  'swell.long':  { ko:'장주기 그라운드 스웰', def:'10~13초. 세트 파워가 강함', src:'강의노트' },
+  'swell.xlong': { ko:'초장주기 스웰',   def:'13초 초과. 국내에 드물고 백워시 주의', src:'단톡 코칭 09.09 · 교장쌤' },
+  'tide.rise':   { ko:'들물', def:'물이 차오르는 중 (만조로 향함)', src:'일반 용어' },
+  'tide.fall':   { ko:'날물', def:'물이 빠지는 중 (간조로 향함)', src:'일반 용어' },
+  'tide.slack':  { ko:'정조', def:'물 높이가 거의 멈춘 때', src:'일반 용어' },
+  'stage.push':  { ko:'푸쉬업', def:'상체를 세워 중심을 잡는 단계', src:'단톡 코칭 09.08 · 교장쌤' },
+  'stage.stand': { ko:'스탠드업', def:'일어서는 동작', src:'단톡 코칭 09.21 · Rio' },
+  'stage.ride':  { ko:'라이딩', def:'파도 면을 타고 나아가는 것', src:'일반 용어' },
+  'sess.try':    { ko:'도전', def:'파도를 잡으러 패들링해 들어간 횟수', src:'앱 제안' },
+  'sess.take':   { ko:'테이크오프', def:'일어서서 파도를 탄 횟수', src:'강의노트' },
+  'period':      { ko:'피리어드', def:'파도와 파도 사이 간격(초). 크기보다 중요한 지표, 동해 최적 7~9초', src:'단톡 코칭 09.09 · 교장쌤' },
+  'exposure':    { ko:'파도 방향 / 받는 정도', def:'해변이 향한 쪽에서 파도가 들어와야 힘이 온전히 닿음', src:'단톡 코칭 09.22 · 교장쌤' },
+};
+let LEX = { ...LEX_SEED };
+const T = (id, f='ko') => (LEX[id] || LEX_SEED[id] || {})[f] || id;
+let relKo = { on:'온쇼어', off:'오프쇼어', cross:'사이드쇼어' };
+let relKoFull = { on:'온쇼어(바다→해변)', off:'오프쇼어(해변→바다)', cross:'사이드쇼어(옆바람)' };
+function applyLex(){
+  relKo = { on:T('rel.on'), off:T('rel.off'), cross:T('rel.cross') };
+  relKoFull = { on:`${T('rel.on')}(바다→해변)`, off:`${T('rel.off')}(해변→바다)`, cross:`${T('rel.cross')}(옆바람)` };
+  if(typeof STAGES!=='undefined'){ STAGES.push = T('stage.push'); STAGES.stand = T('stage.stand'); STAGES.ride = T('stage.ride'); }
+}
+async function pullTerms(){
+  if(!supaOn()) return; try{ const rows = await sbGet('terms', 'select=*&limit=500'); const next = { ...LEX_SEED };
+    rows.forEach(r=>{ if(r.status!=='fix' || r.ko) next[r.id] = { ko:r.ko || (LEX_SEED[r.id]||{}).ko, def:r.def || (LEX_SEED[r.id]||{}).def, src:r.src || (LEX_SEED[r.id]||{}).src, status:r.status, note:r.note, by:r.by_name }; });
+    LEX = next; applyLex(); state.termsOk = true; }
+  catch(e){ state.termsOk = e.code==='notable' ? false : state.termsOk; }
+}
+async function saveTerm(id, patch){
+  const cur = LEX[id] || LEX_SEED[id] || {};
+  const row = { id, ko:patch.ko ?? cur.ko, def:patch.def ?? cur.def, src:patch.src ?? cur.src, status:patch.status || 'approved', note:patch.note ?? cur.note ?? null, by_name:ME.name, updated_at:new Date().toISOString() };
+  await sbUpsert('terms', row); LEX[id] = { ko:row.ko, def:row.def, src:row.src, status:row.status, note:row.note, by:row.by_name }; applyLex();
+}
 function tides(b, day){
   const y = b.m.sea_level_height_msl, out = [];
   for(let i=1;i<y.length-1;i++){
@@ -1065,7 +1115,7 @@ function tides(b, day){
   }
   return out;
 }
-function swellFit(b, dir){ const d = Math.abs(((dir - b.swell) + 540) % 360 - 180); return d<=22 ? { s:2, ko:'정면 ◎' } : d<=45 ? { s:1, ko:'양호 ○' } : d<=90 ? { s:0, ko:'부분 △' } : { s:-2, ko:'차단 ✕' }; }
+function swellFit(b, dir){ const d = Math.abs(((dir - b.swell) + 540) % 360 - 180); return d<=22 ? { s:2, ko:T('fit.2') } : d<=45 ? { s:1, ko:T('fit.1') } : d<=90 ? { s:0, ko:T('fit.0') } : { s:-2, ko:T('fit.-2') }; }
 function hourScore(b, i, tidePos){
   const h = b.m.wave_height[i] ?? 0, p = b.m.wave_period[i] ?? 0, w = b.f.wind_speed_10m[i] ?? 0, rel = windRel(b.f.wind_direction_10m[i] ?? 0, b.facing);
   let s = 0;
@@ -1077,7 +1127,7 @@ function hourScore(b, i, tidePos){
   const sdir = b.m.swell_wave_direction?.[i] ?? b.m.wave_direction[i] ?? 0, fit = swellFit(b, sdir); s += fit.s;   // 스웰 방향 궁합
   return { s: Math.max(0, s), fit, sdir, danger: h>2.5 || w>25 || (b.f.weather_code[i]>=95), h, p, w, rel };
 }
-function verdict(avg, danger){ if(danger) return { v:'warn', t:'위험' }; if(avg>=8) return { v:'good', t:'좋음' }; if(avg>=5.5) return { v:'ok', t:'보통' }; if(avg>=3.5) return { v:'meh', t:'약함' }; return { v:'bad', t:'나쁨' }; }
+function verdict(avg, danger){ if(danger) return { v:'warn', t:T('verdict.warn') }; if(avg>=8) return { v:'good', t:T('verdict.good') }; if(avg>=5.5) return { v:'ok', t:T('verdict.ok') }; if(avg>=3.5) return { v:'meh', t:T('verdict.meh') }; return { v:'bad', t:T('verdict.bad') }; }
 const _an = new Map();
 function analyze(b, day){ const k = `${b.id}|${day}|${state.model}|${state.fetchedAt?.getTime()||0}`; if(_an.has(k)) return _an.get(k); const r = analyzeRaw(b, day); if(_an.size>200) _an.clear(); _an.set(k, r); return r; }
 function analyzeRaw(b, day){
@@ -1093,7 +1143,7 @@ function analyzeRaw(b, day){
   for(let h=Math.max(0,srH); h+1<=Math.min(23,ssH); h++){ const sum = hours[h].s + hours[h+1].s; if(!best || sum>best.sum) best = { h, sum, danger: hours[h].danger||hours[h+1].danger }; }
   if(!best) best = { h:srH, sum:hours[srH].s*2, danger:hours[srH].danger };
   const rep = hours[best.h], vd = verdict(best.sum/2, best.danger);
-  const swell = rep.p<7 ? '단주기 윈드 스웰' : rep.p<=9.5 ? ((rep.wwH ?? 0) >= (rep.swH ?? 0) ? '윈드 스웰' : '그라운드 스웰') : rep.p<=13 ? '장주기 그라운드 스웰' : '초장주기 스웰';
+  const swell = rep.p<7 ? T('swell.short') : rep.p<=9.5 ? ((rep.wwH ?? 0) >= (rep.swH ?? 0) ? T('swell.wind') : T('swell.ground')) : rep.p<=13 ? T('swell.long') : T('swell.xlong');
   const swellHint = rep.p<7 ? '(가까운 바람이 만든 잔파도)' : rep.p<=9.5 ? '(바람으로 만들어진 보통 파도)' : rep.p<=13 ? '(먼바다에서 온 힘 있는 파도)' : '(아주 멀리서 온 큰 파도)';
   const power = rep.h<0.5 ? '파워 약함 · 롱보드 권장' : rep.h<1 ? '파워 보통 이하 · 입문 라이딩 적합' : rep.h<1.6 ? '파워 적당' : '파워 강함 · 커런트 주의';
   const dayT = hours.slice(5,20).map(x=>x.temp);
@@ -1167,7 +1217,7 @@ function suitWhy(sst, tmin){ const core = sst>=24 ? '수온이 높아 슈트 없
   return core + (tmin<=15 ? ' · 바깥 기온이 낮으니 판초·갈아입을 옷 필수' : ''); }
 function tidePhase(a){
   const tp = a.rep.tp, next = a.hours[a.best.h+1]?.tp ?? tp, lvl = tp==null ? '' : tp<0.33 ? '로우' : tp<0.66 ? '미드' : '하이';
-  const trend = next==null||tp==null ? '' : next>tp+0.03 ? ' · 들물(상승)' : next<tp-0.03 ? ' · 날물(하강)' : ' · 정조'; return lvl + trend;
+  const trend = next==null||tp==null ? '' : next>tp+0.03 ? ` · ${T('tide.rise')}(상승)` : next<tp-0.03 ? ` · ${T('tide.fall')}(하강)` : ` · ${T('tide.slack')}`; return lvl + trend;
 }
 function wxKo(c){ if(c==null) return ''; if(c<=1) return '맑음'; if(c===2) return '구름 조금'; if(c===3) return '흐림'; if(c<=48) return '안개'; if(c<=57) return '이슬비'; if(c<=67) return '비'; if(c<=77) return '눈'; if(c<=82) return '소나기'; if(c<=86) return '눈소나기'; return '뇌우'; }
 function renderTiles(b, a){
@@ -1179,7 +1229,7 @@ function renderTiles(b, a){
     const now = new Date(), hNow = now.getHours() + now.getMinutes()/60, i0 = Math.floor(hNow), lv0 = a.hours[i0]?.lvl, lv1 = a.hours[Math.min(23,i0+1)]?.lvl;
     const cur = lv0!=null && lv1!=null ? lv0 + (lv1-lv0)*(hNow-i0) : lv0;
     const next = tev.map(t=>{ const [hh,mm]=t.time.split(':').map(Number); return { ...t, at:hh+mm/60 }; }).find(t=>t.at>hNow);
-    const dir = lv1==null||lv0==null ? '' : lv1>lv0+0.005 ? '들물 ↑ (상승)' : lv1<lv0-0.005 ? '날물 ↓ (하강)' : '정조 →';
+    const dir = lv1==null||lv0==null ? '' : lv1>lv0+0.005 ? `${T('tide.rise')} ↑ (상승)` : lv1<lv0-0.005 ? `${T('tide.fall')} ↓ (하강)` : `${T('tide.slack')} →`;
     const left = next ? `${next.type} ${next.time}까지 ${Math.floor(next.at-hNow)}시간 ${Math.round(((next.at-hNow)%1)*60)}분` : '오늘 남은 만·간조 없음';
     tideNow = `지금 <b>${cur!=null?(cur>=0?'+':'')+cur.toFixed(2)+'m':'-'}</b> · <b>${dir}</b> · ${left}`;
   }
@@ -1652,6 +1702,34 @@ const SAYS = [
   { c:'트레이닝', who:'이승대 교장', d:'09.22', t:'다리 모으기 · 상체 익스텐션', b:`다리를 신경 써서 <b>더 모아주고</b>, 모으는 것도 중요하지만 <b>힘을 줘서</b> 모아줍니다.<br>자세가 낮은 것은 나쁘지 않지만 테이크오프 이후 <b>상체를 세우려고</b> 노력하세요. 제너레이팅(속도 만들기) 연습도 함께.` },
 ];
 const SAY_CATS = ['전체','테이크오프','푸쉬업','스탠스','패들링','라이딩·턴','매너·안전','트레이닝','이론'];
+const LEX_GROUPS = [
+  ['바람', ['rel.on','rel.off','rel.cross']],
+  ['파도 방향', ['exposure','fit.2','fit.1','fit.0','fit.-2']],
+  ['판정', ['verdict.good','verdict.ok','verdict.meh','verdict.bad','verdict.warn']],
+  ['스웰·피리어드', ['period','swell.short','swell.wind','swell.ground','swell.long','swell.xlong']],
+  ['물때', ['tide.rise','tide.fall','tide.slack']],
+  ['동작·기록', ['stage.push','stage.stand','stage.ride','sess.try','sess.take']],
+];
+function renderLex(){
+  if(!$('lex-sec')) return; const isCoach = myProfile().role==='coach';
+  $('lex-sec').hidden = false;
+  const all = LEX_GROUPS.flatMap(([,ids])=>ids), fixes = all.filter(id=>LEX[id]?.status==='fix').length, ok = all.filter(id=>LEX[id]?.status==='approved').length;
+  $('lex-sub').textContent = state.termsOk===false ? '서버 준비 중' : `승인 ${ok} · 수정요청 ${fixes} / ${all.length}`;
+  $('lex').innerHTML = `<div class="lab-sm">앱이 쓰는 표현을 <b>학교 기준</b>으로 맞추는 곳이에요. ${isCoach?'코치는 바로 고칠 수 있고, 저장하면 앱 전체에 반영됩니다.':'이상한 표현이 보이면 "고쳐주세요"를 눌러 코치에게 알려요.'}</div>` +
+    LEX_GROUPS.map(([g,ids])=>`<details style="margin-top:8px"><summary style="cursor:pointer;font-weight:700">${g}</summary>${ids.map(id=>{ const e = LEX[id]||LEX_SEED[id]||{}; const st = e.status||'';
+      return `<div style="border-top:2px dashed var(--grid);padding:8px 0;font-size:13px" data-lex="${id}">
+        <div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap"><b>${e.ko||id}</b><span class="lab-sm" style="margin:0">${e.def||''}</span></div>
+        <div class="lab-sm" style="margin:4px 0 0">출처 ${e.src||'—'}${st==='approved'?' · <b style="color:#1FA366">코치 승인</b>':st==='fix'?` · <b style="color:var(--bad)">수정 요청</b>${e.note?` — ${e.note}`:''}`:''}${e.by?` · ${e.by}`:''}</div>
+        ${isCoach ? `<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input data-ko="${id}" value="${(e.ko||'').replace(/"/g,'&quot;')}" style="flex:1;min-width:90px;border:3px solid var(--ink);padding:4px 6px;font-family:inherit;font-size:12px"><input data-def="${id}" value="${(e.def||'').replace(/"/g,'&quot;')}" placeholder="설명" style="flex:2;min-width:140px;border:3px solid var(--ink);padding:4px 6px;font-family:inherit;font-size:12px"><button class="btn sm mint" type="button" data-save="${id}">저장·승인</button></div>`
+                    : `<button class="btn sm ghost" type="button" data-fix="${id}" style="margin-top:6px">고쳐주세요</button>`}
+      </div>`; }).join('')}</details>`).join('');
+  $('lex').querySelectorAll('[data-save]').forEach(b=>b.onclick=async ()=>{ const id=b.dataset.save;
+    try{ await saveTerm(id, { ko:$('lex').querySelector(`[data-ko="${id}"]`).value.trim(), def:$('lex').querySelector(`[data-def="${id}"]`).value.trim(), status:'approved' }); toast('승인 · 앱에 반영'); renderLex(); if(state.loaded) renderWave(); }
+    catch(e){ toast(state.termsOk===false?'코치가 supabase-terms.sql 실행 필요':'저장 실패'); } });
+  $('lex').querySelectorAll('[data-fix]').forEach(b=>b.onclick=async ()=>{ const id=b.dataset.fix, note = prompt('학교에서는 어떻게 부르나요? (비워도 됩니다)')||'';
+    try{ await saveTerm(id, { status:'fix', note:`${note} (${ME.name})` }); toast('코치에게 전달했어요'); renderLex(); }
+    catch(e){ toast(state.termsOk===false?'코치가 supabase-terms.sql 실행 필요':'전송 실패'); } });
+}
 function renderSays(){
   if(!$('says')) return; const cat = state.sayCat || '전체', list = SAYS.filter(x=>cat==='전체'||x.c===cat);
   $('say-sub').textContent = `${SAYS.length}개`;
@@ -1681,7 +1759,7 @@ function renderTko(){
 }
 
 /* ═══════════ 내 자세 기록: 영상에서 프레임 뽑아 저장 → 주차별 변화 ═══════════ */
-const STAGES = { push:'푸쉬업', stand:'스탠드업', ride:'라이딩' };
+const STAGES = { push:'푸쉬업', stand:'스탠드업', ride:'라이딩' };   // applyLex()가 코치 승인본으로 갱신
 function renderPose(){
   if(!$('pose')) return; const mine = (state.poses||[]).filter(x=>x.user_id===ME.id).sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
   $('pose-sub').textContent = mine.length ? `${mine.length}장` : '';
@@ -2108,7 +2186,7 @@ function showTab(t){
   if(t!=='wave' && camPlaying) camStop(); if(t==='wave' && state.loaded && !camPlaying) setTimeout(()=>camPlay(BEACHES[state.beach]), 300);
   state.tab = t; ['wave','mission','level','rank','gear'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
-  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); renderSays(); renderTko(); renderPose(); pullPoses().then(()=>{ if(state.tab==='mission') renderPose(); }); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); if(t==='gear') renderGear(); window.scrollTo({top:0, behavior:'instant'});
+  if(t==='mission'){ renderMission(); renderQuiz(); renderGloss($('gloss-q')?.value||''); renderSays(); renderTko(); renderPose(); renderLex(); pullTerms().then(()=>{ if(state.tab==='mission') renderLex(); if(state.loaded && state.tab==='wave') renderWave(); }); pullPoses().then(()=>{ if(state.tab==='mission') renderPose(); }); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); } if(t==='level') renderLevel(); if(t==='rank') renderRank(); if(t==='gear') renderGear(); window.scrollTo({top:0, behavior:'instant'});
   const tb = $('tab-'+t); tb.style.animation='none'; void tb.offsetWidth; tb.style.animation='';
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
@@ -2117,7 +2195,7 @@ function enter(u){
   $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
   state.pref = LS.get('surf.pref', null); state.model = LS.get('surf.model', 'marine_best_match'); const sb = (auth.users()[u.id]?.profile?.home) || LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
   $('practice').value = LS.get(`surf.practice.${u.id}`, '');
-  refreshMe(); showTab('wave'); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
+  refreshMe(); showTab('wave'); pullTerms().then(()=>{ if(state.loaded) renderWave(); }); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
 }
 let mode = 'in';
 const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; $('f-birth').hidden = m!=='new'; $('reset-box').hidden = true; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
