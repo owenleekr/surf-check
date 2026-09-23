@@ -448,6 +448,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .opt button{border:3px solid var(--ink); background:#fff; padding:4px 8px; font-size:12px; font-weight:700; box-shadow:2px 2px 0 var(--ink); display:flex; align-items:center; gap:5px}
 .opt button i{width:12px; height:12px; border:2px solid var(--ink); display:inline-block}
 .opt button[aria-pressed="true"]{background:var(--sun)}
+.bldtabs{margin-bottom:2px}
 .opt button.coach{background:var(--orange); color:#fff}
 .role{display:flex; gap:0; margin-top:6px}
 .role button{flex:1; border:4px solid var(--ink); background:#fff; padding:8px; font-weight:700; font-size:14px}
@@ -2258,22 +2259,37 @@ function renderFeed(){
 
 /* ═══════════ 온보딩 (첫 로그인) ═══════════ */
 const COACH_PR = { role:'coach', hair:'surf', hairc:'k', top:'k', hat:'cap', board:'long', boardc:'w', bottom:'k', face:'cool', pet:'dog', petc:'n' };
-function builderHTML(pr, prefix){
-  const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
-  const cur = { ...pr, hair:hairOf(pr) };
-  const opt2 = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(cur[key]??'')===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
-  return opt2('머리 모양 · 멀리서도 이걸로 알아봅니다', 'hair', Object.keys(HAIR).map(k=>[k,HAIR_KO[k]])) +
-    opt('머리 색', 'hairc', Object.keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), (v,t)=>`<i style="background:${HAIRC[v]}"></i>${t}`) +
-    opt('피부 톤', 'skin', Object.keys(SKIN).map(k=>[k,SKIN_KO[k]]), (v,t)=>`<i style="background:${SKIN[v]}"></i>${t}`) +
-    opt('표정', 'face', Object.keys(FACE).map(k=>[k,FACE_KO[k]])) +
-    opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), (v,t)=>`<i style="background:${TOPS[v]}"></i>${t}`) +
-    opt('팬츠 / 웻수트', 'bottom', Object.keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), (v,t)=>`<i style="background:${BOTTOMS[v]}"></i>${t}`) +
-    opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
-    opt('보드', 'board', [['long','롱보드 9ft+'],['fun','펀·미드 7~9ft'],['short','숏보드']]) +
-    opt('보드 색', 'boardc', Object.keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), (v,t)=>`<i style="background:${BOARDC[v]}"></i>${t}`) +
-    opt('같이 타는 친구', 'pet', Object.keys(PET).map(k=>[k,PET_KO[k]])) +
-    (pr.pet && pr.pet!=='none' ? opt('친구 색', 'petc', Object.keys(PETC).map(k=>[k,PETC_KO[k]]), (v,t)=>`<i style="background:${PETC[v]}"></i>${t}`) : '') +
-    (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) + opt('내 뱃지 · 마을·채팅에 표시', 'badge', COACH_BADGES.map(b=>[b,b])) : '');
+/* 꾸밀 항목이 11줄이 되면서 한 번에 다 펼치면 스크롤이 끝나지 않는다.
+   얼굴/옷/보드/친구로 묶고 한 묶음씩만 보여준다. */
+const BLD_TABS = [['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
+function builderHTML(pr){
+  const cur = { ...pr, hair:hairOf(pr) }, tab = state.bldTab || 'face';
+  const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(cur[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
+  const sw = (map) => (v,t)=>`<i style="background:${map[v]}"></i>${t}`;
+  const G = {
+    face: opt('머리 모양 · 멀리서도 이걸로 알아봅니다', 'hair', Object.keys(HAIR).map(k=>[k,HAIR_KO[k]])) +
+          opt('머리 색', 'hairc', Object.keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), sw(HAIRC)) +
+          opt('피부 톤', 'skin', Object.keys(SKIN).map(k=>[k,SKIN_KO[k]]), sw(SKIN)) +
+          opt('표정', 'face', Object.keys(FACE).map(k=>[k,FACE_KO[k]])),
+    wear: opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)) +
+          opt('팬츠 / 웻수트', 'bottom', Object.keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS)) +
+          opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
+          (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) + opt('내 뱃지 · 마을·채팅에 표시', 'badge', COACH_BADGES.map(b=>[b,b])) : ''),
+    board: opt('보드', 'board', [['long','롱보드 9ft+'],['fun','펀·미드 7~9ft'],['short','숏보드']]) +
+           opt('보드 색', 'boardc', Object.keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), sw(BOARDC)),
+    pet:  opt('같이 타는 친구 · 보드 옆에서 같이 달려요', 'pet', Object.keys(PET).map(k=>[k,PET_KO[k]])) +
+          (pr.pet && pr.pet!=='none' ? opt('친구 색', 'petc', Object.keys(PETC).map(k=>[k,PETC_KO[k]]), sw(PETC)) : '<div class="lab-sm">친구를 고르면 색도 고를 수 있어요. 출석하면 친밀도가 올라 볼터치 → 리본 → 선글라스가 붙습니다.</div>'),
+  };
+  return `<div class="chips bldtabs">${BLD_TABS.map(([k,t])=>`<button type="button" data-bt="${k}" aria-pressed="${k===tab}">${t}</button>`).join('')}<button type="button" data-bt="rand" style="margin-left:auto">🎲 랜덤</button></div>` + (G[tab] || G.face);
+}
+function bindBuilder(root, pr, after){
+  root.querySelectorAll('button[data-k]').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; after({ [x.dataset.k]: v }); });
+  root.querySelectorAll('button[data-bt]').forEach(x=>x.onclick=()=>{
+    if(x.dataset.bt!=='rand'){ state.bldTab = x.dataset.bt; after({}); return; }
+    const pick = a => a[Math.floor(Math.random()*a.length)];
+    after({ hair:pick(Object.keys(HAIR)), hairc:pick(Object.keys(HAIRC)), skin:pick(Object.keys(SKIN)), face:pick(Object.keys(FACE)),
+            top:pick(Object.keys(TOPS)), bottom:pick(Object.keys(BOTTOMS)), hat:pick(Object.keys(HAT)), boardc:pick(Object.keys(BOARDC)) });
+  });
 }
 const MANAGER_PR = { role:'coach', hair:'pony', hairc:'n', top:'y', hat:'bucket', board:'fun', boardc:'c', bottom:'k', vest:false, face:'happy', pet:'seal', petc:'w' };
 const ONB = [
@@ -2295,7 +2311,7 @@ function onbShow(){
   const st = ONB[onbI]; $('onb').hidden = false; showTab(st.tab);
   const who = st.who==='매니저' ? MANAGER_PR : COACH_PR; $('onb-name').textContent = st.who; typeInto($('onb-txt'), st.txt); drawSpr($('onb-av'), avatarRows(who), avatarTintOf(who, 5));
   $('onb-step').innerHTML = ONB.map((_,k)=>`<span style="display:inline-block;width:8px;height:8px;margin-right:3px;border:2px solid var(--ink);background:${k<onbI?'var(--mint)':k===onbI?'var(--sun)':'#fff'}"></span>`).join(''); $('onb-next').textContent = st.last ? '출발! 🏄' : '다음 ▶';
-  if(st.build){ onbPr = { ...myProfile() }; const paintB = ()=>{ $('onb-bld').innerHTML = `<canvas id="onb-me" data-anim style="width:128px;height:128px;display:block;margin:0 auto 8px;background:var(--sky);border:4px solid var(--ink)"></canvas><div class="opts">${builderHTML(onbPr)}</div>`; drawSpr($('onb-me'), avatarRows(onbPr), avatarTintOf(onbPr, 0)); $('onb-bld').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; onbPr[x.dataset.k] = v; paintB(); }); }; paintB(); }
+  if(st.build){ onbPr = { ...myProfile() }; const paintB = ()=>{ $('onb-bld').innerHTML = `<canvas id="onb-me" data-anim style="width:128px;height:128px;display:block;margin:0 auto 8px;background:var(--sky);border:4px solid var(--ink)"></canvas><div class="opts">${builderHTML(onbPr)}</div>`; drawSpr($('onb-me'), avatarRows(onbPr), avatarTintOf(onbPr, 0)); bindBuilder($('onb-bld'), onbPr, patch=>{ Object.assign(onbPr, patch); paintB(); }); }; paintB(); }
   else if(st.task){ const done = st.task.check(); $('onb-bld').innerHTML = `<div class="item" style="margin-top:6px"><input type="checkbox" disabled ${done?'checked':''}><label><b>${st.task.label}</b><span>${done?'완료! 다음으로':'대화창 뒤 화면에서 직접 눌러보세요 · 건너뛰어도 돼요'}</span></label></div>`; clearInterval(state.onbPoll); state.onbPoll = setInterval(()=>{ if(!$('onb').hidden && ONB[onbI]===st && st.task.check()){ clearInterval(state.onbPoll); onbShow(); toast('잘했어요!'); } }, 800); }
   else if(st.mood){ $('onb-bld').innerHTML = `<div class="mood" style="margin-top:6px"><input id="onb-mood" maxlength="40" placeholder="예) 6기 김나리 잘 부탁해요!" value="${myProfile().mood||''}"></div><div class="lab-sm" style="margin-top:4px">저장하면 마을에 말풍선 + 채팅에 입장 인사 (+5 XP)</div>`; }
   else if(st.home){ const home = myProfile().home || 'naksan'; $('onb-bld').innerHTML = `<div class="chips">${BEACHES.map(b=>`<button type="button" data-home="${b.id}" aria-pressed="${b.id===home}">${b.name}</button>`).join('')}</div>`; $('onb-bld').querySelectorAll('[data-home]').forEach(x=>x.onclick=()=>{ setProfile({ home:x.dataset.home }); LS.set('surf.beach', x.dataset.home); const i = BEACHES.findIndex(b=>b.id===x.dataset.home); if(i>=0){ state.beach = i; renderWave(); } onbShow(); }); }
@@ -2331,7 +2347,7 @@ function renderLevel(){
   const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTint());
   const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
   $('bld-opts').innerHTML = builderHTML(pr) + `<div class="lab-sm" style="margin-top:4px">보유 장비(보드·슈트·리쉬)는 <a href="#" onclick="showTab('gear');return false">장비 탭 → 내 옷장</a>에서</div>`;
-  $('bld-opts').querySelectorAll('button').forEach(x=>x.onclick=()=>{ const v = x.dataset.v==='true'?true:x.dataset.v==='false'?false:x.dataset.v; setProfile({[x.dataset.k]:v}); });
+  bindBuilder($('bld-opts'), pr, patch=>{ if(Object.keys(patch).length) setProfile(patch); else renderLevel(); });
   renderPetCard();
   const mine = allCards().filter(c=>c.to===ME.name && !['MVP','인증'].includes(c.tpl)).sort((a,b)=>b.date.localeCompare(a.date));
   $('cards-n').textContent = mine.length;
@@ -2518,7 +2534,7 @@ async function renderVillage(){
   $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}">${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
   rows.forEach(x=>{ const pf = withLook(x.profile, x.name); drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(pf), avatarTintOf(pf, x.level)); });
   $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
-    const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
+    const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.pet && x.profile.pet!=='none' ? `<br>${{rabbit:'🐰',cat:'🐱',dog:'🐶',seal:'🦭',penguin:'🐧'}[x.profile.pet]||'🐾'} ${x.profile.petName||PET_KO[x.profile.pet]} · ${PET_STAGE[x.profile.petLv||0].ko}` : ''}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
     $('village').appendChild(c); c.querySelector('[data-close]').onclick=()=>c.remove(); c.querySelector('[data-clap]')?.addEventListener('click', ()=>{ openCard(x.name); c.remove(); });
     c.querySelector('[data-cert]')?.addEventListener('change', e=>{ if(e.target.value){ certify(x.name, +e.target.value); c.remove(); } });
     c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 ${x.name}님 안녕!`, profile:myProfile(), created_at:new Date().toISOString() }; try{ await sbUpsert('chat', row); state.chat.push(row); renderChat(); toast(`${x.name}에게 손 흔들었어요`); }catch(e){ toast('채팅 서버 준비 중'); } c.remove(); }); });
