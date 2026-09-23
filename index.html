@@ -478,7 +478,7 @@ footer a{color:var(--paper)}
 <!-- ───────── 로그인 ───────── -->
 <div class="wrap" id="login">
   <div class="title"><small>YANGYANG SURF SCHOOL · 6기</small>라인업<span style="display:block;font-family:'Galmuri11',sans-serif;font-size:16px;letter-spacing:.05em;text-shadow:2px 2px 0 var(--ink);margin-top:10px">오늘 파도 어때</span></div>
-  <div class="title-art"><canvas data-spr="sun" width="8" height="8" style="width:40px;height:40px"></canvas><canvas data-spr="surfer" data-anim width="16" height="16" style="width:108px;height:108px"></canvas><canvas data-spr="wave" width="16" height="8" style="width:80px;height:40px"></canvas></div>
+  <div class="title-art"><canvas data-spr="sun" width="8" height="8" style="width:40px;height:40px"></canvas><canvas id="hero-av" data-anim style="width:116px;height:116px"></canvas><canvas data-spr="wave" width="16" height="8" style="width:80px;height:40px"></canvas></div>
   <div class="wavebar"></div>
   <form class="px" id="login-form" autocomplete="off">
     <div class="mode"><button type="button" id="m-in" aria-pressed="true">로그인</button><button type="button" id="m-new" aria-pressed="false">새 계정</button></div>
@@ -512,7 +512,7 @@ footer a{color:var(--paper)}
   <header class="hdr">
     <h1 id="app-title">라인업</h1>
     <button class="btn sm ghost" type="button" id="bgm" title="배경음악" aria-pressed="false" style="padding:4px 8px;font-family:sans-serif;font-size:14px;margin-right:6px">🎵</button>
-    <div class="me"><canvas data-spr="surfer" width="16" height="16" id="me-av" data-anim></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span><span class="streak" id="me-streak"></span></div></div>
+    <div class="me"><canvas id="me-av" data-anim></canvas><div><b id="me-name">—</b><span class="lv" id="me-lv">LV.0</span><span class="streak" id="me-streak"></span></div></div>
   </header>
   <div class="wavebar"></div>
 
@@ -616,7 +616,7 @@ footer a{color:var(--paper)}
   <!-- 탭 3: 레벨 -->
   <div id="tab-level" hidden>
     <div class="px card">
-      <canvas data-spr="surfer" width="16" height="16" id="lv-av" data-anim></canvas>
+      <canvas id="lv-av" data-anim></canvas>
       <div class="ct"><span class="eyebrow">양양서핑학교 6기 <button type="button" class="undo" id="logout-top" style="margin-left:6px">로그아웃</button></span><b id="lv-name">—</b><span class="lvname" id="lv-title">LV.0 물멍</span><div class="meta" id="lv-meta"></div></div>
     </div>
     <div class="px" style="margin-top:14px">
@@ -898,6 +898,9 @@ function drawSpr(cv, name, tint){
   cv._rows = rows; cv._tint = tint; paint(cv, rows, tint, frame);
 }
 function paintAll(root=document){ root.querySelectorAll('canvas[data-spr]').forEach(c=>drawSpr(c, c.dataset.spr)); }
+/* 로그인 화면 서퍼 — 여기서 첫인상이 정해지므로 앱 안과 같은 도트를 쓴다 */
+{ const pr = { hair:'surf', hairc:'k', skin:'s', face:'happy', top:'r', bottom:'b', board:'long', boardc:'y', pet:'dog', petc:'n', petLv:2 };
+  const c = document.getElementById('hero-av'); if(c) drawSpr(c, avatarRows(pr), avatarTintOf(pr, 0)); }
 
 /* ═══════════ 계정 (이 기기에만 저장) ═══════════ */
 const LS = { get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v);}catch(e){return d;} }, set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
