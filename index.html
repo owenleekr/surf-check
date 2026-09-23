@@ -1760,49 +1760,123 @@ function renderTko(){
 
 /* ═══════════ 내 자세 기록: 영상에서 프레임 뽑아 저장 → 주차별 변화 ═══════════ */
 const STAGES = { push:'푸쉬업', stand:'스탠드업', ride:'라이딩' };   // applyLex()가 코치 승인본으로 갱신
+/* 동작 흐름을 한 장으로: 고른 시점 앞뒤 0.6초를 4컷 스트립으로 */
+async function captureStrip(v, w, h){
+  const cw = 300, ch = Math.round(h * cw / w), cv = document.createElement('canvas');
+  cv.width = cw*4; cv.height = ch; const g = cv.getContext('2d');
+  const t0 = v.currentTime, offs = [-0.6,-0.2,0.2,0.6].map(o=>Math.max(0, Math.min(v.duration-0.05, t0+o)));
+  for(let k=0;k<4;k++){
+    await new Promise(r=>{ const on=()=>{ v.removeEventListener('seeked',on); r(); }; v.addEventListener('seeked',on); v.currentTime = offs[k]; });
+    g.drawImage(v, k*cw, 0, cw, ch);
+    g.strokeStyle='#1B1B2F'; g.lineWidth=3; g.strokeRect(k*cw+1.5, 1.5, cw-3, ch-3);
+    g.fillStyle='rgba(27,27,47,.75)'; g.fillRect(k*cw+4, ch-20, 46, 16);
+    g.fillStyle='#FFF9E6'; g.font='12px sans-serif'; g.fillText(`${(offs[k]-t0>=0?'+':'')}${(offs[k]-t0).toFixed(1)}s`, k*cw+8, ch-8);
+  }
+  v.currentTime = t0;
+  return new Promise(r=>cv.toBlob(r, 'image/jpeg', 0.8));
+}
+
+/* 자동 자세 측정 (MediaPipe Pose, 눌렀을 때만 내려받음 ~6MB) */
+let poseLm = null, poseLoading = false;
+async function loadPoseModel(){
+  if(poseLm || poseLoading) return poseLm; poseLoading = true;
+  try{
+    const vision = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+    const files = await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    poseLm = await vision.PoseLandmarker.createFromOptions(files, { baseOptions:{ modelAssetPath:'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task' }, runningMode:'IMAGE', numPoses:1 });
+  }catch(e){ poseLm = null; }
+  poseLoading = false; return poseLm;
+}
+const ang = (a,b,c)=>{ const ab=[a.x-b.x,a.y-b.y], cb=[c.x-b.x,c.y-b.y]; const d=(ab[0]*cb[0]+ab[1]*cb[1])/(Math.hypot(...ab)*Math.hypot(...cb)||1); return Math.round(Math.acos(Math.max(-1,Math.min(1,d)))*180/Math.PI); };
+function poseMetrics(L){
+  const P = i => L[i];
+  const shL=P(11), shR=P(12), hipL=P(23), hipR=P(24), knL=P(25), knR=P(26), ankL=P(27), ankR=P(28), nose=P(0);
+  const shW = Math.abs(shL.x-shR.x) || 0.001, stance = Math.abs(ankL.x-ankR.x)/shW;
+  const midAnk = (ankL.x+ankR.x)/2, midHip = (hipL.x+hipR.x)/2;
+  const lean = (midHip - midAnk)/ (Math.abs(ankL.x-ankR.x)||0.001);            // + = 앞발 쪽, - = 뒷발 쪽(후경)
+  const knee = Math.round((ang(hipL,knL,ankL)+ang(hipR,knR,ankR))/2);
+  const upright = Math.round(ang({x:midHip,y:(hipL.y+hipR.y)/2}, {x:(shL.x+shR.x)/2,y:(shL.y+shR.y)/2}, {x:(shL.x+shR.x)/2,y:0}));
+  const headOut = Math.abs(nose.x - midHip) / (Math.abs(ankL.x-ankR.x)||0.001);
+  return { stance:+stance.toFixed(2), lean:+lean.toFixed(2), knee, upright, headOut:+headOut.toFixed(2) };
+}
+function poseReport(m){
+  const out = [];
+  out.push([ m.stance>=1.0 && m.stance<=1.8, `스탠스 폭 ${m.stance.toFixed(1)}배(어깨 대비)`, m.stance<1.0 ? '좁음 — 코치 피드백 "스탠스 넓히기"' : m.stance>1.8 ? '너무 넓음 — 중심 이동이 느려짐' : '적정' ]);
+  out.push([ m.knee<=150, `무릎 굽힘 ${m.knee}°`, m.knee>160 ? '거의 펴짐 — 낮은 자세로 1~2초 유지 연습' : m.knee<90 ? '너무 앉음 — "편하게 일어나고 중심만 앞발"' : '적정' ]);
+  out.push([ Math.abs(m.lean)<=0.25, `중심 ${m.lean>0.05?'앞':m.lean<-0.05?'뒤':'가운데'} (${m.lean>0?'+':''}${m.lean})`, m.lean<-0.15 ? '후경 — 일어선 뒤 중심이 뒤로 빠짐(Rio 코치 지적 1번)' : m.lean>0.35 ? '과하게 앞' : '전경~중립' ]);
+  out.push([ m.headOut<=0.6, `머리 위치 ${m.headOut}`, m.headOut>0.6 ? '보드 밖으로 나감 — BBP 자세 점검' : '보드 안' ]);
+  return out;
+}
+
 function renderPose(){
   if(!$('pose')) return; const mine = (state.poses||[]).filter(x=>x.user_id===ME.id).sort((a,b)=>(a.created_at||'').localeCompare(b.created_at||''));
+  const isCoach = myProfile().role==='coach';
   $('pose-sub').textContent = mine.length ? `${mine.length}장` : '';
   const byStage = st => mine.filter(x=>x.stage===st);
   const cmp = Object.entries(STAGES).map(([st,ko])=>{ const list = byStage(st); if(!list.length) return ''; const first = list[0], last = list[list.length-1];
     return `<div style="margin-top:10px"><div class="lab-sm" style="margin-bottom:4px">${ko} · ${list.length}장</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
       <figure style="margin:0"><img src="${first.url}" style="width:100%;border:3px solid var(--ink);display:block"><figcaption class="lab-sm" style="margin:2px 0 0">처음 ${String(first.date).slice(5).replace('-','.')}</figcaption></figure>
       <figure style="margin:0"><img src="${last.url}" style="width:100%;border:3px solid var(--ink);display:block"><figcaption class="lab-sm" style="margin:2px 0 0">최근 ${String(last.date).slice(5).replace('-','.')}${last.week?` · ${last.week}주차`:''}</figcaption></figure></div>
-      ${last.coach_note?`<div class="lab-sm" style="margin-top:4px">💬 ${last.coach_name||'코치'}: ${last.coach_note}</div>`:''}</div>`; }).join('');
-  $('pose').innerHTML = `<div class="lab-sm">수업 영상에서 <b>내 자세 한 컷</b>을 뽑아 저장해요. 영상 원본은 폰에만 남고, 사진만 올라갑니다.</div>
+      ${last.note?`<div class="lab-sm" style="margin-top:4px">메모: ${last.note}</div>`:''}
+      ${last.coach_note?`<div class="lab-sm" style="margin-top:2px">💬 ${last.coach_name||'코치'}: ${last.coach_note}</div>`:''}</div>`; }).join('');
+  $('pose').innerHTML = `<div class="lab-sm">수업 영상에서 <b>테이크오프 순간</b>을 골라 저장해요. 영상 원본은 폰에만 남고 사진만 올라갑니다.</div>
     <input type="file" id="pose-file" accept="video/*,image/*" style="margin-top:6px;font-size:12px;width:100%">
     <div id="pose-edit" hidden style="margin-top:8px"><video id="pose-video" playsinline muted style="width:100%;border:3px solid var(--ink);background:#000"></video>
-      <input type="range" id="pose-seek" min="0" max="100" value="0" step="0.1" style="width:100%;margin-top:6px">
+      <input type="range" id="pose-seek" min="0" max="100" value="0" step="0.05" style="width:100%;margin-top:6px">
+      <div style="display:flex;gap:6px;margin-top:4px"><button class="btn sm ghost" type="button" id="pose-prev">◀ 0.1초</button><button class="btn sm ghost" type="button" id="pose-next">0.1초 ▶</button><span class="lab-sm" style="margin:0;align-self:center" id="pose-time"></span></div>
       <div class="chips" style="margin-top:6px">${Object.entries(STAGES).map(([k,v],i)=>`<button type="button" data-stage="${k}" aria-pressed="${i===1}">${v}</button>`).join('')}</div>
+      <label class="item" style="margin-top:6px;gap:8px;font-size:13px"><input type="checkbox" id="pose-strip" checked><span>앞뒤 0.6초를 <b>4컷 스트립</b>으로 (동작 흐름이 보여요)</span></label>
       <input id="pose-note" maxlength="40" placeholder="메모 (예: 앞발 45도 시도)" style="width:100%;border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px;margin-top:6px">
-      <button class="btn sm blue" type="button" id="pose-save" style="margin-top:6px">이 장면 저장</button></div>
+      <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sm blue" type="button" id="pose-save">이 장면 저장</button><button class="btn sm mint" type="button" id="pose-ai">🤖 자세 자동 분석</button></div>
+      <div id="pose-report" class="lab-sm" style="margin-top:6px"></div></div>
     ${cmp || '<div class="lab-sm" style="margin-top:8px">아직 기록이 없어요. 수업 영상을 올려 첫 자세를 남겨보세요.</div>'}
-    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px">${mine.slice().reverse().map(x=>`<figure style="margin:0"><img src="${x.url}" style="width:100%;border:3px solid var(--ink);display:block"><figcaption class="lab-sm" style="margin:2px 0 0;font-size:10px">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${x.note?`<br>${x.note}`:''}</figcaption></figure>`).join('')}</div></details>` : ''}`;
+    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${x.url}" style="width:100%;border:3px solid var(--ink);display:block"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${x.note?` · ${x.note}`:''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
   let stage = 'stand', blobUrl = null;
+  const vEl = () => $('pose-video');
   $('pose-file').onchange = e=>{ const f = e.target.files[0]; if(!f) return; if(blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = URL.createObjectURL(f);
-    const v = $('pose-video'); $('pose-edit').hidden = false;
-    if(f.type.startsWith('image/')){ v.hidden = true; $('pose-seek').hidden = true; const img = new Image(); img.src = blobUrl; v._img = img; }
-    else { v.hidden = false; $('pose-seek').hidden = false; v._img = null; v.src = blobUrl; v.onloadedmetadata = ()=>{ $('pose-seek').max = v.duration; v.currentTime = Math.min(1, v.duration/2); }; }
+    const v = vEl(); $('pose-edit').hidden = false; $('pose-report').textContent = '';
+    if(f.type.startsWith('image/')){ v.hidden = true; $('pose-seek').hidden = true; $('pose-strip').checked = false; const img = new Image(); img.src = blobUrl; v._img = img; }
+    else { v.hidden = false; $('pose-seek').hidden = false; v._img = null; v.src = blobUrl; v.onloadedmetadata = ()=>{ $('pose-seek').max = v.duration; v.currentTime = Math.min(1, v.duration/2); }; v.ontimeupdate = ()=>{ $('pose-time').textContent = `${v.currentTime.toFixed(1)}s / ${(v.duration||0).toFixed(1)}s`; $('pose-seek').value = v.currentTime; }; }
   };
-  $('pose-seek').oninput = ()=>{ const v = $('pose-video'); if(v.duration) v.currentTime = +$('pose-seek').value; };
+  $('pose-seek').oninput = ()=>{ const v = vEl(); if(v.duration) v.currentTime = +$('pose-seek').value; };
+  $('pose-prev').onclick = ()=>{ const v = vEl(); if(v.duration) v.currentTime = Math.max(0, v.currentTime-0.1); };
+  $('pose-next').onclick = ()=>{ const v = vEl(); if(v.duration) v.currentTime = Math.min(v.duration-0.05, v.currentTime+0.1); };
   $('pose-edit').querySelectorAll('[data-stage]').forEach(b=>b.onclick = ()=>{ stage = b.dataset.stage; $('pose-edit').querySelectorAll('[data-stage]').forEach(x=>x.setAttribute('aria-pressed', String(x===b))); });
+  const frameCanvas = ()=>{ const v = vEl(), src = v._img || v, w = v._img ? v._img.naturalWidth : v.videoWidth, h = v._img ? v._img.naturalHeight : v.videoHeight;
+    if(!w) return null; const cw = 480, ch = Math.round(h*cw/w), cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; cv.getContext('2d').drawImage(src, 0, 0, cw, ch); return { cv, w, h }; };
+  $('pose-ai').onclick = async ()=>{
+    const f = frameCanvas(); if(!f) return toast('영상을 먼저 불러와요');
+    $('pose-report').innerHTML = '분석 준비 중… (처음 한 번 6MB 내려받아요)';
+    const lm = await loadPoseModel(); if(!lm){ $('pose-report').textContent = '자동 분석을 불러오지 못했어요 (신호·브라우저 확인). 아래 체크리스트로 직접 봐요.'; return; }
+    try{ const res = lm.detect(f.cv); const L = res?.landmarks?.[0];
+      if(!L){ $('pose-report').textContent = '사람을 못 찾았어요. 몸이 크게 나온 장면으로 다시 골라보세요.'; return; }
+      const m = poseMetrics(L), rows = poseReport(m);
+      $('pose-report').innerHTML = `<b>자동 측정</b> (참고용 · 각도는 촬영 각도에 따라 달라져요)` + rows.map(([ok,t,d])=>`<div style="margin-top:3px">${ok?'✅':'⚠️'} ${t} — ${d}</div>`).join('');
+      state.lastMetrics = m;
+    }catch(e){ $('pose-report').textContent = '분석 실패 — 다른 장면으로 시도해보세요.'; }
+  };
   $('pose-save').onclick = async ()=>{
-    const v = $('pose-video'), src = v._img || v, w = v._img ? v._img.naturalWidth : v.videoWidth, h = v._img ? v._img.naturalHeight : v.videoHeight;
-    if(!w) return toast('영상을 먼저 불러와요');
-    const cw = 480, ch = Math.round(h * cw / w), cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
-    cv.getContext('2d').drawImage(src, 0, 0, cw, ch);
-    const blob = await new Promise(r=>cv.toBlob(r, 'image/jpeg', 0.82));
+    const v = vEl(), f = frameCanvas(); if(!f) return toast('영상을 먼저 불러와요');
     if(!supaOn()) return toast('서버 연결 필요');
+    let blob;
+    if($('pose-strip').checked && !v._img && v.duration){ $('pose-save').textContent = '4컷 만드는 중…'; blob = await captureStrip(v, f.w, f.h); $('pose-save').textContent = '이 장면 저장'; }
+    else blob = await new Promise(r=>f.cv.toBlob(r, 'image/jpeg', 0.82));
     const path = `${ME.id}/${Date.now()}.jpg`;
     try{
       const up = await fetch(`${SUPA.url}/storage/v1/object/poses/${path}`, { method:'POST', headers:{ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'image/jpeg' }, body:blob });
       if(!up.ok) throw new Error('upload');
       const url = `${SUPA.url}/storage/v1/object/public/poses/${path}`;
-      const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), week:weekOfDate(today()), stage, url, note:$('pose-note').value.trim().slice(0,40) };
-      await sbUpsert('poses', row); state.poses = [...(state.poses||[]), row];
+      const met = state.lastMetrics ? ` · 스탠스 ${state.lastMetrics.stance} 무릎 ${state.lastMetrics.knee}° 중심 ${state.lastMetrics.lean}` : '';
+      const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), week:weekOfDate(today()), stage, url, note:($('pose-note').value.trim()+met).slice(0,80) };
+      await sbUpsert('poses', row); state.poses = [...(state.poses||[]), row]; state.lastMetrics = null;
       addBonus(5, `pose|${today()}`); toast('자세 기록 저장'); chatSys(`📸 ${STAGES[stage]} 자세 기록`); $('pose-edit').hidden = true; $('pose-file').value=''; renderPose();
     }catch(e){ toast('저장 실패 — 코치가 supabase-pose.sql 실행했는지 확인'); }
   };
+  $('pose').querySelectorAll('[data-cnote]').forEach(b=>b.onclick = async ()=>{
+    const id = b.dataset.cnote, note = prompt('이 자세에 대한 코치 피드백'); if(!note) return;
+    try{ const r = await fetch(`${SUPA.url}/rest/v1/poses?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', headers:supaH(), body:JSON.stringify({ coach_note:note.slice(0,120), coach_name:ME.name }) }); if(!r.ok) throw 0;
+      const px = (state.poses||[]).find(x=>x.id===id); if(px){ px.coach_note = note; px.coach_name = ME.name; }
+      toast('피드백 저장'); chatSys(`💬 ${px?.name||''} 자세에 코치 피드백`); renderPose(); }catch(e){ toast('실패'); } });
 }
 async function pullPoses(){ if(!supaOn()) return; try{ state.poses = await sbGet('poses', 'select=*&order=created_at.asc&limit=300'); }catch(e){ state.poses = state.poses||[]; } }
 
