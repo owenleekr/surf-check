@@ -820,7 +820,7 @@ const PET = {
 const PETBOARD = ['..wwwwwwww..','.kwwwwwwwwk.','.kwwwwwwwwk.','..kkkkkkkk..'];
 /* 친밀도가 오르면 눈에 보이는 게 하나씩 붙는다 — 숫자만 오르는 바는 아무도 안 본다.
    모든 펫이 같은 자리에 눈(2·3열 / 8·9열)을 갖도록 그렸기 때문에 오버레이 하나로 다 맞는다. */
-const PET_ACC = [ null, { y:5, r:'.p........p.' }, { y:1, r:'........qkq.' }, { y:4, r:'.kkddkkddkk.' } ];
+const PET_ACC = [ null, { y:5, r:'.p........p.' }, { y:1, r:'........qkq.' }, { y:4, r:'.kddkkkkddk.' } ];
 const PET_STAGE = [ { at:0, ko:'처음 만남', un:'' }, { at:25, ko:'친해지는 중', un:'볼터치' }, { at:55, ko:'단짝', un:'리본' }, { at:90, ko:'베스트 버디', un:'선글라스' } ];
 const petStageOf = b => PET_STAGE.reduce((n,st,i)=> b>=st.at ? i : n, 0);
 const PET_KO = { none:'없음', rabbit:'토끼', cat:'고양이', dog:'강아지', seal:'물개', penguin:'펭귄' };

@@ -1,25 +1,8 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
-<style>
-html,body{margin:0} body{width:1200px;height:630px;overflow:hidden;font-family:"Galmuri14","Galmuri11",sans-serif;image-rendering:pixelated;
- background:linear-gradient(to bottom,#DCF3FF 0 26%,#AEE2FF 26% 40%,#83CCF7 40% 58%,#5AB4EF 58% 88%,#F7DC8F 88% 100%);position:relative}
-.wave{position:absolute;left:0;right:0;top:56%;height:24px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 4h2V2h2V0h2v2h2v2h2v2h2v2h2v2h-2v-2h-2v-2h-2V4h-2v2H4V4H2v2H0z' fill='%23FFF9E6'/%3E%3C/svg%3E") repeat-x 0 0/48px 24px}
-.t{position:absolute;left:70px;top:52px;color:#FFF9E6;text-shadow:7px 7px 0 #1B1B2F}
-.t small{display:block;font-size:28px;letter-spacing:.24em;text-shadow:4px 4px 0 #1B1B2F;margin-bottom:4px}
-.t b{font-size:118px;line-height:1;font-weight:700;letter-spacing:-.02em}
-.t span{display:block;font-size:32px;margin-top:14px;text-shadow:4px 4px 0 #1B1B2F}
-.pill{position:absolute;left:70px;top:300px;display:flex;gap:14px}
-.pill i{font-style:normal;background:#FFF9E6;color:#1B1B2F;border:5px solid #1B1B2F;box-shadow:7px 7px 0 #1B1B2F;padding:8px 18px;font-size:25px;font-weight:700}
-.crew{position:absolute;left:0;right:0;bottom:34px;display:flex;justify-content:center;align-items:flex-end}
-.crew canvas{height:250px;width:auto}
-.sun{position:absolute;right:70px;top:34px;width:88px;height:88px}
-</style></head><body>
-<div class="wave"></div>
-<div class="t"><small>YANGYANG SURF SCHOOL · 6기</small><b>라인업</b><span>오늘 파도 어때 — 파도 · 수업 · 성장 · 마을</span></div>
-<div class="pill"><i>🌊 파도 체크</i><i>🔴 출석·레벨</i><i>💬 6기 마을</i></div>
-<canvas class="sun" id="sun" width="8" height="8"></canvas>
-<div class="crew"><canvas id="a1"></canvas><canvas id="a2"></canvas><canvas id="a3"></canvas></div>
-<script>
+<!doctype html><meta charset=utf-8><style>
+html,body{margin:0;width:180px;height:180px;overflow:hidden}
+body{background:linear-gradient(to bottom,#AEE2FF 0 58%,#5AB4EF 58% 82%,#F7DC8F 82% 100%);image-rendering:pixelated;position:relative}
+canvas{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);height:164px;width:auto}
+</style><canvas id=c></canvas><script>
 const PAL = { k:'#1B1B2F', w:'#FFF9E6', s:'#F7C59F', h:'#3A2A1E', r:'#FF6B6B', b:'#2E6BFF', y:'#FFD23F', g:'#4DE1A5', p:'#9B6BFF', o:'#FF9F1C', c:'#8FD3FF', d:'#1A47C9', t:'#E2B96A' };
 const HEAD = [
   '........kkkkkkkk........',
@@ -152,21 +135,12 @@ const avatarTintOf = (pr, L) => ({
   b: BOTTOMS[pr?.bottom] || BOTTOMS.b, y: BOARDC[pr?.boardc] || BOARDC.y, r: TOPS[pr?.top] || TOPS.r,
 });
 
-function paint(cv, rows, tint){
-  const W=rows[0].length,H=rows.length; cv.width=W+2; cv.height=H+2;
-  const g=cv.getContext('2d'); const px=[];
-  rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ if(ch!=='.') px.push([x+1,y+1,ch]); }));
-  const occ=new Set(px.map(([x,y])=>x+','+y)); g.fillStyle='rgba(255,255,255,.65)';
-  px.forEach(([x,y])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ if(!occ.has((x+dx)+','+(y+dy))) g.fillRect(x+dx,y+dy,1,1); }));
-  px.forEach(([x,y,ch])=>{ g.fillStyle=(tint&&tint[ch])||PAL[ch]||ch; g.fillRect(x,y,1,1); });
-  const ch=cv.clientHeight; if(ch) cv.style.width=Math.round(ch*cv.width/cv.height)+'px';
-}
-const CREW=[
-  ['a1',{hair:'twin',hairc:'k',skin:'s',face:'happy',top:'p',bottom:'b',board:'fun',boardc:'p',pet:'cat',petc:'y',petLv:2}],
-  ['a2',{hair:'surf',hairc:'n',skin:'d',face:'cool',top:'y',bottom:'k',hat:'cap',board:'long',boardc:'w',pet:'dog',petc:'n',petLv:3}],
-  ['a3',{hair:'bob',hairc:'r',skin:'l',face:'smile',top:'g',bottom:'p',board:'short',boardc:'c',pet:'rabbit',petc:'p',petLv:1}],
-];
-CREW.forEach(([id,pr])=>paint(document.getElementById(id), avatarRows(pr), avatarTintOf(pr,0)));
-const sun=['.y....y.','..yyyy..','.yyyyyy.','yyyyyyyy','yyyyyyyy','.yyyyyy.','..yyyy..','.y....y.'], gs=document.getElementById('sun').getContext('2d');
-sun.forEach((r,y)=>[...r].forEach((c,x)=>{ if(c!=='.'){ gs.fillStyle='#FFD23F'; gs.fillRect(x,y,1,1);} }));
-</script></body></html>
+const pr={hair:'surf',hairc:'k',skin:'s',face:'happy',top:'r',bottom:'b',board:'long',boardc:'y'};
+const rows=avatarRows(pr), tint=avatarTintOf(pr,0);
+const cv=document.getElementById('c'), W=rows[0].length,H=rows.length; cv.width=W+2; cv.height=H+2;
+const g=cv.getContext('2d'); const px=[];
+rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ if(ch!=='.') px.push([x+1,y+1,ch]); }));
+const occ=new Set(px.map(([x,y])=>x+','+y)); g.fillStyle='rgba(255,255,255,.7)';
+px.forEach(([x,y])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ if(!occ.has((x+dx)+','+(y+dy))) g.fillRect(x+dx,y+dy,1,1); }));
+px.forEach(([x,y,ch])=>{ g.fillStyle=tint[ch]||PAL[ch]||ch; g.fillRect(x,y,1,1); });
+</script>
