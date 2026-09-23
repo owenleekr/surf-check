@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>용어 검수 — 라인업</title>
+<link rel="icon" href="icon-180.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<script src="config.js"></script>
+<script src="lex.js"></script>
+<style>
+:root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F; --mint:#4DE1A5; --coral:#FF6B6B; --grid:rgba(27,27,47,.15); }
+*{box-sizing:border-box} html,body{margin:0}
+body{ background:var(--deep); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; font-size:15px; line-height:1.6; -webkit-text-size-adjust:100%; }
+.wrap{ max-width:720px; margin:0 auto; padding-inline:14px; padding-block:16px 60px }
+h1,h2,.px b.t{ font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700 }
+h1{ color:var(--paper); text-shadow:3px 3px 0 var(--ink); font-size:26px; margin:0 }
+.sub{ color:var(--sun); font-size:13px; margin:4px 0 14px }
+.px{ background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:14px }
+.btn{ border:4px solid var(--ink); background:var(--sun); color:var(--ink); padding:8px 14px; font-weight:700; font-size:14px; box-shadow:3px 3px 0 var(--ink); cursor:pointer; font-family:inherit }
+.btn.sm{ padding:4px 9px; font-size:12px; border-width:3px; box-shadow:2px 2px 0 var(--ink) }
+.btn.blue{ background:var(--sea); color:#fff } .btn.mint{ background:var(--mint) } .btn.ghost{ background:#fff }
+.btn:active{ transform:translate(3px,3px); box-shadow:0 0 0 }
+input{ border:3px solid var(--ink); padding:7px 9px; font-family:inherit; font-size:14px; background:#fff; width:100% }
+label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
+.err{ color:var(--coral); font-size:13px; min-height:1.3em }
+.grp{ margin-top:14px }
+.grp > b{ display:block; color:var(--paper); text-shadow:2px 2px 0 var(--ink); font-family:"Galmuri11",sans-serif; margin-bottom:6px }
+.row{ border-top:2px dashed var(--grid); padding:10px 0 }
+.row:first-child{ border-top:0 }
+.row .hd{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap }
+.row .hd b{ font-size:15px }
+.meta{ font-size:12px; color:var(--ink2); margin-top:3px }
+.ok{ color:#1FA366; font-weight:700 } .fix{ color:var(--coral); font-weight:700 }
+.edit{ display:grid; grid-template-columns:1fr; gap:6px; margin-top:8px }
+@media(min-width:520px){ .edit{ grid-template-columns:1fr 2fr auto } }
+.note{ font-size:12px; color:var(--ink2); margin-top:10px; line-height:1.6 }
+.toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:var(--ink); color:var(--sun); border:3px solid var(--sun); padding:8px 16px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none }
+.toast.show{ opacity:1 }
+a{ color:var(--sun) }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>용어 검수</h1>
+  <div class="sub">라인업이 쓰는 표현을 <b>양양서핑학교 기준</b>으로 맞추는 곳 · <a href="./">앱으로</a></div>
+
+  <div class="px" id="login">
+    <b class="t">먼저 로그인</b>
+    <div class="note" style="margin-top:4px">앱과 같은 아이디·비밀번호예요. 코치는 바로 수정할 수 있고, 멤버는 "고쳐주세요"로 알릴 수 있어요.</div>
+    <label for="uid">아이디</label><input id="uid" autocapitalize="off">
+    <label for="upw">비밀번호</label><input id="upw" type="password">
+    <div class="err" id="err"></div>
+    <button class="btn blue" id="go">들어가기</button>
+  </div>
+
+  <div id="main" hidden>
+    <div class="px" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <b class="t" id="who">—</b><span class="meta" id="stat" style="flex:1;margin:0"></span>
+      <button class="btn sm ghost" id="out">나가기</button>
+    </div>
+    <div id="list"></div>
+    <div class="px note" style="margin-top:14px">
+      <b>출처 표기</b> — 강의노트 / 단톡 코칭(날짜) / 일반 용어 / <b>앱 제안</b>(코치 확인 전).<br>
+      코치가 저장하면 <b>앱 전체 표현이 즉시 바뀝니다</b> — 판정 도장, 요약, 차트 범례, 체크리스트, 노션 일지까지.
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const SUPA = { url:(window.SURF_CONFIG?.supabaseUrl||'').replace(/\/$/,''), key:window.SURF_CONFIG?.supabaseKey||'' };
+const H = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' });
+let ME = null, LEX = { ...window.LEX_SEED };
+let tT; const toast = m => { $('toast').textContent = m; $('toast').classList.add('show'); clearTimeout(tT); tT = setTimeout(()=>$('toast').classList.remove('show'), 1800); };
+
+async function rpc(fn, args){
+  const r = await fetch(`${SUPA.url}/rest/v1/rpc/${fn}`, { method:'POST', headers:H(), body:JSON.stringify(args) });
+  const b = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((b?.message||'').replace(/.*?(nouser|wrongpw|unauthorized).*/, '$1') || ('오류 '+r.status));
+  return b;
+}
+$('go').onclick = async ()=>{
+  const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value; $('err').textContent = '';
+  try{
+    const r = await rpc('login', { p_id:id, p_pw:pw });
+    ME = { id, name:r.name, profile:r.profile||{} };
+    try{ localStorage.setItem('lineup.terms.me', JSON.stringify(ME)); }catch(e){}
+    start();
+  }catch(e){ $('err').textContent = { nouser:'없는 아이디예요', wrongpw:'비밀번호가 달라요' }[e.message] || (e.message==='Failed to fetch' ? '서버에 닿지 않아요' : e.message); }
+};
+$('out').onclick = ()=>{ try{ localStorage.removeItem('lineup.terms.me'); }catch(e){} location.reload(); };
+
+async function pull(){
+  try{
+    const r = await fetch(`${SUPA.url}/rest/v1/terms?select=*&limit=500`, { headers:H() });
+    if(r.status===404){ toast('terms 테이블이 없어요 (supabase-terms.sql 실행 필요)'); return; }
+    const rows = await r.json(); const next = { ...window.LEX_SEED };
+    rows.forEach(x=>{ const base = window.LEX_SEED[x.id] || {}; next[x.id] = { ko:x.ko||base.ko, def:x.def||base.def, src:x.src||base.src, status:x.status, note:x.note, by:x.by_name }; });
+    LEX = next;
+  }catch(e){}
+}
+async function save(id, patch){
+  const cur = LEX[id] || window.LEX_SEED[id] || {};
+  const row = { id, ko:patch.ko ?? cur.ko, def:patch.def ?? cur.def, src:patch.src ?? cur.src, status:patch.status, note:patch.note ?? cur.note ?? null, by_name:ME.name, updated_at:new Date().toISOString() };
+  const r = await fetch(`${SUPA.url}/rest/v1/terms`, { method:'POST', headers:H(), body:JSON.stringify(row) });
+  if(!r.ok) throw new Error('저장 실패');
+  LEX[id] = { ko:row.ko, def:row.def, src:row.src, status:row.status, note:row.note, by:row.by_name };
+}
+
+function render(){
+  const isCoach = ME.profile?.role === 'coach';
+  const ids = window.LEX_GROUPS.flatMap(([,x])=>x);
+  const ok = ids.filter(i=>LEX[i]?.status==='approved').length, fix = ids.filter(i=>LEX[i]?.status==='fix').length;
+  $('who').textContent = `${ME.name}${isCoach ? ` · ${ME.profile.badge||'코치'}` : ''}`;
+  $('stat').textContent = `승인 ${ok} · 수정 요청 ${fix} / 전체 ${ids.length}`;
+  $('list').innerHTML = window.LEX_GROUPS.map(([g, list])=>`<div class="grp"><b>${g}</b><div class="px">${list.map(id=>{
+    const e = LEX[id] || window.LEX_SEED[id] || {}, st = e.status || '';
+    return `<div class="row">
+      <div class="hd"><b>${e.ko||id}</b><span class="meta" style="margin:0">${e.def||''}</span></div>
+      <div class="meta">출처 ${e.src||'—'}${st==='approved'?' · <span class="ok">코치 승인</span>':st==='fix'?` · <span class="fix">수정 요청</span>${e.note?` — ${e.note}`:''}`:''}${e.by?` · ${e.by}`:''}</div>
+      ${isCoach ? `<div class="edit"><input data-ko="${id}" value="${(e.ko||'').replace(/"/g,'&quot;')}" placeholder="화면에 쓸 말"><input data-def="${id}" value="${(e.def||'').replace(/"/g,'&quot;')}" placeholder="설명"><button class="btn sm mint" data-save="${id}">저장·승인</button></div>`
+                : `<button class="btn sm ghost" data-fix="${id}" style="margin-top:6px">고쳐주세요</button>`}
+    </div>`; }).join('')}</div></div>`).join('');
+  $('list').querySelectorAll('[data-save]').forEach(b=>b.onclick = async ()=>{
+    const id = b.dataset.save;
+    try{ await save(id, { ko:$('list').querySelector(`[data-ko="${id}"]`).value.trim(), def:$('list').querySelector(`[data-def="${id}"]`).value.trim(), status:'approved' }); toast('승인 · 앱에 반영됩니다'); render(); }
+    catch(e){ toast(e.message); } });
+  $('list').querySelectorAll('[data-fix]').forEach(b=>b.onclick = async ()=>{
+    const id = b.dataset.fix, note = prompt('학교에서는 어떻게 부르나요? (비워도 됩니다)') ?? null;
+    if(note===null) return;
+    try{ await save(id, { status:'fix', note:`${note} (${ME.name})` }); toast('코치에게 전달했어요'); render(); }
+    catch(e){ toast(e.message); } });
+}
+async function start(){ $('login').hidden = true; $('main').hidden = false; await pull(); render(); }
+(function boot(){
+  if(!SUPA.url){ $('err').textContent = '서버 설정이 없어요 (config.js)'; return; }
+  try{ const saved = JSON.parse(localStorage.getItem('lineup.terms.me')||'null'); if(saved?.id){ ME = saved; start(); } }catch(e){}
+})();
+</script>
+</body>
+</html>
