@@ -35,16 +35,19 @@ const HEAD = [
   '.......kssssssssk.......',
   '........kkkkkkkk........',
 ];
-const TORSO = [
-  '...kssssrrrrrrssssk.....'.slice(0,0)+'...kssssskrrrrrrkssssk..'.slice(0,0)+'...kssssk'+'rrrrrr'+'kssssk...',
-  '...kkkkkk'+'rrrrrr'+'kkkkkk...',
-  '........k'+'rrrrrr'+'k........',
-  '........k'+'rrrrrr'+'k........',
-  '........k'+'bbbbbb'+'k........',
-  '........kbbkkbbk........',
-  '........ksk..ksk........',
-  '........kkk..kkk........',
-];
+/* 상의는 색만 바꾸면 다 같은 옷이라, 실루엣이 바뀌는 5종으로 나눴다.
+   LEGS/ARMS가 아니라 8줄 통째로 두는 편이 읽기 쉬워서 변형마다 전부 적는다. */
+const LEGS = ['........kbbbbbbk........','........kbbkkbbk........','........ksk..ksk........','........kkk..kkk........'];
+const WEAR = {
+  rash: { ko:'래시가드', rows:['...kssrrkrrrrrrkrrssk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........'].concat(LEGS) },
+  hood: { ko:'후디',     rows:['...krrrrkrrrrrrkrrrrk...','...kkkkkkrrrrrrkkkkkk...','........krwrrwrk........','........krkkkkrk........'].concat(LEGS),
+          neck:['....krr..........rrk....','....krr..........rrk....'] },
+  tank: { ko:'민소매',   rows:['...kssssksrrrrskssssk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........'].concat(LEGS) },
+  suit: { ko:'풀슈트',   rows:['...krrrrkrrrrrrkrrrrk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........',
+                               '........krrrrrrk........','........krrkkrrk........','........krk..krk........','........kkk..kkk........'] },
+  bare: { ko:'맨몸',     rows:['...kssssksssssskssssk...','...kkkkkksssssskkkkkk...','........kssssssk........','........kssssssk........'].concat(LEGS) },
+};
+const WEAR_KO = Object.fromEntries(Object.entries(WEAR).map(([k,v])=>[k,v.ko]));
 const BOARD = {
   long: ['.yyyyyyyyyyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyyyyyyyyyk','kyyyyyyyyyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkkkkkkkkkk.'],
   fun:  ['....yyyyyyyyyyyyyyyy....','...kyyyyyyyyyyyyyyyyk...','...kyyyyyyyyyyyyyyyyk...','....kkkkkkkkkkkkkkkk....'],
@@ -67,7 +70,7 @@ const HAIR = {
   long: ['........................','.......khhhhhhhhk.......','......khhhhhhhhhhk......','......khhhhhhhhhhk......','......khhhhhhhhhhk......','......kh........hk......','.....khh........hhk.....','.....khh........hhk.....','....khhh........hhhk....','....khhh........hhhk....','...khhh..........hhhk...','...khhh..........hhhk...','...khh............hhk...','...kkk............kkk...'],
   pony: ['........................','.......khhhhhhhhk.......','......khhhhhhhhhhk......','......khhhhhhhhhhkhhk...','......khhhhhhhhhhkhhhk..','.................khhhk..','.................khhhk..','..................khhk..','..................khhk..','...................kkk..'],
   twin: ['........................','.......khhhhhhhhk.......','......khhhhhhhhhhk......','.khhhkkhhhhhhhhhhkkhhhk.','.khhhkkhhhhhhhhhhkkhhhk.','.khhhk............khhhk.','.khhhk............khhhk.','.khhhk............khhhk.','.kkkkk............kkkkk.'],
-  wave: ['.......kkkkkkkkkk.......','.....khhhhhhhhhhhhk.....','....khhhhhhhhhhhhhhk....','....khhhhhhhhhhhhhhk....','....khhhhhhhhhhhhhhk....','...khhhk........khhhk...','...khhhk........khhhk...','....kkkk........kkkk....'],
+  wave: ['......kkkkkkkkkkkk......','.....khhhhhhhhhhhhk.....','....khhhhhhhhhhhhhhk....','....khhhh......hhhhk....','...khhhh........hhhhk...','...khhh..........hhhk...','....khh..........hhk....','....khhh........hhhk....','.....khh........hhk.....','.....kkk........kkk.....'],
   surf: ['.....khhk.khhk.khhk.....','.....khhhhhhhhhhhhhk....','....khhhhhhhhhhhhhhhk...','....khhhhhhhhhhhhhhk....','.....khhhhhhhhhhhhk.....','.....khh........hhk.....','......kh........hk......'],
 };
 const HAIR_KO = { buzz:'스포츠', short:'짧은머리', bob:'단발', long:'장발', pony:'포니테일', twin:'양갈래', wave:'웨이브', surf:'서퍼컷' };
@@ -123,13 +126,16 @@ function withLook(pr, name){
     hair:   pr.hair   || set[h % set.length],
     hairc:  pr.hairc  || ck[(h >>> 3) % ck.length],
     skin:   pr.skin   || sk[(h >>> 6) % 3],
+    wear:   pr.wear   || ['rash','hood','tank','rash','suit'][(h >>> 12) % 5],
     boardc: pr.boardc || bk[(h >>> 9) % bk.length] };
 }
 /* withPet=false — 헤더·채팅처럼 40px 안팎으로 작게 그리는 자리에서는 펫을 빼서
    서퍼가 화면의 2/3로 쪼그라드는 걸 막는다 */
 function avatarRows(pr, withPet){
   pr = pr || {};
-  let rows = HEAD.concat(TORSO, BOARD[pr.board] || BOARD.long);
+  const w = WEAR[pr.wear] || WEAR.rash;
+  let rows = HEAD.concat(w.rows, BOARD[pr.board] || BOARD.long);
+  if(w.neck) rows = overlay(rows, w.neck, 10);            // 후드가 목 뒤로 보이게
   rows = overlay(rows, FACE[pr.face] || FACE.smile, 5);
   rows = overlay(rows, HAIR[hairOf(pr)], 0);
   if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 12);
@@ -151,7 +157,6 @@ const avatarTintOf = (pr, L) => ({
   q:'#FF4B4B', t:'#F7DC8F', n: PETC[pr?.petc] || PETC.y,
   b: BOTTOMS[pr?.bottom] || BOTTOMS.b, y: BOARDC[pr?.boardc] || BOARDC.y, r: TOPS[pr?.top] || TOPS.r,
 });
-
 function paint(cv, rows, tint){
   const W=rows[0].length,H=rows.length; cv.width=W+2; cv.height=H+2;
   const g=cv.getContext('2d'); const px=[];
@@ -162,9 +167,9 @@ function paint(cv, rows, tint){
   const ch=cv.clientHeight; if(ch) cv.style.width=Math.round(ch*cv.width/cv.height)+'px';
 }
 const CREW=[
-  ['a1',{hair:'twin',hairc:'k',skin:'s',face:'happy',top:'p',bottom:'b',board:'fun',boardc:'p',pet:'cat',petc:'y',petLv:2}],
-  ['a2',{hair:'surf',hairc:'n',skin:'d',face:'cool',top:'y',bottom:'k',hat:'cap',board:'long',boardc:'w',pet:'dog',petc:'n',petLv:3}],
-  ['a3',{hair:'bob',hairc:'r',skin:'l',face:'smile',top:'g',bottom:'p',board:'short',boardc:'c',pet:'rabbit',petc:'p',petLv:1}],
+  ['a1',{hair:'twin',hairc:'k',skin:'s',face:'happy',wear:'hood',top:'p',bottom:'b',board:'fun',boardc:'p',pet:'cat',petc:'y',petLv:2}],
+  ['a2',{hair:'surf',hairc:'n',skin:'d',face:'cool',wear:'suit',top:'y',bottom:'k',hat:'cap',board:'long',boardc:'w',pet:'dog',petc:'n',petLv:3}],
+  ['a3',{hair:'bob',hairc:'r',skin:'l',face:'smile',wear:'tank',top:'g',bottom:'p',board:'short',boardc:'c',pet:'rabbit',petc:'p',petLv:1}],
 ];
 CREW.forEach(([id,pr])=>paint(document.getElementById(id), avatarRows(pr), avatarTintOf(pr,0)));
 const sun=['.y....y.','..yyyy..','.yyyyyy.','yyyyyyyy','yyyyyyyy','.yyyyyy.','..yyyy..','.y....y.'], gs=document.getElementById('sun').getContext('2d');

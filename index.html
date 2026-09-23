@@ -794,7 +794,7 @@ const HAIR = {
   long: ['........................','.......khhhhhhhhk.......','......khhhhhhhhhhk......','......khhhhhhhhhhk......','......khhhhhhhhhhk......','......kh........hk......','.....khh........hhk.....','.....khh........hhk.....','....khhh........hhhk....','....khhh........hhhk....','...khhh..........hhhk...','...khhh..........hhhk...','...khh............hhk...','...kkk............kkk...'],
   pony: ['........................','.......khhhhhhhhk.......','......khhhhhhhhhhk......','......khhhhhhhhhhkhhk...','......khhhhhhhhhhkhhhk..','.................khhhk..','.................khhhk..','..................khhk..','..................khhk..','...................kkk..'],
   twin: ['........................','.......khhhhhhhhk.......','......khhhhhhhhhhk......','.khhhkkhhhhhhhhhhkkhhhk.','.khhhkkhhhhhhhhhhkkhhhk.','.khhhk............khhhk.','.khhhk............khhhk.','.khhhk............khhhk.','.kkkkk............kkkkk.'],
-  wave: ['.......kkkkkkkkkk.......','.....khhhhhhhhhhhhk.....','....khhhhhhhhhhhhhhk....','....khhhhhhhhhhhhhhk....','....khhhhhhhhhhhhhhk....','...khhhk........khhhk...','...khhhk........khhhk...','....kkkk........kkkk....'],
+  wave: ['......kkkkkkkkkkkk......','.....khhhhhhhhhhhhk.....','....khhhhhhhhhhhhhhk....','....khhhh......hhhhk....','...khhhh........hhhhk...','...khhh..........hhhk...','....khh..........hhk....','....khhh........hhhk....','.....khh........hhk.....','.....kkk........kkk.....'],
   surf: ['.....khhk.khhk.khhk.....','.....khhhhhhhhhhhhhk....','....khhhhhhhhhhhhhhhk...','....khhhhhhhhhhhhhhk....','.....khhhhhhhhhhhhk.....','.....khh........hhk.....','......kh........hk......'],
 };
 const HAIR_KO = { buzz:'스포츠', short:'짧은머리', bob:'단발', long:'장발', pony:'포니테일', twin:'양갈래', wave:'웨이브', surf:'서퍼컷' };
@@ -2521,7 +2521,7 @@ function renderPetCard(){
   $('petsub').textContent = `${st.ko} · ${b}/100`;
   $('petcard').innerHTML = `<div style="display:flex;gap:12px;align-items:center">
       <canvas id="pet-av" data-anim style="height:72px;background:var(--sky);border:3px solid var(--ink)"></canvas>
-      <div style="flex:1;min-width:0"><span class="eyebrow">${PET_KO[pr.pet]}</span>
+      <div style="flex:1;min-width:0"><span class="eyebrow">${pr.petName ? PET_KO[pr.pet] : '아직 이름이 없어요'}</span>
         <div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:18px">${nm}</div>
         <div class="lab-sm" style="margin:2px 0 0">${st.ko}${st.un?` · ${st.un} 달았어요`:''}</div></div></div>
     <div class="bar" data-c="sun" style="margin-top:8px"><i style="width:${b}%"></i></div>
