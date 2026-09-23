@@ -759,16 +759,19 @@ const HEAD = [
   '.......kssssssssk.......',
   '........kkkkkkkk........',
 ];
-const TORSO = [
-  '...kssssrrrrrrssssk.....'.slice(0,0)+'...kssssskrrrrrrkssssk..'.slice(0,0)+'...kssssk'+'rrrrrr'+'kssssk...',
-  '...kkkkkk'+'rrrrrr'+'kkkkkk...',
-  '........k'+'rrrrrr'+'k........',
-  '........k'+'rrrrrr'+'k........',
-  '........k'+'bbbbbb'+'k........',
-  '........kbbkkbbk........',
-  '........ksk..ksk........',
-  '........kkk..kkk........',
-];
+/* 상의는 색만 바꾸면 다 같은 옷이라, 실루엣이 바뀌는 5종으로 나눴다.
+   LEGS/ARMS가 아니라 8줄 통째로 두는 편이 읽기 쉬워서 변형마다 전부 적는다. */
+const LEGS = ['........kbbbbbbk........','........kbbkkbbk........','........ksk..ksk........','........kkk..kkk........'];
+const WEAR = {
+  rash: { ko:'래시가드', rows:['...kssrrkrrrrrrkrrssk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........'].concat(LEGS) },
+  hood: { ko:'후디',     rows:['...krrrrkrrrrrrkrrrrk...','...kkkkkkrrrrrrkkkkkk...','........krwrrwrk........','........krkkkkrk........'].concat(LEGS),
+          neck:['....krr..........rrk....','....krr..........rrk....'] },
+  tank: { ko:'민소매',   rows:['...kssssksrrrrskssssk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........'].concat(LEGS) },
+  suit: { ko:'풀슈트',   rows:['...krrrrkrrrrrrkrrrrk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........',
+                               '........krrrrrrk........','........krrkkrrk........','........krk..krk........','........kkk..kkk........'] },
+  bare: { ko:'맨몸',     rows:['...kssssksssssskssssk...','...kkkkkksssssskkkkkk...','........kssssssk........','........kssssssk........'].concat(LEGS) },
+};
+const WEAR_KO = Object.fromEntries(Object.entries(WEAR).map(([k,v])=>[k,v.ko]));
 const BOARD = {
   long: ['.yyyyyyyyyyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyyyyyyyyyk','kyyyyyyyyyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkkkkkkkkkk.'],
   fun:  ['....yyyyyyyyyyyyyyyy....','...kyyyyyyyyyyyyyyyyk...','...kyyyyyyyyyyyyyyyyk...','....kkkkkkkkkkkkkkkk....'],
@@ -847,13 +850,16 @@ function withLook(pr, name){
     hair:   pr.hair   || set[h % set.length],
     hairc:  pr.hairc  || ck[(h >>> 3) % ck.length],
     skin:   pr.skin   || sk[(h >>> 6) % 3],
+    wear:   pr.wear   || ['rash','hood','tank','rash','suit'][(h >>> 12) % 5],
     boardc: pr.boardc || bk[(h >>> 9) % bk.length] };
 }
 /* withPet=false — 헤더·채팅처럼 40px 안팎으로 작게 그리는 자리에서는 펫을 빼서
    서퍼가 화면의 2/3로 쪼그라드는 걸 막는다 */
 function avatarRows(pr, withPet){
   pr = pr || {};
-  let rows = HEAD.concat(TORSO, BOARD[pr.board] || BOARD.long);
+  const w = WEAR[pr.wear] || WEAR.rash;
+  let rows = HEAD.concat(w.rows, BOARD[pr.board] || BOARD.long);
+  if(w.neck) rows = overlay(rows, w.neck, 10);            // 후드가 목 뒤로 보이게
   rows = overlay(rows, FACE[pr.face] || FACE.smile, 5);
   rows = overlay(rows, HAIR[hairOf(pr)], 0);
   if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 12);
@@ -899,7 +905,7 @@ function drawSpr(cv, name, tint){
 }
 function paintAll(root=document){ root.querySelectorAll('canvas[data-spr]').forEach(c=>drawSpr(c, c.dataset.spr)); }
 /* 로그인 화면 서퍼 — 여기서 첫인상이 정해지므로 앱 안과 같은 도트를 쓴다 */
-{ const pr = { hair:'surf', hairc:'k', skin:'s', face:'happy', top:'r', bottom:'b', board:'long', boardc:'y', pet:'dog', petc:'n', petLv:2 };
+{ const pr = { hair:'surf', hairc:'k', skin:'s', face:'happy', wear:'hood', top:'r', bottom:'b', board:'long', boardc:'y', pet:'dog', petc:'n', petLv:2 };
   const c = document.getElementById('hero-av'); if(c) drawSpr(c, avatarRows(pr), avatarTintOf(pr, 0)); }
 
 /* ═══════════ 계정 (이 기기에만 저장) ═══════════ */
@@ -922,7 +928,7 @@ const auth = {
   users(){ return LS.get('surf.users', {}); },
   remember(id, u){ const all = auth.users(); all[id] = { ...(all[id]||{}), ...u }; LS.set('surf.users', all); },
   async create(id, name, pw){
-    const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y', hair: pick.gender==='m'?'short':'bob', hairc:'k', skin:'s', face:'smile', pet:'none', petc:'y', badge: pick.role==='coach' ? (COACH_DEFAULT_BADGE[name]||'코치') : undefined, birth: ($('ubirth')?.value||'').trim() || undefined };
+    const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y', hair: pick.gender==='m'?'short':'bob', hairc:'k', skin:'s', face:'smile', wear:'rash', pet:'none', petc:'y', badge: pick.role==='coach' ? (COACH_DEFAULT_BADGE[name]||'코치') : undefined, birth: ($('ubirth')?.value||'').trim() || undefined };
     if(supaOn()){
       try{ const token = await rpc('signup', { p_id:id, p_name:name||id, p_pw:pw, p_profile:profile });
         auth.remember(id, { name:name||id, cohort:'6기', profile, server:true, token, createdAt:new Date().toISOString() }); return auth.users()[id]; }
@@ -2261,7 +2267,7 @@ function renderFeed(){
 }
 
 /* ═══════════ 온보딩 (첫 로그인) ═══════════ */
-const COACH_PR = { role:'coach', hair:'surf', hairc:'k', top:'k', hat:'cap', board:'long', boardc:'w', bottom:'k', face:'cool', pet:'dog', petc:'n' };
+const COACH_PR = { role:'coach', hair:'surf', hairc:'k', wear:'suit', top:'k', hat:'cap', board:'long', boardc:'w', bottom:'k', face:'cool', pet:'dog', petc:'n' };
 /* 꾸밀 항목이 11줄이 되면서 한 번에 다 펼치면 스크롤이 끝나지 않는다.
    얼굴/옷/보드/친구로 묶고 한 묶음씩만 보여준다. */
 const BLD_TABS = [['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
@@ -2274,7 +2280,8 @@ function builderHTML(pr){
           opt('머리 색', 'hairc', Object.keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), sw(HAIRC)) +
           opt('피부 톤', 'skin', Object.keys(SKIN).map(k=>[k,SKIN_KO[k]]), sw(SKIN)) +
           opt('표정', 'face', Object.keys(FACE).map(k=>[k,FACE_KO[k]])),
-    wear: opt('래시가드', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)) +
+    wear: opt('상의', 'wear', Object.keys(WEAR).map(k=>[k,WEAR_KO[k]])) +
+          (pr.wear==='bare' ? '' : opt('상의 색', 'top', Object.keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS))) +
           opt('팬츠 / 웻수트', 'bottom', Object.keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS)) +
           opt('모자', 'hat', Object.keys(HAT).map(k=>[k,HAT_KO[k]])) +
           (pr.role==='coach' ? opt('코치 전용', 'vest', [[true,'코치 조끼 + 호루라기','coach'],[false,'조끼 벗기']]) + opt('내 뱃지 · 마을·채팅에 표시', 'badge', COACH_BADGES.map(b=>[b,b])) : ''),
@@ -2291,10 +2298,10 @@ function bindBuilder(root, pr, after){
     if(x.dataset.bt!=='rand'){ state.bldTab = x.dataset.bt; after({}); return; }
     const pick = a => a[Math.floor(Math.random()*a.length)];
     after({ hair:pick(Object.keys(HAIR)), hairc:pick(Object.keys(HAIRC)), skin:pick(Object.keys(SKIN)), face:pick(Object.keys(FACE)),
-            top:pick(Object.keys(TOPS)), bottom:pick(Object.keys(BOTTOMS)), hat:pick(Object.keys(HAT)), boardc:pick(Object.keys(BOARDC)) });
+            wear:pick(Object.keys(WEAR)), top:pick(Object.keys(TOPS)), bottom:pick(Object.keys(BOTTOMS)), hat:pick(Object.keys(HAT)), boardc:pick(Object.keys(BOARDC)) });
   });
 }
-const MANAGER_PR = { role:'coach', hair:'pony', hairc:'n', top:'y', hat:'bucket', board:'fun', boardc:'c', bottom:'k', vest:false, face:'happy', pet:'seal', petc:'w' };
+const MANAGER_PR = { role:'coach', hair:'pony', hairc:'n', wear:'hood', top:'y', hat:'bucket', board:'fun', boardc:'c', bottom:'k', vest:false, face:'happy', pet:'seal', petc:'w' };
 const ONB = [
   { who:'교장쌤', txt:'6기 환영합니다! 먼저 라인업에서 알아볼 수 있게 캐릭터부터 만들어요. 머리 모양이 제일 눈에 띄니 거기부터. 맨 아래 "같이 타는 친구"를 고르면 보드 옆에서 같이 달려요.', build:true, tab:'wave' },
   { who:'매니저', txt:'주로 어느 해변에서 타요? 홈 해변을 고르면 앱이 그 해변으로 열려요. (나중에 "나" 탭에서 바꿀 수 있어요)', home:true, tab:'wave' },
