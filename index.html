@@ -819,6 +819,7 @@ footer a{color:var(--paper)}
   <div class="field"><label for="party-time">몇 시</label><input id="party-time" type="time" value="09:00" required style="border:4px solid var(--ink);padding:8px 10px;font-size:16px;font-family:inherit;background:#fff"></div>
   <div class="field"><label for="party-note">한 마디</label><input id="party-note" placeholder="예) 낙산 주차장에서 만나요, 차 있어요" maxlength="60" style="border:4px solid var(--ink);padding:8px 10px;font-size:15px;font-family:inherit;background:#fff"></div>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">올리기 +5 XP</button><button class="btn ghost" type="button" id="party-cancel">닫기</button></div></form></div>
+<div class="modal" id="zoom" hidden><div class="px" style="padding:6px;max-width:92vw"><img id="zoom-img" alt="저장한 자세 사진 크게 보기" style="width:100%;display:block;border:3px solid var(--ink)"><button class="btn sm ghost" type="button" style="margin-top:6px;width:100%" onclick="document.getElementById('zoom').hidden=true">닫기</button></div></div>
 <div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요</div><button class="btn sm ghost" type="button" style="margin-top:10px" onclick="$('lvup').hidden=true">닫기</button></div></div>
 <div class="gain" id="gain">+10 XP</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -1110,6 +1111,9 @@ const closeModals = () => { let any = false;
   return any; };
 document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeModals(); });
 document.addEventListener('click', e=>{ if(e.target.classList?.contains('modal')) e.target.hidden = true; });
+/* 저장한 자세 사진이 손톱만 해서 정작 자세를 확인할 수가 없었다 — 탭하면 크게 */
+document.addEventListener('click', e=>{ const z = e.target.closest?.('[data-zoom]'); if(!z) return;
+  $('zoom-img').src = z.dataset.zoom; $('zoom-img').alt = z.alt || '자세 사진'; $('zoom').hidden = false; });
 /* 접이식 섹션은 한 번 편 사람에겐 계속 펴져 있어야 한다 — 매번 다시 펴게 하면 접은 의미가 없다 */
 function rememberFold(id){ const d = document.getElementById(id); if(!d) return;
   try{ if(localStorage.getItem('surf.fold.'+id)==='1') d.open = true; }catch(e){}
@@ -2064,7 +2068,7 @@ const TKO = [
   ['시선', '가고 싶은 방향을 본다 (보드를 보지 않는다)'],
   ['푸시 팔 위치', '손이 갈비뼈 옆 또는 그 아래'],
   ['발 위치·각도', '앞발 45° · 뒷발 45~90° (일자·90° 초과 금지)'],
-  ['무릎 방향', '두 무릎이 굽힐 때 전방을 향한다'],
+  ['무릎 방향', '두 무릎이 서로 안쪽으로 — 특히 뒷무릎을 앞무릎 쪽으로 넣는다'],
   ['중심 이동', '앞발에 무게중심(전경) — 후경으로 빠지지 않게'],
   ['BBP', '엉덩이·머리가 보드 밖으로 나가지 않는다'],
   ['리드암', '앞손을 자연스럽게 들어 방향타로 쓴다'],
@@ -2073,29 +2077,54 @@ const TKO = [
    코치 7항목을 옆모습(시선·상체·무릎·중심)과 위에서 본 모습(발 각도·스탠스 폭) 두 장으로 나눴다.
    발 각도는 옆에서 보면 안 보이기 때문. 그림이라 신호 없어도 뜬다. */
 function refPoseSVG(){
+  const leg = (ax,ay,kx,ky,hx,hy,col) => `<path d="M${ax} ${ay} L${kx} ${ky} L${hx} ${hy}" stroke="${col}" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
   return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
     <figure style="margin:0">
-      <svg viewBox="0 0 150 170" style="width:100%;background:#fff;border:3px solid var(--ink)" role="img" aria-label="옆에서 본 라이딩 기준 자세">
-        <path d="M14 150 Q75 143 140 150 Q75 158 14 150Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="3"/>
-        <path d="M60 146 L64 118 M64 118 L82 100" stroke="var(--ink)" stroke-width="5" fill="none" stroke-linecap="round"/>
-        <path d="M102 146 L99 116 M99 116 L82 100" stroke="var(--ink)" stroke-width="5" fill="none" stroke-linecap="round"/>
-        <path d="M82 100 L88 62" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
-        <circle cx="92" cy="50" r="11" fill="#fff" stroke="var(--ink)" stroke-width="3"/>
-        <path d="M88 66 L114 72 L132 58" stroke="var(--ink)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M88 66 L66 76 L52 68" stroke="var(--ink)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M104 46 L136 40" stroke="#1A47C9" stroke-width="3" stroke-dasharray="5 4"/>
-        <path d="M136 40 l-8 -4 l0 8 Z" fill="#1A47C9"/>
-        <text x="147" y="30" font-size="11" font-weight="700" fill="#1A47C9" text-anchor="end" stroke="#fff" stroke-width="3.5" paint-order="stroke">시선</text>
-        <path d="M99 116 a12 12 0 0 0 -10 -8" fill="none" stroke="#12784B" stroke-width="3"/>
-        <text x="146" y="134" font-size="10" font-weight="700" fill="#12784B" text-anchor="end" stroke="#fff" stroke-width="3.5" paint-order="stroke">무릎 110~150°</text>
-        <circle cx="102" cy="146" r="6" fill="none" stroke="var(--coral)" stroke-width="3"/>
-        <text x="6" y="120" font-size="10" font-weight="700" fill="var(--coral)" stroke="#fff" stroke-width="3.5" paint-order="stroke">중심은 앞발</text>
-        <path d="M44 124 L94 143" stroke="var(--coral)" stroke-width="2" stroke-dasharray="3 3"/>
+      <svg viewBox="0 0 150 175" style="width:100%;background:#fff;border:3px solid var(--ink)" role="img" aria-label="좋은 자세 — 두 무릎이 서로 안쪽으로 모인 옆모습">
+        <path d="M14 152 Q75 145 140 152 Q75 160 14 152Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="3"/>
+        ${leg(56,148, 72,117, 86,101, 'var(--ink)')}
+        ${leg(106,148, 101,114, 86,101, 'var(--ink)')}
+        <path d="M86 101 L92 63" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="96" cy="51" r="11" fill="#fff" stroke="var(--ink)" stroke-width="3"/>
+        <path d="M92 67 L116 73 L133 59" stroke="var(--ink)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M92 67 L70 77 L56 69" stroke="var(--ink)" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M108 47 L136 41" stroke="#1A47C9" stroke-width="3" stroke-dasharray="5 4"/><path d="M136 41 l-8 -4 l0 8 Z" fill="#1A47C9"/>
+        <text x="147" y="31" font-size="11" font-weight="700" fill="#1A47C9" text-anchor="end" stroke="#fff" stroke-width="3.5" paint-order="stroke">시선</text>
+        <path d="M58 117 L68 117" stroke="#12784B" stroke-width="3"/><path d="M69 117 l-8 -4 l0 8 Z" fill="#12784B"/>
+        <circle cx="72" cy="117" r="8" fill="none" stroke="#12784B" stroke-width="3"/>
+        <text x="4" y="110" font-size="10" font-weight="700" fill="#12784B" stroke="#fff" stroke-width="3.5" paint-order="stroke">뒷무릎을</text>
+        <text x="4" y="122" font-size="10" font-weight="700" fill="#12784B" stroke="#fff" stroke-width="3.5" paint-order="stroke">앞무릎 쪽으로</text>
+        <path d="M101 114 a11 11 0 0 0 -9 -7" fill="none" stroke="#12784B" stroke-width="3"/>
+        <text x="147" y="98" font-size="9.5" font-weight="700" fill="#12784B" text-anchor="end" stroke="#fff" stroke-width="3.5" paint-order="stroke">무릎 굽힘</text>
+        <text x="147" y="109" font-size="9.5" font-weight="700" fill="#12784B" text-anchor="end" stroke="#fff" stroke-width="3.5" paint-order="stroke">${CRIT.knee.good[0]}~${CRIT.knee.good[1]}°</text>
+        <circle cx="106" cy="148" r="6" fill="none" stroke="var(--coral)" stroke-width="3"/>
+        <text x="146" y="170" font-size="10" font-weight="700" fill="var(--coral)" text-anchor="end" stroke="#fff" stroke-width="3.5" paint-order="stroke">중심은 앞발</text>
+        <text x="6" y="16" font-size="12" font-weight="700" fill="#12784B">✓ 이렇게</text>
       </svg>
-      <figcaption class="lab-sm" style="margin:3px 0 0;text-align:center">옆에서 — 시선·상체·무릎·중심</figcaption>
+      <figcaption class="lab-sm" style="margin:3px 0 0;text-align:center">무릎이 <b>모인다</b> · 엉덩이가 보드 위</figcaption>
     </figure>
     <figure style="margin:0">
-      <svg viewBox="0 0 150 170" style="width:100%;background:#fff;border:3px solid var(--ink)" role="img" aria-label="위에서 본 발 각도">
+      <svg viewBox="0 0 150 175" style="width:100%;background:#FFF2F2;border:3px solid var(--ink)" role="img" aria-label="나쁜 자세 — 무릎이 벌어지고 엉덩이가 뒤로 빠진 쩍벌">
+        <path d="M14 152 Q75 145 140 152 Q75 160 14 152Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="3"/>
+        ${leg(56,148, 52,121, 66,112, '#C2303A')}
+        ${leg(106,148, 108,119, 66,112, '#C2303A')}
+        <path d="M66 112 L88 80" stroke="#C2303A" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="93" cy="70" r="11" fill="#fff" stroke="#C2303A" stroke-width="3"/>
+        <path d="M88 84 L110 92 L126 82" stroke="#C2303A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M88 84 L68 94 L54 88" stroke="#C2303A" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M44 128 L34 128" stroke="#C2303A" stroke-width="3"/><path d="M33 128 l8 -4 l0 8 Z" fill="#C2303A"/>
+        <path d="M116 126 L126 126" stroke="#C2303A" stroke-width="3"/><path d="M127 126 l-8 -4 l0 8 Z" fill="#C2303A"/>
+        <text x="80" y="172" font-size="10" font-weight="700" fill="#C2303A" text-anchor="middle" stroke="#FFF2F2" stroke-width="3.5" paint-order="stroke">무릎이 벌어짐</text>
+        <circle cx="62" cy="112" r="9" fill="none" stroke="#C2303A" stroke-width="3" stroke-dasharray="4 3"/>
+        <path d="M54 108 L40 100" stroke="#C2303A" stroke-width="2"/>
+        <text x="4" y="92" font-size="9.5" font-weight="700" fill="#C2303A" stroke="#FFF2F2" stroke-width="3.5" paint-order="stroke">엉덩이가</text>
+        <text x="4" y="103" font-size="9.5" font-weight="700" fill="#C2303A" stroke="#FFF2F2" stroke-width="3.5" paint-order="stroke">뒤로 빠짐</text>
+        <text x="6" y="16" font-size="12" font-weight="700" fill="#C2303A">✗ 쩍벌</text>
+      </svg>
+      <figcaption class="lab-sm" style="margin:3px 0 0;text-align:center">무릎이 <b>벌어진다</b> · 중심이 뒤로</figcaption>
+    </figure>
+    <figure style="margin:0;grid-column:1/-1;display:flex;flex-direction:column;align-items:center">
+      <svg viewBox="0 0 150 170" style="width:58%;max-width:190px;background:#fff;border:3px solid var(--ink)" role="img" aria-label="위에서 본 발 각도">
         <path d="M75 12 Q108 70 100 150 Q75 162 50 150 Q42 70 75 12Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="3"/>
         <line x1="75" y1="18" x2="75" y2="152" stroke="var(--ink)" stroke-width="1" stroke-dasharray="4 4" opacity=".5"/>
         <g transform="translate(75 58) rotate(45)"><rect x="-9" y="-22" width="18" height="44" rx="8" fill="#fff" stroke="var(--ink)" stroke-width="3"/></g>
@@ -2109,8 +2138,21 @@ function refPoseSVG(){
       </svg>
       <figcaption class="lab-sm" style="margin:3px 0 0;text-align:center">위에서 — 발 각도·스탠스 폭</figcaption>
     </figure>
+    <div style="font-size:12.5px;line-height:1.6;grid-column:1/-1;border-top:2px dashed var(--grid);padding-top:8px">
+      <b>무릎은 발끝을 따라갑니다.</b> 앞발 45°·뒷발 45~90°면 두 발끝은 몸 앞쪽(토 사이드)을
+      보고 있으니, <b>무릎도 노즈가 아니라 그쪽</b>을 봐야 합니다. 그러면 뒷무릎이 자연히
+      앞무릎 쪽으로 들어옵니다 — <b>스키 눈밟기(snow plough)</b> 모양이에요.<br>
+      벌어지면 엉덩이가 보드 밖 뒤로 빠지고(쩍벌), 앞뒤로 중심을 못 옮깁니다.
+    </div>
   </div>
-  <div class="lab-sm" style="margin-top:6px">일자(0°)나 90° 넘는 각도는 금지 — 무릎이 비틀려요. 두 무릎은 굽힐 때 <b>전방</b>을 향합니다.</div>`;
+  <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:700">이 기준은 어디서 왔나</summary>
+    <div class="lab-sm" style="margin-top:6px;line-height:1.6">
+      · <b>뒷발 90° · 쩍벌</b> — Rio 코치(6기 단톡방 09.21): "뒷발이 90°를 넘어가면 무릎을 굽힐 때 전방이 아니라 벌어집니다(쩍벌). 중심이 후경으로 빠지지 않습니다."<br>
+      · <b>무릎이 서로 안쪽으로</b> — <a href="https://seaheartssurf.com/mastering-the-proper-surf-stance/" target="_blank" rel="noopener">Sea Hearts Surf Club</a> "knees come-in towards each other, rather than spreading apart, especially your back knee" ·
+      <a href="https://puravidaadventures.com/overcoming-poo-stance/" target="_blank" rel="noopener">Pura Vida Adventures</a> "tracking in towards each other, like the snow plough" ·
+      <a href="https://www.ombe.co/guides/the-proper-surf-stance" target="_blank" rel="noopener">OMBE</a> "if you tuck your back knee even more, it'll be even better"<br>
+      · <b>무릎 굽힘 ${CRIT.knee.good[0]}~${CRIT.knee.good[1]}° · 중심 +${COACH_REF.lean}</b> — ${CRIT.knee.src}
+    </div></details>`;
 }
 /* 참고 영상 — 코치님 시연 영상 대신 공개 강좌로.
    고르는 기준은 두 가지였다.
@@ -2243,6 +2285,7 @@ async function scanRide(v, lm, onProgress, seed){
   const W2 = 384, c2 = document.createElement('canvas'); c2.width = W2; c2.height = W2; const g2 = c2.getContext('2d');
   const raw = []; let track = seed || null, lastBox = null, peopleMax = 0, i = 0;
   for(let t = 0; t < dur - 0.03; t += step){
+    if(state.scanAbort) return { aborted:true };
     await seekTo(v, t);
     g1.drawImage(v, 0, 0, c1.width, c1.height);
     let Ls = []; try{ Ls = lm.detect(c1)?.landmarks || []; }catch(e){}
@@ -2288,6 +2331,28 @@ async function scanRide(v, lm, onProgress, seed){
    - 무릎: 중앙값 107~130°
    - 스탠스: 촬영 방향에 따라 0.08~0.47로 흔들려 기준으로 쓰지 않는다. */
 const COACH_REF = { who:'루비 코치', pop:[0.9,1.5], lean:0.05, leanTol:0.18, knee:[100,140] };
+/* ── 판정 기준은 여기서만 정한다 ────────────────────────────────
+   화면마다 다른 숫자를 "코치 기준"이라고 부르던 것을 하나로 모았다.
+   src는 반드시 화면에 띄운다 — 무슨 근거로 고치라는 건지 안 밝히면 따를 이유가 없다.
+   band:false는 "숫자는 보여주되 잘잘못은 매기지 않는다"는 뜻이다. 못 믿는 값에
+   초록 띠를 그으면 안 된다(스탠스가 그렇다 — 촬영 방향에 따라 0.08~0.47로 흔들린다). */
+const CRIT = {
+  knee: { ko:'무릎 굽힘', unit:'°', good:COACH_REF.knee, band:true,
+    src:`${COACH_REF.who} 육상 팝업 시연 2편을 같은 방식으로 재서 얻은 중앙값 (2026-09-24 · 실내·옆모습·전신 · 인식률 75~82%)`,
+    say: v => v>165 ? ['⚠️','거의 편 다리 — 낮은 자세로 1~2초 버티는 연습부터']
+            : v>COACH_REF.knee[1] ? ['△','조금 덜 굽었어요 — 조금 더 낮게']
+            : v>=COACH_REF.knee[0] ? ['✅','적정']
+            : v>=80 ? ['△','많이 앉았어요 — 편하게 서고 중심만 앞발로']
+            : ['⚠️','너무 앉음 — 엉덩이가 뒤로 빠졌을 수 있어요(쩍벌)'] },
+  lean: { ko:'앞뒤 중심', unit:'', good:[+(COACH_REF.lean-COACH_REF.leanTol).toFixed(2), +(COACH_REF.lean+COACH_REF.leanTol).toFixed(2)], band:true,
+    src:`${COACH_REF.who} 시연 실측 +${COACH_REF.lean} ± ${COACH_REF.leanTol} (몸길이로 나눈 값 · 0이면 발 가운데, +면 앞발 쪽)`,
+    say: v => v < COACH_REF.lean-COACH_REF.leanTol ? ['⚠️','뒤로 빠짐(후경) — Rio 코치가 제일 많이 지적하는 것']
+            : v > COACH_REF.lean+COACH_REF.leanTol ? ['△','앞으로 과함 — 노즈가 박힐 수 있어요']
+            : ['✅','앞발 쪽에 잘 실렸어요'] },
+  stance: { ko:'스탠스 폭', unit:'', band:false,
+    src:'촬영 방향에 따라 0.08~0.47로 흔들려서 잘잘못을 매기지 않습니다. 같은 자리에서 찍은 영상끼리 변화만 보세요 (몸길이로 나눈 값)' },
+};
+const critSay = (k, v) => { const c = CRIT[k]; if(!c?.say || v==null || isNaN(v)) return ['','']; return c.say(+v); };
 /* 팝업 상한을 1.3 → 1.5로 넓힌 이유: 실측은 0.10초 간격으로 쟀는데 앱은 영상 길이에 따라
    최대 0.20초 간격으로 훑는다. 그 차이만큼(±0.2초) 값이 커질 수 있어서, 코치 본인 영상이
    "느림"으로 찍히는 일이 없게 여유를 뒀다. */
@@ -2370,11 +2435,14 @@ function rideReport(P){
   return { good, weak };
 }
 function poseReport(m){
+  /* 판정은 CRIT 한 곳에서만 읽는다 — 예전엔 여기(≤150°)와 그림(110~150°)과
+     추이 그래프(110~150°)와 COACH_REF(100~140°)가 각자 다른 "코치 기준"을 말했다. */
   const out = [];
-  out.push([ m.stance>=1.0 && m.stance<=1.8, `스탠스 폭 ${m.stance.toFixed(1)}배(어깨 대비)`, m.stance<1.0 ? '좁음 — 코치 피드백 "스탠스 넓히기"' : m.stance>1.8 ? '너무 넓음 — 중심 이동이 느려짐' : '적정' ]);
-  out.push([ m.knee<=150, `무릎 굽힘 ${m.knee}°`, m.knee>160 ? '거의 펴짐 — 낮은 자세로 1~2초 유지 연습' : m.knee<90 ? '너무 앉음 — "편하게 일어나고 중심만 앞발"' : '적정' ]);
-  out.push([ Math.abs(m.lean)<=0.25, `중심 ${m.lean>0.05?'앞':m.lean<-0.05?'뒤':'가운데'} (${m.lean>0?'+':''}${m.lean})`, m.lean<-0.15 ? '후경 — 일어선 뒤 중심이 뒤로 빠짐(Rio 코치 지적 1번)' : m.lean>0.35 ? '과하게 앞' : '전경~중립' ]);
+  const K = CRIT.knee.say(m.knee), L = CRIT.lean.say(m.leanN);
+  out.push([ K[0]==='✅', `${CRIT.knee.ko} ${m.knee}° (기준 ${CRIT.knee.good[0]}~${CRIT.knee.good[1]}°)`, K[1] ]);
+  out.push([ L[0]==='✅', `${CRIT.lean.ko} ${m.leanN>0?'+':''}${m.leanN} (기준 ${CRIT.lean.good[0]}~${CRIT.lean.good[1]} · 0=발 가운데)`, L[1] ]);
   out.push([ m.headOut<=0.6, `머리 위치 ${m.headOut}`, m.headOut>0.6 ? '보드 밖으로 나감 — BBP 자세 점검' : '보드 안' ]);
+  out.push([ true, `${CRIT.stance.ko} ${m.stanceN}`, '참고용 — 촬영 각도에 따라 달라져 잘잘못을 매기지 않아요' ]);
   return out;
 }
 
@@ -2384,23 +2452,45 @@ function renderPose(){
   $('pose-sub').textContent = mine.length ? `${mine.length}장` : '';
   const metOf = x => { try{ const m = String(x.note||'').match(/\{[^}]+\}/); return m ? JSON.parse(m[0]) : (x.metrics||null); }catch(e){ return x.metrics||null; } };
   const noteText = x => String(x.note||'').replace(/\s*\{[^}]+\}/,'').trim();
-  const withMet = mine.map(x=>({ ...x, m:metOf(x) })).filter(x=>x.m);
+  const withMet = mine.map(x=>({ ...x, m:metOf(x) })).filter(x=>x.m && x.m.v===2);   // 옛 기록(v1)은 자가 달라 추이에 못 섞는다
+  /* 숫자 하나에 "뜻 · 판정 · 기준"을 붙인다. 174°만 덩그러니 있으면 좋은 건지 나쁜 건지,
+     뭘 해야 하는지 알 수가 없다. 옛 기록은 단위가 달라 판정을 생략한다. */
+  const metLine = m => {
+    const row = (k, v, extra) => { if(v==null||isNaN(v)) return '';
+      const c = CRIT[k], [ic,tip] = (m.v===2 && c.say) ? c.say(+v) : ['',''];
+      return `<div style="margin-top:2px">${ic?ic+' ':''}<b>${c.ko}</b> ${v}${c.unit}${extra?` <span style="color:var(--ink2)">${extra}</span>`:''}${tip?` — ${tip}`:''}</div>`; };
+    return `<div style="margin-top:4px;font-size:12px;line-height:1.5;background:#fff;border:2px solid var(--grid);padding:5px 7px">
+      ${row('knee', m.knee, m.v===2?`(기준 ${CRIT.knee.good[0]}~${CRIT.knee.good[1]}°)`:'')}
+      ${row('lean', m.lean, m.v===2?'(0=발 가운데 · +=앞발 쪽)':'')}
+      ${row('stance', m.stance, '(참고용 — 촬영 각도 영향)')}
+      ${m.v===2 ? `<div class="lab-sm" style="margin:4px 0 0">기준 출처 · ${CRIT.knee.src}</div>`
+                : `<div class="lab-sm" style="margin:4px 0 0">옛 방식으로 잰 기록이라 잘잘못은 매기지 않았어요 (중심·스탠스를 지금과 다른 자로 쟀습니다).</div>`}
+    </div>`; };
   const byStage = st => mine.filter(x=>x.stage===st);
   const cmp = Object.entries(STAGES).map(([st,ko])=>{ const list = byStage(st); if(!list.length) return ''; const first = list[0], last = list[list.length-1];
     return `<div style="margin-top:10px"><div class="lab-sm" style="margin-bottom:4px">${ko} · ${list.length}장</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      <figure style="margin:0"><img src="${first.url}" style="width:100%;border:3px solid var(--ink);display:block"><figcaption class="lab-sm" style="margin:2px 0 0">처음 ${String(first.date).slice(5).replace('-','.')}</figcaption></figure>
-      <figure style="margin:0"><img src="${last.url}" style="width:100%;border:3px solid var(--ink);display:block"><figcaption class="lab-sm" style="margin:2px 0 0">최근 ${String(last.date).slice(5).replace('-','.')}${last.week?` · ${last.week}주차`:''}</figcaption></figure></div>
+      <figure style="margin:0"><img src="${first.url}" alt="처음 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${first.url}"><figcaption class="lab-sm" style="margin:2px 0 0">처음 ${String(first.date).slice(5).replace('-','.')}</figcaption></figure>
+      <figure style="margin:0"><img src="${last.url}" alt="최근 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${last.url}"><figcaption class="lab-sm" style="margin:2px 0 0">최근 ${String(last.date).slice(5).replace('-','.')}${last.week?` · ${last.week}주차`:''}</figcaption></figure></div>
       ${noteText(last)?`<div class="lab-sm" style="margin-top:4px">메모: ${noteText(last)}</div>`:''}
       ${last.coach_note?`<div class="lab-sm" style="margin-top:2px">💬 ${last.coach_name||'코치'}: ${last.coach_note}</div>`:''}</div>`; }).join('');
-  const trend = (key, label, unit, good) => { const pts = withMet.map(x=>+x.m[key]).filter(v=>!isNaN(v)); if(pts.length<2) return '';
-    const min = Math.min(...pts, good[0]), max = Math.max(...pts, good[1]), rng = (max-min)||1, W=260, H=44;
+  const trend = (key) => { const c = CRIT[key], good = c.band ? c.good : null;
+    const pts = withMet.map(x=>+x.m[key]).filter(v=>!isNaN(v)); if(pts.length<2) return '';
+    const label = c.ko, unit = c.unit;
+    const min = Math.min(...pts, ...(good||[])), max = Math.max(...pts, ...(good||[])), rng = (max-min)||1, W=260, H=44;
     const xs = (i)=> 4 + i*(W-8)/(pts.length-1), ys = (v)=> H-6 - (v-min)/rng*(H-14);
-    const gy1 = ys(good[1]), gy2 = ys(good[0]);
+    const gy1 = good ? ys(good[1]) : 0, gy2 = good ? ys(good[0]) : 0;
     const line = pts.map((v,i)=>`${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(' ');
-    const first = pts[0], last = pts[pts.length-1], better = Math.abs(last-(good[0]+good[1])/2) < Math.abs(first-(good[0]+good[1])/2);
-    return `<div style="margin-top:8px"><div class="lab-sm" style="margin:0">${label} <b>${first}${unit} → ${last}${unit}</b> ${better?'<span style="color:#1FA366">개선</span>':'<span style="color:var(--ink2)">유지</span>'} <span style="color:var(--ink2)">· 기준 ${good[0]}~${good[1]}${unit}</span></div>
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:44px;border:3px solid var(--ink);background:#fff;margin-top:2px"><rect x="0" y="${Math.min(gy1,gy2)}" width="${W}" height="${Math.abs(gy2-gy1)||2}" fill="var(--mint)" opacity=".35"/><polyline points="${line}" fill="none" stroke="var(--sea)" stroke-width="3"/>${pts.map((v,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="3.5" fill="${i===pts.length-1?'var(--coral)':'var(--ink)'}"/>`).join('')}</svg></div>`; };
-  const trends = withMet.length>=2 ? `<div class="px" style="margin-top:10px;background:#fff"><div class="eyebrow">자세 변화 (자동 측정 ${withMet.length}회)</div>${trend('knee','무릎 굽힘','°',[110,150])}${trend('lean','중심 앞뒤','',[-0.1,0.3])}${trend('stance','스탠스 폭','배',[1.0,1.8])}<div class="lab-sm" style="margin-top:6px">초록 띠가 코치 기준 범위 · 빨간 점이 최근</div></div>` : '';
+    const first = pts[0], last = pts[pts.length-1];
+    const mid = good ? (good[0]+good[1])/2 : 0;
+    const verdict = !good ? '<span style="color:var(--ink2)">참고용</span>'
+      : Math.abs(last-mid) < Math.abs(first-mid) ? '<span style="color:#1FA366">기준에 가까워짐</span>'
+      : Math.abs(last-mid) > Math.abs(first-mid) ? '<span style="color:#C2303A">기준에서 멀어짐</span>'
+      : '<span style="color:var(--ink2)">유지</span>';
+    return `<div style="margin-top:8px"><div class="lab-sm" style="margin:0">${label} <b>${first}${unit} → ${last}${unit}</b> ${verdict} <span style="color:var(--ink2)">· ${good?`기준 ${good[0]}~${good[1]}${unit}`:'기준 없음'}</span></div>
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:44px;border:3px solid var(--ink);background:#fff;margin-top:2px">${good?`<rect x="0" y="${Math.min(gy1,gy2)}" width="${W}" height="${Math.abs(gy2-gy1)||2}" fill="var(--mint)" opacity=".35"/>`:''}<polyline points="${line}" fill="none" stroke="var(--sea)" stroke-width="3"/>${pts.map((v,i)=>`<circle cx="${xs(i).toFixed(1)}" cy="${ys(v).toFixed(1)}" r="3.5" fill="${i===pts.length-1?'var(--coral)':'var(--ink)'}"/>`).join('')}</svg></div>`; };
+  const trends = withMet.length>=2 ? `<div class="px" style="margin-top:10px;background:#fff"><div class="eyebrow">자세 변화 (자동 측정 ${withMet.length}회)</div>${trend('knee')}${trend('lean')}${trend('stance')}
+    <div class="lab-sm" style="margin-top:6px">초록 띠가 기준 범위 · 빨간 점이 최근. 스탠스는 촬영 각도에 따라 흔들려서 띠를 긋지 않았어요.</div>
+    <details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;font-weight:700">이 기준은 어디서 왔나</summary><div class="lab-sm" style="margin-top:4px;line-height:1.6">· <b>${CRIT.knee.ko}</b> — ${CRIT.knee.src}<br>· <b>${CRIT.lean.ko}</b> — ${CRIT.lean.src}<br>· <b>${CRIT.stance.ko}</b> — ${CRIT.stance.src}</div></details></div>` : '';
   $('pose').innerHTML = `<details class="px sand" style="margin-bottom:10px" ${mine.length?'':'open'}><summary style="cursor:pointer;font-weight:700">📹 촬영 가이드 — 이렇게 찍어야 비교가 됩니다</summary>
       <div style="font-size:13px;line-height:1.6;margin-top:8px">
         <b>1. 옆에서(측면) 찍기</b> — 해변에서 파도와 나란히. 앞뒤 중심·무릎 각도는 측면에서만 보입니다.<br>
@@ -2418,6 +2508,22 @@ function renderPose(){
       <div style="margin-top:8px">${refPoseSVG()}</div>
       <div class="lab-sm" style="margin-top:6px">내 사진과 나란히 놓고 보세요. 항목별 확인은 <b>위 테이크오프 체크</b>에 7가지로 있습니다.</div>
     </details>
+    ${(()=>{ const n = mine.length, n2 = withMet.length;
+      const step = (on, num, t, d) => `<div style="flex:1 1 90px;border:3px solid ${on?'var(--ink)':'var(--grid)'};background:${on?'var(--mint)':'#fff'};padding:6px 7px;line-height:1.35">
+        <div style="font-weight:800;font-size:12px">${on?'✓':num} ${t}</div><div style="font-size:11px;color:${on?'var(--ink)':'var(--ink2)'}">${d}</div></div>`;
+      return `<div class="px sand" style="margin-bottom:10px">
+        <div class="eyebrow">이렇게 흘러갑니다</div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          ${step(n>=1, 1, '영상 올리기', '수업 영상에서 한 파도')}
+          ${step(n2>=1, 2, '분석 받기', '무릎·중심을 자동으로 잼')}
+          ${step(n2>=2, 3, '다음 주와 비교', '같은 자리에서 또 찍어 변화 보기')}
+        </div>
+        <div class="lab-sm" style="margin-top:6px">${
+          n===0 ? '아래에서 영상을 고르면 시작돼요. 한 장만 있어도 다음 주에 비교할 기준이 생깁니다.'
+        : n2===0 ? '사진은 저장됐어요. <b>🎬 영상 전체 분석</b>이나 <b>🤖 자세 자동 분석</b>을 누르면 숫자가 함께 기록돼요.'
+        : n2===1 ? '한 번 더 재면 <b>변화 그래프</b>가 그려져요 — 같은 자리·같은 각도로 찍는 게 핵심입니다.'
+        : `자동 측정 <b>${n2}회</b> — 아래 <b>자세 변화</b>에서 추이를 보세요.`}</div>
+      </div>`; })()}
     <div class="lab-sm">수업 영상에서 <b>테이크오프 순간</b>을 골라 저장해요. 영상 원본은 폰에만 남고 사진만 올라갑니다.</div>
     <input type="file" id="pose-file" accept="video/*,image/*" style="margin-top:6px;font-size:12px;width:100%">
     <div id="pose-edit" hidden style="margin-top:8px"><video id="pose-video" playsinline muted style="width:100%;border:3px solid var(--ink);background:#000"></video>
@@ -2429,10 +2535,11 @@ function renderPose(){
       <button class="btn sm grape" type="button" id="pose-scan" style="width:100%;margin-top:8px">🎬 영상 전체 분석 — 테이크오프·라이딩 재기</button>
       <div id="pose-scan-out" style="margin-top:6px"></div>
       <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sm blue" type="button" id="pose-save">이 장면 저장</button><button class="btn sm mint" type="button" id="pose-ai">🤖 자세 자동 분석</button></div>
+      <div class="lab-sm" style="margin-top:4px">저장하면 <b>이 장면 사진만</b> 올라가요. 영상 원본은 서버에 안 올라가니, 다시 보려면 폰의 원본을 다시 고르면 됩니다.</div>
       <div id="pose-report" class="lab-sm" style="margin-top:6px"></div></div>
     ${trends}
     ${cmp || '<div class="lab-sm" style="margin-top:8px">아직 기록이 없어요. 수업 영상을 올려 첫 자세를 남겨보세요.</div>'}
-    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${x.url}" style="width:100%;border:3px solid var(--ink);display:block"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${noteText(x)?` · ${noteText(x)}`:''}${metOf(x)?`<br><span style="color:var(--ink2)">무릎 ${metOf(x).knee}° · 중심 ${metOf(x).lean} · 스탠스 ${metOf(x).stance}</span>`:''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
+    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${x.url}" alt="${String(x.date)} ${STAGES[x.stage]||''} 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${x.url}"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${noteText(x)?` · ${noteText(x)}`:''}${metOf(x)?metLine(metOf(x)):''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
   let stage = 'stand', blobUrl = null;
   const vEl = () => $('pose-video');
   $('pose-file').onchange = e=>{ const f = e.target.files[0]; if(!f) return; if(blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = URL.createObjectURL(f);
@@ -2459,11 +2566,16 @@ function renderPose(){
     const lm = await loadPoseModel();
     if(!lm){ box.innerHTML = '<div class="lab-sm">자동 분석을 불러오지 못했어요 (신호·브라우저 확인).</div>'; return; }
     const was = v.currentTime; $('pose-scan').disabled = true;
-    box.innerHTML = `<div class="lab-sm">영상 훑는 중 <b id="scan-pct">0%</b> — ${Math.round(v.duration)}초짜리라 ${Math.max(10, Math.round(v.duration*2.2))}초쯤 걸려요</div>`;
+    state.scanAbort = false;
+    box.innerHTML = `<div class="lab-sm">영상 훑는 중 <b id="scan-pct">0%</b> — ${Math.round(v.duration)}초짜리라 ${Math.max(10, Math.round(v.duration*2.2))}초쯤 걸려요</div>
+      <button class="btn sm ghost" type="button" id="scan-stop" style="margin-top:6px">그만두기</button>${
+      v.duration > 60 ? '<div class="lab-sm" style="margin-top:4px">영상이 길어요 — 그 파도만 잘라서 올리면 훨씬 빨라요.</div>' : ''}`;
+    $('scan-stop').onclick = ()=>{ state.scanAbort = true; $('scan-stop').disabled = true; $('scan-stop').textContent = '멈추는 중…'; };
     let R = null;
     try{ R = await scanRide(v, lm, f=>{ const el = $('scan-pct'); if(el) el.textContent = Math.round(f*100)+'%'; }, subjectSeed); }
     catch(e){ R = null; }
     $('pose-scan').disabled = false;
+    if(R?.aborted){ box.innerHTML = '<div class="lab-sm">분석을 멈췄어요. 다시 누르면 처음부터 훑어요.</div>'; await seekTo(v, was); return; }
     if(!R){ box.innerHTML = '<div class="lab-sm">영상을 읽지 못했어요. 다른 파일로 시도해 주세요.</div>'; await seekTo(v, was); return; }
     const P = ridePhases(R);
     const tapHint = R.peopleMax > 1 ? '<div class="lab-sm" style="margin-top:6px">물에 <b>' + R.peopleMax + '명</b>이 잡혔어요. 다른 사람을 분석했다면 <b>영상에서 본인을 탭</b>하고 다시 눌러주세요.</div>' : '';
@@ -2531,10 +2643,18 @@ function renderPose(){
       const up = await fetch(`${SUPA.url}/storage/v1/object/poses/${path}`, { method:'POST', headers:{ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'image/jpeg' }, body:blob });
       if(!up.ok) throw new Error('upload');
       const url = `${SUPA.url}/storage/v1/object/public/poses/${path}`;
-      const met = state.lastMetrics ? ' ' + JSON.stringify({ knee:state.lastMetrics.knee, lean:state.lastMetrics.lean, stance:state.lastMetrics.stance }) : '';
+      const M0 = state.lastMetrics;
+      const met = M0 ? ' ' + JSON.stringify({ v:2, knee:M0.knee, lean:M0.leanN, stance:M0.stanceN }) : '';
       const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), week:weekOfDate(today()), stage, url, note:($('pose-note').value.trim().slice(0,40)+met).slice(0,160) };
       await sbUpsert('poses', row); state.poses = [...(state.poses||[]), row]; state.lastMetrics = null;
-      addBonus(5, `pose|${today()}`); toast('자세 기록 저장'); chatSys(`📸 ${STAGES[stage]} 자세 기록`); $('pose-edit').hidden = true; $('pose-file').value=''; renderPose();
+      addBonus(5, `pose|${today()}`); toast('자세 기록 저장'); chatSys(`📸 ${STAGES[stage]} 자세 기록`);
+      /* 편집창을 닫지 않는다 — 방금 올린 영상으로 다른 장면도 이어서 저장할 수 있어야 한다.
+         (원본 영상은 서버로 안 가므로, 여기서 닫으면 되살릴 방법이 없다) */
+      const keep = { src:v.src, t:v.currentTime, img:v._img, stage };
+      renderPose();
+      if(keep.src && !keep.img){ const v2 = $('pose-video'); $('pose-edit').hidden = false; v2.src = keep.src;
+        v2.onloadedmetadata = ()=>{ $('pose-seek').max = v2.duration; v2.currentTime = keep.t; };
+        $('pose-scan-out').innerHTML = '<div class="lab-sm">저장했어요. 같은 영상에서 다른 장면도 이어서 저장할 수 있어요.</div>'; }
     }catch(e){ toast('저장 실패 — 코치가 supabase-pose.sql 실행했는지 확인'); }
   });
   $('pose').querySelectorAll('[data-cnote]').forEach(b=>b.onclick = async ()=>{
