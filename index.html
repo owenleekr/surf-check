@@ -227,6 +227,7 @@ section{margin-top:26px}
 .bs-t{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:16px; line-height:1.25; margin-bottom:4px}
 .basis-steps small{font-size:12.5px; line-height:1.5; color:var(--ink2)}
 /* 참고 영상 썸네일 — 누르기 전엔 iframe을 안 만든다(바다 앞 데이터·개인정보) */
+.linkish{background:none; border:0; padding:0; font:inherit; color:inherit; text-decoration:underline; cursor:pointer; text-align:left}
 .ytf{position:relative; display:block; width:100%; padding:0; border:3px solid var(--ink); background:#000; cursor:pointer; line-height:0}
 .ytf img{width:100%; display:block}
 .ytf .pl{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--coral); color:var(--ink); border:3px solid var(--ink); padding:4px 14px; font-size:17px; font-weight:700; line-height:1.2}
@@ -1864,7 +1865,7 @@ const EMPTY_SESS = () => ({ a:0, p:0, t:0, l:0, r:0, w:0, hist:[] });
 function session(){ const d = getData(); return (d.sessions||{})[today()] || EMPTY_SESS(); }
 /* 반별 카운터. 비기너: 도전 → 팝업 → 테이크오프 성공. 중급: 레프트/라이트 성공 + 와이프아웃 */
 const SESS_UI = {
-  beginner:{ unit:'회 테이크오프', btns:[['a','도전','w','파도 잡으러 감'],['p','푸쉬업','r','상체 세워 중심 잡음'],['t','테이크오프','l','일어나서 탐 +2XP']], total:sx=>sx.t, sub:sx=>`도전 ${sx.a} · 푸쉬업 ${sx.p} · 테이크오프 ${sx.t}${sx.a?` · 성공률 ${Math.round(sx.t/sx.a*100)}%`:''}`, hint:'파도를 잡으러 가면 "도전", 푸쉬업 자세를 유지했으면 "푸쉬업", 일어서서 라이딩했으면 "테이크오프".' },
+  beginner:{ unit:'회 테이크오프', btns:[['a','도전','w','파도 잡으러 감'],['p','푸쉬업','r','상체 세워 중심 잡음'],['t','테이크오프','l','일어나서 탐 +2XP']], total:sx=>sx.t, sub:sx=>`도전 ${sx.a} · 푸쉬업 ${sx.p} · 테이크오프 ${sx.t}${sx.a>=3?` · 성공률 ${Math.round(sx.t/sx.a*100)}%`:''}`, hint:'파도를 잡으러 가면 "도전", 푸쉬업 자세를 유지했으면 "푸쉬업", 일어서서 라이딩했으면 "테이크오프".' },
   inter:   { unit:'회 라이딩', btns:[['l','레프트','l','+2XP'],['r','라이트','r','+2XP'],['w','와이프아웃','w','']], total:sx=>sx.l+sx.r, sub:sx=>`레프트 ${sx.l} · 라이트 ${sx.r} · 와이프아웃 ${sx.w}`, hint:'방향별로 탄 파도를 세요. 노션 복사하면 라이딩 횟수가 채워져요.' },
 };
 const sessUI = () => SESS_UI[myProfile().role==='coach' ? 'inter' : (myProfile().cls||'beginner')];
@@ -1915,7 +1916,7 @@ function weekBodyHTML(d, wk, compact){
   const w = wk.n;
   return `${weekAttHTML(d, w)}
     <div><div class="lab-sm">배운 것 체크 · 각 +${XP.skill} XP</div><div class="skills">${wk.skills.map((t,i)=>`<div class="item"><input type="checkbox" id="sk-${w}-${i}" data-act="skill" data-k="${w}-${i}" ${d.skills[`${w}-${i}`]?'checked':''}><label for="sk-${w}-${i}"><b>${t}</b></label></div>`).join('')}</div></div>
-    <div class="mission ${d.missions[w]?'done':''}"><canvas data-spr="${wk.icon}"></canvas><div class="mt"><b>미션 · +${XP.mission} XP</b>${wk.mission}</div>${d.missions[w]?`<button class="undo" type="button" data-act="unmission" data-w="${w}">취소</button>`:`<button class="btn sm blue" type="button" data-act="mission" data-w="${w}">완료</button>`}</div>
+    <div class="mission ${d.missions[w]?'done':''}"><canvas data-spr="${wk.icon}"></canvas><div class="mt"><b>미션 · +${XP.mission} XP</b>${wk.mission}</div>${d.missions[w]?`<button class="undo" type="button" data-act="unmission" data-w="${w}">취소</button>`:`<button class="btn sm mint" type="button" data-act="mission" data-w="${w}">다 했어요</button>`}</div>
     ${lessonForm(w, compact)}`;
 }
 function bindWeekActs(root){
@@ -2081,7 +2082,7 @@ function bindGuideVids(root){
 function renderTko(){
   if(!$('tko')) return; const d = getData(), k = `surf.tko.${ME.id}`, saved = LS.get(k, {}), n = TKO.filter((_,i)=>saved[i]).length;
   const ref = `<details style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:700;font-size:13px">📐 그림으로 보기</summary><div style="margin-top:8px">${refPoseSVG()}</div></details>`
-    + `<details style="margin-bottom:8px" id="tko-vids"><summary style="cursor:pointer;font-weight:700;font-size:13px">▶ 참고 영상 ${GUIDE_VIDS.length}편 — 많이 본 공개 강좌</summary>
+    + `<details style="margin-bottom:8px" id="tko-vids"><summary style="cursor:pointer;font-weight:700;font-size:13px">참고 영상 ${GUIDE_VIDS.length}편 — 많이 본 공개 강좌</summary>
         <div class="lab-sm" style="margin-top:6px">학교 기준은 <b>아래 7항목</b>이에요. 영상마다 표현이 조금씩 다를 수 있으니 항목에 맞춰 보세요.</div>
         ${renderGuideVids()}</details>`;
   $('tko-sub').textContent = `${n}/${TKO.length}`;
@@ -2623,7 +2624,7 @@ function myTaste(){ const mine = state.social.ratings.filter(r=>r.user_id===ME.i
 function tasteMatch(x){ const t = myTaste(); if(!t) return 0; return Math.abs(x.h-t.h)<=0.3 && Math.abs(x.p-t.p)<=1.5 && x.rel===t.rel ? 1 : 0; }
 function renderHello(){
   if(!$('hello')) return; const pr = myProfile(), d = new Date(), h = d.getHours(), cw = weekOfDate(today()), dow = d.getDay(), isClass = [0,6].includes(dow) && cw>=1 && cw<=8;
-  const greet = h<5 ? '아직 캄캄' : h<9 ? '굿모닝' : h<12 ? '좋은 아침' : h<18 ? '오후' : '저녁';
+  const greet = h<5 ? '아직 캄캄' : h<9 ? '굿모닝' : h<12 ? '좋은 아침' : h<18 ? '좋은 오후' : h<21 ? '좋은 저녁' : '늦은 밤';
   const cls = pr.role==='coach' ? '코치' : pr.cls==='inter' ? '중급반' : '비기너반', t = pr.role==='coach' ? '' : (pr.cls==='inter' ? '13:30 이론 · 14:00 입수' : '09:00 이론 · 10:00 입수');
   const d0 = getData(), sx = session(), left = 3 - Math.min(3, (sx.t||0)+(sx.l||0)+(sx.r||0));
   $('hello').innerHTML = `<b>${greet}, ${ME.name}</b> · ${isClass ? `${cw}주차 ${dow===6?'토':'일'} · ${cls} ${t}` : `${cw>=1&&cw<=8?cw+'주차 주중':'학기 밖'} · 다음 수업까지 ${(6-dow+7)%7||7}일`}${isClass && left>0 ? ` · 오늘 성공 ${3-left}/3` : ''}${myTaste()?` · 내 취향 ★ ${myTaste().h.toFixed(1)}m·${myTaste().p.toFixed(1)}초 ${relKo[myTaste().rel]}`:''}`;
@@ -2631,7 +2632,10 @@ function renderHello(){
 (function(){ const cw = weekOfDate(today()), dow = new Date().getDay(); if([0,6].includes(dow) && cw>=1 && cw<=8){ $('quick').style.gridTemplateColumns = 'repeat(5,1fr)'; $('quick').insertAdjacentHTML('afterbegin', `<button type="button" data-stamp><span>🔴</span>출석 도장</button>`); $('quick').querySelector('[data-stamp]').onclick = ()=>{ const d = getData(), arr = attOf(d, cw); if(arr.includes(today())) return toast('오늘 도장은 이미 찍었어요'); if(arr.length>=PER_WEEK) return toast('이번 주 출석 다 찍었어요'); arr.push(today()); arr.sort(); d.attend[cw] = arr; setData(d); gain(XP.attend); toast(`${cw}주차 ${arr.length}회차 출석!`); refreshMe(); renderQuests(); }; } })();
 $('quick').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const el = $(b.dataset.go); if(!el) return; if(el.tagName==='DETAILS') el.open = true; el.scrollIntoView({block:'center'}); if(b.dataset.go==='ci') $('ci-btn')?.focus(); });
 function renderHome(){
-  if(!$('home-chips')) return; const home = myProfile().home || null;
+  if(!$('home-chips')) return;
+  /* 아무것도 안 고른 상태에서 "파도 탭이 이 해변으로 열려요"만 떠 있었다.
+     실제로는 낙산으로 열리고 있었으니 그걸 눌러서 보여준다 — 학교 앞바다다. */
+  const home = myProfile().home || LS.get('surf.beach', null) || 'naksan';
   $('acc-birth').value = myProfile().birth || '';
   $('acc-birth-save').onclick = ()=>{ const b = $('acc-birth').value.replace(/\D/g,''); if(!/^\d{6}$/.test(b)) return $('acc-msg').textContent = '6자리로 적어주세요 (예 881102)'; setProfile({ birth:b }); $('acc-msg').textContent = '저장됨 · 비밀번호 잊으면 이걸로 재설정'; };
   $('acc-pw-save').onclick = async ()=>{ const o = $('acc-old').value, n = $('acc-new').value; if(n.length<4) return $('acc-msg').textContent = '새 비밀번호는 4자 이상'; const u = auth.users()[ME.id];
@@ -2667,7 +2671,7 @@ function renderBasis(b, a){
       <div><b class="bs-t">① 파고 · 피리어드 — ${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b>${waveNote}.<br>${periodNote}.<br><b>파도가 ${compass(r.sdir)}에서 들어옴</b> → ${b.name}이 가장 잘 받는 방향은 ${compassKo(b.swell)}, 지금은 <b>${r.fit.ko}</b>${b.note?`<br><small>${b.note}</small>`:''}${r.fit.s<=0?`<br><small>이 방향을 더 잘 받는 해변: ${BEACHES.filter(x=>swellFit(x, r.sdir).s>=1).map(x=>x.name).slice(0,3).join(' · ')||'없음'}</small>`:''}</div>
       <div><b class="bs-t">② 물때</b>${tideEvents(b,a).ev.map(e=>`<b>${e.type}</b> ${e.time} <small>${e.h>=0?'+':''}${e.h.toFixed(2)}m</small>`).join(' · ')||'극값 없음'}${state.day===0?`<br>${(()=>{ const now=new Date(), hNow=now.getHours()+now.getMinutes()/60, i0=Math.floor(hNow), lv0=a.hours[i0]?.lvl, lv1=a.hours[Math.min(23,i0+1)]?.lvl; return lv0==null||lv1==null?'':`지금 <b>${lv1>lv0+0.005?'들물 ↑':lv1<lv0-0.005?'날물 ↓':'정조 →'}</b> · `; })()}수심 한 뼘(20cm) 차이로 파도 형태가 바뀜, 작은 파도일수록 민감`:''}<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">브리핑 자세히</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${ts.text} 동해안 수심은 물때에 따라 0.1~0.48m 사이를 오가고, 해변마다 파도가 가장 좋은 기준 수심이 따로 있습니다. 별점을 남기면 그때 수심이 기록돼 6기 기준이 쌓입니다.<br><small style="color:var(--ink2)">기준: ${ts.src}</small></div></details></div>
       <div><b class="bs-t">③ 바람 — ${compassKo(r.dir)} ${Math.round(r.w)}kts · ${relKo[r.rel]}</b>${r.rel==='on'?'바다에서 해변으로 부는 바람. 파도 면이 무너져 거칠어짐 → 바람 약한 이른 시간대 권장':r.rel==='off'?'해변에서 바다로 부는 바람. 파도 면이 매끈해짐(글래시) → 일어서는 타이밍을 한 박자 늦게':'해변과 나란히 부는 옆바람. 파도 면에 결이 생김 → 바람을 등진 쪽이 유리'}.</div>
-      <div><b class="bs-t">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><details style="margin-top:2px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">왜 이 슈트?</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${suitWhy(sstB, a.tempMin)}</div></details><div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
+      <div><b class="bs-t">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><details style="margin-top:2px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">왜 이 슈트?</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${suitWhy(sstB, a.tempMin)}</div></details><div class="lab-sm" style="margin-top:4px"><button type="button" class="linkish" onclick="showTab('gear')">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</button></div></div>
     </div>
     <div class="lab-sm" style="margin-top:8px">데이터: Open-Meteo(${b.name} 앞바다, 매시 갱신) · 물때 ${state.social.tides[date]?'코치 입력 공식값':'조위 모델'}</div>
     ${isCoach ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">코치: 오늘 공식 물때 입력 (바다누리 기준)</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px"><label>만조 시각<input id="tide-hit" type="time" value="${off?.hi?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>만조 높이(m)<input id="tide-hih" type="number" step="0.01" value="${off?.hi?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 시각<input id="tide-lot" type="time" value="${off?.lo?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 높이(m)<input id="tide-loh" type="number" step="0.01" value="${off?.lo?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label></div><button class="btn sm blue" type="button" id="tide-save" style="margin-top:8px">저장 → 전원 브리핑에 반영</button></details>` : ''}`;
@@ -2848,14 +2852,25 @@ function renderLevel(){
   $('xp-txt').textContent = `${xp} XP · 칭호 ${LEVELS[L][1]}`; $('xp-next').textContent = next ? `다음 칭호 ${next[1]}까지 ${next[0]-xp} XP` : '최고 칭호!';
   const lo = LEVELS[L][0], hi = next ? next[0] : lo+1; $('xp-bar').style.width = Math.min(100, (xp-lo)/(hi-lo)*100)+'%';
   const skN = Object.values(d.skills).filter(Boolean).length, total = WEEKS.reduce((s,w)=>s+w.skills.length,0);
-  $('stats').innerHTML = [[attN(d)+'/'+TOTAL_ATT,'출석'],[skN+'/'+total,'배운 것'],[Object.values(d.missions).filter(Boolean).length+'/8','미션'],[totalRides(d),'탄 파도'],[lessonFilled(d),'레슨런'],[d.logs||0,'일지 복사']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  const misN = Object.values(d.missions).filter(Boolean).length, rides = totalRides(d);
+  $('stats').innerHTML = [[attN(d)+'/'+TOTAL_ATT,'출석'],[skN+'/'+total,'배운 것'],[misN+'/8','미션'],[rides,'탄 파도'],[lessonFilled(d),'레슨런'],[d.logs||0,'일지 복사']].map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+  /* 갓 가입하면 0이 여섯 개 뜬다. 숫자만 보여주고 끝내면 "나는 아무것도 안 했다"로만 읽힌다.
+     첫 한 칸을 어디서 채우는지 알려준다. */
+  const blank = !attN(d) && !skN && !misN && !rides;
+  document.getElementById('stats-hint')?.remove();          // renderLevel은 여러 번 돈다 — 쌓이지 않게
+  $('stats').insertAdjacentHTML('afterend', blank
+    ? `<div class="px sand" id="stats-hint" style="margin-top:10px;font-size:13px;line-height:1.55"><b>첫 칸부터 채워볼까요</b><br>
+        수업 나간 날은 코치 출석부가 자동으로 채워요. 지금 바로 할 수 있는 건 —
+        <span class="linkish" onclick="showTab('mission')">수업 탭에서 배운 것 체크</span> ·
+        <span class="linkish" onclick="showTab('wave')">파도 탭에서 오늘 기준 잡기</span>.</div>`
+    : '');
   $('badges').innerHTML = BADGES.map(b=>`<div class="badge ${b.test(d)?'':'lock'}"><canvas data-spr="${b.icon}"></canvas>${b.name}</div>`).join(''); paintAll($('badges'));
   const an = attN(d); let stage = 0; ATT_STAGES.forEach(([n],i)=>{ if(an>=n) stage=i; });
   $('ladder').innerHTML = ATT_STAGES.map(([n,name],i)=>`<div class="${i<stage?'on':i===stage?'cur':''}"><b>${n}</b>${name}</div>`).join('');
   const nx = ATT_STAGES[stage+1]; $('ladder-txt').textContent = `출석 ${an}회 · ${ATT_STAGES[stage][1]}${nx?` → ${nx[1]}까지 ${nx[0]-an}회 남음`:' · 다 채웠어요!'}`;
   const pr = myProfile(); drawSpr($('bld-av'), avatarRows(pr), avatarTint());
   const opt = (label, key, items, render) => `<div class="opt"><div class="lab-sm">${label}</div><div class="row">${items.map(([v,t,c])=>`<button type="button" data-k="${key}" data-v="${v}" aria-pressed="${String(pr[key]??(key==='vest'?true:''))===String(v)}" class="${c||''}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
-  $('bld-opts').innerHTML = builderHTML(pr) + `<div class="lab-sm" style="margin-top:4px">보유 장비(보드·슈트·리쉬)는 <a href="#" onclick="showTab('gear');return false">장비 탭 → 내 옷장</a>에서</div>`;
+  $('bld-opts').innerHTML = builderHTML(pr) + `<div class="lab-sm" style="margin-top:4px">보유 장비(보드·슈트·리쉬)는 <button type="button" class="linkish" onclick="showTab('gear')">장비 탭 → 내 옷장</button>에서</div>`;
   bindBuilder($('bld-opts'), pr, patch=>{ if(Object.keys(patch).length) setProfile(patch); else renderLevel(); });
   renderPetCard();
   const mine = allCards().filter(c=>c.to===ME.name && !['MVP','인증'].includes(c.tpl)).sort((a,b)=>b.date.localeCompare(a.date));
