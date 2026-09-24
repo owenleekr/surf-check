@@ -2084,12 +2084,17 @@ function poseMetrics(L){
   const P = i => L[i];
   const shL=P(11), shR=P(12), hipL=P(23), hipR=P(24), knL=P(25), knR=P(26), ankL=P(27), ankR=P(28), nose=P(0);
   const shW = Math.abs(shL.x-shR.x) || 0.001, stance = Math.abs(ankL.x-ankR.x)/shW;
+  /* 어깨너비를 분모로 쓰면 옆에서 찍었을 때 두 어깨가 겹쳐 0이 되고 값이 10배로 튄다.
+     (루비 코치 육상 팝업 영상에서 스탠스가 9.9±17.7로 나왔다.)
+     몸길이(어깨~발목)로 나누면 촬영 방향과 무관하다. */
   const midAnk = (ankL.x+ankR.x)/2, midHip = (hipL.x+hipR.x)/2;
   const lean = (midHip - midAnk)/ (Math.abs(ankL.x-ankR.x)||0.001);            // + = 앞발 쪽, - = 뒷발 쪽(후경)
   const knee = Math.round((ang(hipL,knL,ankL)+ang(hipR,knR,ankR))/2);
   const upright = Math.round(ang({x:midHip,y:(hipL.y+hipR.y)/2}, {x:(shL.x+shR.x)/2,y:(shL.y+shR.y)/2}, {x:(shL.x+shR.x)/2,y:0}));
   const headOut = Math.abs(nose.x - midHip) / (Math.abs(ankL.x-ankR.x)||0.001);
-  return { stance:+stance.toFixed(2), lean:+lean.toFixed(2), knee, upright, headOut:+headOut.toFixed(2) };
+  const bl = Math.hypot((shL.x+shR.x)/2-midAnk, (shL.y+shR.y)/2-(ankL.y+ankR.y)/2) || 0.001;
+  return { stance:+stance.toFixed(2), lean:+lean.toFixed(2), knee, upright, headOut:+headOut.toFixed(2),
+           leanN:+((midHip-midAnk)/bl).toFixed(3), stanceN:+(Math.abs(ankL.x-ankR.x)/bl).toFixed(3) };
 }
 /* ── 영상 전체 분석 ─────────────────────────────────────────────
    6기 영상 9개로 실측하고 다시 쓴 판(2026-09-24). 처음 판은 세 군데가 틀렸다.
@@ -2119,7 +2124,10 @@ const seekTo = (v, t) => new Promise(res=>{ const h=()=>{ v.removeEventListener(
 async function scanRide(v, lm, onProgress, seed){
   const dur = v.duration; if(!dur || !isFinite(dur)) return null;
   const VW = v.videoWidth, VH = v.videoHeight; if(!VW) return null;
-  const step = Math.max(0.10, dur/70);
+  /* 간격을 dur/70으로 잡았더니 23초짜리 코치 시연 영상이 0.33초 간격이 되어
+     1.1초 팝업이 두세 컷으로 뭉개졌다. 0.10~0.20초로 묶는다 — 긴 영상은 오래 걸리지만
+     팝업(약 1초)을 최소 5컷으로는 봐야 구간이 나온다. */
+  const step = Math.min(0.20, Math.max(0.10, dur/110));
   const W1 = 640, c1 = document.createElement('canvas'); c1.width = W1; c1.height = Math.round(VH*W1/VW); const g1 = c1.getContext('2d');
   const W2 = 384, c2 = document.createElement('canvas'); c2.width = W2; c2.height = W2; const g2 = c2.getContext('2d');
   const raw = []; let track = seed || null, lastBox = null, peopleMax = 0, i = 0;
@@ -2149,9 +2157,11 @@ async function scanRide(v, lm, onProgress, seed){
     if(!L2.length){ raw.push({ t:+t.toFixed(2), vert:null, leg:null, m:null }); continue; }
     const B = L2.map(L=>({ L, a:poseArea(L) })).sort((a,b)=>b.a-a.a)[0].L;
     const ok = keyVis(B) >= 0.6;                            // 어깨·엉덩이·발목이 안 보이면 값이 의미 없다
-    /* 관절이 엉뚱하게 맞으면 스탠스가 24배처럼 나온다 — 사람 몸으로 불가능한 값은 통계에서 뺀다 */
+    /* 관절이 엉뚱하게 맞은 컷은 통계에서 뺀다. 단, 옛 stance/lean은 어깨너비를 분모로 써서
+       옆에서 찍으면 정상 자세인데도 10~24로 튄다 — 그걸로 걸렀더니 루비 코치 시연 영상의
+       프레임을 거의 전부 버렸다. 몸길이로 정규화한 값으로만 판단한다. */
     const M = ok ? poseMetrics(B) : null;
-    const sane = M && M.stance >= 0.3 && M.stance <= 3 && Math.abs(M.lean) <= 2 && M.knee >= 30 && M.knee <= 190;
+    const sane = M && M.stanceN >= 0.02 && M.stanceN <= 1.2 && Math.abs(M.leanN) <= 0.8 && M.knee >= 30 && M.knee <= 190;
     raw.push({ t:+t.toFixed(2), vert: ok?+vertOf(B).toFixed(3):null, leg: ok?+legDropOf(B).toFixed(3):null, m: sane?M:null });
     if(onProgress && (++i % 3 === 0)) onProgress(t/dur);
   }
@@ -2160,6 +2170,16 @@ async function scanRide(v, lm, onProgress, seed){
   return { peopleMax, S: raw.map((x,n)=>({ ...x, vert:vs[n], leg:ls[n] })) };
 }
 
+/* 루비 코치 육상 팝업 시연 2편(2026-09-24, 실내·옆모습·전신, 인식률 75~82%)을 돌려 얻은 실측값.
+   내가 정한 숫자가 아니라 학교에서 가르치는 사람의 실제 값이라, 이걸 기준선으로 쓴다.
+   - 팝업: 세 번 반복 모두 1.0~1.2초 (내가 처음 쓴 "1초 넘으면 문제"는 코치보다 빡빡했다)
+   - 중심: 두 영상 모두 +0.05 ± 0.08 — 발 가운데보다 아주 살짝 앞. 가장 안정적인 지표다.
+   - 무릎: 중앙값 107~130°
+   - 스탠스: 촬영 방향에 따라 0.08~0.47로 흔들려 기준으로 쓰지 않는다. */
+const COACH_REF = { who:'루비 코치', pop:[0.9,1.5], lean:0.05, leanTol:0.18, knee:[100,140] };
+/* 팝업 상한을 1.3 → 1.5로 넓힌 이유: 실측은 0.10초 간격으로 쟀는데 앱은 영상 길이에 따라
+   최대 0.20초 간격으로 훑는다. 그 차이만큼(±0.2초) 값이 커질 수 있어서, 코치 본인 영상이
+   "느림"으로 찍히는 일이 없게 여유를 뒀다. */
 const isStand = x => x.vert!=null && x.leg!=null && x.vert > VERT_UP && x.leg > LEG_UP;
 const isProne = x => x.vert!=null && x.leg!=null && x.vert < VERT_DOWN && x.leg < LEG_DOWN;
 function ridePhases(R){
@@ -2192,14 +2212,19 @@ function ridePhases(R){
      중간에 넘어졌다 다시 선 영상에서 넘어진 시간까지 라이딩으로 세어버린다. */
   const ride = S.slice(run.a, run.b+1).filter(x=>isStand(x) && x.m);
   const first = run.a, last = run.b;
-  const avg = k => ride.length ? +(ride.reduce((s,x)=>s+x.m[k],0)/ride.length).toFixed(2) : null;
-  const sd  = k => { if(ride.length<3) return null; const a=avg(k); return +Math.sqrt(ride.reduce((s,x)=>s+(x.m[k]-a)**2,0)/ride.length).toFixed(2); };
+  /* 평균은 한두 컷 잘못 맞은 값에 끌려간다(무릎에서 특히). 중앙값으로 대표값을 내고
+     흔들림은 따로 보여준다. */
+  const vals = k => ride.map(x=>x.m[k]).filter(v=>v!=null && isFinite(v)).sort((a,b)=>a-b);
+  const med = k => { const a = vals(k); return a.length ? +a[Math.floor(a.length/2)].toFixed(2) : null; };
+  const sd  = k => { const a = vals(k); if(a.length<3) return null; const m=a.reduce((s,v)=>s+v,0)/a.length;
+    return +Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length).toFixed(2); };
+  const avg = med;
   if(ride.length < 5) return { ok:false, tooShort:true, rideN:ride.length, seen:seen.length, total:S.length, peopleMax:R.peopleMax };
   return { ok:true, standT:S[standIdx].t, standIdx,
     popSec: proneIdx>=0 ? +(S[standIdx].t - S[proneIdx].t).toFixed(2) : null,
     rideSec: first>=0 ? +(S[last].t - S[first].t).toFixed(1) : 0, rideN: ride.length,
-    ride: { lean:avg('lean'), stance:avg('stance'), knee:avg('knee') },
-    sd:   { lean:sd('lean'),  stance:sd('stance'),  knee:sd('knee') },
+    ride: { lean:med('leanN'), stance:med('stanceN'), knee:med('knee') },
+    sd:   { lean:sd('leanN'),  stance:sd('stanceN'),  knee:sd('knee') },
     best: ride.length ? ride.reduce((b,x)=> Math.abs(x.m.lean-0.12) < Math.abs(b.m.lean-0.12) ? x : b, ride[0]) : null,
     seen:seen.length, total:S.length, peopleMax:R.peopleMax };
 }
@@ -2207,20 +2232,29 @@ function ridePhases(R){
    9개 영상에서 무릎 각도는 편차 ±48°까지 나왔다 — 멀리서 찍으면 무릎 관절이 흐려진다.
    그런 값을 "무릎 147°"라고 단정해 보여주면 측정이 아니라 거짓말이 된다. */
 function rideReport(P){
-  const good = [], weak = [];
+  const good = [], weak = [], R = COACH_REF;
   good.push(['🏄', `라이딩 <b>${P.rideSec}초</b>`, `${P.rideN}컷 연속으로 서 있었어요${P.rideSec>=3?' — 3초 넘게 버텼습니다':''}`]);
-  good.push(['⏱', `테이크오프 <b>${P.standT}초</b> 지점`, P.popSec!=null ? `엎드림 → 섬까지 <b>${P.popSec}초</b>${P.popSec<=1.0?' (빠름)':' — 1초가 넘으면 중간에 무릎을 짚었는지 확인'}` : '']);
+  if(P.popSec != null){
+    const ok = P.popSec <= R.pop[1];
+    good.push([ok?'⏱':'⚠️', `팝업 <b>${P.popSec}초</b>`,
+      `${R.who} 시연 ${R.pop[0]}~${R.pop[1]}초 — ${P.popSec<=R.pop[0]?'더 빠릅니다':ok?'비슷해요':'중간에 무릎을 짚었는지 확인해 보세요'} <span style="opacity:.7">(±0.2초 오차)</span>`]);
+  } else good.push(['⏱', `테이크오프 <b>${P.standT}초</b> 지점`, '']);
   const L = P.ride.lean, sdL = P.sd.lean;
   if(L != null){
-    if(sdL != null && sdL > 0.35) weak.push(['중심 앞뒤', `흔들림이 ±${sdL}로 커서 평균(${L>0?'+':''}${L})은 참고만 — 파도가 부서지는 구간이 섞였을 수 있어요`]);
-    else good.push(['⚖️', `라이딩 중심 ${L>0.05?'앞':L<-0.05?'뒤':'가운데'} <b>${L>0?'+':''}${L}</b>`,
-      L<-0.15 ? '후경 — 일어선 뒤 중심이 뒤로 빠짐(Rio 코치 지적 1번). 앞발 무릎에 체중' : L>0.35 ? '과하게 앞 — 노즈 다이브 주의' : `안정적 (흔들림 ±${sdL ?? '-'})`]);
+    if(sdL != null && sdL > 0.25) weak.push(['중심 앞뒤', `흔들림이 ±${sdL}로 커서 대표값(${L>0?'+':''}${L})은 참고만 — 파도가 부서지는 구간이 섞였을 수 있어요`]);
+    else {
+      const d = L - R.lean, far = Math.abs(d) > R.leanTol;
+      good.push([far?'⚠️':'⚖️', `중심 <b>${L>0?'+':''}${L}</b>`,
+        `${R.who} ${R.lean>0?'+':''}${R.lean} 대비 ${Math.abs(d)<0.05?'거의 같아요' : d<0 ? `뒤로 ${Math.abs(d).toFixed(2)}` : `앞으로 ${d.toFixed(2)}`}` +
+        (far ? (d<0 ? ' — 후경입니다. 앞발 무릎에 체중(Rio 코치 지적 1번)' : ' — 과하게 앞, 노즈 다이브 주의') : ` (흔들림 ±${sdL ?? '-'})`)]);
+    }
   }
-  if(P.ride.stance != null) good.push(['🦶', `스탠스 폭 <b>${P.ride.stance}배</b>`,
-    P.ride.stance<1.0 ? '좁음 — 발이 모여 중심이 흔들려요' : P.ride.stance>1.8 ? '너무 넓음 — 중심 이동이 느려짐' : '적정 (어깨 대비)']);
-  if(P.sd.knee != null && P.sd.knee > 25) weak.push(['무릎 각도', `편차 ±${Math.round(P.sd.knee)}°로 신뢰할 수 없어요 — 멀리서 찍으면 무릎 관절이 흐려집니다`]);
-  else if(P.ride.knee != null) good.push(['🦵', `라이딩 무릎 평균 <b>${Math.round(P.ride.knee)}°</b>`, P.ride.knee>160 ? '거의 펴짐 — 낮은 자세로 버티기' : '적정']);
+  const K = P.ride.knee, sdK = P.sd.knee;
+  if(sdK != null && sdK > 25) weak.push(['무릎 각도', `편차 ±${Math.round(sdK)}°로 신뢰할 수 없어요 — 멀리서 찍으면 무릎 관절이 흐려집니다`]);
+  else if(K != null) good.push([(K>=R.knee[0]&&K<=R.knee[1])?'🦵':'⚠️', `무릎 <b>${Math.round(K)}°</b>`,
+    `${R.who} ${R.knee[0]}~${R.knee[1]}° — ${K>R.knee[1]?'덜 굽혔어요. 낮은 자세로 버티기':K<R.knee[0]?'너무 앉았어요':'비슷해요'}`]);
   if(P.popSec == null) weak.push(['팝업 시간', '엎드린 구간이 안 잡혔어요 — 패들하는 장면부터 찍으면 잴 수 있어요']);
+  /* 스탠스는 촬영 방향에 따라 0.08~0.47로 흔들렸다(루비 코치 영상 2편에서). 기준으로 쓰지 않는다. */
   if(P.seen/P.total < 0.5) weak.push(['인식률', `${P.seen}/${P.total}컷만 잡혔어요 — 몸이 더 크게 나오게 찍으면 정확해집니다`]);
   return { good, weak };
 }
@@ -2314,7 +2348,7 @@ function renderPose(){
     const lm = await loadPoseModel();
     if(!lm){ box.innerHTML = '<div class="lab-sm">자동 분석을 불러오지 못했어요 (신호·브라우저 확인).</div>'; return; }
     const was = v.currentTime; $('pose-scan').disabled = true;
-    box.innerHTML = '<div class="lab-sm">영상 훑는 중 <b id="scan-pct">0%</b> — 길이에 따라 10~25초</div>';
+    box.innerHTML = `<div class="lab-sm">영상 훑는 중 <b id="scan-pct">0%</b> — ${Math.round(v.duration)}초짜리라 ${Math.max(10, Math.round(v.duration*2.2))}초쯤 걸려요</div>`;
     let R = null;
     try{ R = await scanRide(v, lm, f=>{ const el = $('scan-pct'); if(el) el.textContent = Math.round(f*100)+'%'; }, subjectSeed); }
     catch(e){ R = null; }
@@ -2343,6 +2377,10 @@ function renderPose(){
         ${weak.length?`<div style="margin-top:10px;border-top:2px dashed var(--grid);padding-top:8px">
           <div class="eyebrow">이번 영상에선 못 잰 것</div>
           ${weak.map(([t,d])=>`<div style="margin-top:3px;font-size:12.5px;color:var(--ink2)">· <b>${t}</b> — ${d}</div>`).join('')}</div>`:''}
+        <div class="lab-sm" style="margin-top:10px;border-top:2px dashed var(--grid);padding-top:6px">
+          기준값은 <b>${COACH_REF.who} 육상 팝업 시연 영상</b>을 같은 방식으로 재서 얻은 실측치예요 (팝업 ${COACH_REF.pop[0]}~${COACH_REF.pop[1]}초 · 중심 +${COACH_REF.lean} · 무릎 ${COACH_REF.knee[0]}~${COACH_REF.knee[1]}°).
+          촬영 각도에 따라 값이 달라지니 <b>같은 자리에서 찍은 영상끼리</b> 비교할 때 가장 정확합니다.
+        </div>
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
           <button class="btn sm ghost" type="button" data-go="${P.standT}">일어선 순간으로</button>
           ${P.best?`<button class="btn sm ghost" type="button" data-go="${P.best.t}">제일 좋은 라이딩으로</button>`:''}
