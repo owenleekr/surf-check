@@ -227,9 +227,9 @@ section{margin-top:26px}
 .bs-t{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:16px; line-height:1.25; margin-bottom:4px}
 .basis-steps small{font-size:12.5px; line-height:1.5; color:var(--ink2)}
 /* 참고 영상 썸네일 — 누르기 전엔 iframe을 안 만든다(바다 앞 데이터·개인정보) */
-.linkish{background:none; border:0; padding:0; font:inherit; color:inherit; text-decoration:underline; cursor:pointer; text-align:left}
-.ytf{position:relative; display:block; width:100%; padding:0; border:3px solid var(--ink); background:#000; cursor:pointer; line-height:0}
-.ytf img{width:100%; display:block}
+.linkish{background:none; border:0; padding:5px 0; font:inherit; color:inherit; text-decoration:underline; cursor:pointer; text-align:left}
+.ytf{position:relative; display:block; width:100%; aspect-ratio:16/9; padding:0; border:3px solid var(--ink); background:#000; cursor:pointer; line-height:0}
+.ytf img{width:100%; height:100%; object-fit:cover; display:block}
 .ytf .pl{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--coral); color:var(--ink); border:3px solid var(--ink); padding:4px 14px; font-size:17px; font-weight:700; line-height:1.2}
 .ytf:active{transform:translate(2px,2px)}
 .sec-h h2{white-space:nowrap}
@@ -743,7 +743,7 @@ footer a{color:var(--paper)}
     <div class="mood" style="margin-top:4px"><input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!"><button class="btn sm blue" type="button" id="mood-save">말풍선</button><button class="btn sm ghost" type="button" id="mood-clear" title="말풍선 지우기">✕</button></div>
     <div style="display:flex;gap:8px;margin-top:10px"><button class="btn pink" type="button" id="card-open" style="flex:1;font-size:16px">👏 칭찬 카드</button><button class="btn mint" type="button" id="invite" style="flex:0 0 auto">🔗 친구 초대</button></div>
     <section><div class="sec-h"><h2>마을 채팅</h2><span class="tag">실시간</span><span class="sub" id="chat-sub"></span></div>
-      <div class="px"><div class="chat" id="chat"></div><div class="chips" id="chat-emo" style="margin-top:8px">${''}</div><div class="chat-in"><input id="chat-in" maxlength="200" placeholder="메시지" autocomplete="off"><button class="btn sm pink" type="button" id="chat-send">보내기</button></div></div>
+      <div class="px"><div class="chat" id="chat"></div><div class="chips" id="chat-emo" style="margin-top:8px;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px">${''}</div><div class="chat-in"><input id="chat-in" maxlength="200" placeholder="메시지" autocomplete="off"><button class="btn sm pink" type="button" id="chat-send">보내기</button></div></div>
     </section>
     <section><div class="sec-h"><h2>오늘의 서퍼</h2><span class="tag">매일 한 명</span></div><div class="px sand" id="surfer-day"></div></section>
     <section><div class="sec-h"><h2>서핑 소식</h2><span class="tag">매일</span><span class="sub" id="news-sub"></span></div><div class="feed" id="news"></div><details class="px" id="news-arch" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">지난 소식 아카이브</summary><div id="news-arch-list" style="margin-top:8px;font-size:12px"></div></details></section>
@@ -2110,7 +2110,7 @@ const GUIDE_VIDS = [
 function renderGuideVids(){
   return GUIDE_VIDS.map(v=>`<div style="border-top:2px dashed var(--grid);padding:9px 0">
       <button type="button" class="ytf" data-yt="${v.id}" aria-label="${v.t} 재생">
-        <img src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg" alt="" loading="lazy" decoding="async"><span class="pl">▶</span></button>
+        <img src="https://img.youtube.com/vi/${v.id}/mqdefault.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"><span class="pl">▶</span></button>
       <div style="margin-top:5px;font-size:13.5px;font-weight:700">${v.t}</div>
       <div class="lab-sm" style="margin:2px 0 0">${v.why}</div>
       <div class="lab-sm" style="margin:2px 0 0">출처 · <b>${v.ch}</b> · ${v.stat} — <a href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">유튜브에서 보기 ↗</a></div>
@@ -3137,7 +3137,7 @@ function startChatPoll(){ clearInterval(chatT); chatT = setInterval(()=>{ if(sta
 function chatSys(text){ if(!supaOn() || state.chatOk===false || !ME) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text, profile:myProfile(), created_at:new Date().toISOString() }; sbUpsert('chat', row).then(()=>{ state.chat.push(row); if(state.tab==='rank') renderChat(); }).catch(()=>{}); }
 async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200), profile:{ gender:myProfile().gender, hat:myProfile().hat, top:myProfile().top, bottom:myProfile().bottom, board:myProfile().board, boardc:myProfile().boardc, role:myProfile().role, badge:myProfile().badge }, created_at:new Date().toISOString() };
   try{ await sbUpsert('chat', row); $('chat-in').value=''; state.chat.push(row); renderChat(); }catch(e){ toast(state.chatOk===false?'서버 준비 중':'전송 실패 · 신호 확인'); } }
-$('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏'].map(e=>`<button type="button" style="padding:3px 8px;font-family:sans-serif">${e}</button>`).join('');
+$('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏'].map(e=>`<button type="button" style="padding:6px 0;min-height:38px;font-family:sans-serif">${e}</button>`).join('');
 $('chat-emo').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=$('chat-in'); i.value += b.textContent; i.focus(); });
 $('chat-send').onclick = noDouble($('chat-send'), sendChat); $('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
 
