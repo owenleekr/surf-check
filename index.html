@@ -2442,7 +2442,7 @@ function poseReport(m){
   out.push([ K[0]==='✅', `${CRIT.knee.ko} ${m.knee}° (기준 ${CRIT.knee.good[0]}~${CRIT.knee.good[1]}°)`, K[1] ]);
   out.push([ L[0]==='✅', `${CRIT.lean.ko} ${m.leanN>0?'+':''}${m.leanN} (기준 ${CRIT.lean.good[0]}~${CRIT.lean.good[1]} · 0=발 가운데)`, L[1] ]);
   out.push([ m.headOut<=0.6, `머리 위치 ${m.headOut}`, m.headOut>0.6 ? '보드 밖으로 나감 — BBP 자세 점검' : '보드 안' ]);
-  out.push([ true, `${CRIT.stance.ko} ${m.stanceN}`, '참고용 — 촬영 각도에 따라 달라져 잘잘못을 매기지 않아요' ]);
+  out.push([ null, `${CRIT.stance.ko} ${m.stanceN}`, '참고용 — 촬영 각도에 따라 달라져 잘잘못을 매기지 않아요' ]);
   return out;
 }
 
@@ -2627,7 +2627,7 @@ function renderPose(){
     try{ const res = lm.detect(f.cv); const L = res?.landmarks?.[0];
       if(!L){ $('pose-report').textContent = '사람을 못 찾았어요. 몸이 크게 나온 장면으로 다시 골라보세요.'; return; }
       const m = poseMetrics(L), rows = poseReport(m);
-      $('pose-report').innerHTML = `<b>자동 측정</b> (참고용 · 각도는 촬영 각도에 따라 달라져요)` + rows.map(([ok,t,d])=>`<div style="margin-top:3px">${ok?'✅':'⚠️'} ${t} — ${d}</div>`).join('');
+      $('pose-report').innerHTML = `<b>자동 측정</b> (참고용 · 각도는 촬영 각도에 따라 달라져요)` + rows.map(([ok,t,d])=>`<div style="margin-top:3px">${ok==null?'ℹ️':ok?'✅':'⚠️'} ${t} — ${d}</div>`).join('');
       state.lastMetrics = m;
       $('pose-report').innerHTML += `<div style="margin-top:4px;color:var(--ink2)">이대로 저장하면 이 수치가 함께 기록돼 <b>주차별 변화 그래프</b>가 그려집니다.</div>`;
     }catch(e){ $('pose-report').textContent = '분석 실패 — 다른 장면으로 시도해보세요.'; }
