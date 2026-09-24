@@ -744,6 +744,11 @@ footer a{color:var(--paper)}
       <div class="lab-sm" style="margin-top:12px">내 홈 해변 · 파도 탭이 이 해변으로 열려요</div><div class="chips" id="home-chips"></div>
       <div class="lab-sm" style="margin-top:12px">최근 세션</div><div class="hist" id="hist"></div>
     </div>
+    <section><div class="sec-h"><h2>앱 사용법</h2><span class="tag">처음이면</span></div>
+      <div class="px sand"><div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn sm blue" type="button" onclick="openHowto()" style="flex:1 1 150px">▶ 사용 설명 영상 39초</button>
+        <button class="btn sm ghost" type="button" onclick="onbStart()" style="flex:1 1 150px">교장쌤 안내 다시 받기</button>
+      </div><div class="lab-sm" style="margin-top:6px">영상은 소리 없이 자막으로 넘어가요. 안내는 화면을 직접 가리켜 줍니다.</div></div></section>
     <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">주 2회 × 8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
     <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av" data-anim></canvas><div class="opts" id="bld-opts"></div></div></section>
     <section><div class="sec-h"><h2>같이 타는 친구</h2><span class="tag">친밀도</span><span class="sub" id="petsub"></span></div><div class="px sand" id="petcard"></div></section>
@@ -754,7 +759,7 @@ footer a{color:var(--paper)}
     <section><details class="fold" id="res-fold"><summary><span class="fold-t">6기 자료</span><span class="tag">카페 · 캠</span></summary><div class="px cam-more" style="margin-top:0"><a href="https://naver.me/FmGtUQAq" target="_blank" rel="noopener">STC 네이버 카페 (영상 업로드)</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 캠</a><span class="lab-sm" style="width:100%;margin-top:6px">수업 영상 구글드라이브 링크는 단톡방 공지에서 (공개 리포라 여기 안 넣음)</span></div></details></section>
     <section><details class="fold" id="io-fold"><summary><span class="fold-t">데이터 옮기기</span><span class="tag">폰 바꿀 때</span></summary>
       <div class="px"><p class="lab-sm">서버 계정이면 새 폰에서 그냥 로그인하면 돼요. 이 코드는 서버 없이 옮길 때 예비용.</p>
-        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm ghost" type="button" onclick="onbStart()">튜토리얼 다시</button><button class="btn sm ghost" id="wipe" type="button">이 기기 데이터 전부 지우기</button></div>
+        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm ghost" id="wipe" type="button">이 기기 데이터 전부 지우기</button></div>
         <textarea id="io-box" style="margin-top:10px;min-height:50px" placeholder="가져올 땐 여기에 코드를 붙여넣고 '가져오기'"></textarea>
       </div>
     </details></section>
@@ -817,12 +822,18 @@ footer a{color:var(--paper)}
   <div class="chips" id="card-tpls"></div>
   <textarea id="card-text" style="margin-top:10px;min-height:56px" placeholder="한 줄 더 (선택) — 예) 오늘 6시 세트 잡는 거 봤다"></textarea>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">보내기 +5 XP</button><button class="btn ghost" type="button" id="card-cancel">닫기</button></div></form></div>
-<div class="onb" id="onb" hidden><div class="dim"></div><div class="dlg"><div class="who"><canvas id="onb-av" data-anim></canvas><div style="flex:1;min-width:0"><div class="name" id="onb-name">양양서핑학교</div><div class="txt" id="onb-txt"></div></div></div><div class="bld" id="onb-bld"></div><div class="acts"><span class="step" id="onb-step"></span><button class="btn sm ghost" type="button" id="onb-skip">건너뛰기</button><button class="btn sm blue" type="button" id="onb-next">다음 ▶</button></div></div></div>
+<div class="onb" id="onb" hidden><div class="dim"></div><div class="dlg"><div class="who"><canvas id="onb-av" data-anim></canvas><div style="flex:1;min-width:0"><div class="name" id="onb-name">양양서핑학교</div><div class="txt" id="onb-txt"></div></div></div><div class="bld" id="onb-bld"></div><div class="acts"><span class="step" id="onb-step"></span><button class="btn sm ghost" type="button" id="onb-film" onclick="openHowto()">▶ 영상으로 먼저 보기</button><button class="btn sm ghost" type="button" id="onb-skip">건너뛰기</button><button class="btn sm blue" type="button" id="onb-next">다음 ▶</button></div></div></div>
 <div class="modal" id="party-modal" hidden><form class="px" id="party-form"><span class="eyebrow">파티원 모집</span><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px;margin-top:2px">같이 가실 분?</div>
   <div class="field"><label for="party-beach">어디</label><select id="party-beach"></select></div>
   <div class="field"><label for="party-time">몇 시</label><input id="party-time" type="time" value="09:00" required style="border:4px solid var(--ink);padding:8px 10px;font-size:16px;font-family:inherit;background:#fff"></div>
   <div class="field"><label for="party-note">한 마디</label><input id="party-note" placeholder="예) 낙산 주차장에서 만나요, 차 있어요" maxlength="60" style="border:4px solid var(--ink);padding:8px 10px;font-size:15px;font-family:inherit;background:#fff"></div>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">올리기 +5 XP</button><button class="btn ghost" type="button" id="party-cancel">닫기</button></div></form></div>
+<div class="modal" id="howto" hidden><div class="px" style="padding:8px;max-width:420px">
+  <span class="eyebrow">사용 설명 · 39초</span>
+  <video id="howto-v" controls playsinline preload="none" poster="guide/howto.jpg" style="width:100%;display:block;margin-top:4px;border:3px solid var(--ink);background:#000"><source src="guide/howto.mp4" type="video/mp4"><div class="lab-sm">이 브라우저가 영상을 못 열어요.</div></video>
+  <div class="lab-sm" style="margin-top:4px">소리 없음 · 자막으로 따라갑니다</div>
+  <button class="btn sm ghost" type="button" style="margin-top:8px;width:100%" onclick="closeHowto()">닫기</button>
+</div></div>
 <div class="modal" id="zoom" hidden><div class="px" style="padding:6px;max-width:92vw"><img id="zoom-img" alt="저장한 자세 사진 크게 보기" style="width:100%;display:block;border:3px solid var(--ink)"><button class="btn sm ghost" type="button" style="margin-top:6px;width:100%" onclick="document.getElementById('zoom').hidden=true">닫기</button></div></div>
 <div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요</div><button class="btn sm ghost" type="button" style="margin-top:10px" onclick="$('lvup').hidden=true">닫기</button></div></div>
 <div class="gain" id="gain">+10 XP</div>
@@ -1111,11 +1122,17 @@ function noDouble(el, fn){
   };
 }
 const closeModals = () => { let any = false;
-  document.querySelectorAll('.modal:not([hidden]), .lvup:not([hidden])').forEach(m=>{ m.hidden = true; any = true; });
+  document.querySelectorAll('.modal:not([hidden]), .lvup:not([hidden])').forEach(m=>{
+    m.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} });   // 안 멈추면 닫아도 소리·재생이 계속된다
+    m.hidden = true; any = true; });
   return any; };
 document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeModals(); });
-document.addEventListener('click', e=>{ if(e.target.classList?.contains('modal')) e.target.hidden = true; });
+document.addEventListener('click', e=>{ if(!e.target.classList?.contains('modal')) return;
+  e.target.querySelectorAll('video').forEach(v=>{ try{ v.pause(); }catch(e){} }); e.target.hidden = true; });
 /* 저장한 자세 사진이 손톱만 해서 정작 자세를 확인할 수가 없었다 — 탭하면 크게 */
+/* 모달을 닫을 때 영상도 멈춘다 — 안 그러면 뒤에서 계속 재생된다 */
+function closeHowto(){ const v = $('howto-v'); try{ v.pause(); }catch(e){} $('howto').hidden = true; }
+function openHowto(){ $('howto').hidden = false; }
 document.addEventListener('click', e=>{ const z = e.target.closest?.('[data-zoom]'); if(!z) return;
   $('zoom-img').src = z.dataset.zoom; $('zoom-img').alt = z.alt || '자세 사진'; $('zoom').hidden = false; });
 /* 접이식 섹션은 한 번 편 사람에겐 계속 펴져 있어야 한다 — 매번 다시 펴게 하면 접은 의미가 없다 */
@@ -3108,6 +3125,7 @@ function onbShow(){
   const st = ONB[onbI]; $('onb').hidden = false; showTab(st.tab);
   setTimeout(()=>onbSpot(st.focus), 260);                          // 탭이 그려진 뒤에
   const who = ONB_PR[st.who] || COACH_PR; $('onb-name').textContent = st.who; typeInto($('onb-txt'), st.txt); drawSpr($('onb-av'), avatarRows(who), avatarTintOf(who, 5));
+  $('onb-film').hidden = onbI > 0;                                 /* 첫 화면에서만 — 뒤로 갈수록 방해된다 */
   $('onb-step').innerHTML = ONB.map((_,k)=>`<span style="display:inline-block;width:8px;height:8px;margin-right:3px;border:2px solid var(--ink);background:${k<onbI?'var(--mint)':k===onbI?'var(--sun)':'#fff'}"></span>`).join(''); $('onb-next').textContent = st.last ? '출발! 🏄' : '다음 ▶';
   if(st.build){ onbPr = { ...myProfile() }; const paintB = ()=>{ $('onb-bld').innerHTML = `<canvas id="onb-me" data-anim style="width:128px;height:128px;display:block;margin:0 auto 8px;background:var(--sky);border:4px solid var(--ink)"></canvas><div class="opts">${builderHTML(onbPr)}</div>`; drawSpr($('onb-me'), avatarRows(onbPr), avatarTintOf(onbPr, 0)); bindBuilder($('onb-bld'), onbPr, patch=>{ Object.assign(onbPr, patch); paintB(); }); }; paintB(); }
   else if(st.task){ const done = st.task.check(); $('onb-bld').innerHTML = `<div class="item" style="margin-top:6px"><input type="checkbox" disabled ${done?'checked':''}><label><b>${st.task.label}</b><span>${done?'완료! 다음으로':'대화창 뒤 화면에서 직접 눌러보세요 · 건너뛰어도 돼요'}</span></label></div>`; clearInterval(state.onbPoll); state.onbPoll = setInterval(()=>{ if(!$('onb').hidden && ONB[onbI]===st && st.task.check()){ clearInterval(state.onbPoll); onbShow(); toast('잘했어요!'); } }, 800); }

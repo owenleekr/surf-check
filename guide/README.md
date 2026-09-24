@@ -40,3 +40,17 @@ node guide/_shoot.mjs guide          # puppeteer-core + 시스템 크롬 필요
 `_shoot.mjs`는 `zz_guide` 데모 계정을 localStorage에 심고 탭을 돌며 찍는다.
 서버 계정이 아니라 로컬 계정이라 Supabase에 쓰레기 행이 남지 않는다.
 다만 **마을·채팅은 실제 서버 데이터**라 그날 기수 상태가 그대로 찍힌다.
+
+## 사용 설명 영상 — `howto.mp4`
+
+`node guide/_film.mjs` 로 다시 뽑는다 (`preview.sh` 가 8765 포트로 떠 있어야 함).
+실제 앱을 헤드리스 크롬으로 돌려 프레임을 찍고 ffmpeg으로 묶는다 — 손으로 화면 녹화를
+뜨면 UI를 고칠 때마다 영상이 낡는다.
+
+- 39초 · 540×1080 · 약 1MB (h264 + yuv420p + faststart, iOS 사파리까지 재생됨)
+- 소리 없음. 자막은 페이지에 DOM으로 얹는다 — ffmpeg `drawtext` 는 한글 폰트 경로를 타서 잘 깨진다.
+- 포스터(`howto.jpg`)도 같이 나온다. 앱은 `preload="none"` 이라 **영상을 열기 전엔 포스터만** 받는다.
+- **헤드리스 크롬에서는 재생 확인이 안 된다** — 독점 코덱이 빠져 있어 `videoWidth`가 0으로 나온다.
+  실제 브라우저에서 확인할 것 (2026-09-24 확인: 540×1080 / 39초 / `canPlayType` → probably).
+
+UI를 크게 바꾸면 이 영상도 다시 뽑을 것. 장면 순서·자막은 `_film.mjs` 아래쪽 "장면" 블록에 있다.
