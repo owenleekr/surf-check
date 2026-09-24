@@ -147,6 +147,27 @@ h1,h2,h3,.title,.stamp,.hero .place b,.tile .val,.sec-h h2,.lvup .big,.card .ct 
 .nav button[aria-pressed="true"]{color:var(--sun); background:rgba(255,255,255,.08)}
 .nav button[aria-pressed="true"]::after{content:""; width:24px; height:3px; background:var(--sun); margin-top:2px}
 
+/* 폰을 가로로 눕히면 세로가 390px뿐이다 — 머리말·빠른버튼·날짜·해변만으로 화면이 다 차서
+   정작 파도 카드가 한 줄도 안 보였다. 바다 앞에서 캠 보려고 눕히는 일이 흔하니 껍데기를 줄인다. */
+@media (orientation:landscape) and (max-height:520px){
+  .wrap{padding-block:4px calc(64px + env(safe-area-inset-bottom,0px))}
+  .hdr{padding-block:2px 4px}
+  .hdr h1{font-size:18px}
+  .hdr .me canvas{width:34px; height:34px}
+  .hdr .me b{font-size:13px} .hdr .me .lv{font-size:10.5px}
+  .wavebar{height:8px; background-size:16px 8px}
+  .hello{margin-top:4px; font-size:13px}
+  .hello b{font-size:16px}
+  .quick{margin-top:5px}
+  .quick button{min-height:34px; padding:4px 2px; font-size:11px}
+  .quick button span{font-size:13px}
+  .days{margin-top:4px}
+  .beaches{padding-block:6px 4px}
+  .nav{padding:2px 10px calc(2px + env(safe-area-inset-bottom,0px))}
+  .nav button{padding:3px 4px; font-size:11px}
+  .nav button canvas{width:20px; height:20px}
+}
+
 /* 날짜·해변 */
 .days{display:flex; gap:8px; margin-top:6px}
 .day{flex:1; border:4px solid var(--ink); background:var(--paper); padding:5px 4px; font-size:12px; line-height:1.15; text-align:center; box-shadow:3px 3px 0 var(--ink)}
