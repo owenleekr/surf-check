@@ -2080,15 +2080,36 @@ function renderWave(){
   const b = BEACHES[state.beach], a = analyze(b, state.day);
   renderDays(); renderBeaches(); renderHello(); renderHero(b, a); renderPeriod(b, a); renderTip(); renderClass(); renderQuests(); renderSession(); rateVal = 0; renderRate(); renderCheckin(); renderParty(); renderTopbar(); pullSocial(false); renderTiles(b, a); renderSource(b, a); renderChart(b, a); renderBasis(b, a); renderReco(); renderChecks(b, a); renderCam(b); renderCompare();
 }
+/* 파도 데이터가 없어도 살릴 수 있는 것만 살린다.
+   세션 카운트·레슨런은 전부 localStorage라 신호와 무관한데, 예전엔 같이 숨어버렸다.
+   물에서 나와 세는 그 순간이 하필 신호가 제일 약한 때다. */
+function restoreWave(){
+  document.querySelectorAll('[data-offl-hid]').forEach(el=>{ el.hidden = false; delete el.dataset.offlHid; });
+  $('offl-note')?.remove();
+}
+function offlineWave(){
+  $('wave-main').hidden = false; restoreWave();
+  /* 파도 값을 쓰는 블록만 감춘다 — 남는 건 세션·레슨런·수업 진행 */
+  /* 숨긴 것에 표시를 남긴다 — "↻ 다시 받기"가 성공하면 그대로 되돌려야 한다 */
+  document.querySelectorAll('#wave-main > section, #wave-main > div').forEach(el=>{
+    if(el.querySelector('#sess, #sess-lesson') || el.hidden) return;          // 세션·레슨런만 남긴다
+    el.hidden = true; el.dataset.offlHid = '1';
+  });
+  renderSession();
+  const host = $('sess')?.parentElement;
+  if(host && !$('offl-note')){ const d = document.createElement('div'); d.id='offl-note'; d.className='lab-sm';
+    d.style.cssText='margin:0 0 8px'; d.textContent='신호 없이도 세션과 레슨런은 기록돼요. 나중에 연결되면 같이 올라갑니다.';
+    host.insertBefore(d, $('sess')); }
+}
 async function refreshWave(){ try{ await load(); renderWave(); toast(`파도 데이터 갱신 ${pad2(new Date().getHours())}:${pad2(new Date().getMinutes())}`); }catch(e){} }
 setInterval(()=>{ if(ME && state.loaded) refreshWave(); }, 3600e3);                                   // 매시 자동 갱신
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && ME && state.loaded && state.fetchedAt && Date.now()-state.fetchedAt.getTime() > 30*60e3) refreshWave(); });
 async function bootWave(){
   const st = $('state'); st.hidden = false; $('wave-main').hidden = true;
   st.innerHTML = `<span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p>`;
-  try{ await load(); st.hidden = true; $('wave-main').hidden = false; renderWave(); }
+  try{ await load(); st.hidden = true; $('wave-main').hidden = false; restoreWave(); renderWave(); }
   catch(e){
-    if(loadFromCache()){ st.hidden = true; $('wave-main').hidden = false; renderWave(); return; }
+    if(loadFromCache()){ st.hidden = true; $('wave-main').hidden = false; restoreWave(); renderWave(); return; }
     /* e.message는 "Failed to fetch" 같은 영문 기술 문구다 — 사용자에게 보여줄 말이 아니다.
        그리고 파도만 못 받았을 뿐 나머지 탭은 다 되니 막다른 길처럼 두지 않는다. */
     st.innerHTML = `데이터 못 받아왔어요<p>바다 앞이라 신호가 약한 것 같아요. 데이터를 켜고 다시 받아보세요.</p>
@@ -2096,7 +2117,8 @@ async function bootWave(){
       <p class="lab-sm" style="margin-top:10px">신호 없이도 되는 것 — 
         <span class="linkish" onclick="showTab('mission')">수업 체크</span> ·
         <span class="linkish" onclick="showTab('growth')">코치님 말씀·자세 기록</span> ·
-        <span class="linkish" onclick="showTab('gear')">장비 가이드</span></p>`; }
+        <span class="linkish" onclick="showTab('gear')">장비 가이드</span></p>`;
+    offlineWave(); }
 }
 
 /* ═══════════ 렌더: 미션 탭 ═══════════ */
