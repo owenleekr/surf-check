@@ -397,6 +397,9 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .vgrid{position:relative; display:flex; flex-wrap:wrap; gap:6px 4px; justify-content:center; align-items:flex-end; margin-top:52px}
 .vp{width:auto; min-width:64px; max-width:110px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; position:relative}
 .vp canvas{width:56px; height:64px}
+/* 펫(14칸)은 사람 왼쪽에 그려져 장면이 38칸이 된다 — 가운데 정렬하면 이름표가 펫 쪽으로 밀린다.
+   보정량 = 캔버스높이/(24+여백2) × 펫14칸/2 = 64/26×7 ≈ 17.2px. transform이라 폭 계산엔 안 끼어든다 */
+.vp[data-pet] .nm{ transform: translateX(17.2px) }
 .vp .nm{font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink); padding:0 4px; max-width:106px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .vp .bub{position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink); padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:120px; white-space:normal; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2}
 .vp .bub::after{content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--ink)}
@@ -492,6 +495,9 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .sess{margin-top:14px}
 .sess .head{display:flex; align-items:center; justify-content:space-between; gap:8px}
 .sess .total{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:34px; line-height:1}
+/* 갈무리체의 0은 속이 빈 네모라, 혼자 서 있으면 숫자가 아니라 깨진 글자로 읽힌다.
+   하필 첫 화면에서 가장 먼저 보이는 숫자가 그것이므로 0일 때만 본문 글꼴로 돌린다 */
+.sess .total.zero{font-family:inherit; font-size:30px}
 .sess .total small{font-size:13px; font-weight:400; color:var(--ink2); margin-left:4px}
 .cnt{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px}
 .cnt button{border:4px solid var(--ink); background:#fff; padding:8px 4px; font-weight:700; font-size:13px; box-shadow:3px 3px 0 var(--ink); line-height:1.2}
@@ -699,15 +705,17 @@ footer a{color:var(--paper)}
   <div id="tab-level" hidden>
     <div class="px card">
       <canvas id="lv-av" data-anim></canvas>
-      <div class="ct"><span class="eyebrow">양양서핑학교 6기 <button type="button" class="undo" id="logout-top" style="margin-left:6px">로그아웃</button></span><b id="lv-name">—</b><span class="lvname" id="lv-title">LV.0 물멍</span><div class="meta" id="lv-meta"></div></div>
+      <div class="ct"><span class="eyebrow">양양서핑학교 6기</span><b id="lv-name">—</b><span class="lvname" id="lv-title">LV.0 물멍</span><div class="meta" id="lv-meta"></div></div>
     </div>
     <div class="px" style="margin-top:14px">
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)"><span id="xp-txt">0 XP</span><span id="xp-next"></span></div>
       <div class="bar" data-c="sun" style="margin-top:6px"><i id="xp-bar"></i></div>
       <div class="stats" id="stats"></div>
-      <details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;font-weight:700">계정 · 생년월일(재설정용) · 비밀번호 변경</summary>
+      <details style="margin-top:12px"><summary style="cursor:pointer;font-size:12px;font-weight:700">계정 · 생년월일(재설정용) · 비밀번호 변경 · 로그아웃</summary>
         <div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-top:8px;font-size:12px;align-items:end"><label>생년월일 6자리<input id="acc-birth" inputmode="numeric" maxlength="6" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><button class="btn sm mint" type="button" id="acc-birth-save">저장</button>
-        <label>현재 비밀번호<input id="acc-old" type="password" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><span></span><label>새 비밀번호<input id="acc-new" type="password" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><button class="btn sm blue" type="button" id="acc-pw-save">변경</button></div><div class="lab-sm" id="acc-msg" style="margin-top:6px"></div></details>
+        <label>현재 비밀번호<input id="acc-old" type="password" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><span></span><label>새 비밀번호<input id="acc-new" type="password" style="width:100%;border:3px solid var(--ink);padding:6px;font-family:inherit"></label><button class="btn sm blue" type="button" id="acc-pw-save">변경</button></div><div class="lab-sm" id="acc-msg" style="margin-top:6px"></div>
+        <button class="btn sm pink" id="logout" type="button" style="margin-top:10px">로그아웃</button>
+        <div class="lab-sm">기록은 서버에 남아요. 같은 아이디로 다시 들어오면 그대로예요.</div></details>
       <div class="lab-sm" style="margin-top:12px">내 홈 해변 · 파도 탭이 이 해변으로 열려요</div><div class="chips" id="home-chips"></div>
       <div class="lab-sm" style="margin-top:12px">최근 세션</div><div class="hist" id="hist"></div>
     </div>
@@ -721,7 +729,7 @@ footer a{color:var(--paper)}
     <section><details class="fold" id="res-fold"><summary><span class="fold-t">6기 자료</span><span class="tag">카페 · 캠</span></summary><div class="px cam-more" style="margin-top:0"><a href="https://naver.me/FmGtUQAq" target="_blank" rel="noopener">STC 네이버 카페 (영상 업로드)</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 캠</a><span class="lab-sm" style="width:100%;margin-top:6px">수업 영상 구글드라이브 링크는 단톡방 공지에서 (공개 리포라 여기 안 넣음)</span></div></details></section>
     <section><details class="fold" id="io-fold"><summary><span class="fold-t">데이터 옮기기</span><span class="tag">폰 바꿀 때</span></summary>
       <div class="px"><p class="lab-sm">서버 계정이면 새 폰에서 그냥 로그인하면 돼요. 이 코드는 서버 없이 옮길 때 예비용.</p>
-        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm pink" id="logout" type="button">로그아웃</button><button class="btn sm ghost" type="button" onclick="onbStart()">튜토리얼 다시</button><button class="btn sm ghost" id="wipe" type="button">이 기기 데이터 전부 지우기</button></div>
+        <div class="io"><button class="btn sm mint" id="exp" type="button">내 데이터 코드 복사</button><button class="btn sm ghost" id="imp" type="button">코드 붙여넣어 가져오기</button><button class="btn sm ghost" type="button" onclick="onbStart()">튜토리얼 다시</button><button class="btn sm ghost" id="wipe" type="button">이 기기 데이터 전부 지우기</button></div>
         <textarea id="io-box" style="margin-top:10px;min-height:50px" placeholder="가져올 땐 여기에 코드를 붙여넣고 '가져오기'"></textarea>
       </div>
     </details></section>
@@ -790,7 +798,7 @@ footer a{color:var(--paper)}
   <div class="field"><label for="party-time">몇 시</label><input id="party-time" type="time" value="09:00" required style="border:4px solid var(--ink);padding:8px 10px;font-size:16px;font-family:inherit;background:#fff"></div>
   <div class="field"><label for="party-note">한 마디</label><input id="party-note" placeholder="예) 낙산 주차장에서 만나요, 차 있어요" maxlength="60" style="border:4px solid var(--ink);padding:8px 10px;font-size:15px;font-family:inherit;background:#fff"></div>
   <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pink" type="submit" style="flex:1">올리기 +5 XP</button><button class="btn ghost" type="button" id="party-cancel">닫기</button></div></form></div>
-<div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요 · 탭해서 닫기</div></div></div>
+<div class="lvup" id="lvup" hidden onclick="this.hidden=true"><div><div class="eyebrow" style="color:var(--sand)">LEVEL UP!</div><div class="big" id="lvup-t">LV.1 폼보더</div><canvas id="lvup-av" data-anim></canvas><div style="font-size:13px">보드 색이 바뀌었어요</div><button class="btn sm ghost" type="button" style="margin-top:10px" onclick="$('lvup').hidden=true">닫기</button></div></div>
 <div class="gain" id="gain">+10 XP</div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -1077,7 +1085,7 @@ function noDouble(el, fn){
   };
 }
 const closeModals = () => { let any = false;
-  document.querySelectorAll('.modal:not([hidden])').forEach(m=>{ m.hidden = true; any = true; });
+  document.querySelectorAll('.modal:not([hidden]), .lvup:not([hidden])').forEach(m=>{ m.hidden = true; any = true; });
   return any; };
 document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeModals(); });
 document.addEventListener('click', e=>{ if(e.target.classList?.contains('modal')) e.target.hidden = true; });
@@ -1900,7 +1908,10 @@ const sessUI = () => SESS_UI[myProfile().role==='coach' ? 'inter' : (myProfile()
 function renderSession(){
   const sx = session(), ui = sessUI(), pr = myProfile();
   $('sess-beach').textContent = sx.beach || BEACHES[state.beach].name; $('sess-cls').textContent = pr.role==='coach' ? '코치' : (pr.cls==='inter' ? '중급반' : '비기너반');
-  $('sess-total').textContent = ui.total(sx); $('sess-unit').textContent = ui.unit; $('sess-sub').textContent = ui.sub(sx); $('sess-hint').textContent = ui.hint;
+  const n = ui.total(sx);
+  $('sess-total').textContent = n; $('sess-unit').textContent = ui.unit; $('sess-sub').textContent = ui.sub(sx); $('sess-hint').textContent = ui.hint;
+  $('sess-total').parentElement.classList.toggle('zero', n===0);
+  $('sess-undo').hidden = !sx.hist?.length;              /* 셀 게 없는데 "하나 취소"가 떠 있으면 눌러보고 아무 일도 안 난다 */
   $('sess-btns').innerHTML = ui.btns.map(([k,label,cls,memo])=>`<button type="button" class="${cls}" data-ride="${k}"><b>+1</b>${label}<span style="display:block;font-weight:400;font-size:11.5px;line-height:1.3;color:var(--ink2)">${memo}</span></button>`).join('');
   $('sess-btns').querySelectorAll('[data-ride]').forEach(b=>b.onclick=()=>ride(b.dataset.ride));
   const cw = Math.min(8, Math.max(1, weekOfDate(today()))); if(!$('sess-lesson-form').dataset.w || +$('sess-lesson-form').dataset.w!==cw){ $('sess-lesson-form').dataset.w = cw; $('sess-lesson-form').innerHTML = lessonForm(cw, true); bindLesson($('sess-lesson-form')); }
@@ -1945,7 +1956,7 @@ const curWeek = () => Math.min(8, Math.max(1, weekOfDate(today())));
 function weekAttHTML(d, w){
   const atts = attOf(d,w), cw = curWeek(), isClassDay = [0,6].includes(new Date().getDay());
   const canStamp = w===cw && atts.length<PER_WEEK && !atts.includes(today()) && isClassDay;
-  return `<div class="att">${[0,1].map(i=>atts[i]?`<div class="stamp-att on">${i+1}회차 ${atts[i].slice(5).replace('-','.')}</div>`:`<div class="stamp-att">${i+1}회차 ${w<cw?'결석':w>cw?'예정':(isClassDay?'오늘':'주말에')}</div>`).join('')}${canStamp?`<button class="btn sm pink" type="button" data-act="att" data-w="${w}">오늘 출석 도장 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`:''}${atts.includes(today())?`<button class="undo" type="button" data-act="unatt" data-w="${w}">오늘 도장 취소</button>`:''}</div>`;
+  return `<div class="lab-sm" style="margin:0 0 4px">주 2회 출석 도장</div><div class="att">${[0,1].map(i=>atts[i]?`<div class="stamp-att on">${i+1}회차 ${atts[i].slice(5).replace('-','.')}</div>`:`<div class="stamp-att">${i+1}회차 ${w<cw?'결석':w>cw?'예정':(isClassDay?'오늘':'주말에')}</div>`).join('')}${canStamp?`<button class="btn sm pink" type="button" data-act="att" data-w="${w}">오늘 출석 도장 <span class="xp" style="color:#fff">+${XP.attend}</span></button>`:''}${atts.includes(today())?`<button class="undo" type="button" data-act="unatt" data-w="${w}">오늘 도장 취소</button>`:''}</div>`;
 }
 function weekBodyHTML(d, wk, compact){
   const w = wk.n;
@@ -2676,7 +2687,6 @@ function renderHome(){
   $('acc-pw-save').onclick = async ()=>{ const o = $('acc-old').value, n = $('acc-new').value; if(n.length<4) return $('acc-msg').textContent = '새 비밀번호는 4자 이상'; const u = auth.users()[ME.id];
     try{ if(u?.token && supaOn()){ await rpc('change_pw', { p_id:ME.id, p_token:u.token, p_old:o, p_new:n }); } else { if(u.hash !== await hash(u.salt+o)) throw new Error('현재 비밀번호가 달라요'); u.hash = await hash(u.salt+n); auth.remember(ME.id, u); } $('acc-msg').textContent = '비밀번호를 바꿨어요'; $('acc-old').value=''; $('acc-new').value=''; }
     catch(e){ $('acc-msg').textContent = e.code==='unauthorized' ? '현재 비밀번호가 달라요' : (e.message||'실패'); } };
-  $('logout-top').onclick = ()=>$('logout').click();
   $('home-chips').innerHTML = BEACHES.map(b=>`<button type="button" data-home="${b.id}" aria-pressed="${b.id===home}">${b.name}</button>`).join('');
   $('home-chips').querySelectorAll('button').forEach(x=>x.onclick=()=>{ setProfile({ home:x.dataset.home }); LS.set('surf.beach', x.dataset.home); toast(`홈 해변: ${BEACHES.find(b=>b.id===x.dataset.home).name}`); renderHome(); });
   const d = getData(), ss = Object.entries(d.sessions||{}).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,6);
@@ -2881,7 +2891,7 @@ $('onb-next').onclick = onbNext; $('onb-skip').onclick = ()=>{ if(ONB[onbI].buil
 /* ═══════════ 렌더: 레벨 탭 ═══════════ */
 function renderLevel(){
   const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1], st = slvStat(d), curL = SLV[st.cur], nextL = SLV[st.cur] ;
-  $('lv-name').textContent = ME.name; $('lv-title').textContent = `${'★'.repeat(st.cur)}${'☆'.repeat(Math.max(0,3-st.cur))} ${st.label}${certOf(ME.name)?` (코치 인증 LV.${certOf(ME.name)} ✅)`:''}${st.cur?` · ${SLV[st.cur-1].g}`:' · 입문'} · 칭호 ${LEVELS[L][1]}`;
+  $('lv-name').textContent = ME.name; $('lv-title').textContent = `${'★'.repeat(st.cur)}${'☆'.repeat(Math.max(0,3-st.cur))} ${st.label}${certOf(ME.name)?` (코치 인증 LV.${certOf(ME.name)} ✅)`:''}${st.cur?` · ${SLV[st.cur-1].g}`:' · 입문'}`;   /* 칭호는 상단바와 바로 아래 XP줄에 이미 있다 — 여기 또 붙이면 두 줄로 접힌다 */
   const ro = rosterOf(ME.name), pr0 = myProfile();
   $('lv-meta').textContent = (pr0.role==='coach' ? '코치 · ' : ro&&ro[1] ? `서핑 시작 ${ro[1]} · 첫 파도 ${ro[2]} · ` : '') + `@${ME.id}` + (pr0.boardName||pr0.suit ? ` · 🏄 ${[pr0.boardName, pr0.boardLen, pr0.suit, pr0.suitName].filter(Boolean).join(' · ')}` : '');
   $('xp-txt').textContent = `${xp} XP · 칭호 ${LEVELS[L][1]}`; $('xp-next').textContent = next ? `다음 칭호 ${next[1]}까지 ${next[0]-xp} XP` : '최고 칭호!';
@@ -2985,7 +2995,8 @@ $('r-go').onclick = async ()=>{ const id = $('r-id').value.trim().toLowerCase(),
     else { const u = auth.users()[id]; if(!u) throw new Error('없는 아이디예요'); if((u.profile?.birth||'')!==birth) throw new Error(u.profile?.birth ? '생년월일이 달라요' : '이 계정은 생년월일이 없어요'); u.hash = await hash(u.salt+pw); auth.remember(id, u); }
     toast('비밀번호를 바꿨어요'); $('reset-box').hidden = true; setMode('in'); $('uid').value = id; $('upw').value = pw; $('login-form').requestSubmit();
   }catch(e){ $('r-err').textContent = e.message; } };
-$('logout').onclick = ()=>{ try{ localStorage.removeItem('surf.session'); }catch(e){} location.reload(); };
+$('logout').onclick = ()=>{ if(!confirm('로그아웃할까요? 기록은 서버에 남아 다시 로그인하면 그대로예요.')) return;
+  try{ localStorage.removeItem('surf.session'); }catch(e){} location.reload(); };
 $('copy').addEventListener('click', copyNotion);
 $('practice').addEventListener('input', e=>LS.set(`surf.practice.${ME.id}`, e.target.value));
 $('exp').onclick = async ()=>{ const users = auth.users(); const pack = { v:1, id:ME.id, user:users[ME.id], data:getData(), practice:LS.get(`surf.practice.${ME.id}`,'') }; const code = 'SURF6:' + btoa(unescape(encodeURIComponent(JSON.stringify(pack)))); $('io-box').value = code; await copyText(code); toast('코드 복사됨. 새 폰에 붙여넣기'); };
@@ -3080,7 +3091,10 @@ function renderPetCard(){
   drawSpr($('pet-av'), avatarRows(pr), avatarTint());
   $('pet-name-save').onclick = ()=>{ setProfile({ petName: $('pet-name').value.trim().slice(0,8) }); toast('이름 저장'); renderPetCard(); };
 }
-function renderGearMe(){ const pr = myProfile(); $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">주력 장비 · 마을 카드에 표시</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'옷장에서 주력을 골라주세요'}</div></div></div>`; drawSpr($('gear-av'), avatarRows(pr), avatarTint()); }
+function renderGearMe(){ const pr = myProfile();
+  /* 옷장이 비었는데 "주력을 골라주세요" 카드를 띄우면 바로 아래 빈 옷장 안내와 같은 말이 두 번 나온다 */
+  $('gear-me').hidden = closetOf(pr).length===0 && !gearLine(pr);
+  $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">주력 장비 · 마을 카드에 표시</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'옷장에서 주력을 골라주세요'}</div></div></div>`; drawSpr($('gear-av'), avatarRows(pr), avatarTint()); }
 async function renderRank(){   // = 마을
   renderSheet(); pullSocial(true).then(()=>{ renderFeed(); renderVillage(); }); renderFeed(); renderVillage(); pullChat(true); startChatPoll(); renderSurferDay(); renderNews();
 }
@@ -3090,7 +3104,7 @@ async function renderVillage(){
   raw.forEach(x=>{ const cur = byName.get(x.name); if(!cur || (x.xp||0) > (cur.xp||0)) byName.set(x.name, x); });
   const rows = [...byName.values()].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
   $('village-sub').textContent = `${rows.length}명 · 탭하면 카드`;
-  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}">${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
+  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}"${x.profile?.pet&&x.profile.pet!=='none'?' data-pet':''}>${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
   rows.forEach(x=>{ const pf = withLook(x.profile, x.name); drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(pf), avatarTintOf(pf, x.level)); });
   $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
     const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.pet && x.profile.pet!=='none' ? `<br>${{rabbit:'🐰',cat:'🐱',dog:'🐶',seal:'🦭',penguin:'🐧'}[x.profile.pet]||'🐾'} ${x.profile.petName||PET_KO[x.profile.pet]} · ${PET_STAGE[x.profile.petLv||0].ko}` : ''}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
