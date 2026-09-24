@@ -1065,6 +1065,17 @@ function paintAll(root=document){ root.querySelectorAll('canvas[data-spr]').forE
 /* 모달 닫기 — ESC와 바깥 클릭. 취소할 방법이 "닫기" 버튼 하나뿐이면
    폼을 열어놓고 빠져나가지 못하는 느낌이 든다(특히 키보드·PC에서).
    온보딩은 뺀다 — 실수로 건너뛰면 다시 찾기 어렵고, 거기엔 건너뛰기 버튼이 따로 있다. */
+/* 저장 버튼 3연타 = 요청 3번. 별점은 같은 id로 덮어써서 티가 안 났지만
+   칭찬 카드·채팅은 id에 Date.now()가 들어가 카드 3장·메시지 3개가 그대로 나간다.
+   신호 약한 바다 앞에서 응답이 늦으면 누구나 한 번 더 누른다 — 막아야 할 실패다. */
+function noDouble(el, fn){
+  return async (...a) => {
+    if(!el || el.dataset.busy) return;
+    el.dataset.busy = '1'; const wasDisabled = el.disabled; el.disabled = true;
+    try{ return await fn(...a); }
+    finally{ delete el.dataset.busy; el.disabled = wasDisabled; }
+  };
+}
 const closeModals = () => { let any = false;
   document.querySelectorAll('.modal:not([hidden])').forEach(m=>{ m.hidden = true; any = true; });
   return any; };
@@ -1264,13 +1275,13 @@ function openCard(name){
 $('card-cancel').onclick = ()=>$('card-modal').hidden = true;
 $('card-open').onclick = ()=>openCard();
 $('invite').onclick = async ()=>{ const url = 'https://surf.owenai.xyz/', text = '라인업 — 양양서핑학교 6기 앱. 파도 체크·출석·마을. 새 계정 만들고 명단에서 이름 고르면 돼요'; if(navigator.share){ try{ await navigator.share({ title:'라인업', text, url }); return; }catch(e){} } await copyText(url); toast('링크 복사됨 · 단톡방에 붙여넣기'); };
-$('card-form').addEventListener('submit', async e=>{
+$('card-form').addEventListener('submit', noDouble(document.querySelector('#card-form button[type=submit]'), async e=>{
   e.preventDefault(); if(!cardTo) return;
   const c = { id: ME.id+'-'+Date.now(), from:ME.id, fromName:ME.name, to:cardTo, tpl:cardTpl, text:$('card-text').value.trim().slice(0,120), date:new Date().toISOString() };
   const cs = LS.get('surf.cards', []); cs.push(c); LS.set('surf.cards', cs); $('card-modal').hidden = true; gain(5); toast(`${cardTo}에게 칭찬 카드 보냄`);
   if(supaOn()) fetch(`${SUPA.url}/rest/v1/cards`, { method:'POST', headers:supaH(), body:JSON.stringify({ id:c.id, from_id:c.from, from_name:c.fromName, to_name:c.to, tpl:c.tpl, text:c.text, created_at:c.date }) }).catch(()=>{});
   refreshMe();
-});
+}));
 async function pullCards(){
   if(!supaOn()) return; try{ const r = await fetch(`${SUPA.url}/rest/v1/cards?select=*&order=created_at.desc&limit=300`, { headers:supaH() }); if(!r.ok) return;
     state.remoteCards = (await r.json()).map(x=>({ id:x.id, from:x.from_id, fromName:x.from_name, to:x.to_name, tpl:x.tpl, text:x.text||'', date:x.created_at })); }catch(e){}
@@ -2477,7 +2488,7 @@ function renderPose(){
       $('pose-report').innerHTML += `<div style="margin-top:4px;color:var(--ink2)">이대로 저장하면 이 수치가 함께 기록돼 <b>주차별 변화 그래프</b>가 그려집니다.</div>`;
     }catch(e){ $('pose-report').textContent = '분석 실패 — 다른 장면으로 시도해보세요.'; }
   };
-  $('pose-save').onclick = async ()=>{
+  $('pose-save').onclick = noDouble($('pose-save'), async ()=>{
     const v = vEl(), f = frameCanvas(); if(!f) return toast('영상을 먼저 불러와요');
     if(!supaOn()) return toast('서버 연결 필요');
     let blob;
@@ -2493,7 +2504,7 @@ function renderPose(){
       await sbUpsert('poses', row); state.poses = [...(state.poses||[]), row]; state.lastMetrics = null;
       addBonus(5, `pose|${today()}`); toast('자세 기록 저장'); chatSys(`📸 ${STAGES[stage]} 자세 기록`); $('pose-edit').hidden = true; $('pose-file').value=''; renderPose();
     }catch(e){ toast('저장 실패 — 코치가 supabase-pose.sql 실행했는지 확인'); }
-  };
+  });
   $('pose').querySelectorAll('[data-cnote]').forEach(b=>b.onclick = async ()=>{
     const id = b.dataset.cnote, note = prompt('이 자세에 대한 코치 피드백'); if(!note) return;
     try{ const r = await fetch(`${SUPA.url}/rest/v1/poses?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', headers:supaH(), body:JSON.stringify({ coach_note:note.slice(0,120), coach_name:ME.name }) }); if(!r.ok) throw 0;
@@ -2700,8 +2711,8 @@ function renderBasis(b, a){
     <div class="lab-sm" style="margin-top:8px">데이터: Open-Meteo(${b.name} 앞바다, 매시 갱신) · 물때 ${state.social.tides[date]?'코치 입력 공식값':'조위 모델'}</div>
     ${isCoach ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">코치: 오늘 공식 물때 입력 (바다누리 기준)</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px"><label>만조 시각<input id="tide-hit" type="time" value="${off?.hi?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>만조 높이(m)<input id="tide-hih" type="number" step="0.01" value="${off?.hi?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 시각<input id="tide-lot" type="time" value="${off?.lo?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 높이(m)<input id="tide-loh" type="number" step="0.01" value="${off?.lo?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label></div><button class="btn sm blue" type="button" id="tide-save" style="margin-top:8px">저장 → 전원 브리핑에 반영</button></details>` : ''}`;
   $('basis-ck').onchange = e=>{ LS.set(bkey, e.target.checked); state.basisOpen = false; if(e.target.checked){ addBonus(3, 'basis|'+date+'|'+b.id); toast('기준 잡기 완료'); renderQuests(); } setTimeout(()=>renderBasis(b, a), 600); };
-  if(isCoach) $('tide-save').onclick = async ()=>{ const row = { id:date, hi: $('tide-hit').value ? [{ t:$('tide-hit').value, h:+$('tide-hih').value||0 }] : [], lo: $('tide-lot').value ? [{ t:$('tide-lot').value, h:+$('tide-loh').value||0 }] : [], by_id:ME.id, updated_at:new Date().toISOString() };
-    try{ await sbUpsert('tides', row); state.social.tides[date] = row; toast('물때 기준 저장 · 전원에게 반영'); renderBasis(b, a); renderTiles(b, a); }catch(e){ toast(state.social.ok===false?notReady:'저장 실패'); } };
+  if(isCoach) $('tide-save').onclick = noDouble($('tide-save'), async ()=>{ const row = { id:date, hi: $('tide-hit').value ? [{ t:$('tide-hit').value, h:+$('tide-hih').value||0 }] : [], lo: $('tide-lot').value ? [{ t:$('tide-lot').value, h:+$('tide-loh').value||0 }] : [], by_id:ME.id, updated_at:new Date().toISOString() };
+    try{ await sbUpsert('tides', row); state.social.tides[date] = row; toast('물때 기준 저장 · 전원에게 반영'); renderBasis(b, a); renderTiles(b, a); }catch(e){ toast(state.social.ok===false?notReady:'저장 실패'); } });
 }
 /* 상단 알림: 긴 피리어드 추천 · 칭찬 카드 · 체크인 · 파티 */
 function buildAlerts(){
@@ -2753,8 +2764,8 @@ function renderRate(){
   const snap = chartSnap(b, a), todays = state.social.ratings.filter(r=>r.beach===b.name && r.date===today()), sim = similar(b, snap, null);
   const avg = arr => arr.length ? (arr.reduce((s,r)=>s+(+r.stars),0)/arr.length).toFixed(1) : null;
   $('rate-info').innerHTML = state.social.ok===false ? notReady : [ mine?`내 평가 ★${(+mine.stars).toFixed(1)} 저장됨`:'', todays.length?`오늘 ${b.name} 실제 ★${avg(todays)} (${todays.length}명)`:'', sim.length?`비슷한 차트(${snap.h}m·${snap.p}초·${relKo[snap.rel]})일 때 실제 ★${avg(sim)} (${sim.length}회) vs 차트 판정 "${a.vd.t}"`:'' ].filter(Boolean).join(' · ') || '별점이 쌓이면 "차트가 이 정도면 실제로 몇 점"이 여기 뜹니다';
-  $('rate-save').onclick = async ()=>{ if(!rateVal) return toast('별을 눌러 점수부터'); const row = { id, user_id:ME.id, name:ME.name, beach:b.name, date:today(), hour:snap.hour, stars:rateVal, comment:$('rate-txt').value.trim().slice(0,60), chart:snap };
-    try{ await sbUpsert('ratings', row); state.social.ratings = [row, ...state.social.ratings.filter(r=>r.id!==id)]; addBonus(5, 'rate|'+today()); toast(`★${rateVal.toFixed(1)} 저장 · 고마워요`); renderRate(); }catch(e){ toast(state.social.ok===false?notReady:'저장 실패 · 신호 확인'); } };
+  $('rate-save').onclick = noDouble($('rate-save'), async ()=>{ if(!rateVal) return toast('별을 눌러 점수부터'); const row = { id, user_id:ME.id, name:ME.name, beach:b.name, date:today(), hour:snap.hour, stars:rateVal, comment:$('rate-txt').value.trim().slice(0,60), chart:snap };
+    try{ await sbUpsert('ratings', row); state.social.ratings = [row, ...state.social.ratings.filter(r=>r.id!==id)]; addBonus(5, 'rate|'+today()); toast(`★${rateVal.toFixed(1)} 저장 · 고마워요`); renderRate(); }catch(e){ toast(state.social.ok===false?notReady:'저장 실패 · 신호 확인'); } });
 }
 /* 체크인 */
 function renderCheckin(){
@@ -2783,8 +2794,8 @@ function renderParty(){
 }
 $('party-new').onclick = ()=>{ if(state.social.ok===false) return toast(notReady); $('party-beach').innerHTML = BEACHES.map(b=>`<option ${b.id===BEACHES[state.beach].id?'selected':''}>${b.name}</option>`).join(''); $('party-modal').hidden = false; };
 $('party-cancel').onclick = ()=>$('party-modal').hidden = true;
-$('party-form').addEventListener('submit', async e=>{ e.preventDefault(); const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), beach:$('party-beach').value, time:$('party-time').value, note:$('party-note').value.trim().slice(0,60), joins:[] };
-  try{ await sbUpsert('parties', row); state.social.parties = [...state.social.parties, row].sort((a,b)=>a.time.localeCompare(b.time)); $('party-modal').hidden = true; $('party-note').value=''; addBonus(5, 'party|'+row.id); toast('모집 올렸어요 · 동기들 상단 바에 떠요'); chatSys(`🏄 ${row.time} ${row.beach} 같이 가실 분? ${row.note||''}`); renderParty(); }catch(e){ toast('실패 · 신호 확인'); } });
+$('party-form').addEventListener('submit', noDouble(document.querySelector('#party-form button[type=submit]'), async e=>{ e.preventDefault(); const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, date:today(), beach:$('party-beach').value, time:$('party-time').value, note:$('party-note').value.trim().slice(0,60), joins:[] };
+  try{ await sbUpsert('parties', row); state.social.parties = [...state.social.parties, row].sort((a,b)=>a.time.localeCompare(b.time)); $('party-modal').hidden = true; $('party-note').value=''; addBonus(5, 'party|'+row.id); toast('모집 올렸어요 · 동기들 상단 바에 떠요'); chatSys(`🏄 ${row.time} ${row.beach} 같이 가실 분? ${row.note||''}`); renderParty(); }catch(e){ toast('실패 · 신호 확인'); } }));
 /* 피드 (6기 탭) */
 function renderFeed(){
   const rs = state.social.ratings.slice(0, 12); $('feed-sub').textContent = state.social.ok===false ? '서버 준비 중' : `${state.social.ratings.length}건`;
@@ -3114,7 +3125,7 @@ async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; c
   try{ await sbUpsert('chat', row); $('chat-in').value=''; state.chat.push(row); renderChat(); }catch(e){ toast(state.chatOk===false?'서버 준비 중':'전송 실패 · 신호 확인'); } }
 $('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏'].map(e=>`<button type="button" style="padding:3px 8px;font-family:sans-serif">${e}</button>`).join('');
 $('chat-emo').querySelectorAll('button').forEach(b=>b.onclick=()=>{ const i=$('chat-in'); i.value += b.textContent; i.focus(); });
-$('chat-send').onclick = sendChat; $('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
+$('chat-send').onclick = noDouble($('chat-send'), sendChat); $('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
 
 if('serviceWorker' in navigator && location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 paintAll();
