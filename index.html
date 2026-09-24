@@ -61,8 +61,13 @@ a{color:inherit}
 canvas{image-rendering:pixelated; image-rendering:crisp-edges}
 [hidden]{display:none!important}
 /* 접기 요약이 높이 19px짜리 탭 대상이었다 — 손가락으로 못 누른다 */
-summary{min-height:34px; display:flex; align-items:center; flex-wrap:wrap; gap:4px}
-.px > details > summary{padding:3px 0}
+/* 접기 요약이 높이 19px짜리 띠였다. flex로 바꿨더니 두 줄짜리 요약이 한 줄로 붙어
+   카드마다 줄 수가 달라졌다 — block 유지하고 패딩으로만 손가락 자리를 만든다 */
+summary{min-height:34px; padding:6px 0; list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"▶ "; font-size:.82em; color:var(--ink2)}
+details[open] > summary::before{content:"▼ "}
+.fold > summary::before{content:none}
 html{scroll-behavior:smooth}
 #tab-wave,#tab-mission,#tab-level,#tab-rank{animation:tabin .25s steps(5)}
 @keyframes tabin{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
@@ -207,6 +212,13 @@ section{margin-top:26px}
 .sec-h{display:flex; align-items:center; gap:10px; margin-bottom:10px; color:var(--paper); text-shadow:2px 2px 0 var(--ink); flex-wrap:wrap}
 /* 바다 배경 위 작은 글씨용. 종이색 글씨는 22px 제목에서나 읽히지, 12px에선 흐려진다 */
 .on-sea{color:#0D2846; text-shadow:0 1px 0 rgba(255,255,255,.6)}
+/* 기준 잡기 ①~④ — 네 단계가 한 덩어리로 흘러 어디서 끊기는지 안 보였다.
+   단계마다 실선을 긋고 제목만 픽셀 폰트로 남긴다 */
+.basis-steps{margin-top:10px; display:flex; flex-direction:column; font-size:13.5px; line-height:1.6}
+.basis-steps > div{padding:11px 0; border-top:2px solid rgba(27,27,47,.16)}
+.basis-steps > div:first-child{padding-top:4px; border-top:0}
+.bs-t{display:block; font-family:"Galmuri14","Galmuri11",sans-serif; font-size:16px; line-height:1.25; margin-bottom:4px}
+.basis-steps small{font-size:12px; color:var(--ink2)}
 .sec-h h2{white-space:nowrap}
 .sec-h h2{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:22px; line-height:1}
 .sec-h .tag{font-size:11px; border:3px solid var(--ink); padding:1px 7px; background:var(--sun); color:var(--ink); text-shadow:none; transform:rotate(-3deg)}
@@ -2234,11 +2246,11 @@ function renderBasis(b, a){
   const hiEv = tideEvents(b, a).ev.find(e=>e.type==='만조');
   if(collapsed){ $('basis').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><span style="font-size:13px;flex:1;line-height:1.4"><b>기준 ✓</b> ${r.h.toFixed(1)}m·${r.p.toFixed(1)}초 ${compass(r.sdir)} ${r.fit.ko.slice(-1)} · 만조 ${hiEv?hiEv.time:'-'} · ${Math.round(r.w)}kts ${relKo[r.rel]} · ${suitFor(sstB)}</span><button class="btn sm ghost" type="button" id="basis-open">펼치기</button></div>`; $('basis-open').onclick = ()=>{ state.basisOpen = true; renderBasis(b, a); }; return; }
   $('basis').innerHTML = `<div style="display:flex;align-items:center;gap:10px"><span class="eyebrow" style="flex:1">오늘의 기준 잡기 · ${date.slice(5).replace('-','.')} ${b.name}</span><label class="item" style="gap:8px;font-size:13px;font-weight:700;align-items:center"><input type="checkbox" id="basis-ck" ${bchecked?'checked':''}><span>확인했어요</span></label></div>
-    <div style="margin-top:8px;display:flex;flex-direction:column;gap:10px;font-size:13px;line-height:1.55">
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">① 파고 · 피리어드 — ${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b><br>${waveNote}.<br>${periodNote}.<br><b>파도가 ${compass(r.sdir)}에서 들어옴</b> → ${b.name}이 가장 잘 받는 방향은 ${compassKo(b.swell)}, 지금은 <b>${r.fit.ko}</b>${b.note?`<br><small>${b.note}</small>`:''}${r.fit.s<=0?`<br><small>이 방향을 더 잘 받는 해변: ${BEACHES.filter(x=>swellFit(x, r.sdir).s>=1).map(x=>x.name).slice(0,3).join(' · ')||'없음'}</small>`:''}</div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">② 물때</b><br>${tideEvents(b,a).ev.map(e=>`<b>${e.type}</b> ${e.time} <small>${e.h>=0?'+':''}${e.h.toFixed(2)}m</small>`).join(' · ')||'극값 없음'}${state.day===0?`<br>${(()=>{ const now=new Date(), hNow=now.getHours()+now.getMinutes()/60, i0=Math.floor(hNow), lv0=a.hours[i0]?.lvl, lv1=a.hours[Math.min(23,i0+1)]?.lvl; return lv0==null||lv1==null?'':`지금 <b>${lv1>lv0+0.005?'들물 ↑':lv1<lv0-0.005?'날물 ↓':'정조 →'}</b> · `; })()}수심 한 뼘(20cm) 차이로 파도 형태가 바뀜, 작은 파도일수록 민감`:''}<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">브리핑 자세히</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${ts.text} 동해안 수심은 물때에 따라 0.1~0.48m 사이를 오가고, 해변마다 파도가 가장 좋은 기준 수심이 따로 있습니다. 별점을 남기면 그때 수심이 기록돼 6기 기준이 쌓입니다.<br><small style="color:var(--ink2)">기준: ${ts.src}</small></div></details></div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">③ 바람 — ${compassKo(r.dir)} ${Math.round(r.w)}kts · ${relKo[r.rel]}</b><br>${r.rel==='on'?'바다에서 해변으로 부는 바람. 파도 면이 무너져 거칠어짐 → 바람 약한 이른 시간대 권장':r.rel==='off'?'해변에서 바다로 부는 바람. 파도 면이 매끈해짐(글래시) → 일어서는 타이밍을 한 박자 늦게':'해변과 나란히 부는 옆바람. 파도 면에 결이 생김 → 바람을 등진 쪽이 유리'}.</div>
-      <div><b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><details style="margin-top:2px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">왜 이 슈트?</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${suitWhy(sstB, a.tempMin)}</div></details><div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
+    <div class="basis-steps">
+      <div><b class="bs-t">① 파고 · 피리어드 — ${r.h.toFixed(1)}m · ${r.p.toFixed(1)}초</b>${waveNote}.<br>${periodNote}.<br><b>파도가 ${compass(r.sdir)}에서 들어옴</b> → ${b.name}이 가장 잘 받는 방향은 ${compassKo(b.swell)}, 지금은 <b>${r.fit.ko}</b>${b.note?`<br><small>${b.note}</small>`:''}${r.fit.s<=0?`<br><small>이 방향을 더 잘 받는 해변: ${BEACHES.filter(x=>swellFit(x, r.sdir).s>=1).map(x=>x.name).slice(0,3).join(' · ')||'없음'}</small>`:''}</div>
+      <div><b class="bs-t">② 물때</b>${tideEvents(b,a).ev.map(e=>`<b>${e.type}</b> ${e.time} <small>${e.h>=0?'+':''}${e.h.toFixed(2)}m</small>`).join(' · ')||'극값 없음'}${state.day===0?`<br>${(()=>{ const now=new Date(), hNow=now.getHours()+now.getMinutes()/60, i0=Math.floor(hNow), lv0=a.hours[i0]?.lvl, lv1=a.hours[Math.min(23,i0+1)]?.lvl; return lv0==null||lv1==null?'':`지금 <b>${lv1>lv0+0.005?'들물 ↑':lv1<lv0-0.005?'날물 ↓':'정조 →'}</b> · `; })()}수심 한 뼘(20cm) 차이로 파도 형태가 바뀜, 작은 파도일수록 민감`:''}<details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">브리핑 자세히</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${ts.text} 동해안 수심은 물때에 따라 0.1~0.48m 사이를 오가고, 해변마다 파도가 가장 좋은 기준 수심이 따로 있습니다. 별점을 남기면 그때 수심이 기록돼 6기 기준이 쌓입니다.<br><small style="color:var(--ink2)">기준: ${ts.src}</small></div></details></div>
+      <div><b class="bs-t">③ 바람 — ${compassKo(r.dir)} ${Math.round(r.w)}kts · ${relKo[r.rel]}</b>${r.rel==='on'?'바다에서 해변으로 부는 바람. 파도 면이 무너져 거칠어짐 → 바람 약한 이른 시간대 권장':r.rel==='off'?'해변에서 바다로 부는 바람. 파도 면이 매끈해짐(글래시) → 일어서는 타이밍을 한 박자 늦게':'해변과 나란히 부는 옆바람. 파도 면에 결이 생김 → 바람을 등진 쪽이 유리'}.</div>
+      <div><b class="bs-t">④ 웻수트 — ${suitFor(sstB)} <small style="font-weight:400">(수온 ${sstB.toFixed(1)}°C · 기온 ${Math.round(a.tempMin)}~${Math.round(a.tempMax)}°C)</small></b><details style="margin-top:2px"><summary style="cursor:pointer;font-size:12px;color:var(--ink2)">왜 이 슈트?</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">${suitWhy(sstB, a.tempMin)}</div></details><div class="lab-sm" style="margin-top:4px"><a href="#" onclick="showTab('gear');return false">장비 탭 — 일본 웻슈트 브랜드·소재·봉제 가이드 →</a></div></div>
     </div>
     <div class="lab-sm" style="margin-top:8px">데이터: Open-Meteo(${b.name} 앞바다, 매시 갱신) · 물때 ${state.social.tides[date]?'코치 입력 공식값':'조위 모델'}</div>
     ${isCoach ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">코치: 오늘 공식 물때 입력 (바다누리 기준)</summary><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px"><label>만조 시각<input id="tide-hit" type="time" value="${off?.hi?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>만조 높이(m)<input id="tide-hih" type="number" step="0.01" value="${off?.hi?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 시각<input id="tide-lot" type="time" value="${off?.lo?.[0]?.t||''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label><label>간조 높이(m)<input id="tide-loh" type="number" step="0.01" value="${off?.lo?.[0]?.h??''}" style="width:100%;border:3px solid var(--ink);padding:5px;font-family:inherit"></label></div><button class="btn sm blue" type="button" id="tide-save" style="margin-top:8px">저장 → 전원 브리핑에 반영</button></details>` : ''}`;
