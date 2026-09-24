@@ -605,6 +605,13 @@ footer a{color:var(--paper)}
       <div class="cam-more" style="margin-top:8px"><a id="cam-link" href="#" target="_blank" rel="noopener">↗ WSB FARM에서 크게</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">전체 캠</a><a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 해안 CCTV</a><a href="https://www.weather.go.kr/w/weather/warning/status.do" target="_blank" rel="noopener">기상청 특보</a></div>
       </section>
       <div class="px sand" id="basis" style="margin-top:10px"></div>
+      <!-- 오늘 조건 체크리스트는 아침에 보는 것인데 세션 기록·차트 뒤에 있었다.
+           아침(판정→기준→체크리스트) → 바다(체크인·버디·파티) → 나온 뒤(세션·별점) 순서로 -->
+      <section>
+        <div class="sec-h"><h2>체크리스트</h2><span class="tag">오늘 조건</span></div>
+        <div class="list px" id="checks"></div>
+        <div class="practice"><div class="lab-sm" style="color:#0D2846;text-shadow:0 1px 0 rgba(255,255,255,.6);font-weight:600">오늘 연습할 기술 / 포인트</div><textarea id="practice" placeholder="예) 팝업 — 손 V자, 팔꿈치 갈비뼈 아래, 엉덩이 안 들기"></textarea></div>
+      </section>
       <div class="ci" id="ci"><div class="avs" id="ci-avs"></div><div class="t" id="ci-t"><b>지금 낙산에 아무도 없어요</b><small>바다 도착하면 체크인 → 옆 동기를 버디로 · 4시간 뒤 자동 해제</small></div><button class="btn sm pink" type="button" id="ci-btn">📍 체크인</button><div id="buddy" style="width:100%;display:none;gap:6px;align-items:center;flex-wrap:wrap;font-size:12px;border-top:2px dashed var(--grid);padding-top:6px"></div></div>
       <div class="pbar" id="pbar"><div class="ph"><b>🏄 파티원 모집</b><span class="cnt2" id="pbar-sub">아직 없어요</span><button class="btn sm ghost" type="button" id="party-new">+ 모집</button></div><div id="pbar-list"></div></div>
       <div class="px sess" id="sess">
@@ -642,11 +649,6 @@ footer a{color:var(--paper)}
         </details>
       </section>
 
-      <section>
-        <div class="sec-h"><h2>체크리스트</h2><span class="tag">오늘 조건</span></div>
-        <div class="list px" id="checks"></div>
-        <div class="practice"><div class="lab-sm" style="color:#0D2846;text-shadow:0 1px 0 rgba(255,255,255,.6);font-weight:600">오늘 연습할 기술 / 포인트</div><textarea id="practice" placeholder="예) 팝업 — 손 V자, 팔꿈치 갈비뼈 아래, 엉덩이 안 들기"></textarea></div>
-      </section>
 
 
       <section>
