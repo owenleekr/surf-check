@@ -402,8 +402,9 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .ci .t small{color:var(--ink2); font-size:11px}
 /* 별점 */
 .stars{display:inline-flex; gap:2px; font-family:sans-serif; font-size:30px; line-height:1; user-select:none}
-.stars .st{position:relative; width:32px; height:32px; color:#D9D4C0}
-.stars .st::before{content:"★"; position:absolute; inset:0; text-align:center}
+/* 빈 별이 연회색 면이라 "누르는 것"으로 안 보였다 — 테두리를 줘서 채울 칸처럼 */
+.stars .st{position:relative; width:32px; height:32px; color:#FFFFFF}
+.stars .st::before{content:"★"; position:absolute; inset:0; text-align:center; -webkit-text-stroke:2px rgba(27,27,47,.4)}
 .stars .st.f::before{color:var(--sun); -webkit-text-stroke:2px var(--ink)}
 .stars .st.h::after{content:"★"; position:absolute; inset:0; text-align:center; color:var(--sun); -webkit-text-stroke:2px var(--ink); clip-path:inset(0 50% 0 0)}
 .stars .st button{position:absolute; top:0; bottom:0; width:50%; opacity:0; border:0; padding:0; cursor:pointer}
@@ -584,7 +585,7 @@ footer a{color:var(--paper)}
         <div class="head"><div><span class="eyebrow">오늘 세션 · <span id="sess-beach">낙산</span> · <span id="sess-cls"></span></span><div class="total"><span id="sess-total">0</span><small id="sess-unit">번 성공</small></div><div class="lab-sm" id="sess-sub" style="margin:2px 0 0"></div></div><button class="undo" type="button" id="sess-undo">하나 취소</button></div>
         <div class="cnt" id="sess-btns"></div>
         <div class="lab-sm" id="sess-hint" style="margin-top:8px"></div>
-        <div id="rate" style="margin-top:12px;border-top:3px dashed var(--grid);padding-top:10px"><div class="lab-sm">오늘 파도, 차트 대비 실제로는? · 0.5점 단위 · 첫 평가 +5 XP</div><div class="rate-row"><div class="stars" id="stars"></div><span class="num2" id="rate-num">–</span></div><div style="display:flex;gap:6px;margin-top:8px"><input id="rate-txt" placeholder="한 줄 (선택) — 예) 세트 간격 길고 면 좋았음" maxlength="60" style="flex:1;border:3px solid var(--ink);padding:6px 8px;font-size:13px;font-family:inherit;background:#fff"><button class="btn sm blue" type="button" id="rate-save">저장</button></div><div class="rl" id="rate-info"></div></div>
+        <div id="rate" style="margin-top:12px;border-top:3px dashed var(--grid);padding-top:10px"><div class="lab-sm">오늘 파도, 차트 대비 실제로는? — <b>★을 탭</b> · 반쪽은 왼쪽 절반 · 첫 평가 +5 XP</div><div class="rate-row"><div class="stars" id="stars"></div><span class="num2" id="rate-num">–</span></div><div style="display:flex;gap:6px;margin-top:8px"><input id="rate-txt" placeholder="한 줄 (선택) — 예) 세트 간격 길고 면 좋았음" maxlength="60" style="flex:1;border:3px solid var(--ink);padding:6px 8px;font-size:13px;font-family:inherit;background:#fff"><button class="btn sm blue" type="button" id="rate-save">저장</button></div><div class="rl" id="rate-info"></div></div>
         <details id="sess-lesson" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700;font-size:13px">✎ 오늘 레슨런 적기 (이론 · 피드백 · 다음)</summary><div id="sess-lesson-form" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div></details>
         <button class="btn sm pink" type="button" onclick="openCard()" style="margin-top:10px;width:100%">👏 오늘 같이 탄 친구 칭찬하기</button>
       </div>
@@ -1390,7 +1391,7 @@ function renderTiles(b, a){
     tile('drop','수온', `${sst.toFixed(1)}<small>°C</small>`, `<b>${suitFor(sst)}</b>${nowSst!=null?` · 지금 ${pad2(new Date().getHours())}시 기준`:''}`) +
     tile('temp','기온', `${Math.round(a.tempMin)}<small>~</small>${Math.round(a.tempMax)}<small>°C</small>`, `${wxKo(r.wx)} · 강수 ${rain}%${a.tempMin<=18?' · 새벽엔 서늘, 겉옷':''}`) +
     tile('wave','파고 · 피리어드', `${r.h.toFixed(1)}<small>m</small> / ${r.p.toFixed(1)}<small>초</small>`, `${compass(r.wdir)}에서 · 너울 ${(r.swH??0).toFixed(1)}m ${Math.round(r.swP??0)}초 · <b>${a.swell}</b>`) +
-    tile('wind','바람', `${Math.round(r.w)}<small>kts</small> ${compass(r.dir)}`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 초피':r.rel==='off'?' · 글래시':''} · 돌풍 ${Math.round(r.gust)}kts`);
+    tile('wind','바람', `${compassKo(r.dir)} ${Math.round(r.w)}<small>kts</small>`, `<b>${relKo[r.rel]}</b>${r.rel==='on'?' · 초피':r.rel==='off'?' · 글래시':''} · 돌풍 ${Math.round(r.gust)}kts`);
   paintAll($('tiles'));
 }
 function renderSource(b, a){
@@ -2280,7 +2281,11 @@ function renderRate(){
   if(!$('rate')) return; const b = BEACHES[state.beach], a = analyze(b, state.day), id = `${ME.id}|${b.name}|${today()}`;
   const mine = state.social.ratings.find(r=>r.id===id); if(mine && !rateVal){ rateVal = +mine.stars; $('rate-txt').value = mine.comment||''; }
   $('stars').innerHTML = starsHTML(rateVal); $('rate-num').textContent = rateVal ? rateVal.toFixed(1) : '–';
-  $('stars').querySelectorAll('button').forEach(x=>x.onclick=()=>{ rateVal = +x.dataset.v; $('stars').innerHTML = starsHTML(rateVal); $('rate-num').textContent = rateVal.toFixed(1); $('stars').querySelectorAll('button').forEach(y=>y.onclick=x.onclick); });
+  /* 별을 다시 그린 뒤 새 버튼에 "방금 눌린 별의 핸들러"를 그대로 복사하고 있었다 —
+     한 번 누르고 나면 어느 별을 눌러도 같은 점수가 됐다. 매번 제 값으로 다시 묶는다. */
+  const bindStars = ()=>$('stars').querySelectorAll('button').forEach(x=>x.onclick=()=>{
+    rateVal = +x.dataset.v; $('stars').innerHTML = starsHTML(rateVal); $('rate-num').textContent = rateVal.toFixed(1); bindStars(); });
+  bindStars();
   const snap = chartSnap(b, a), todays = state.social.ratings.filter(r=>r.beach===b.name && r.date===today()), sim = similar(b, snap, null);
   const avg = arr => arr.length ? (arr.reduce((s,r)=>s+(+r.stars),0)/arr.length).toFixed(1) : null;
   $('rate-info').innerHTML = state.social.ok===false ? notReady : [ mine?`내 평가 ★${(+mine.stars).toFixed(1)} 저장됨`:'', todays.length?`오늘 ${b.name} 실제 ★${avg(todays)} (${todays.length}명)`:'', sim.length?`비슷한 차트(${snap.h}m·${snap.p}초·${relKo[snap.rel]})일 때 실제 ★${avg(sim)} (${sim.length}회) vs 차트 판정 "${a.vd.t}"`:'' ].filter(Boolean).join(' · ') || '별점이 쌓이면 "차트가 이 정도면 실제로 몇 점"이 여기 뜹니다';
