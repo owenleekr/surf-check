@@ -424,7 +424,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .vp .nm{font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink); padding:0 4px; max-width:106px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .vp .bub{position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink); padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:120px; white-space:normal; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2}
 .vp .bub::after{content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--ink)}
-.vp.me canvas{outline:3px solid var(--sun)}
+.vp.me .nm{background:var(--sun); border-width:3px}   /* "나"는 이름표를 노랗게 — 스프라이트에 테두리를 두르면 펫까지 감싸 창문처럼 보인다 */
 .vp.here::before{content:"📍"; position:absolute; top:-2px; right:-2px; font-size:11px; font-family:sans-serif; z-index:3}
 .mood{display:flex; gap:6px; margin-top:10px}
 .mood input{flex:1; border:4px solid var(--ink); padding:8px 10px; font-size:14px; font-family:inherit; background:#fff}
@@ -2761,30 +2761,33 @@ const notReady = '서버 테이블 준비 중 (코치가 supabase-social.sql 실
 
 /* ═══════════ 오늘의 서퍼 · 서핑 소식 ═══════════ */
 const SURFERS = [
-  ['켈리 슬레이터','미국','WSL 월드 타이틀 11회. 파이프라인에서 50대에도 우승한 살아 있는 전설'],
-  ['스테파니 길모어','호주','월드 타이틀 8회. 흐르듯 부드러운 스타일의 교과서'],
-  ['가브리엘 메디나','브라질','월드 타이틀 3회. 에어와 파워를 한 몸에 — 브라질리언 스톰의 선봉'],
-  ['존 존 플로렌스','하와이','파이프라인 토박이. 월드 타이틀 3회. 어떤 파도든 자연스럽게 읽는 감각'],
-  ['카리사 무어','하와이','월드 타이틀 5회, 2021 도쿄 올림픽 첫 서핑 금메달'],
-  ['필리페 톨레도','브라질','2022·2023 월드 챔피언. 스몰웨이브 퍼포먼스의 끝판'],
-  ['이탈로 페헤이라','브라질','2019 월드 챔피언, 도쿄 올림픽 금메달. 폭발적인 에어'],
-  ['캐롤라인 마크스','미국','2023 월드 챔피언, 2024 파리 올림픽(타히티 테아후푸) 금메달'],
-  ['베서니 해밀턴','하와이','13살에 상어에게 왼팔을 잃고도 프로로 복귀. 다큐·영화 「소울 서퍼」'],
-  ['듀크 카하나모쿠','하와이','올림픽 수영 금메달리스트이자 현대 서핑을 세계에 알린 "서핑의 아버지"'],
-  ['톰 커렌','미국','월드 타이틀 3회. 군더더기 없는 스타일의 원형'],
-  ['믹 패닝','호주','월드 타이틀 3회. 2015 제이베이 결승 중 상어와 마주친 그 장면'],
-  ['레인 비츨리','호주','월드 타이틀 7회. 여자 서핑의 기준을 세운 사람'],
-  ['카이 레니','하와이','빅웨이브·포일·윈드서핑 다 하는 만능 워터맨. 자스(Jaws) 라이딩'],
-  ['이가라시 카노아','일본','도쿄 올림픽 은메달. 일본계 미국 서퍼, 치바 출신 부모'],
-  ['조엘 튜더','미국','롱보드 월드 챔피언. 클래식 노즈라이딩의 아이콘'],
-  ['켈리아 모니즈','하와이','롱보드 월드 챔피언 2회(2012·2013). 스타일리시한 로그 라이딩'],
-  ['몰리 피클럼','호주','2025 월드 챔피언급 신예. 파워 서핑의 다음 세대'],
-  ['잭 로빈슨','호주','파이프·테아후푸 같은 무거운 파도에서 특히 강한 스페셜리스트'],
-  ['타일러 라이트','호주','월드 타이틀 2회. 부상과 질병을 딛고 돌아온 근성'],
+  ['켈리 슬레이터','미국','WSL 월드 타이틀 11회. 파이프라인에서 50대에도 우승한 살아 있는 전설','lVMsXRJca8E'],
+  ['스테파니 길모어','호주','월드 타이틀 8회. 흐르듯 부드러운 스타일의 교과서','dHD7Ipi4wx0'],
+  ['가브리엘 메디나','브라질','월드 타이틀 3회. 에어와 파워를 한 몸에 — 브라질리언 스톰의 선봉','_a8MFyKSc1s'],
+  ['존 존 플로렌스','하와이','파이프라인 토박이. 월드 타이틀 3회. 어떤 파도든 자연스럽게 읽는 감각','r3IcMTzLh_8'],
+  ['카리사 무어','하와이','월드 타이틀 5회, 2021 도쿄 올림픽 첫 서핑 금메달','v8_DSBu1geE'],
+  ['필리페 톨레도','브라질','2022·2023 월드 챔피언. 스몰웨이브 퍼포먼스의 끝판','hhCKeVRqL5g'],
+  ['이탈로 페헤이라','브라질','2019 월드 챔피언, 도쿄 올림픽 금메달. 폭발적인 에어','QjGCXtOfJ7k'],
+  ['캐롤라인 마크스','미국','2023 월드 챔피언, 2024 파리 올림픽(타히티 테아후푸) 금메달','wP87Ac-gR9w'],
+  ['베서니 해밀턴','하와이','13살에 상어에게 왼팔을 잃고도 프로로 복귀. 다큐·영화 「소울 서퍼」','O5MsXjUQLYM'],
+  ['듀크 카하나모쿠','하와이','올림픽 수영 금메달리스트이자 현대 서핑을 세계에 알린 "서핑의 아버지"','L_oyVdxKYiE'],
+  ['톰 커렌','미국','월드 타이틀 3회. 군더더기 없는 스타일의 원형','stTh23ZCJ6E'],
+  ['믹 패닝','호주','월드 타이틀 3회. 2015 제이베이 결승 중 상어와 마주친 그 장면','x73Pce_kd7Y'],
+  ['레인 비츨리','호주','월드 타이틀 7회. 여자 서핑의 기준을 세운 사람',''],
+  ['카이 레니','하와이','빅웨이브·포일·윈드서핑 다 하는 만능 워터맨. 자스(Jaws) 라이딩',''],
+  ['이가라시 카노아','일본','도쿄 올림픽 은메달. 일본계 미국 서퍼, 치바 출신 부모','x73Pce_kd7Y'],
+  ['조엘 튜더','미국','롱보드 월드 챔피언. 클래식 노즈라이딩의 아이콘',''],
+  ['켈리아 모니즈','하와이','롱보드 월드 챔피언 2회(2012·2013). 스타일리시한 로그 라이딩',''],
+  ['몰리 피클럼','호주','2025 월드 챔피언급 신예. 파워 서핑의 다음 세대','edYO0OEU9KA'],
+  ['잭 로빈슨','호주','파이프·테아후푸 같은 무거운 파도에서 특히 강한 스페셜리스트','l1tYR-pECaI'],
+  ['타일러 라이트','호주','월드 타이틀 2회. 부상과 질병을 딛고 돌아온 근성','oOcFNDQ8BFk'],
 ];
 function renderSurferDay(){
-  if(!$('surfer-day')) return; const i = Math.floor(Date.now()/864e5) % SURFERS.length, [n,c,d] = SURFERS[i];
-  $('surfer-day').innerHTML = `<div style="display:flex;gap:12px;align-items:flex-start"><canvas data-spr="star" style="width:28px;height:28px;flex:0 0 auto"></canvas><div><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${n} <small style="font-size:12px;font-weight:400;color:var(--ink2)">${c}</small></div><div style="font-size:13px;line-height:1.5;margin-top:2px">${d}</div><div class="cam-more" style="margin-top:6px"><a href="https://www.youtube.com/results?search_query=${encodeURIComponent(n+' surfing')}" target="_blank" rel="noopener">▶ 영상 보기</a><a href="https://www.google.com/search?q=${encodeURIComponent(n+' 서퍼')}" target="_blank" rel="noopener">더 알아보기</a></div></div></div>`;
+  if(!$('surfer-day')) return; const i = Math.floor(Date.now()/864e5) % SURFERS.length, [n,c,d,v] = SURFERS[i];
+  $('surfer-day').innerHTML = `<div style="display:flex;gap:12px;align-items:flex-start"><canvas data-spr="star" style="width:28px;height:28px;flex:0 0 auto"></canvas><div><div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${n} <small style="font-size:12px;font-weight:400;color:var(--ink2)">${c}</small></div><div style="font-size:13px;line-height:1.5;margin-top:2px">${d}</div><div class="cam-more" style="margin-top:6px">${v?'':`<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(n+' surfing')}" target="_blank" rel="noopener">▶ 영상 찾아보기</a>`}<a href="https://www.google.com/search?q=${encodeURIComponent(n+' 서퍼')}" target="_blank" rel="noopener">더 알아보기</a></div></div></div>
+    ${v?`<button type="button" class="ytf" data-yt="${v}" aria-label="${n} 영상 재생" style="margin-top:8px"><img src="https://img.youtube.com/vi/${v}/mqdefault.jpg" alt="" loading="lazy" decoding="async" onerror="this.remove()"><span class="pl">▶</span></button>
+    <div class="lab-sm" style="margin:3px 0 0">탭하면 여기서 바로 재생 · 출처 유튜브</div>`:''}`;
+  bindGuideVids($('surfer-day'));
   paintAll($('surfer-day'));
 }
 async function renderNews(){
@@ -3247,7 +3250,10 @@ let syncT; function syncUp(){
   syncT = setTimeout(()=>{ fetch(`${SUPA.url}/rest/v1/${SUPA.table}`, { method:'POST', headers:supaH(), body:JSON.stringify(snapshot(ME.id)) }).catch(()=>{}); }, 1200);
 }
 const HIDE_IDS = ['owen','qa_owen','zz_test'];   // 예전 중복 계정
-const isTest = id => typeof id==='string' && (HIDE_IDS.includes(id) || (id.startsWith('zz_') && !(ME && ME.id.startsWith('zz_'))));
+/* zz로 시작하면 전부 테스트다. 예전엔 startsWith('zz_')라 id가 그냥 'zz'인 QA 계정이
+   필터를 통과해 마을에 실명처럼 떴다(2026-09-24, 이름 "김나리"). 언더바를 선택사항으로 둔다. */
+const TESTID = /^zz(_|$)/;
+const isTest = id => typeof id==='string' && (HIDE_IDS.includes(id) || (TESTID.test(id) && !(ME && TESTID.test(ME.id))));
 async function fetchRank(){
   const local = Object.keys(auth.users()).map(snapshot).filter(Boolean);
   if(!supaOn()) return { rows:local, remote:false };
