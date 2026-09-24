@@ -598,6 +598,7 @@ footer a{color:var(--paper)}
     <div class="beaches" id="beaches" role="group" aria-label="해변 선택"></div>
     <div id="state" class="state px"><span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p></div>
     <div id="wave-main" hidden>
+      <div class="px" id="stale" hidden style="margin-bottom:10px;background:var(--sand);display:flex;gap:10px;align-items:center;flex-wrap:wrap"></div>
       <article class="hero px">
         <div class="hero-head">
           <div class="place"><span id="hero-date">—</span><b id="hero-name">낙산</b></div>
@@ -1061,6 +1062,14 @@ function drawSpr(cv, name, tint){
   cv._rows = rows; cv._tint = tint; paint(cv, rows, tint, frame);
 }
 function paintAll(root=document){ root.querySelectorAll('canvas[data-spr]').forEach(c=>drawSpr(c, c.dataset.spr)); }
+/* 모달 닫기 — ESC와 바깥 클릭. 취소할 방법이 "닫기" 버튼 하나뿐이면
+   폼을 열어놓고 빠져나가지 못하는 느낌이 든다(특히 키보드·PC에서).
+   온보딩은 뺀다 — 실수로 건너뛰면 다시 찾기 어렵고, 거기엔 건너뛰기 버튼이 따로 있다. */
+const closeModals = () => { let any = false;
+  document.querySelectorAll('.modal:not([hidden])').forEach(m=>{ m.hidden = true; any = true; });
+  return any; };
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeModals(); });
+document.addEventListener('click', e=>{ if(e.target.classList?.contains('modal')) e.target.hidden = true; });
 /* 접이식 섹션은 한 번 편 사람에겐 계속 펴져 있어야 한다 — 매번 다시 펴게 하면 접은 의미가 없다 */
 function rememberFold(id){ const d = document.getElementById(id); if(!d) return;
   try{ if(localStorage.getItem('surf.fold.'+id)==='1') d.open = true; }catch(e){}
@@ -1441,7 +1450,15 @@ function renderPeriod(b, a){
 }
 function renderHero(b, a){
   const L = dateLabel(b.daily.time[state.day]);
-  $('hero-date').textContent = `${L.iso.replace(/-/g,'.')} (${L.dow}) · ${b.area}${state.cached?` · ${pad2(state.fetchedAt.getHours())}:${pad2(state.fetchedAt.getMinutes())} 캐시`:''}`; $('hero-name').textContent = b.name;
+  $('hero-date').textContent = `${L.iso.replace(/-/g,'.')} (${L.dow}) · ${b.area}`;
+  /* 저장해둔 값으로 보고 있다는 걸 계속 보이게 — 토스트는 사라지고 나면
+     3시간 전 파고를 지금 파고로 믿게 된다 */
+  if($('stale')){ const sb = $('stale');
+    if(state.cached && state.fetchedAt){
+      const mins = Math.round((Date.now()-state.fetchedAt.getTime())/60000);
+      sb.hidden = false;
+      sb.innerHTML = `<b style="font-size:14px">저장해둔 값이에요</b><span class="lab-sm" style="margin:0;flex:1">${mins<60?`${mins}분`:(mins%60 ? `${Math.floor(mins/60)}시간 ${mins%60}분` : `${Math.floor(mins/60)}시간`)} 전 · ${pad2(state.fetchedAt.getHours())}:${pad2(state.fetchedAt.getMinutes())} 기준</span><button class="btn sm blue" type="button" onclick="bootWave()">↻ 새로 받기</button>`;
+    } else sb.hidden = true; } $('hero-name').textContent = b.name;
   const st = $('stamp'); st.dataset.v = a.vd.v; st.textContent = a.vd.t;
   const r = a.rep, windTxt = `${compass(r.dir)} ${relKo[r.rel]} ${Math.round(r.w)}kts`;
   const nowH0 = state.day===0 ? new Date().getHours() : -1;
@@ -1900,8 +1917,15 @@ async function bootWave(){
   st.innerHTML = `<span class="blink">▮</span> 파도 확인 중…<p>Open-Meteo에서 파고·바람·조위를 받아오는 중</p>`;
   try{ await load(); st.hidden = true; $('wave-main').hidden = false; renderWave(); }
   catch(e){
-    if(loadFromCache()){ st.hidden = true; $('wave-main').hidden = false; renderWave(); toast(`신호 약함 · ${pad2(state.fetchedAt.getHours())}:${pad2(state.fetchedAt.getMinutes())} 데이터로 표시`); return; }
-    st.innerHTML = `데이터 못 받아왔어요<p>${e.message}. 바다 앞 신호가 약할 때 그래요. 데이터 켜고 다시 시도.</p><p style="margin-top:10px"><button class="btn sm" type="button" onclick="bootWave()">↻ 다시 시도</button></p>`; }
+    if(loadFromCache()){ st.hidden = true; $('wave-main').hidden = false; renderWave(); return; }
+    /* e.message는 "Failed to fetch" 같은 영문 기술 문구다 — 사용자에게 보여줄 말이 아니다.
+       그리고 파도만 못 받았을 뿐 나머지 탭은 다 되니 막다른 길처럼 두지 않는다. */
+    st.innerHTML = `데이터 못 받아왔어요<p>바다 앞이라 신호가 약한 것 같아요. 데이터를 켜고 다시 받아보세요.</p>
+      <p style="margin-top:10px"><button class="btn sm" type="button" onclick="bootWave()">↻ 다시 받기</button></p>
+      <p class="lab-sm" style="margin-top:10px">신호 없이도 되는 것 — 
+        <span class="linkish" onclick="showTab('mission')">수업 체크</span> ·
+        <span class="linkish" onclick="showTab('growth')">코치님 말씀·자세 기록</span> ·
+        <span class="linkish" onclick="showTab('gear')">장비 가이드</span></p>`; }
 }
 
 /* ═══════════ 렌더: 미션 탭 ═══════════ */
