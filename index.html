@@ -2636,7 +2636,50 @@ function renderPose(){
   const trends = withMet.length>=2 ? `<div class="px" style="margin-top:10px;background:#fff"><div class="eyebrow">자세 변화 (자동 측정 ${withMet.length}회)</div>${trend('knee')}${trend('lean')}${trend('stance')}
     <div class="lab-sm" style="margin-top:6px">초록 띠가 기준 범위 · 빨간 점이 최근. 스탠스는 촬영 각도에 따라 흔들려서 띠를 긋지 않았어요.</div>
     <details style="margin-top:4px"><summary style="cursor:pointer;font-size:12px;font-weight:700">이 기준은 어디서 왔나</summary><div class="lab-sm" style="margin-top:4px;line-height:1.6">· <b>${CRIT.knee.ko}</b> — ${CRIT.knee.src}<br>· <b>${CRIT.lean.ko}</b> — ${CRIT.lean.src}<br>· <b>${CRIT.stance.ko}</b> — ${CRIT.stance.src}</div></details></div>` : '';
-  $('pose').innerHTML = `<details class="px sand" style="margin-bottom:10px" ${mine.length?'':'open'}><summary style="cursor:pointer;font-weight:700">📹 촬영 가이드 — 이렇게 찍어야 비교가 됩니다</summary>
+  $('pose').innerHTML = `            </details>
+    ${(()=>{ const n = mine.length, n2 = withMet.length;
+      const step = (on, num, t, d) => `<div style="flex:1 1 90px;border:3px solid ${on?'var(--ink)':'var(--grid)'};background:${on?'var(--mint)':'#fff'};padding:6px 7px;line-height:1.35">
+        <div style="font-weight:800;font-size:12px">${on?'✓':num} ${t}</div><div style="font-size:11px;color:${on?'var(--ink)':'var(--ink2)'}">${d}</div></div>`;
+      return `<div class="px sand" style="margin-bottom:10px">
+        <div class="eyebrow">이렇게 흘러갑니다</div>
+        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+          ${step(n>=1, 1, '영상 올리기', '수업 영상에서 한 파도')}
+          ${step(n2>=1, 2, '분석 받기', '무릎·중심을 자동으로 잼')}
+          ${step(n2>=2, 3, '다음 주와 비교', '같은 자리에서 또 찍어 변화 보기')}
+        </div>
+        <div class="lab-sm" style="margin-top:6px">${
+          n===0 ? '아래에서 영상을 고르면 시작돼요. 한 장만 있어도 다음 주에 비교할 기준이 생깁니다.'
+        : n2===0 ? '사진은 저장됐어요. <b>🎬 영상 전체 분석</b>이나 <b>🤖 자세 자동 분석</b>을 누르면 숫자가 함께 기록돼요.'
+        : n2===1 ? '한 번 더 재면 <b>변화 그래프</b>가 그려져요 — 같은 자리·같은 각도로 찍는 게 핵심입니다.'
+        : `자동 측정 <b>${n2}회</b> — 아래 <b>자세 변화</b>에서 추이를 보세요.`}</div>
+      </div>`; })()}
+    <div class="lab-sm">수업 영상에서 <b>테이크오프 순간</b>을 골라 저장해요. 영상 원본은 폰에만 남고 사진만 올라갑니다.</div>
+    <!-- 파일 입력은 브라우저 기본 회색 버튼이라, 이 섹션의 유일한 행동인데 가장 안 보였다.
+         label로 감싸 앱의 버튼 모양을 입힌다(id는 그대로라 기존 onchange·value='' 다 동작) -->
+    <label class="btn blue" style="display:block;width:100%;margin-top:8px;text-align:center;cursor:pointer">
+      <input type="file" id="pose-file" accept="video/*,image/*" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+      🎬 수업 영상 고르기
+    </label>
+    <div class="lab-sm" id="pose-fname" style="margin-top:4px"></div>
+    <div id="pose-edit" hidden style="margin-top:8px"><video id="pose-video" playsinline muted style="width:100%;border:3px solid var(--ink);background:#000"></video>
+      <input type="range" id="pose-seek" min="0" max="100" value="0" step="0.05" style="width:100%;margin-top:6px">
+      <div style="display:flex;gap:6px;margin-top:4px"><button class="btn sm ghost" type="button" id="pose-prev">◀ 0.1초</button><button class="btn sm ghost" type="button" id="pose-next">0.1초 ▶</button><span class="lab-sm" style="margin:0;align-self:center" id="pose-time"></span></div>
+      <div class="chips" style="margin-top:6px">${Object.entries(STAGES).map(([k,v],i)=>`<button type="button" data-stage="${k}" aria-pressed="${i===1}">${v}</button>`).join('')}</div>
+      <label class="item" style="margin-top:6px;gap:8px;font-size:13px"><input type="checkbox" id="pose-strip" checked><span>앞뒤 0.6초를 <b>4컷 스트립</b>으로 (동작 흐름이 보여요)</span></label>
+      <input id="pose-note" maxlength="40" placeholder="메모 (예: 앞발 45도 시도)" style="width:100%;border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px;margin-top:6px">
+      <button class="btn sm grape" type="button" id="pose-scan" style="width:100%;margin-top:8px">🎬 영상 전체 분석 — 테이크오프·라이딩 재기</button>
+      <div id="pose-scan-out" style="margin-top:6px"></div>
+      <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sm blue" type="button" id="pose-save">이 장면 저장</button><button class="btn sm mint" type="button" id="pose-ai">🤖 자세 자동 분석</button></div>
+      <div class="lab-sm" style="margin-top:4px">저장하면 <b>이 장면 사진만</b> 올라가요. 영상 원본은 서버에 안 올라가니, 다시 보려면 폰의 원본을 다시 고르면 됩니다.</div>
+      <div id="pose-report" class="lab-sm" style="margin-top:6px"></div></div>
+    ${trends}
+    ${cmp || '<div class="lab-sm" style="margin-top:8px">아직 기록이 없어요. 수업 영상을 올려 첫 자세를 남겨보세요.</div>'}
+        <div class="lab-sm" style="margin-top:14px;border-top:2px dashed var(--grid);padding-top:8px">참고 자료 — 필요할 때 펼쳐보세요</div>
+    <details class="px" style="background:#fff;margin-bottom:10px"><summary style="cursor:pointer;font-weight:700">📐 기준 자세 — 이렇게 생겨야 합니다</summary>
+      <div style="margin-top:8px">${refPoseSVG()}</div>
+      <div class="lab-sm" style="margin-top:6px">내 사진과 나란히 놓고 보세요. 항목별 확인은 <b>위 테이크오프 체크</b>에 7가지로 있습니다.</div>
+    </details>
+    <details class="px sand" style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:700">📹 촬영 가이드 — 이렇게 찍어야 비교가 됩니다</summary>
       <div style="font-size:13px;line-height:1.6;margin-top:8px">
         <b>1. 옆에서(측면) 찍기</b> — 해변에서 파도와 나란히. 앞뒤 중심·무릎 각도는 측면에서만 보입니다.<br>
         <b>2. 몸 전체가 들어오게</b> — 머리부터 보드 테일까지. 너무 멀면 관절 인식이 안 돼요.<br>
@@ -2649,10 +2692,6 @@ function renderPose(){
         <b>팝업 시간(엎드림 → 섬)을 못 잽니다.</b> 일어선 뒤부터 찍으면 라이딩 시간만 나와요.
         <div class="lab-sm" style="margin-top:6px">수업 영상은 매주 월요일 구글드라이브·STC 카페에 올라옵니다 — 거기서 받아 쓰면 각도가 일정해요.</div>
       </div></details>
-    <details class="px" style="background:#fff;margin-bottom:10px" open><summary style="cursor:pointer;font-weight:700">📐 기준 자세 — 이렇게 생겨야 합니다</summary>
-      <div style="margin-top:8px">${refPoseSVG()}</div>
-      <div class="lab-sm" style="margin-top:6px">내 사진과 나란히 놓고 보세요. 항목별 확인은 <b>위 테이크오프 체크</b>에 7가지로 있습니다.</div>
-    </details>
     <details class="px sand" style="margin-bottom:10px"><summary style="cursor:pointer;font-weight:700">🏠 집에서 고치기 — 육상 드릴 3가지</summary>
       <div style="font-size:13px;line-height:1.6;margin-top:8px">
         물에서는 한 파도에 한 번뿐이라, 실제 교정은 거의 육상에서 일어납니다.<br><br>
@@ -2676,42 +2715,11 @@ function renderPose(){
           · <b>엉덩이는 보드 가운데 · 앞발 60 : 뒷발 40</b> — Rapture Surfcamps ("hips centred over the board, weight distributed roughly 60/40 between your front foot and back foot"),
           <a href="https://cornishwave.com/beginners-guide-to-surfing/the-importance-of-stance/" target="_blank" rel="noopener">Cornish Wave</a>도 같은 60:40
         </div></details>
-    </details>
-    ${(()=>{ const n = mine.length, n2 = withMet.length;
-      const step = (on, num, t, d) => `<div style="flex:1 1 90px;border:3px solid ${on?'var(--ink)':'var(--grid)'};background:${on?'var(--mint)':'#fff'};padding:6px 7px;line-height:1.35">
-        <div style="font-weight:800;font-size:12px">${on?'✓':num} ${t}</div><div style="font-size:11px;color:${on?'var(--ink)':'var(--ink2)'}">${d}</div></div>`;
-      return `<div class="px sand" style="margin-bottom:10px">
-        <div class="eyebrow">이렇게 흘러갑니다</div>
-        <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
-          ${step(n>=1, 1, '영상 올리기', '수업 영상에서 한 파도')}
-          ${step(n2>=1, 2, '분석 받기', '무릎·중심을 자동으로 잼')}
-          ${step(n2>=2, 3, '다음 주와 비교', '같은 자리에서 또 찍어 변화 보기')}
-        </div>
-        <div class="lab-sm" style="margin-top:6px">${
-          n===0 ? '아래에서 영상을 고르면 시작돼요. 한 장만 있어도 다음 주에 비교할 기준이 생깁니다.'
-        : n2===0 ? '사진은 저장됐어요. <b>🎬 영상 전체 분석</b>이나 <b>🤖 자세 자동 분석</b>을 누르면 숫자가 함께 기록돼요.'
-        : n2===1 ? '한 번 더 재면 <b>변화 그래프</b>가 그려져요 — 같은 자리·같은 각도로 찍는 게 핵심입니다.'
-        : `자동 측정 <b>${n2}회</b> — 아래 <b>자세 변화</b>에서 추이를 보세요.`}</div>
-      </div>`; })()}
-    <div class="lab-sm">수업 영상에서 <b>테이크오프 순간</b>을 골라 저장해요. 영상 원본은 폰에만 남고 사진만 올라갑니다.</div>
-    <input type="file" id="pose-file" accept="video/*,image/*" style="margin-top:6px;font-size:12px;width:100%">
-    <div id="pose-edit" hidden style="margin-top:8px"><video id="pose-video" playsinline muted style="width:100%;border:3px solid var(--ink);background:#000"></video>
-      <input type="range" id="pose-seek" min="0" max="100" value="0" step="0.05" style="width:100%;margin-top:6px">
-      <div style="display:flex;gap:6px;margin-top:4px"><button class="btn sm ghost" type="button" id="pose-prev">◀ 0.1초</button><button class="btn sm ghost" type="button" id="pose-next">0.1초 ▶</button><span class="lab-sm" style="margin:0;align-self:center" id="pose-time"></span></div>
-      <div class="chips" style="margin-top:6px">${Object.entries(STAGES).map(([k,v],i)=>`<button type="button" data-stage="${k}" aria-pressed="${i===1}">${v}</button>`).join('')}</div>
-      <label class="item" style="margin-top:6px;gap:8px;font-size:13px"><input type="checkbox" id="pose-strip" checked><span>앞뒤 0.6초를 <b>4컷 스트립</b>으로 (동작 흐름이 보여요)</span></label>
-      <input id="pose-note" maxlength="40" placeholder="메모 (예: 앞발 45도 시도)" style="width:100%;border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px;margin-top:6px">
-      <button class="btn sm grape" type="button" id="pose-scan" style="width:100%;margin-top:8px">🎬 영상 전체 분석 — 테이크오프·라이딩 재기</button>
-      <div id="pose-scan-out" style="margin-top:6px"></div>
-      <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sm blue" type="button" id="pose-save">이 장면 저장</button><button class="btn sm mint" type="button" id="pose-ai">🤖 자세 자동 분석</button></div>
-      <div class="lab-sm" style="margin-top:4px">저장하면 <b>이 장면 사진만</b> 올라가요. 영상 원본은 서버에 안 올라가니, 다시 보려면 폰의 원본을 다시 고르면 됩니다.</div>
-      <div id="pose-report" class="lab-sm" style="margin-top:6px"></div></div>
-    ${trends}
-    ${cmp || '<div class="lab-sm" style="margin-top:8px">아직 기록이 없어요. 수업 영상을 올려 첫 자세를 남겨보세요.</div>'}
     ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${x.url}" alt="${String(x.date)} ${STAGES[x.stage]||''} 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${x.url}"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${noteText(x)?` · ${noteText(x)}`:''}${metOf(x)?metLine(metOf(x)):''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
   let stage = 'stand', blobUrl = null;
   const vEl = () => $('pose-video');
   $('pose-file').onchange = e=>{ const f = e.target.files[0]; if(!f) return; if(blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = URL.createObjectURL(f);
+    $('pose-fname').textContent = `고른 파일 · ${f.name}`;     // 기본 입력을 숨겼으니 파일명은 우리가 보여준다
     const v = vEl(); $('pose-edit').hidden = false; $('pose-report').textContent = '';
     if(f.type.startsWith('image/')){ v.hidden = true; $('pose-seek').hidden = true; $('pose-strip').checked = false; const img = new Image(); img.src = blobUrl; v._img = img; }
     else { v.hidden = false; $('pose-seek').hidden = false; v._img = null; v.src = blobUrl; v.onloadedmetadata = ()=>{ $('pose-seek').max = v.duration; v.currentTime = Math.min(1, v.duration/2); }; v.ontimeupdate = ()=>{ $('pose-time').textContent = `${v.currentTime.toFixed(1)}s / ${(v.duration||0).toFixed(1)}s`; $('pose-seek').value = v.currentTime; }; }
