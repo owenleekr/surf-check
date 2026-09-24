@@ -14,3 +14,13 @@ do $$ begin
   create policy "terms insert" on terms for insert with check (true);
   create policy "terms update" on terms for update using (true);
 exception when duplicate_object then null; end $$;
+
+-- 되돌리기용 delete 정책 (2026-09-24 추가)
+-- 처음엔 select/insert/update만 열어뒀는데, 그러면 코치가 한 번 저장한 표현을
+-- 원래대로(lex.js 기본값) 돌릴 방법이 없다. 행을 지워야 기본값으로 떨어지기 때문.
+do $$ begin
+  create policy "terms delete" on terms for delete using (true);
+exception when duplicate_object then null; end $$;
+
+-- 연결 점검용으로 만든 행 정리 (있으면 지우고, 없으면 아무 일도 안 함)
+delete from terms where id = 'zz_probe';

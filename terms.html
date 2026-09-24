@@ -109,6 +109,14 @@ async function save(id, patch){
   if(!r.ok) throw new Error('저장 실패');
   LEX[id] = { ko:row.ko, def:row.def, src:row.src, status:row.status, note:row.note, by:row.by_name };
 }
+/* 저장한 표현을 원래대로 — 행을 지우면 앱이 lex.js 기본값으로 떨어진다.
+   (그래서 terms 테이블에 delete 정책이 필요하다. supabase-terms.sql 참고) */
+async function revert(id){
+  const r = await fetch(`${SUPA.url}/rest/v1/terms?id=eq.${encodeURIComponent(id)}`, { method:'DELETE', headers:H() });
+  if(!r.ok) throw new Error('되돌리기 실패');
+  delete LEX[id];
+  const seed = window.LEX_SEED[id]; if(seed) LEX[id] = { ...seed };
+}
 
 function render(){
   const isCoach = ME.profile?.role === 'coach';
@@ -121,13 +129,17 @@ function render(){
     return `<div class="row">
       <div class="hd"><b>${e.ko||id}</b><span class="meta" style="margin:0">${e.def||''}</span></div>
       <div class="meta">출처 ${e.src||'—'}${st==='approved'?' · <span class="ok">코치 승인</span>':st==='fix'?` · <span class="fix">수정 요청</span>${e.note?` — ${e.note}`:''}`:''}${e.by?` · ${e.by}`:''}</div>
-      ${isCoach ? `<div class="edit"><input data-ko="${id}" value="${(e.ko||'').replace(/"/g,'&quot;')}" placeholder="화면에 쓸 말"><input data-def="${id}" value="${(e.def||'').replace(/"/g,'&quot;')}" placeholder="설명"><button class="btn sm mint" data-save="${id}">저장·승인</button></div>`
+      ${isCoach ? `<div class="edit"><input data-ko="${id}" value="${(e.ko||'').replace(/"/g,'&quot;')}" placeholder="화면에 쓸 말"><input data-def="${id}" value="${(e.def||'').replace(/"/g,'&quot;')}" placeholder="설명"><span style="display:flex;gap:6px"><button class="btn sm mint" data-save="${id}">저장·승인</button>${st?`<button class="btn sm ghost" data-revert="${id}" title="lex.js 기본값으로">되돌리기</button>`:''}</span></div>`
                 : `<button class="btn sm ghost" data-fix="${id}" style="margin-top:6px">고쳐주세요</button>`}
     </div>`; }).join('')}</div></div>`).join('');
   $('list').querySelectorAll('[data-save]').forEach(b=>b.onclick = async ()=>{
     const id = b.dataset.save;
     try{ await save(id, { ko:$('list').querySelector(`[data-ko="${id}"]`).value.trim(), def:$('list').querySelector(`[data-def="${id}"]`).value.trim(), status:'approved' }); toast('승인 · 앱에 반영됩니다'); render(); }
     catch(e){ toast(e.message); } });
+  $('list').querySelectorAll('[data-revert]').forEach(b=>b.onclick = async ()=>{
+    const id = b.dataset.revert; if(!confirm('이 용어를 앱 기본값으로 되돌릴까요?')) return;
+    try{ await revert(id); toast('기본값으로 되돌렸어요'); render(); }
+    catch(e){ toast(e.message + ' — supabase-terms.sql을 다시 실행해 주세요(delete 정책)'); } });
   $('list').querySelectorAll('[data-fix]').forEach(b=>b.onclick = async ()=>{
     const id = b.dataset.fix, note = prompt('학교에서는 어떻게 부르나요? (비워도 됩니다)') ?? null;
     if(note===null) return;
