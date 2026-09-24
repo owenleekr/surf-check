@@ -479,13 +479,15 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 /* 설명이 가리키는 곳만 어둠에서 꺼낸다. 말로만 "위 빠른 버튼"이라고 하면 못 찾는다 */
 .onb-spot{position:relative; z-index:71; box-shadow:0 0 0 4px var(--sun), 0 0 0 9px rgba(27,27,47,.85), 0 0 0 2000px rgba(18,36,95,.45); border-radius:2px; animation:spotin .25s ease-out}
 @keyframes spotin{from{box-shadow:0 0 0 0 var(--sun), 0 0 0 0 rgba(27,27,47,0), 0 0 0 2000px rgba(18,36,95,.45)}}
-.onb.spotting .dim{opacity:0}
+.onb.spotting .dim{opacity:0; pointer-events:none}   /* 가리키는 중엔 클릭이 통과해야 한다 — 온보딩이 직접 눌러보라고 시킨다 */
 .onb .dlg{z-index:72; position:absolute; left:12px; right:12px; bottom:calc(16px + env(safe-area-inset-bottom,0px)); background:#fff; border:4px solid var(--ink); box-shadow:inset 0 0 0 3px var(--paper), 6px 6px 0 var(--ink); padding:14px 14px 12px; pointer-events:auto; max-height:80svh; overflow:auto}
 .onb .who{display:flex; gap:12px; align-items:flex-start}
 .onb .who canvas{width:64px; height:64px; flex:0 0 auto; background:var(--sky); border:3px solid var(--ink)}
 .onb .name{font-size:11px; color:var(--ink2); letter-spacing:.06em}
 .onb .txt{font-size:15px; line-height:1.6; min-height:3.2em; white-space:pre-line}
 .onb .txt::after{content:"▼"; font-size:10px; margin-left:4px; animation:blink 1s steps(2,start) infinite}
+.onb .btn.pulse{animation:pulse 1s steps(2,start) infinite}
+@keyframes pulse{50%{background:var(--sun); color:var(--ink)}}
 .onb .acts{display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap}
 .onb .step{font-size:11px; color:var(--ink2); margin-right:auto; align-self:center}
 .onb .bld{margin-top:10px}
@@ -1135,6 +1137,37 @@ function closeHowto(){ const v = $('howto-v'); try{ v.pause(); }catch(e){} $('ho
 function openHowto(){ $('howto').hidden = false; }
 document.addEventListener('click', e=>{ const z = e.target.closest?.('[data-zoom]'); if(!z) return;
   $('zoom-img').src = z.dataset.zoom; $('zoom-img').alt = z.alt || '자세 사진'; $('zoom').hidden = false; });
+/* ── 모달을 열면 포커스도 따라 들어가야 한다 ──────────────────────
+   지금까지는 열어도 포커스가 뒤 화면에 남아 있었다. 키보드·스크린리더 사용자는
+   덮여서 보이지도 않는 버튼들 사이를 탭으로 헤매게 된다. 닫을 땐 원래 자리로 돌려준다.
+   여는 경로가 여럿(openCard·openHowto·hidden=false 직접 대입 …)이라
+   호출부마다 붙이지 않고 hidden 속성을 지켜본다 — 어느 경로로 열려도 걸린다. */
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select,textarea,summary,video[controls],[tabindex]:not([tabindex="-1"])';
+const visFocusable = m => [...m.querySelectorAll(FOCUSABLE)].filter(e=>e.offsetWidth || e.offsetHeight || e.tagName==='VIDEO');
+let lastFocus = null;
+/* 온보딩은 뺀다 — 바깥 화면을 직접 누르라고 시키는 안내창이라 가두면 과제를 못 한다 */
+const openOverlay = () => document.querySelector('.modal:not([hidden]), .lvup:not([hidden])');
+function watchOverlay(m){
+  if(!m.hasAttribute('tabindex')) m.tabIndex = -1;                 // 안에 포커스 받을 게 없을 때의 착지점
+  new MutationObserver(()=>{
+    if(!m.hidden){
+      if(!m.contains(document.activeElement)) lastFocus = document.activeElement;
+      setTimeout(()=>{ const f = visFocusable(m); (f[0] || m).focus({ preventScroll:true }); }, 30);
+    } else if(lastFocus && document.contains(lastFocus)){
+      lastFocus.focus({ preventScroll:true }); lastFocus = null;
+    }
+  }).observe(m, { attributes:true, attributeFilter:['hidden'] });
+}
+document.querySelectorAll('.modal, .lvup').forEach(watchOverlay);
+/* 탭이 모달 밖으로 새어나가지 않게 가둔다 */
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Tab') return; const m = openOverlay(); if(!m) return;
+  const f = visFocusable(m); if(!f.length) return;
+  const first = f[0], last = f[f.length-1];
+  if(!m.contains(document.activeElement)){ e.preventDefault(); (e.shiftKey?last:first).focus(); return; }
+  if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+});
 /* 접이식 섹션은 한 번 편 사람에겐 계속 펴져 있어야 한다 — 매번 다시 펴게 하면 접은 의미가 없다 */
 function rememberFold(id){ const d = document.getElementById(id); if(!d) return;
   try{ if(localStorage.getItem('surf.fold.'+id)==='1') d.open = true; }catch(e){}
@@ -3211,10 +3244,18 @@ function onbShow(){
   const st = ONB[onbI]; $('onb').hidden = false; showTab(st.tab);
   setTimeout(()=>onbSpot(st.focus), 260);                          // 탭이 그려진 뒤에
   const who = ONB_PR[st.who] || COACH_PR; $('onb-name').textContent = st.who; typeInto($('onb-txt'), st.txt); drawSpr($('onb-av'), avatarRows(who), avatarTintOf(who, 5));
+  $('onb-next').classList.remove('pulse');
   $('onb-film').hidden = onbI > 0;                                 /* 첫 화면에서만 — 뒤로 갈수록 방해된다 */
   $('onb-step').innerHTML = ONB.map((_,k)=>`<span style="display:inline-block;width:8px;height:8px;margin-right:3px;border:2px solid var(--ink);background:${k<onbI?'var(--mint)':k===onbI?'var(--sun)':'#fff'}"></span>`).join(''); $('onb-next').textContent = st.last ? '출발! 🏄' : '다음 ▶';
   if(st.build){ onbPr = { ...myProfile() }; const paintB = ()=>{ $('onb-bld').innerHTML = `<canvas id="onb-me" data-anim style="width:128px;height:128px;display:block;margin:0 auto 8px;background:var(--sky);border:4px solid var(--ink)"></canvas><div class="opts">${builderHTML(onbPr)}</div>`; drawSpr($('onb-me'), avatarRows(onbPr), avatarTintOf(onbPr, 0)); bindBuilder($('onb-bld'), onbPr, patch=>{ Object.assign(onbPr, patch); paintB(); }); }; paintB(); }
-  else if(st.task){ const done = st.task.check(); $('onb-bld').innerHTML = `<div class="item" style="margin-top:6px"><input type="checkbox" disabled ${done?'checked':''}><label><b>${st.task.label}</b><span>${done?'완료! 다음으로':'대화창 뒤 화면에서 직접 눌러보세요 · 건너뛰어도 돼요'}</span></label></div>`; clearInterval(state.onbPoll); state.onbPoll = setInterval(()=>{ if(!$('onb').hidden && ONB[onbI]===st && st.task.check()){ clearInterval(state.onbPoll); onbShow(); toast('잘했어요!'); } }, 800); }
+  else if(st.task){
+    /* 과제를 마치면 onbShow()를 다시 부르던 탓에 읽던 설명이 처음부터 다시 타이핑됐다.
+       바뀌는 건 이 상자 하나뿐이니 여기만 다시 그린다. */
+    const paintTask = () => { const done = st.task.check();
+      $('onb-bld').innerHTML = `<div class="item" style="margin-top:6px"><input type="checkbox" disabled ${done?'checked':''}><label><b>${st.task.label}</b><span>${done?'✅ 완료! 아래 “다음”으로':'노란 테두리 친 곳을 직접 눌러보세요 · 건너뛰어도 돼요'}</span></label></div>`;
+      if(done) $('onb-next').classList.add('pulse'); };
+    paintTask(); clearInterval(state.onbPoll);
+    state.onbPoll = setInterval(()=>{ if(!$('onb').hidden && ONB[onbI]===st && st.task.check()){ clearInterval(state.onbPoll); paintTask(); toast('잘했어요!'); } }, 800); }
   else if(st.mood){ $('onb-bld').innerHTML = `<div class="mood" style="margin-top:6px"><input id="onb-mood" maxlength="40" placeholder="예) 6기 김나리 잘 부탁해요!" value="${myProfile().mood||''}"></div><div class="lab-sm" style="margin-top:4px">저장하면 마을에 말풍선 + 채팅에 입장 인사 (+5 XP)</div>`; }
   else if(st.home){ const home = myProfile().home || 'naksan'; $('onb-bld').innerHTML = `<div class="chips">${BEACHES.map(b=>`<button type="button" data-home="${b.id}" aria-pressed="${b.id===home}">${b.name}</button>`).join('')}</div>`; $('onb-bld').querySelectorAll('[data-home]').forEach(x=>x.onclick=()=>{ setProfile({ home:x.dataset.home }); LS.set('surf.beach', x.dataset.home); const i = BEACHES.findIndex(b=>b.id===x.dataset.home); if(i>=0){ state.beach = i; renderWave(); } onbShow(); }); }
   else $('onb-bld').innerHTML = '';
