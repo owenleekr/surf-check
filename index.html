@@ -35,6 +35,8 @@
   --sand:#F7DC8F; --sand2:#E2B96A; --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B;
   --sun:#FFD23F; --coral:#FF6B6B; --mint:#4DE1A5; --grape:#9B6BFF; --orange:#FF9F1C;
   --good:#2FD07A; --warn:#FFB020; --bad:#FF4B4B;
+  /* 위 세 색은 "칠하는 색"이다. 크림 배경 위 글자색으로 쓰면 2~3:1이라 아래를 쓴다 */
+  --bad-t:#B3202B; --warn-t:#B45309; --good-t:#12784B;
   --grid:rgba(27,27,47,.15);
 }
 *{box-sizing:border-box}
@@ -150,7 +152,7 @@ h1,h2,h3,.title,.stamp,.hero .place b,.tile .val,.sec-h h2,.lvup .big,.card .ct 
 .day{flex:1; border:4px solid var(--ink); background:var(--paper); padding:5px 4px; font-size:12px; line-height:1.15; text-align:center; box-shadow:3px 3px 0 var(--ink)}
 .day b{display:block; font-size:15px}
 .day[aria-pressed="true"]{background:var(--ink); color:var(--sun)}
-.day.weekend b{color:var(--coral)} .day[aria-pressed="true"].weekend b{color:var(--sun)}
+.day.weekend b{color:#C2303A} .day[aria-pressed="true"].weekend b{color:var(--sun)}
 .beaches{display:flex; gap:8px; overflow-x:auto; padding-block:12px 6px; margin-inline:-14px; padding-inline:14px; scrollbar-width:none}
 .beaches::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto; border:4px solid var(--ink); padding:5px 12px; background:var(--paper); font-size:14px; font-weight:700; box-shadow:3px 3px 0 var(--ink); display:flex; gap:7px; align-items:center}
@@ -246,7 +248,7 @@ section{margin-top:26px}
 .winds .num{font-size:11.5px; letter-spacing:-.02em}
 .winds .w{display:flex; flex-direction:column; align-items:center; gap:1px; line-height:1.1}
 .winds .w b{font-size:16px; display:inline-block; color:var(--ink); font-family:sans-serif}
-.winds .w.on b{color:var(--orange)} .winds .w.off b{color:var(--sea)}
+.winds .w.on b{color:#C2410C} .winds .w.off b{color:#1A47C9}
 .tip{position:absolute; pointer-events:none; background:var(--ink); color:var(--paper); border:3px solid var(--sun); padding:6px 9px; font-size:11px; line-height:1.4; white-space:nowrap; transform:translate(-50%,-112%); opacity:0; z-index:3}
 .tip.show{opacity:1}
 .legend{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:11px; color:var(--ink2); margin-top:8px}
@@ -268,7 +270,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .lab-sm{font-size:12.5px; color:var(--ink2); margin-bottom:6px; line-height:1.5}
 
 /* 캠 */
-.cam-btn{display:flex; align-items:center; gap:12px; text-decoration:none; background:var(--coral); color:#fff}
+.cam-btn{display:flex; align-items:center; gap:12px; text-decoration:none; background:var(--coral); color:var(--ink)}
 .cam-btn .live{font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:18px; line-height:1; background:var(--ink); color:var(--sun); padding:6px 9px; display:flex; align-items:center; gap:8px}
 .cam-btn .live::before{content:""; width:10px; height:10px; background:var(--bad); animation:blink 1.2s steps(2,start) infinite}
 .cam-btn .t{font-weight:700; font-size:16px; line-height:1.25} .cam-btn .t span{display:block; font-weight:400; font-size:12px; opacity:.9; margin-top:2px}
@@ -313,7 +315,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .week.locked .wh{filter:grayscale(1); opacity:.7}
 .att{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
 .att .stamp-att{border:4px dashed var(--ink2); padding:8px 12px; font-size:13px; color:var(--ink2); min-width:150px; text-align:center}
-.att .stamp-att.on{border-style:solid; border-color:var(--coral); color:var(--coral); font-weight:700; transform:rotate(-4deg); background:#fff; animation:stamp .35s steps(4) both}
+.att .stamp-att.on{border-style:solid; border-color:var(--coral); color:#B3202B; font-weight:700; transform:rotate(-4deg); background:#fff; animation:stamp .35s steps(4) both}
 @keyframes stamp{0%{transform:scale(1.8) rotate(-12deg); opacity:0} 100%{transform:scale(1) rotate(-4deg); opacity:1}}
 .att .undo{font-size:12px; color:var(--ink2); background:none; border:0; text-decoration:underline; padding:8px 6px; min-height:34px}
 .skills{display:flex; flex-direction:column; gap:8px}
@@ -361,7 +363,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .quiz .qq{font-weight:700; font-size:16px; line-height:1.4; margin-top:6px}
 .quiz .qa{display:flex; flex-direction:column; gap:6px; margin-top:10px}
 .quiz .qa button{text-align:left; border:3px solid var(--ink); background:#fff; padding:8px 10px; font-size:13px; line-height:1.4; box-shadow:3px 3px 0 var(--ink)}
-.quiz .qa button.ok{background:var(--mint)} .quiz .qa button.no{background:var(--coral); color:#fff}
+.quiz .qa button.ok{background:var(--mint)} .quiz .qa button.no{background:var(--coral); color:var(--ink)}
 .quiz .qr{font-size:12px; color:var(--ink2); margin-top:8px; line-height:1.5}
 /* 용어 사전 */
 .gloss{display:flex; flex-direction:column; gap:12px}
@@ -466,7 +468,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .slv .body h4{margin:6px 0 2px; font-size:12px; color:var(--ink2); letter-spacing:.06em}
 .slv .item label b{font-weight:400; font-size:13px}
 .sheet{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:10px}
-.sheet button{border:3px solid var(--ink); background:var(--coral); color:#fff; padding:7px 4px; font-size:13px; font-weight:700; box-shadow:2px 2px 0 var(--ink)}
+.sheet button{border:3px solid var(--ink); background:var(--coral); color:var(--ink); padding:7px 4px; font-size:13px; font-weight:700; box-shadow:2px 2px 0 var(--ink)}
 .sheet button[aria-pressed="true"]{background:var(--mint); color:var(--ink)}
 .sheet-h{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
 .sheet-h input[type=date]{border:3px solid var(--ink); padding:6px 8px; font-size:14px; background:#fff; font-family:inherit}
@@ -518,7 +520,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .role button + button{border-left:0}
 .role button[aria-pressed="true"]{background:var(--mint)}
 .field select{border:4px solid var(--ink); background:#fff; padding:10px 12px; font-size:16px; width:100%; box-shadow:inset 4px 4px 0 rgba(27,27,47,.12); font-family:inherit}
-.tagc{font-size:10px; border:2px solid var(--ink); padding:0 5px; background:var(--orange); color:#fff; vertical-align:2px; margin-left:4px}
+.tagc{font-size:10.5px; font-weight:800; border:2px solid var(--ink); padding:0 5px; background:var(--orange); color:var(--ink); vertical-align:2px; margin-left:4px}
 /* 칭찬 카드 */
 .cards{display:flex; flex-direction:column; gap:10px}
 .cardc{border:4px solid var(--ink); background:#fff; padding:10px 12px; box-shadow:3px 3px 0 var(--ink); position:relative; transform:rotate(-1deg)}
@@ -530,7 +532,8 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .modal .px{width:100%; max-width:520px; max-height:88svh; overflow:auto}
 .chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px}
 .chips button{border:3px solid var(--ink); background:#fff; padding:5px 9px; font-size:13px; font-weight:700; box-shadow:2px 2px 0 var(--ink)}
-.chips button[aria-pressed="true"],.chips button.on{background:var(--coral); color:#fff}
+/* 코랄·오렌지 위 흰 글씨는 대비 2.1~2.8:1. 이 팔레트에선 흰 글씨가 아니라 잉크가 답이다 */
+.chips button[aria-pressed="true"],.chips button.on{background:var(--coral); color:var(--ink)}
 .rrow .clap{border:3px solid var(--ink); background:var(--sun); font-size:14px; padding:4px 7px; box-shadow:2px 2px 0 var(--ink); font-family:sans-serif}
 footer{margin-top:32px; font-size:11px; color:var(--sand); line-height:1.6; text-shadow:1px 1px 0 var(--ink)}
 footer a{color:var(--paper)}
@@ -643,7 +646,7 @@ footer a{color:var(--paper)}
           <div class="winds" id="winds"></div>
           <div class="row-h"><span>수온 °C</span><span id="chart-sst"></span></div>
           <div class="winds" id="ssts"></div>
-          <div class="legend"><span><i style="background:var(--sun)"></i>추천 입수</span><span><i style="background:var(--sea)"></i>파고</span><span><i style="background:var(--grape)"></i>조위</span><span><b style="color:var(--orange);font-family:sans-serif">↓</b> 온쇼어</span><span><b style="color:var(--sea);font-family:sans-serif">↓</b> 오프쇼어</span></div>
+          <div class="legend"><span><i style="background:var(--sun)"></i>추천 입수</span><span><i style="background:var(--sea)"></i>파고</span><span><i style="background:var(--grape)"></i>조위</span><span><b style="color:#C2410C;font-family:sans-serif">↓</b> 온쇼어</span><span><b style="color:#1A47C9;font-family:sans-serif">↓</b> 오프쇼어</span></div>
           <div class="tip" id="tip"></div>
         </div>
         </details>
@@ -1378,7 +1381,7 @@ function renderHero(b, a){
   const slots = []; for(let h=a.srH; h+1<=a.ssH; h+=2){ const x=a.hours[h], y=a.hours[h+1]||x; slots.push({ h, s:(x.s+y.s)/2, wh:(x.h+y.h)/2, p:(x.p+y.p)/2, w:(x.w+y.w)/2, rel:x.rel, tp:x.tp, danger:x.danger||y.danger }); }
   const top = slots.slice().sort((p,q)=>q.s-p.s).slice(0,3).sort((p,q)=>p.h-q.h);
   const nowH = state.day===0 ? new Date().getHours() : -1;
-  $('slots').innerHTML = top.map((sl,i)=>`<div class="slot ${sl.h===a.best.h?'best':''}" ${nowH>=sl.h+2?'style="opacity:.45"':''}><span class="t num">${pad2(sl.h)}~${pad2(sl.h+2)}시${nowH>=sl.h&&nowH<sl.h+2?'<span class="sc" style="margin-left:4px;background:var(--coral);color:#fff">지금</span>':nowH>=sl.h+2?'<span class="sc" style="margin-left:4px;background:#fff">지남</span>':''}</span><span class="d"><b>${sl.wh.toFixed(1)}m / ${sl.p.toFixed(1)}초</b> · ${Math.round(sl.w)}kts ${relKo[sl.rel]}${sl.tp!=null?` · ${sl.tp<0.33?'로우':sl.tp<0.66?'미드':'하이'}`:''}${sl.danger?' · <b style="color:var(--bad)">위험</b>':''}</span><span class="sc">${sl.s.toFixed(1)}점</span></div>`).join('');
+  $('slots').innerHTML = top.map((sl,i)=>`<div class="slot ${sl.h===a.best.h?'best':''}" ${nowH>=sl.h+2?'style="opacity:.45"':''}><span class="t num">${pad2(sl.h)}~${pad2(sl.h+2)}시${nowH>=sl.h&&nowH<sl.h+2?'<span class="sc" style="margin-left:4px;background:var(--coral);color:var(--ink)">지금</span>':nowH>=sl.h+2?'<span class="sc" style="margin-left:4px;background:#fff">지남</span>':''}</span><span class="d"><b>${sl.wh.toFixed(1)}m / ${sl.p.toFixed(1)}초</b> · ${Math.round(sl.w)}kts ${relKo[sl.rel]}${sl.tp!=null?` · ${sl.tp<0.33?'로우':sl.tp<0.66?'미드':'하이'}`:''}${sl.danger?' · <b style="color:var(--bad-t)">위험</b>':''}</span><span class="sc">${sl.s.toFixed(1)}점</span></div>`).join('');
 }
 function tile(spr, lab, val, memo, cls){ return `<div class="tile px ${cls||''}"><div class="lab"><canvas data-spr="${spr}"></canvas>${lab}</div><div class="val">${val}</div>${memo?`<div class="memo">${memo}</div>`:''}</div>`; }
 function suitFor(sst){ return sst>=24 ? '보드숏·래시가드 OK' : sst>=21 ? '스프링수트 / 2mm' : sst>=17 ? '3/2mm 풀슈트' : sst>=13 ? '4/3mm + 부츠' : '5/4mm 후드·부츠·장갑'; }
@@ -1466,7 +1469,7 @@ function renderChart(b, a){
   $('chart-per').textContent = `${Math.min(...hrs.map(x=>x.p)).toFixed(1)}~${Math.max(...hrs.map(x=>x.p)).toFixed(1)}초 · 주황=단주기 초록=최적 파랑=장주기`;
   const sb2 = $('ssts'); sb2.style.gridTemplateColumns = wb.style.gridTemplateColumns;
   const ssts = hrs.map(x=>x.sst??0), sMin = Math.min(...ssts), sMax = Math.max(...ssts);
-  sb2.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w" title="${pad2(x.hr)}시 수온 ${(x.sst??0).toFixed(1)}°C · 기온 ${Math.round(x.temp)}°C"><span class="num" style="font-weight:700;color:${(x.sst??0)>=sMax-0.05?'var(--coral)':(x.sst??0)<=sMin+0.05?'var(--sea)':'var(--ink)'}">${Math.round(x.sst??0)}</span><span class="num" style="font-size:9px;color:var(--ink2)">${Math.round(x.temp)}°</span></div>`).join('') + `<span></span>`;
+  sb2.innerHTML = `<span></span>` + hrs.map(x=>`<div class="w" title="${pad2(x.hr)}시 수온 ${(x.sst??0).toFixed(1)}°C · 기온 ${Math.round(x.temp)}°C"><span class="num" style="font-weight:700;color:${(x.sst??0)>=sMax-0.05?'var(--bad-t)':(x.sst??0)<=sMin+0.05?'#1A47C9':'var(--ink)'}">${Math.round(x.sst??0)}</span><span class="num" style="font-size:9px;color:var(--ink2)">${Math.round(x.temp)}°</span></div>`).join('') + `<span></span>`;
   $('chart-sst').textContent = `${sMin.toFixed(1)}~${sMax.toFixed(1)}°C · 작은 숫자는 기온`;
   const tip = $('tip'), box = $('chart');
   const show = (k, evt)=>{ const x = hrs[k]; if(!x) return;
