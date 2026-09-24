@@ -389,9 +389,9 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .village .sun2{position:absolute; right:14px; top:10px; width:24px; height:24px}
 .village .wv{position:absolute; left:0; right:0; top:60%; height:8px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 4h2V2h2V0h2v2h2v2h2v2h2v2h2v2h-2v-2h-2v-2h-2V4h-2v2H4V4H2v2H0z' fill='%23FFF9E6'/%3E%3C/svg%3E") repeat-x 0 0/16px 8px; animation:wave 1.2s steps(8) infinite; opacity:.8}
 .vgrid{position:relative; display:flex; flex-wrap:wrap; gap:6px 4px; justify-content:center; align-items:flex-end; margin-top:52px}
-.vp{width:auto; min-width:64px; max-width:96px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; position:relative}
-.vp canvas{width:56px; height:56px}
-.vp .nm{font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink); padding:0 4px; max-width:92px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.vp{width:auto; min-width:64px; max-width:110px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; position:relative}
+.vp canvas{width:56px; height:64px}
+.vp .nm{font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink); padding:0 4px; max-width:106px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 .vp .bub{position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink); padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:120px; white-space:normal; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2}
 .vp .bub::after{content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--ink)}
 .vp.me canvas{outline:3px solid var(--sun)}
@@ -886,20 +886,95 @@ const HAT = {
 };
 const HAT_KO = { none:'없음', bucket:'서프햇', cap:'캡', visor:'바이저', beanie:'비니' };
 const VEST = ['.........oooooo.........','.........oooooo.........','.........owwwwo.........','.........oooooo.........'];
-/* 반려동물 — 12×8. 24칸 안에 욱여넣으면 갈색 덩어리로만 보여서, 펫이 있으면 장면을
-   왼쪽으로 12칸 넓혀 제 부기보드를 타고 옆에서 따라오게 했다(paint가 비율을 맞춰 캔버스를 넓힌다). */
+/* 반려동물 — 14×11 앞모습, 앉은 자세.
+   옆모습을 두 번 시도했는데 둘 다 실패했다. 14칸에 머리·몸·다리·꼬리를 옆으로 늘어놓으면
+   한 부위가 2~3칸씩밖에 안 되고, 마을 크기(84px)에선 전부 덩어리로 뭉친다.
+   유일하게 잘 읽히던 게 펭귄이었고 이유는 명확했다 — 앞모습 · 좌우대칭 · 흰 배로 색이 갈린다.
+   그 규칙을 다섯 마리 전부에 적용했다: 귀 모양으로 종을 가르고, 흰 주둥이/배로 면을 나눈다.
+   n = 고른 색, m = 그 색을 0.7로 깎은 톤(귀·꼬리를 몸에서 떼는 용도). */
 const PET = {
   none:null,
-  rabbit: ['..knn..nnk..','..knn..nnk..','..knn..nnk..','.knnnnnnnnk.','kneennnneenk','knnwwwwwwnnk','knnwwkkwwnnk','.kkkkkkkkkk.'],
-  cat:    ['..n......n..','.nnn....nnn.','.knnnnnnnnk.','knnnnnnnnnnk','kneennnneenk','knnwwwwwwnnk','knnwwkkwwnnk','.kkkkkkkkkk.'],
-  dog:    ['...nnnnnn...','..knnnnnnk..','nnnnnnnnnnnn','nnnnnnnnnnnn','nneennnneenn','nnnwwwwwwnnn','.nnwwkkwwnn.','..kkkkkkkk..'],
-  seal:   ['............','...nnnnnn...','..knnnnnnk..','.knnnnnnnnk.','kneennnneenk','knnwwwwwwnnk','knnwwkkwwnnk','.kkkkkkkkkk.'],
-  penguin:['............','...knnnnk...','..knnnnnnk..','.knnnnnnnnk.','kneewwwweenk','knnwwwwwwnnk','knnwwoowwnnk','.kkkkkkkkkk.'],
+  dog: [            // 늘어진 귀가 얼굴 옆으로 · 흰 주둥이 · 검은 코 · 혀
+    '..mm......mm..',
+    '.kmmk....kmmk.',
+    '.kmmkkkkkkmmk.',
+    '.kmmnnnnnnmmk.',
+    '.kmneenneenmk.',
+    '.kmwwwwwwwwmk.',
+    '.kmwwwkkwwwmk.',
+    '.kkmwwqqwwmkk.',
+    '..knnnnnnnnk..',
+    '..knnnnnnnnk..',
+    '..kkk....kkk..'],
+  cat: [            // 뾰족한 귀 두 짝 · 수염 · 옆으로 말린 꼬리
+    '..m........m..',
+    '..mm......mm..',
+    '.kmmmkkkkmmmk.',
+    '.knnnnnnnnnnk.',
+    '.knneenneennk.',
+    '.knnwwwwwwnnk.',
+    '.knnwwkkwwnnk.',
+    'w.knnnnnnnnk.w',
+    '..knnnnnnnnk..',
+    '..knnnnnnnnkmm',
+    '..kkk....kkkmk'],
+  rabbit: [         // 길게 선 귀 · 앞니 · 동그란 꼬리
+    '...mm..mm.....',
+    '..kmmk.kmmk...',
+    '..kmmk.kmmk...',
+    '..kkmkkkmkk...',
+    '.knnnnnnnnnk..',
+    '.knneenneenk..',
+    '.knnnwwwwnnk..',
+    '.kknwwkkwwnkk.',
+    '..knnwwwwnnk..',
+    'mmknnnnnnnnk..',
+    'mkkkk....kkk..'],
+  penguin: [        // 서 있는 몸 · 흰 배 · 부리 · 오렌지 발
+    '.....kkkk.....',
+    '....knnnnk....',
+    '...knnennnkoo.',
+    '...knnnnnnnk..',
+    '..kmnwwwwnmk..',
+    '..kmnwwwwnmk..',
+    '..kmnwwwwnmk..',
+    '..kmnwwwwnmk..',
+    '...knwwwwnk...',
+    '....kkkkkk....',
+    '...koo.ook....'],
+  seal: [           // 귀 없이 둥근 머리 · 수염 · 옆으로 벌린 지느러미
+    '....kkkkkk....',
+    '...knnnnnnk...',
+    '..knnnnnnnnk..',
+    '..knneenneek..',
+    '..knnwwwwnnk..',
+    '..knwwkkwwnk..',
+    'w.knnwwwwnnk.w',
+    '..knnnnnnnnk..',
+    '.mknnnnnnnnkm.',
+    'mmknnnnnnnnkmm',
+    '.mkkkk..kkkkm.'],
 };
-const PETBOARD = ['..wwwwwwww..','.kwwwwwwwwk.','.kwwwwwwwwk.','..kkkkkkkk..'];
-/* 친밀도가 오르면 눈에 보이는 게 하나씩 붙는다 — 숫자만 오르는 바는 아무도 안 본다.
-   모든 펫이 같은 자리에 눈(2·3열 / 8·9열)을 갖도록 그렸기 때문에 오버레이 하나로 다 맞는다. */
-const PET_ACC = [ null, { y:5, r:'.p........p.' }, { y:1, r:'........qkq.' }, { y:4, r:'.kddkkkkddk.' } ];
+const PETBOARD = ['..wwwwwwwwww..','.kwwwwwwwwwwk.','.kwwwwwwwwwwk.','..kkkkkkkkkk..'];
+/* 친밀도 표식 — 도안마다 눈·목 자리가 달라 동물별로 [줄번호, 14칸 마스크]를 들고 있는다.
+   '.'은 그대로 두고 나머지만 덮어쓴다. 선글라스는 렌즈-다리-렌즈(ddkkdd)를 통째로 얹는다 —
+   좌표 하나에 2칸만 찍으면 한쪽 눈만 가려져 안대가 된다. */
+const PET_ACC = {
+  dog:     { blush:[4,'...p......p...'], scarf:[8,'.....qqqq.....'], shades:[4,'....ddkkdd....'] },
+  cat:     { blush:[4,'...p......p...'], scarf:[8,'.....qqqq.....'], shades:[4,'....ddkkdd....'] },
+  rabbit:  { blush:[5,'...p......p...'], scarf:[9,'.....qqqq.....'], shades:[5,'....ddkkdd....'] },
+  penguin: { blush:[2,'....p....p....'], scarf:[3,'.....qqqq.....'], shades:[2,'....dddd......'] },
+  seal:    { blush:[4,'...p......p...'], scarf:[7,'.....qqqq.....'], shades:[3,'.....ddkkdd...'] },
+};
+function petDress(rows, kind, lv){
+  const A = PET_ACC[kind]; if(!A || !lv) return rows;
+  let out = rows.slice();
+  const put = a => { if(a) out = overlay(out, [a[1]], a[0]); };
+  if(lv>=1) put(A.blush);
+  if(lv>=2) put(A.scarf);
+  if(lv>=3) put(A.shades);
+  return out;
+}
 const PET_STAGE = [ { at:0, ko:'처음 만남', un:'' }, { at:25, ko:'친해지는 중', un:'볼터치' }, { at:55, ko:'단짝', un:'리본' }, { at:90, ko:'베스트 버디', un:'선글라스' } ];
 const petStageOf = b => PET_STAGE.reduce((n,st,i)=> b>=st.at ? i : n, 0);
 const PET_KO = { none:'없음', rabbit:'토끼', cat:'고양이', dog:'강아지', seal:'물개', penguin:'펭귄' };
@@ -940,20 +1015,21 @@ function avatarRows(pr, withPet){
   if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 12);
   if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
   if(withPet===false || !PET[pr.pet]) return rows;
-  let body = PET[pr.pet];
-  for(let i=1; i<=(pr.petLv||0); i++){ const a = PET_ACC[i]; if(a) body = overlay(body, [a.r], a.y); }
-  const pet = body.concat(PETBOARD), blank = '.'.repeat(12);
-  return rows.map((r,y)=> (y>=12 ? pet[y-12] : blank) + r);   // 36×24 — 펫이 옆에서 같이 달리는 한 장면
+  const body = petDress(PET[pr.pet], pr.pet, pr.petLv||0);
+  const pet = body.concat(PETBOARD), blank = '.'.repeat(14);
+  return rows.map((r,y)=> (y>=9 ? pet[y-9] : blank) + r);     // 38×24 — 펫이 옆에서 같이 달리는 한 장면
 }
 const SLV_COLORS = ['#FFD23F','#A6F542','#4DE1A5','#2ED3E6','#2E6BFF','#9B6BFF','#FF6B6B','#FF9F1C','#F7C59F','#FFFFFF','#1B1B2F'];   // 서핑 LV.0~10 보드 색
 const BOTTOMS = { b:'#2E6BFF', k:'#1B1B2F', r:'#FF6B6B', g:'#4DE1A5', p:'#9B6BFF', t:'#E2B96A' };
 const BOTTOM_KO = { b:'블루', k:'블랙', r:'코랄', g:'민트', p:'퍼플', t:'베이지' };
 const BOARDC = { y:'#FFD23F', w:'#FFFFFF', c:'#8FD3FF', g:'#A6F542', p:'#FF9BD2', o:'#FF9F1C' };
 const BOARDC_KO = { y:'옐로', w:'화이트', c:'하늘', g:'라임', p:'핑크', o:'오렌지' };
+/* 귀·꼬리·무늬를 몸에서 떼어내려면 두 번째 톤이 필요하다. 고른 색에서 바로 깎아 쓴다 */
+const shade = (hex, f) => '#' + (hex||'#FFE0A0').slice(1).replace(/^(.)(.)(.)$/,'$1$1$2$2$3$3').match(/../g).map(h=>Math.max(0,Math.min(255,Math.round(parseInt(h,16)*f))).toString(16).padStart(2,'0')).join('');
 const avatarTintOf = (pr, L) => ({
   k:'#1B1B2F', s: SKIN[pr?.skin] || SKIN.s, h: HAIRC[pr?.hairc] || HAIRC.k,
   e:'#2A2438', w:'#FFFFFF', p:'#FF9BB3', d:'#1A47C9', o:'#FF9F1C',
-  q:'#FF4B4B', t:'#F7DC8F', n: PETC[pr?.petc] || PETC.y,
+  q:'#FF4B4B', t:'#F7DC8F', n: PETC[pr?.petc] || PETC.y, m: shade(PETC[pr?.petc] || PETC.y, 0.7),
   b: BOTTOMS[pr?.bottom] || BOTTOMS.b, y: BOARDC[pr?.boardc] || BOARDC.y, r: TOPS[pr?.top] || TOPS.r,
 });
 let frame = 0; setInterval(()=>{ frame ^= 1; document.querySelectorAll('canvas[data-anim]').forEach(c=>{ if(c._rows) paint(c, c._rows, c._tint, frame); }); }, 550);
