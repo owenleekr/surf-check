@@ -2047,68 +2047,138 @@ function poseMetrics(L){
   const headOut = Math.abs(nose.x - midHip) / (Math.abs(ankL.x-ankR.x)||0.001);
   return { stance:+stance.toFixed(2), lean:+lean.toFixed(2), knee, upright, headOut:+headOut.toFixed(2) };
 }
-/* ── 영상 전체 분석 ──────────────────────────────────────────────
-   한 장면을 손으로 찾는 게 제일 번거로운 단계였다(0.1초씩 눌러가며 팝업 순간 찾기).
-   영상을 촘촘히 훑어 "엎드림 → 섬"이 일어나는 지점을 직접 찾고, 구간을 갈라 본다.
+/* ── 영상 전체 분석 ─────────────────────────────────────────────
+   6기 영상 9개로 실측하고 다시 쓴 판(2026-09-24). 처음 판은 세 군데가 틀렸다.
 
-   판별값 vert = (엉덩이y − 어깨y) / 몸길이.
-   엎드려 패들하면 어깨와 엉덩이가 같은 높이라 0에 가깝고, 서면 어깨가 위로 가 0.5쯤 된다.
-   촬영 각도가 달라도 몸길이로 나누니 비율이 유지된다 — 절대 픽셀을 쓰면 거리에 따라 무너진다. */
-const VERT_DOWN = 0.15, VERT_UP = 0.35;                         // 엎드림 / 선 것으로 보는 경계
-function vertOf(L){
-  const shY=(L[11].y+L[12].y)/2, shX=(L[11].x+L[12].x)/2, hipY=(L[23].y+L[24].y)/2;
-  const ankY=(L[27].y+L[28].y)/2, ankX=(L[27].x+L[28].x)/2;
-  const len = Math.hypot(shX-ankX, shY-ankY) || 0.001;
-  return (hipY - shY) / len;
-}
+   ① 통짜 프레임(384px)으로는 관절이 튄다. 해변에서 찍으면 서퍼가 화면의 1~3%라
+      vert가 -1.3~1.6까지 나왔다(사람 몸으로 불가능한 값). → 2단계로 바꿨다:
+      넓게 훑어 사람 위치를 찾고(pass1), 그 자리를 원본에서 정사각으로 잘라 다시 잰다(pass2).
+      크롭 후 vert가 0.0~0.9의 정상 범위로 들어왔다.
+   ② vert(어깨-엉덩이)만으로는 푸쉬업과 서기를 못 가른다. 푸쉬업도 상체를 세우니까.
+      → legDrop(발목이 엉덩이보다 얼마나 아래) 추가. 엎드림·푸쉬업 0 언저리, 서면 0.35~0.6.
+      C0032(끝까지 패들만 한 영상)가 "선 적 없음"으로 바르게 나오는 게 이 값 덕분이다.
+   ③ 물에 다른 사람이 있으면 그 사람을 분석했다. C0032는 노란 보드 든 사람을 잡았다.
+      → 첫 프레임에서 가장 큰 사람으로 시작해 매 프레임 가장 가까운 사람을 따라간다.
+      그래도 틀리면 사용자가 영상을 탭해 본인을 지정할 수 있다. */
+const VERT_UP = 0.30, LEG_UP = 0.28, VERT_DOWN = 0.15, LEG_DOWN = 0.15;
+const KEY_PTS = [11,12,23,24,25,26,27,28];
+const keyVis = L => KEY_PTS.reduce((s,i)=>s+((L[i].visibility??1)>0.5?1:0),0)/KEY_PTS.length;
+const bodyLen = L => { const shX=(L[11].x+L[12].x)/2, shY=(L[11].y+L[12].y)/2, ankX=(L[27].x+L[28].x)/2, ankY=(L[27].y+L[28].y)/2;
+  return Math.hypot(shX-ankX, shY-ankY) || 0.001; };
+const vertOf = L => ((L[23].y+L[24].y)/2 - (L[11].y+L[12].y)/2) / bodyLen(L);
+const legDropOf = L => ((L[27].y+L[28].y)/2 - (L[23].y+L[24].y)/2) / bodyLen(L);
+const poseCenter = L => ({ x:(L[11].x+L[12].x+L[23].x+L[24].x)/4, y:(L[11].y+L[12].y+L[23].y+L[24].y)/4 });
+const poseArea = L => { const xs=L.map(p=>p.x), ys=L.map(p=>p.y); return (Math.max(...xs)-Math.min(...xs))*(Math.max(...ys)-Math.min(...ys)); };
+const median = a => { const b=[...a].sort((x,y)=>x-y); return b[Math.floor(b.length/2)]; };
 const seekTo = (v, t) => new Promise(res=>{ const h=()=>{ v.removeEventListener('seeked',h); res(); }; v.addEventListener('seeked',h); v.currentTime = Math.max(0, Math.min(v.duration-0.03, t)); });
-async function scanRide(v, lm, onProgress){
+
+async function scanRide(v, lm, onProgress, seed){
   const dur = v.duration; if(!dur || !isFinite(dur)) return null;
-  const step = Math.max(0.08, dur/70), cw = 384, ch = Math.round(v.videoHeight*cw/v.videoWidth) || 216;
-  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; const g = cv.getContext('2d');
-  const out = []; let i = 0;
+  const VW = v.videoWidth, VH = v.videoHeight; if(!VW) return null;
+  const step = Math.max(0.10, dur/70);
+  const W1 = 640, c1 = document.createElement('canvas'); c1.width = W1; c1.height = Math.round(VH*W1/VW); const g1 = c1.getContext('2d');
+  const W2 = 384, c2 = document.createElement('canvas'); c2.width = W2; c2.height = W2; const g2 = c2.getContext('2d');
+  const raw = []; let track = seed || null, lastBox = null, peopleMax = 0, i = 0;
   for(let t = 0; t < dur - 0.03; t += step){
-    await seekTo(v, t); g.drawImage(v, 0, 0, cw, ch);
-    let L = null; try{ L = lm.detect(cv)?.landmarks?.[0] || null; }catch(e){}
-    out.push({ t:+t.toFixed(2), L, vert: L ? vertOf(L) : null, m: L ? poseMetrics(L) : null });
-    if(onProgress && (++i % 4 === 0)) onProgress(t/dur);
+    await seekTo(v, t);
+    g1.drawImage(v, 0, 0, c1.width, c1.height);
+    let Ls = []; try{ Ls = lm.detect(c1)?.landmarks || []; }catch(e){}
+    peopleMax = Math.max(peopleMax, Ls.length);
+    let pick = null;
+    if(Ls.length) pick = track
+      ? Ls.map(L=>({ L, d:Math.hypot(poseCenter(L).x-track.x, poseCenter(L).y-track.y) })).sort((a,b)=>a.d-b.d)[0].L
+      : Ls.map(L=>({ L, a:poseArea(L) })).sort((a,b)=>b.a-a.a)[0].L;
+    let box = null;
+    if(pick){
+      const xs = pick.map(p=>p.x), ys = pick.map(p=>p.y);
+      const cx = (Math.min(...xs)+Math.max(...xs))/2*VW, cy = (Math.min(...ys)+Math.max(...ys))/2*VH;
+      const w = (Math.max(...xs)-Math.min(...xs))*VW, h = (Math.max(...ys)-Math.min(...ys))*VH;
+      box = { cx, cy, half: Math.max(w, h, VW*0.06) * 1.5 / 2 };
+      track = poseCenter(pick);
+    } else box = lastBox;                                   // 놓친 컷은 직전 자리를 계속 본다
+    if(!box){ raw.push({ t:+t.toFixed(2), vert:null, leg:null, m:null }); continue; }
+    lastBox = box;
+    const sx = Math.max(0, box.cx-box.half), sy = Math.max(0, box.cy-box.half);
+    g2.fillStyle = '#000'; g2.fillRect(0,0,W2,W2);
+    g2.drawImage(v, sx, sy, Math.min(VW-sx, box.half*2), Math.min(VH-sy, box.half*2), 0, 0, W2, W2);
+    let L2 = []; try{ L2 = lm.detect(c2)?.landmarks || []; }catch(e){}
+    if(!L2.length){ raw.push({ t:+t.toFixed(2), vert:null, leg:null, m:null }); continue; }
+    const B = L2.map(L=>({ L, a:poseArea(L) })).sort((a,b)=>b.a-a.a)[0].L;
+    const ok = keyVis(B) >= 0.6;                            // 어깨·엉덩이·발목이 안 보이면 값이 의미 없다
+    /* 관절이 엉뚱하게 맞으면 스탠스가 24배처럼 나온다 — 사람 몸으로 불가능한 값은 통계에서 뺀다 */
+    const M = ok ? poseMetrics(B) : null;
+    const sane = M && M.stance >= 0.3 && M.stance <= 3 && Math.abs(M.lean) <= 2 && M.knee >= 30 && M.knee <= 190;
+    raw.push({ t:+t.toFixed(2), vert: ok?+vertOf(B).toFixed(3):null, leg: ok?+legDropOf(B).toFixed(3):null, m: sane?M:null });
+    if(onProgress && (++i % 3 === 0)) onProgress(t/dur);
   }
-  return out;
+  const sm = k => raw.map((x,n)=>{ const w=[raw[n-1],raw[n],raw[n+1]].filter(y=>y&&y[k]!=null).map(y=>y[k]); return w.length>=2 ? +median(w).toFixed(3) : x[k]; });
+  const vs = sm('vert'), ls = sm('leg');
+  return { peopleMax, S: raw.map((x,n)=>({ ...x, vert:vs[n], leg:ls[n] })) };
 }
-/* 구간 가르기 — 팝업은 "마지막 엎드림"과 "처음 선 순간" 사이다 */
-function ridePhases(S){
-  const seen = S.filter(x=>x.vert!=null);
-  if(seen.length < 4) return { ok:false, seen:seen.length, total:S.length };
-  const upIdx = S.findIndex(x=>x.vert!=null && x.vert >= VERT_UP);
-  if(upIdx < 0) return { ok:false, noStand:true, seen:seen.length, total:S.length };
-  let downIdx = -1;
-  for(let i = upIdx; i >= 0; i--){ if(S[i].vert!=null && S[i].vert <= VERT_DOWN){ downIdx = i; break; } }
-  const popStart = downIdx >= 0 ? S[downIdx].t : null, popEnd = S[upIdx].t;
-  const ride = S.slice(upIdx).filter(x=>x.m && x.vert >= VERT_UP);
-  const paddle = downIdx >= 0 ? S.slice(0, downIdx+1).filter(x=>x.m) : [];
-  const avg = (arr, k) => arr.length ? +(arr.reduce((s,x)=>s+x.m[k],0)/arr.length).toFixed(2) : null;
-  return { ok:true, popStart, popEnd, popSec: popStart!=null ? +(popEnd-popStart).toFixed(2) : null,
-    rideSec: +(S[S.length-1].t - popEnd).toFixed(2), rideN: ride.length,
-    ride: { knee:avg(ride,'knee'), lean:avg(ride,'lean'), stance:avg(ride,'stance'), headOut:avg(ride,'headOut'), upright:avg(ride,'upright') },
-    leanMin: ride.length ? +Math.min(...ride.map(x=>x.m.lean)).toFixed(2) : null,
+
+const isStand = x => x.vert!=null && x.leg!=null && x.vert > VERT_UP && x.leg > LEG_UP;
+const isProne = x => x.vert!=null && x.leg!=null && x.vert < VERT_DOWN && x.leg < LEG_DOWN;
+function ridePhases(R){
+  const S = R.S, seen = S.filter(x=>x.vert!=null);
+  if(seen.length < 3) return { ok:false, seen:seen.length, total:S.length, peopleMax:R.peopleMax };
+  /* 서 있는 구간 찾기. 두 가지를 동시에 지켜야 한다 —
+     ① 짧게 스치는 오탐을 버린다: 끝까지 패들만 한 영상(C0032)에서 한두 컷 잘못 맞은 걸
+        "라이딩 0.4초"라고 단정했었다. 그래서 4컷(≈0.4초) 이상을 요구한다.
+     ② 인식 안 된 컷이 구간을 끊으면 안 된다: C0041은 실제로 2초 라이딩이 있는데
+        중간중간 놓친 컷 때문에 연속이 끊겨 "못 찾았어요"가 나왔다.
+     → 못 찾은 컷은 중립으로 두고(최대 3컷까지 건너뜀), 확실히 안 선 컷에서만 구간을 끊는다. */
+  const runs = []; let cur = null, gap = 0;
+  for(let i=0; i<S.length; i++){
+    if(isStand(S[i])){ if(!cur) cur = { a:i, b:i, n:0 }; cur.b = i; cur.n++; gap = 0; }
+    else if(cur && ++gap > 3){ runs.push(cur); cur = null; gap = 0; }   // 3컷까지는 잡음으로 보고 이어간다
+  }
+  if(cur) runs.push(cur);
+  const run = runs.filter(r=>r.n >= 4).sort((a,b)=>b.n-a.n)[0] || null;
+  if(!run){
+    /* 기준에 못 미쳐도 "뭔가 보이긴 했다"는 건 알려준다 — 사용자가 그 지점을 직접 확인할 수 있게.
+       숫자를 단정하지는 않는다(짧은 구간은 오탐일 확률이 높다). */
+    const near = runs.sort((a,b)=>b.n-a.n)[0];
+    return { ok:false, noStand:true, nearT: near ? S[near.a].t : null, nearN: near ? near.n : 0,
+      seen:seen.length, total:S.length, peopleMax:R.peopleMax };
+  }
+  const standIdx = run.a;
+  let proneIdx = -1;                                        // 서기 직전 1.5초 안에 엎드린 컷이 있어야 팝업을 잰다
+  for(let i=standIdx-1; i>=0 && S[standIdx].t - S[i].t <= 1.5; i--) if(isProne(S[i])){ proneIdx = i; break; }
+  /* 라이딩 시간은 "가장 긴 한 번"이다 — 처음 선 시각부터 마지막까지로 재면
+     중간에 넘어졌다 다시 선 영상에서 넘어진 시간까지 라이딩으로 세어버린다. */
+  const ride = S.slice(run.a, run.b+1).filter(x=>isStand(x) && x.m);
+  const first = run.a, last = run.b;
+  const avg = k => ride.length ? +(ride.reduce((s,x)=>s+x.m[k],0)/ride.length).toFixed(2) : null;
+  const sd  = k => { if(ride.length<3) return null; const a=avg(k); return +Math.sqrt(ride.reduce((s,x)=>s+(x.m[k]-a)**2,0)/ride.length).toFixed(2); };
+  if(ride.length < 5) return { ok:false, tooShort:true, rideN:ride.length, seen:seen.length, total:S.length, peopleMax:R.peopleMax };
+  return { ok:true, standT:S[standIdx].t, standIdx,
+    popSec: proneIdx>=0 ? +(S[standIdx].t - S[proneIdx].t).toFixed(2) : null,
+    rideSec: first>=0 ? +(S[last].t - S[first].t).toFixed(1) : 0, rideN: ride.length,
+    ride: { lean:avg('lean'), stance:avg('stance'), knee:avg('knee') },
+    sd:   { lean:sd('lean'),  stance:sd('stance'),  knee:sd('knee') },
     best: ride.length ? ride.reduce((b,x)=> Math.abs(x.m.lean-0.12) < Math.abs(b.m.lean-0.12) ? x : b, ride[0]) : null,
-    popFrame: S[upIdx], paddleN: paddle.length, seen:seen.length, total:S.length };
+    seen:seen.length, total:S.length, peopleMax:R.peopleMax };
 }
-/* 코치 기준으로 읽어주기 — 숫자만 주면 잘한 건지 못한 건지 모른다 */
+/* 잴 수 있는 것과 못 잰 것을 나눠서 말한다.
+   9개 영상에서 무릎 각도는 편차 ±48°까지 나왔다 — 멀리서 찍으면 무릎 관절이 흐려진다.
+   그런 값을 "무릎 147°"라고 단정해 보여주면 측정이 아니라 거짓말이 된다. */
 function rideReport(P){
-  const R = P.ride, out = [];
-  if(P.popSec != null) out.push([ P.popSec<=1.0, `팝업 ${P.popSec}초`,
-    P.popSec<=0.7 ? '빠름 — 이 속도면 파도를 놓치지 않아요' : P.popSec<=1.0 ? '적정' : '느림 — 무릎 짚고 일어나는 중간 동작이 있는지 확인(한 번에 일어서기)' ]);
-  if(R.knee != null) out.push([ R.knee<=150, `라이딩 무릎 평균 ${Math.round(R.knee)}°`,
-    R.knee>160 ? '거의 펴짐 — 낮은 자세로 1~2초 버티기' : R.knee<90 ? '너무 앉음' : '적정' ]);
-  if(R.lean != null) out.push([ R.lean>=-0.15, `라이딩 중심 ${R.lean>0.05?'앞':R.lean<-0.05?'뒤':'가운데'} (평균 ${R.lean>0?'+':''}${R.lean}${P.leanMin!=null?` · 최저 ${P.leanMin}`:''})`,
-    R.lean<-0.15 ? '후경 — 일어선 뒤 중심이 뒤로 빠짐(Rio 코치 지적 1번). 앞발 무릎에 체중' : R.lean>0.35 ? '과하게 앞 — 노즈 다이브 주의' : '적정' ]);
-  if(R.stance != null) out.push([ R.stance>=1.0 && R.stance<=1.8, `스탠스 폭 ${R.stance}배(어깨 대비)`,
-    R.stance<1.0 ? '좁음 — 발이 모여 중심이 흔들려요' : R.stance>1.8 ? '너무 넓음 — 중심 이동이 느려짐' : '적정' ]);
-  if(R.upright != null) out.push([ R.upright<=35, `상체 기울기 ${Math.round(R.upright)}°`,
-    R.upright>35 ? '숙여짐 — 테이크오프 이후 상체 세우기(교장쌤 09.22)' : '세워짐' ]);
-  if(R.headOut != null) out.push([ R.headOut<=0.6, `머리 위치 ${R.headOut}`, R.headOut>0.6 ? '보드 밖 — BBP 점검' : '보드 안' ]);
-  return out;
+  const good = [], weak = [];
+  good.push(['🏄', `라이딩 <b>${P.rideSec}초</b>`, `${P.rideN}컷 연속으로 서 있었어요${P.rideSec>=3?' — 3초 넘게 버텼습니다':''}`]);
+  good.push(['⏱', `테이크오프 <b>${P.standT}초</b> 지점`, P.popSec!=null ? `엎드림 → 섬까지 <b>${P.popSec}초</b>${P.popSec<=1.0?' (빠름)':' — 1초가 넘으면 중간에 무릎을 짚었는지 확인'}` : '']);
+  const L = P.ride.lean, sdL = P.sd.lean;
+  if(L != null){
+    if(sdL != null && sdL > 0.35) weak.push(['중심 앞뒤', `흔들림이 ±${sdL}로 커서 평균(${L>0?'+':''}${L})은 참고만 — 파도가 부서지는 구간이 섞였을 수 있어요`]);
+    else good.push(['⚖️', `라이딩 중심 ${L>0.05?'앞':L<-0.05?'뒤':'가운데'} <b>${L>0?'+':''}${L}</b>`,
+      L<-0.15 ? '후경 — 일어선 뒤 중심이 뒤로 빠짐(Rio 코치 지적 1번). 앞발 무릎에 체중' : L>0.35 ? '과하게 앞 — 노즈 다이브 주의' : `안정적 (흔들림 ±${sdL ?? '-'})`]);
+  }
+  if(P.ride.stance != null) good.push(['🦶', `스탠스 폭 <b>${P.ride.stance}배</b>`,
+    P.ride.stance<1.0 ? '좁음 — 발이 모여 중심이 흔들려요' : P.ride.stance>1.8 ? '너무 넓음 — 중심 이동이 느려짐' : '적정 (어깨 대비)']);
+  if(P.sd.knee != null && P.sd.knee > 25) weak.push(['무릎 각도', `편차 ±${Math.round(P.sd.knee)}°로 신뢰할 수 없어요 — 멀리서 찍으면 무릎 관절이 흐려집니다`]);
+  else if(P.ride.knee != null) good.push(['🦵', `라이딩 무릎 평균 <b>${Math.round(P.ride.knee)}°</b>`, P.ride.knee>160 ? '거의 펴짐 — 낮은 자세로 버티기' : '적정']);
+  if(P.popSec == null) weak.push(['팝업 시간', '엎드린 구간이 안 잡혔어요 — 패들하는 장면부터 찍으면 잴 수 있어요']);
+  if(P.seen/P.total < 0.5) weak.push(['인식률', `${P.seen}/${P.total}컷만 잡혔어요 — 몸이 더 크게 나오게 찍으면 정확해집니다`]);
+  return { good, weak };
 }
 function poseReport(m){
   const out = [];
@@ -2150,7 +2220,9 @@ function renderPose(){
         <b>4. 매번 같은 자리·같은 각도</b> — 주차별 비교의 핵심. 삼각대나 "그 바위 앞"처럼 기준점을 정해두기.<br>
         <b>5. 슬로모션(120fps)</b> — 아이폰 슬로모션이면 0.1초 단위로 훨씬 잘 잡힙니다.<br>
         <b>6. 밝을 때</b> — 역광·해질녘은 인식률이 떨어져요.<br>
-        <b>7. 한 파도에 한 클립</b> — 짧게 끊어두면 나중에 찾기 쉬워요.
+        <b>7. 한 파도에 한 클립</b> — 짧게 끊어두면 나중에 찾기 쉬워요.<br>
+        <b>8. 패들하는 장면부터</b> — 6기 영상 9개로 재보니, 엎드려 패들하는 구간이 안 담기면
+        <b>팝업 시간(엎드림 → 섬)을 못 잽니다.</b> 일어선 뒤부터 찍으면 라이딩 시간만 나와요.
         <div class="lab-sm" style="margin-top:6px">수업 영상은 매주 월요일 구글드라이브·STC 카페에 올라옵니다 — 거기서 받아 쓰면 각도가 일정해요.</div>
       </div></details>
     <div class="lab-sm">수업 영상에서 <b>테이크오프 순간</b>을 골라 저장해요. 영상 원본은 폰에만 남고 사진만 올라갑니다.</div>
@@ -2161,7 +2233,7 @@ function renderPose(){
       <div class="chips" style="margin-top:6px">${Object.entries(STAGES).map(([k,v],i)=>`<button type="button" data-stage="${k}" aria-pressed="${i===1}">${v}</button>`).join('')}</div>
       <label class="item" style="margin-top:6px;gap:8px;font-size:13px"><input type="checkbox" id="pose-strip" checked><span>앞뒤 0.6초를 <b>4컷 스트립</b>으로 (동작 흐름이 보여요)</span></label>
       <input id="pose-note" maxlength="40" placeholder="메모 (예: 앞발 45도 시도)" style="width:100%;border:3px solid var(--ink);padding:6px 8px;font-family:inherit;font-size:13px;margin-top:6px">
-      <button class="btn sm grape" type="button" id="pose-scan" style="width:100%;margin-top:8px">🎬 영상 전체 분석 — 팝업 순간 찾기</button>
+      <button class="btn sm grape" type="button" id="pose-scan" style="width:100%;margin-top:8px">🎬 영상 전체 분석 — 테이크오프·라이딩 재기</button>
       <div id="pose-scan-out" style="margin-top:6px"></div>
       <div style="display:flex;gap:6px;margin-top:6px"><button class="btn sm blue" type="button" id="pose-save">이 장면 저장</button><button class="btn sm mint" type="button" id="pose-ai">🤖 자세 자동 분석</button></div>
       <div id="pose-report" class="lab-sm" style="margin-top:6px"></div></div>
@@ -2182,52 +2254,62 @@ function renderPose(){
   const frameCanvas = ()=>{ const v = vEl(), src = v._img || v, w = v._img ? v._img.naturalWidth : v.videoWidth, h = v._img ? v._img.naturalHeight : v.videoHeight;
     if(!w) return null; const cw = 480, ch = Math.round(h*cw/w), cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; cv.getContext('2d').drawImage(src, 0, 0, cw, ch); return { cv, w, h }; };
   /* 영상 전체 분석 — 손으로 0.1초씩 찾던 걸 대신한다 */
-  let scanRes = null;
+  let subjectSeed = null;                                   // 사용자가 영상을 탭해 지정한 본인 위치
+  vEl().onclick = e=>{ const v = vEl(); if(!v.duration) return;
+    const r = v.getBoundingClientRect();
+    subjectSeed = { x:(e.clientX-r.left)/r.width, y:(e.clientY-r.top)/r.height };
+    toast('이 사람으로 분석할게요 — 다시 분석을 눌러주세요'); };
   $('pose-scan').onclick = async ()=>{
-    const v = vEl(); if(v._img || !v.duration) return toast('영상 파일로 해주세요 (사진은 위 자동 측정)');
+    const v = vEl(); if(v._img || !v.duration) return toast('영상 파일로 해주세요 (사진은 아래 자동 측정)');
     const box = $('pose-scan-out');
     box.innerHTML = '<div class="lab-sm">분석 준비 중… (처음 한 번 6MB 내려받아요)</div>';
     const lm = await loadPoseModel();
     if(!lm){ box.innerHTML = '<div class="lab-sm">자동 분석을 불러오지 못했어요 (신호·브라우저 확인).</div>'; return; }
     const was = v.currentTime; $('pose-scan').disabled = true;
-    box.innerHTML = '<div class="lab-sm">영상 훑는 중 <b id="scan-pct">0%</b> — 길이에 따라 5~15초</div>';
-    let S = null;
-    try{ S = await scanRide(v, lm, f=>{ const el = $('scan-pct'); if(el) el.textContent = Math.round(f*100)+'%'; }); }
-    catch(e){ S = null; }
+    box.innerHTML = '<div class="lab-sm">영상 훑는 중 <b id="scan-pct">0%</b> — 길이에 따라 10~25초</div>';
+    let R = null;
+    try{ R = await scanRide(v, lm, f=>{ const el = $('scan-pct'); if(el) el.textContent = Math.round(f*100)+'%'; }, subjectSeed); }
+    catch(e){ R = null; }
     $('pose-scan').disabled = false;
-    if(!S){ box.innerHTML = '<div class="lab-sm">영상을 읽지 못했어요. 다른 파일로 시도해 주세요.</div>'; await seekTo(v, was); return; }
-    const P = ridePhases(S); scanRes = { S, P };
+    if(!R){ box.innerHTML = '<div class="lab-sm">영상을 읽지 못했어요. 다른 파일로 시도해 주세요.</div>'; await seekTo(v, was); return; }
+    const P = ridePhases(R);
+    const tapHint = R.peopleMax > 1 ? '<div class="lab-sm" style="margin-top:6px">물에 <b>' + R.peopleMax + '명</b>이 잡혔어요. 다른 사람을 분석했다면 <b>영상에서 본인을 탭</b>하고 다시 눌러주세요.</div>' : '';
     if(!P.ok){
-      box.innerHTML = `<div class="lab-sm">${P.noStand ? '<b>일어선 장면을 못 찾았어요.</b> 파도를 타는 구간이 담긴 클립인지, 몸이 충분히 크게 나오는지 확인해 주세요.'
-        : `<b>사람을 거의 못 찾았어요</b> (${P.seen}/${P.total}컷). 옆에서·전신이 들어오게·밝을 때 찍은 영상이 잘 잡혀요.`}</div>`;
+      box.innerHTML = `<div class="px" style="background:#fff;padding:10px"><div style="font-size:13px">${
+        P.noStand ? `<b>일어선 장면을 못 찾았어요.</b> 끝까지 패들만 한 영상이거나, 몸이 너무 작게 나왔을 수 있어요 (${P.seen}/${P.total}컷 인식).${
+            P.nearN>=2 ? ` <br>다만 <b>${P.nearT}초</b>쯤에 ${P.nearN}컷 정도 선 것처럼 보였어요 — 짧아서 숫자는 내지 않았습니다. <button class="btn sm ghost" type="button" data-go="${P.nearT}" style="margin-top:6px">그 지점 보기</button>` : ''}`
+        : P.tooShort ? `<b>일어선 듯한 구간이 ${P.rideN}컷뿐이에요.</b> 라이딩으로 보기엔 짧아서 숫자를 내지 않았습니다 — 잘못 잡았을 가능성이 큽니다.`
+                  : `<b>사람을 거의 못 찾았어요</b> (${P.seen}/${P.total}컷). 옆에서·전신이 들어오게·밝을 때 찍은 영상이 잘 잡혀요.`}</div>${tapHint}</div>`;
+      box.querySelectorAll('[data-go]').forEach(b=>b.onclick = async ()=>{ await seekTo(v, +b.dataset.go); toast('그 지점으로 이동'); });
       await seekTo(v, was); return;
     }
-    const rows = rideReport(P), okN = rows.filter(r=>r[0]).length;
+    const { good, weak } = rideReport(P);
     box.innerHTML = `
       <div class="px" style="background:#fff;padding:10px">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:baseline">
-          <b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:22px">${P.popSec!=null?P.popSec+'초':'—'}</b>
-          <span class="lab-sm" style="margin:0">팝업(엎드림 → 섬) · 라이딩 ${P.rideSec}초 · ${P.seen}/${P.total}컷 인식</span>
+          <b style="font-family:'Galmuri14','Galmuri11',sans-serif;font-size:26px">${P.rideSec}초</b>
+          <span class="lab-sm" style="margin:0">라이딩 · 테이크오프 ${P.standT}초 지점 · ${P.seen}/${P.total}컷 인식</span>
         </div>
         <div id="scan-tl" style="margin-top:8px"></div>
-        <div class="lab-sm" style="margin-top:6px">코치 기준 <b>${okN}/${rows.length}</b> 통과${P.rideN<4?` · <b style="color:var(--warn-t)">라이딩 구간이 ${P.rideN}컷뿐이라 평균이 흔들려요</b>`:''}</div>
-        ${rows.map(([ok,t,d])=>`<div style="margin-top:4px;font-size:13px">${ok?'✅':'⚠️'} <b>${t}</b> <span style="color:var(--ink2)">— ${d}</span></div>`).join('')}
+        ${good.map(([ic,t,d])=>`<div style="margin-top:5px;font-size:13.5px">${ic} ${t}${d?` <span style="color:var(--ink2)">— ${d}</span>`:''}</div>`).join('')}
+        ${weak.length?`<div style="margin-top:10px;border-top:2px dashed var(--grid);padding-top:8px">
+          <div class="eyebrow">이번 영상에선 못 잰 것</div>
+          ${weak.map(([t,d])=>`<div style="margin-top:3px;font-size:12.5px;color:var(--ink2)">· <b>${t}</b> — ${d}</div>`).join('')}</div>`:''}
         <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-          <button class="btn sm ghost" type="button" data-go="${P.popEnd}">팝업 순간으로</button>
+          <button class="btn sm ghost" type="button" data-go="${P.standT}">일어선 순간으로</button>
           ${P.best?`<button class="btn sm ghost" type="button" data-go="${P.best.t}">제일 좋은 라이딩으로</button>`:''}
-        </div>
-        <div class="lab-sm" style="margin-top:8px">각도는 촬영 각도에 따라 달라져요. 같은 자리에서 찍은 영상끼리 비교할 때 가장 정확합니다.</div>
+        </div>${tapHint}
       </div>`;
-    // 타임라인 — 엎드림(파랑) / 팝업(노랑) / 라이딩(초록)
-    const W = 300, H = 40, n = S.length;
-    const seg = x => x.vert==null ? 'var(--grid)' : x.vert>=VERT_UP ? 'var(--mint)' : x.vert<=VERT_DOWN ? 'var(--sky2)' : 'var(--sun)';
+    const S = R.S, W = 300, H = 40, n = S.length;
+    const col = x => x.vert==null ? 'var(--grid)' : isStand(x) ? 'var(--mint)' : isProne(x) ? 'var(--sky2)' : 'var(--sun)';
+    const hOf = x => x.leg==null ? 5 : Math.max(4, Math.min(1, Math.max(0, x.leg+0.15))*(H-6));
     $('scan-tl').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:40px;border:3px solid var(--ink);background:#fff">
-      ${S.map((x,i)=>`<rect x="${(i*W/n).toFixed(1)}" y="${x.vert==null?H-6:H-6-Math.max(2,Math.min(1,Math.max(0,x.vert))*(H-8))}" width="${(W/n).toFixed(1)}" height="${x.vert==null?6:Math.max(2,Math.min(1,Math.max(0,x.vert))*(H-8))+6}" fill="${seg(x)}"/>`).join('')}
-      ${P.popEnd!=null?`<rect x="${(S.findIndex(y=>y.t===P.popEnd)*W/n).toFixed(1)}" y="0" width="2" height="${H}" fill="var(--coral)"/>`:''}
-    </svg><div class="lab-sm" style="margin:2px 0 0;display:flex;gap:10px;font-size:11px"><span>■ 엎드림</span><span style="color:#B45309">■ 팝업</span><span style="color:#12784B">■ 라이딩</span><span style="color:var(--coral)">▌선 순간</span></div>`;
+      ${S.map((x,k)=>`<rect x="${(k*W/n).toFixed(1)}" y="${(H-hOf(x)).toFixed(1)}" width="${Math.max(1.2,W/n).toFixed(1)}" height="${hOf(x).toFixed(1)}" fill="${col(x)}"/>`).join('')}
+      <rect x="${(P.standIdx*W/n).toFixed(1)}" y="0" width="2" height="${H}" fill="var(--coral)"/>
+    </svg><div class="lab-sm" style="margin:2px 0 0;display:flex;gap:10px;font-size:11px;flex-wrap:wrap"><span>■ 엎드림</span><span style="color:#B45309">■ 일어나는 중</span><span style="color:#12784B">■ 서 있음</span><span style="color:var(--coral)">▌일어선 순간</span></div>`;
     box.querySelectorAll('[data-go]').forEach(b=>b.onclick = async ()=>{ await seekTo(v, +b.dataset.go); toast('그 장면으로 이동 — 아래 "이 장면 저장"'); });
-    if(P.best?.m){ state.lastMetrics = P.best.m; }
-    await seekTo(v, P.popEnd);
+    if(P.best?.m) state.lastMetrics = P.best.m;
+    await seekTo(v, P.standT);
   };
   $('pose-ai').onclick = async ()=>{
     const f = frameCanvas(); if(!f) return toast('영상을 먼저 불러와요');
