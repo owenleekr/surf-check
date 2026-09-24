@@ -1505,13 +1505,41 @@ function renderBeaches(){
 const PZ = p => p<5 ? ['거의 평평함','#D9D4C0'] : p<6.5 ? ['짧은 간격 · 힘 약함','var(--sun)'] : p<=9.5 ? ['동해 최적 구간','var(--mint)'] : p<=13 ? ['긴 간격 · 세트 강함','var(--sky)'] : ['너무 긺 · 백워시','var(--coral)'];
 /* 크림 배경 위 --orange(#FF9F1C)는 대비 2:1이라 숫자가 안 읽혔다. 한 단계씩 어둡게 */
 const pColor = p => p<6.5 ? '#B45309' : p<=9.5 ? '#12784B' : p<=13 ? '#1A47C9' : '#B3202B';
+/* 파워는 주기에 "비례"한다 — 예전엔 (p/6)^4 로 계산해 10초를 6초의 7.7배로 불렀다.
+   심해 파워 P ≈ 0.5·H²·Te kW/m (Te=에너지 주기). 실제로는 10/6 = 1.7배다.
+   "장주기가 더 크게 깨진다"는 맞지만 이유가 다르다 — 파장 L = gT²/2π 이라
+   주기가 길면 파장이 T²로 길어지고, 에너지가 수심 L/2까지 닿아 바닥을 일찍 만나
+   천수(shoaling)로 일어선다. 파워가 아니라 파장이 T²인 것이다. */
+const wavePower = (h, t) => 0.5 * h * h * t;                 // kW/m
+const waveLen   = t => 9.81 * t * t / (2 * Math.PI);          // m (심해 파장)
 function renderPeriod(b, a){
-  const r = a.rep, p = r.p, [zone] = PZ(p), pct = Math.min(100, Math.max(0, (p-3)/12*100));   // 3~15초 → 0~100%
-  const energy = p>=7 ? ` 6초 대비 에너지 약 ${Math.round(Math.pow(p/6, 4)*10)/10}배.` : p<6.5 ? ' 같은 파고에서 8초라면 에너지 약 3배.' : '';
+  const r = a.rep, p = r.p, [zone] = PZ(p), pct = Math.min(100, Math.max(0, (p-3)/12*100));
+  const kw = wavePower(r.h, p), L = waveLen(p);
+  const vs = p >= 7 ? ` 같은 ${r.h.toFixed(1)}m가 6초일 때보다 파워 <b>${(p/6).toFixed(1)}배</b>.`
+           : p < 6.5 ? ` 같은 ${r.h.toFixed(1)}m가 9초라면 파워 <b>${(9/p).toFixed(1)}배</b>.` : '';
   $('pgauge').innerHTML = `<div class="ph2"><span>피리어드(파도 간격) <b>${p.toFixed(1)}초</b></span><span>${zone}</span></div>
     <div class="bar2"><span class="mk" style="left:${pct}%"></span></div>
     <div class="lg"><span>3</span><span>5</span><span>6.5</span><span>9.5</span><span>13</span><span>15+</span></div>
-    <div class="why">같은 ${r.h.toFixed(1)}m라도 피리어드가 길수록 실제 파도가 크고 에너지가 강합니다.${energy}<br><small>동해안 최적 7~9초 · 13초 초과 시 백워시 (양양서핑학교 기준)</small></div>`;
+    <div class="why">파워 <b>약 ${kw < 1 ? kw.toFixed(2) : kw.toFixed(1)}kW/m</b> · 파장 <b>약 ${Math.round(L)}m</b>.${vs}
+      <br>같은 파고라도 주기가 길면 <b>깨질 때 더 커집니다</b> — 파장이 길어 에너지가 수심 ${Math.round(L/2)}m까지 닿고,
+      바닥을 일찍 만나 천수(shoaling)로 일어서기 때문이에요.
+      <br><small>동해안 최적 7~9초 · 13초 초과 시 백워시 (양양서핑학교 기준)</small>
+      ${periodSrc()}</div>`;
+}
+function periodSrc(){
+  return `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:700">이 숫자는 어떻게 나온 건가</summary>
+    <div class="lab-sm" style="margin-top:5px;line-height:1.6">
+      · <b>파워</b> P ≈ 0.5 · H² · T (kW/m) — 심해 파랑 에너지 플럭스.
+      <b>주기에 비례</b>합니다(제곱·네제곱이 아님). H는 유의파고, T는 에너지 주기 —
+      앱이 받는 값은 평균/첨두 주기라 어림값입니다.
+      <a href="https://en.wikipedia.org/wiki/Wave_power" target="_blank" rel="noopener">Wave power</a><br>
+      · <b>파장</b> L = gT²/2π — 주기의 <b>제곱</b>. 파동의 물 움직임은 수심 L/2까지 미칩니다.<br>
+      · <b>천수(shoaling)</b> — 파장이 길면 더 깊은 데서 바닥을 만나 속도가 줄고 파고가 커집니다.
+      같은 심해 파고라도 장주기가 더 크게 깨지는 이유.
+      <a href="https://www.surfline.com/surf-news/the-importance-of-swell-period/1555" target="_blank" rel="noopener">Surfline</a> ·
+      <a href="https://www.swellnet.com/news/swellnet-analysis/2021/12/01/deeper-look-swell-period" target="_blank" rel="noopener">Swellnet</a><br>
+      <span style="color:var(--ink2)">2026-09-25 수정: 예전엔 파워를 (T/6)⁴ 로 계산해 10초를 6초의 7.7배로 표시했습니다. 실제는 1.7배입니다.</span>
+    </div></details>`;
 }
 function renderHero(b, a){
   const L = dateLabel(b.daily.time[state.day]);
@@ -1552,7 +1580,50 @@ function renderHero(b, a){
   $('slots').innerHTML = top.map((sl,i)=>`<div class="slot ${sl.h===a.best.h?'best':''}" ${nowH>=sl.h+2?'style="opacity:.45"':''}><span class="t num">${pad2(sl.h)}~${pad2(sl.h+2)}시${nowH>=sl.h&&nowH<sl.h+2?'<span class="sc" style="margin-left:4px;background:var(--coral);color:var(--ink)">지금</span>':nowH>=sl.h+2?'<span class="sc" style="margin-left:4px;background:#fff">지남</span>':''}</span><span class="d"><b>${sl.wh.toFixed(1)}m / ${sl.p.toFixed(1)}초</b> · ${Math.round(sl.w)}kts ${relKo[sl.rel]}${sl.tp!=null?` · ${sl.tp<0.33?'로우':sl.tp<0.66?'미드':'하이'}`:''}${sl.danger?' · <b style="color:var(--bad-t)">위험</b>':''}</span><span class="sc">${sl.s.toFixed(1)}점</span></div>`).join('');
 }
 function tile(spr, lab, val, memo, cls){ return `<div class="tile px ${cls||''}"><div class="lab"><canvas data-spr="${spr}"></canvas>${lab}</div><div class="val">${val}</div>${memo?`<div class="memo">${memo}</div>`:''}</div>`; }
-function suitFor(sst){ return sst>=24 ? '보드숏·래시가드 OK' : sst>=21 ? '스프링수트 / 2mm' : sst>=17 ? '3/2mm 풀슈트' : sst>=13 ? '4/3mm + 부츠' : '5/4mm 후드·부츠·장갑'; }
+/* ── 수온별 슈트 ─────────────────────────────────────────────
+   예전 값은 브랜드 3사 표보다 한 단계씩 두꺼웠다. 20°C에 3/2(3사는 2mm 스프링),
+   16°C에 4/3+부츠(3사는 3/2), 12°C에 후드(3사는 9~10°C 아래).
+   앱 안의 코치 말씀("수온 21도 밑이면 스프링수트, 17도 밑이면 3/2")과도 어긋났다 —
+   같은 앱이 같은 수온에 다른 옷을 말하고 있었다.
+
+   기준선은 3사 합의로 맞추고, 두껍게 입을 조건은 따로 적는다. 표는 "활발히 타는 중급"을
+   전제로 한 값이라, 화이트워터에서 서 있는 시간이 긴 비기너는 한 단계 두꺼운 게 맞다 —
+   예전 값이 두꺼웠던 건 그 이유였을 것이고, 그렇다면 그 이유를 적어야 한다.
+   출처: Rip Curl / Vissla / C-Skins (2026-09-25 확인) — suitSrc() 참고 */
+const SUITS = [
+  { lo:24, suit:'보드숏·래시가드', acc:'',            why:'수온이 높아 슈트 없이도 OK. 햇빛 차단용 래시가드' },
+  { lo:19, suit:'스프링수트 2mm',  acc:'',            why:'스프링수트(반팔·반바지 2mm). 오래 타면 2mm 풀슈트가 편함' },
+  { lo:15, suit:'3/2mm 풀슈트',    acc:'',            why:'3/2mm = 몸통 3mm · 팔다리 2mm. 가을 동해 기본' },
+  { lo:11, suit:'4/3mm 풀슈트',    acc:'부츠',        why:'4/3mm = 몸통 4mm · 팔다리 3mm. 발부터 시려요 — 부츠 먼저' },
+  { lo:8,  suit:'5/4mm 풀슈트',    acc:'부츠·장갑',   why:'5/4mm + 부츠·장갑. 손이 굳으면 패들이 안 됩니다' },
+  { lo:-99,suit:'5/4mm 후드 풀슈트',acc:'부츠·장갑·후드',why:'5/4mm 후드 일체형 + 부츠·장갑. 겨울 장비 없으면 입수 말 것' },
+];
+const suitRow = sst => SUITS.find(x => sst >= x.lo) || SUITS[SUITS.length-1];
+const suitRange = r => { const i = SUITS.indexOf(r);
+  if(i === 0) return `${r.lo}°C↑`;
+  if(i === SUITS.length-1) return `${SUITS[i-1].lo}°C↓`;        // 마지막 칸은 하한이 없다 — 센티넬(-99)이 화면에 새면 안 된다
+  return `${r.lo}~${SUITS[i-1].lo}°C`; };
+function suitFor(sst){ const r = suitRow(sst); return r.suit + (r.acc ? ' + ' + r.acc : ''); }
+/* 표는 물살이 세거나 바람이 불거나 오래 서 있는 경우를 못 담는다 — 앱이 아는 값으로 짚어준다 */
+function suitBump(sst, tmin, wkts){
+  const out = [];
+  if(wkts >= 12) out.push(`바람 ${Math.round(wkts)}kts — 젖은 몸에 바람이 닿으면 체감이 확 떨어져요`);
+  if(tmin != null && tmin < sst - 3) out.push(`기온이 수온보다 낮아요 (${Math.round(tmin)}°C)`);
+  if(myProfile().cls !== 'inter') out.push('비기너는 화이트워터에서 서 있는 시간이 길어요 — 표는 활발히 타는 기준입니다');
+  return out;
+}
+function suitSrc(){
+  return `<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:700">이 기준은 어디서 왔나</summary>
+    <div class="lab-sm" style="margin-top:6px;line-height:1.6">
+      브랜드 3사 표의 공통 구간입니다 (화씨 표기는 섭씨로 환산, 2026-09-25 확인).<br>
+      · <a href="https://www.ripcurl.com/blogs/products/wetsuit-thickness-guide" target="_blank" rel="noopener">Rip Curl</a> — 3/2는 15~18°C, 4/3는 13~15°C, 후드는 10°C 아래<br>
+      · <a href="https://www.vissla.com/pages/wetsuit-thickness-guide" target="_blank" rel="noopener">Vissla</a> — 2mm 19°C↑, 3/2는 15~18°C, 4/3는 11~14°C, 부츠 11°C 아래·장갑 10°C 아래·후드 9°C 아래<br>
+      · <a href="https://c-skins.com/pages/what-thickness-wetsuit-do-i-need" target="_blank" rel="noopener">C-Skins</a> — 4/3는 11~18°C. "바람·체질·물에 있는 시간이 두께를 바꾼다"<br>
+      · 학교 기준 — Rio 코치: "수온 21도 밑이면 스프링수트, 17도 밑이면 3/2 풀슈트"<br>
+      <b>표는 활발히 타는 사람 기준</b>이라 비기너·긴 세션·강풍이면 한 단계 두껍게 잡는 게 맞습니다.
+      예전 이 앱의 값이 3사보다 한 단계씩 두꺼웠는데, 아마 그 이유였을 겁니다 — 이제 기준과 이유를 나눠 적습니다.
+    </div></details>`;
+}
 /* 슈트 두께별 추천 라인(립컬·빌라봉·오닐) + 쇼핑 검색 링크. 파트너스 링크는 config.js의 SHOP 으로 교체 */
 const SHOP = Object.assign({ coupang:'https://www.coupang.com/np/search?q=', naver:'https://search.shopping.naver.com/search/all?query=' }, window.SURF_CONFIG?.shop||{});
 const GEAR = {
@@ -1565,8 +1636,7 @@ const GEAR = {
 const gearKey = sst => sst>=24 ? 'rash' : sst>=21 ? 'spring' : sst>=17 ? '32' : sst>=13 ? '43' : '54';
 function gearHTML(sst){ const g = GEAR[gearKey(sst)]; const q = t => encodeURIComponent(t);
   return `<details style="margin-top:6px"><summary style="cursor:pointer;font-size:12px;font-weight:700">추천 제품 보기 · ${g.name}</summary><div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">${g.items.map(([br,md])=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;border:3px solid var(--ink);background:#fff;padding:6px 8px"><span style="flex:1"><b>${br}</b> ${md}</span><a class="btn sm ghost" style="padding:3px 8px;font-size:11px" href="${SHOP.coupang}${q(br+' '+md)}" target="_blank" rel="noopener">쿠팡</a><a class="btn sm ghost" style="padding:3px 8px;font-size:11px" href="${SHOP.naver}${q(br+' '+md)}" target="_blank" rel="noopener">최저가</a></div>`).join('')}<div class="lab-sm">없으면 학교 렌탈 1만원. 사이즈는 키·몸무게 차트 필수, 새 슈트는 첫 입수 전 물 한 번 적셔두기</div></div></details>`; }
-function suitWhy(sst, tmin){ const core = sst>=24 ? '수온이 높아 슈트 없이도 OK. 햇빛 차단용 래시가드' : sst>=21 ? '스프링수트(반팔·반바지 2mm)나 얇은 풀슈트. 오래 타면 2mm 풀슈트가 편함' : sst>=17 ? '3/2mm = 몸통 3mm · 팔다리 2mm 풀슈트. 가을 동해 기본' : sst>=13 ? '4/3mm = 몸통 4mm · 팔다리 3mm + 부츠. 발부터 시려요' : '5/4mm + 후드·부츠·장갑. 겨울 장비 없으면 입수 말 것';
-  return core + (tmin<=15 ? ' · 바깥 기온이 낮으니 판초·갈아입을 옷 필수' : ''); }
+function suitWhy(sst, tmin){ return suitRow(sst).why + (tmin<=15 ? ' · 바깥 기온이 낮으니 판초·갈아입을 옷 필수' : ''); }
 function tidePhase(a){
   const tp = a.rep.tp, next = a.hours[a.best.h+1]?.tp ?? tp, lvl = tp==null ? '' : tp<0.33 ? '로우' : tp<0.66 ? '미드' : '하이';
   const trend = next==null||tp==null ? '' : next>tp+0.03 ? ` · ${T('tide.rise')}(상승)` : next<tp-0.03 ? ` · ${T('tide.fall')}(하강)` : ` · ${T('tide.slack')}`; return lvl + trend;
@@ -2867,7 +2937,15 @@ const PICKS = [['첫 겨울 세미드라이, 관리 자신 없음','CURVAIN 26FW
 function renderGear(){
   const pr = myProfile(), b = BEACHES[state.beach], a = state.loaded ? analyze(b, 0) : null, sst = a ? ((a.hours[new Date().getHours()].sst) ?? a.rep.sst) : null;
   renderGearMe(); renderCloset();
-  $('gear-today').innerHTML = sst!=null ? `<div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${suitFor(sst)} <small style="font-size:12px;font-weight:400;color:var(--ink2)">수온 ${sst.toFixed(1)}°C · ${b.name}</small></div><div style="font-size:13px;line-height:1.5;margin-top:4px">${suitWhy(sst, a.tempMin)}</div><div class="lab-sm" style="margin-top:8px">수온 24°C↑ 래시가드 · 21~24 스프링 2mm · 17~21 3/2 · 13~17 4/3+부츠 · 13°C↓ 5/4 후드·장갑</div>` : '<div class="lab-sm">파도 탭에서 데이터를 먼저 불러와요</div>';
+  const row = sst!=null ? suitRow(sst) : null;
+  const bumps = sst!=null ? suitBump(sst, a.tempMin, a.rep?.w ?? 0) : [];
+  const next = row ? SUITS[SUITS.indexOf(row)-1] : null, thicker = row ? SUITS[SUITS.indexOf(row)+1] : null;
+  $('gear-today').innerHTML = sst!=null ? `<div style="font-family:'Galmuri14','Galmuri11',sans-serif;font-weight:700;font-size:20px">${suitFor(sst)} <small style="font-size:12px;font-weight:400;color:var(--ink2)">수온 ${sst.toFixed(1)}°C · ${b.name}</small></div>
+    <div class="lab-sm" style="margin:2px 0 0">이 구간 ${suitRange(row)} 기준</div>
+    <div style="font-size:13px;line-height:1.5;margin-top:4px">${suitWhy(sst, a.tempMin)}</div>
+    ${bumps.length && thicker ? `<div class="px sun" style="margin-top:8px;padding:8px 10px;box-shadow:none;border-width:3px"><div style="font-size:13px;font-weight:700">오늘은 <b>${thicker.suit}${thicker.acc?' + '+thicker.acc:''}</b>도 생각해보세요</div>${bumps.map(x=>`<div class="lab-sm" style="margin:2px 0 0">· ${x}</div>`).join('')}</div>` : ''}
+    <div class="lab-sm" style="margin-top:8px">${SUITS.map(r=>`${suitRange(r)} ${r.suit}${r.acc?'+'+r.acc:''}`).reverse().join(' · ')}</div>
+    ${suitSrc()}` : '<div class="lab-sm">파도 탭에서 데이터를 먼저 불러와요</div>';
   $('gear-guide').innerHTML = GUIDE.map(([t,h],i)=>`<details class="px" ${i===0?'open':''}><summary style="cursor:pointer;font-weight:700">${t}</summary><div style="margin-top:8px;font-size:13px;line-height:1.55">${h}</div></details>`).join('');
   $('gear-brands').innerHTML = BRANDS.map(x=>`<details class="px"><summary style="cursor:pointer;font-weight:700">${x.n} <span class="lab-sm" style="display:block;margin:2px 0 0;font-weight:400">${x.t}</span></summary><div style="margin-top:8px;font-size:13px;line-height:1.55">${x.d}</div>${x.links.length?`<div class="cam-more" style="margin-top:8px">${x.links.map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener">${l}</a>`).join('')}</div>`:''}</details>`).join('');
   $('gear-pick').innerHTML = `<table style="width:100%;font-size:12px;border-collapse:collapse">${PICKS.map(([s2,r])=>`<tr><td style="padding:5px 4px;border-bottom:2px dashed var(--grid);color:var(--ink2)">${s2}</td><td style="padding:5px 4px;border-bottom:2px dashed var(--grid)"><b>${r}</b></td></tr>`).join('')}</table>`;
