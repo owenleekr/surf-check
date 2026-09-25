@@ -588,7 +588,8 @@ footer a{color:var(--paper)}
   <div class="wavebar"></div>
   <form class="px" id="login-form" autocomplete="off">
     <div class="mode"><button type="button" id="m-in" aria-pressed="true">로그인</button><button type="button" id="m-new" aria-pressed="false">새 계정</button></div>
-    <div class="field" id="f-role" hidden><label>누구세요?</label><div class="role"><button type="button" data-role="member" aria-pressed="true">6기 멤버</button><button type="button" data-role="coach" aria-pressed="false">코치</button></div></div>
+    <div class="field" id="f-role" hidden><label>누구세요?</label><div class="role"><button type="button" data-role="guest" aria-pressed="true">그냥 서퍼</button><button type="button" data-role="member" aria-pressed="false">양양서핑학교 6기</button><button type="button" data-role="coach" aria-pressed="false">코치</button></div></div>
+    <div class="field" id="f-code" hidden><label for="ucode">학교 인증 암호</label><input id="ucode" type="password" placeholder="6기 단톡방에서 받은 암호" maxlength="40" autocomplete="off"><div class="note" style="font-size:12px;color:var(--ink2);margin-top:4px">코치님 말씀·출석부·레벨표·6기 마을이 열려요. 암호가 없으면 <b>그냥 서퍼</b>로 가입해도 파도·장비·자세분석은 다 됩니다.</div></div>
   <div class="field" id="f-roster" hidden><label for="uroster">이름 (명단에서 고르기)</label><select id="uroster"></select></div>
   <div class="field" id="f-coach" hidden><label for="ucoach">코치 이름</label><select id="ucoach"></select></div>
   <div class="field" id="f-class" hidden><label>반</label><div class="role"><button type="button" data-cls="beginner" aria-pressed="true">비기너반</button><button type="button" data-cls="inter" aria-pressed="false">중급반</button></div></div>
@@ -597,6 +598,12 @@ footer a{color:var(--paper)}
     <div class="field" id="f-av" hidden style="display:none"><label>캐릭터</label><div class="pick" id="pick-g"><button type="button" data-g="f" aria-pressed="true"><canvas></canvas>여자</button><button type="button" data-g="m" aria-pressed="false"><canvas></canvas>남자</button></div><div class="pick" id="pick-b"><button type="button" data-b="long" aria-pressed="true"><canvas></canvas>롱보드</button><button type="button" data-b="short" aria-pressed="false"><canvas></canvas>숏보드</button></div></div>
   <div class="field" id="f-birth" hidden><label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때 재설정용</label><input id="ubirth" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" placeholder="예) 881102" autocomplete="bday"></div>
   <div class="field"><label for="upw">비밀번호</label><div style="display:flex;gap:6px"><input id="upw" name="upw" type="password" autocomplete="current-password" placeholder="4자 이상" minlength="4" required style="flex:1"><button type="button" class="btn sm ghost" id="pw-eye" aria-label="비밀번호 보기" onclick="const i=document.getElementById('upw'); i.type=i.type==='password'?'text':'password'; this.textContent=i.type==='password'?'👁':'🙈'">👁</button></div></div>
+    <label class="item" id="f-agree" hidden style="margin-top:10px;gap:8px;font-size:13px;align-items:flex-start">
+      <input type="checkbox" id="agree">
+      <span><a href="terms-of-service.html" target="_blank" rel="noopener">서비스 이용약관</a>과
+      <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>에 동의합니다
+      <b style="display:block;font-weight:400;color:var(--ink2);font-size:12px;margin-top:2px">파도 정보는 참고용이며, 입수 판단은 본인 책임이라는 점을 확인했습니다</b></span>
+    </label>
     <div class="err" id="err"></div>
   <div style="text-align:right;margin-top:-4px"><button type="button" class="undo" id="reset-open">비밀번호를 잊었어요</button></div>
   <div id="reset-box" hidden style="border:4px solid var(--ink);background:#fff;padding:10px;margin-top:8px">
@@ -711,15 +718,24 @@ footer a{color:var(--paper)}
   </div>
 
   <!-- 탭 2: 미션 -->
-  <div id="tab-mission" hidden>
+  <div id="tab-mission" hidden data-cohort-tab>
     <div class="px" id="thisweek"></div>
     <section><div class="sec-h"><h2>전체 과정</h2><span class="tag">8주</span><span class="sub" id="prog-txt"></span></div><div class="bar" style="margin-bottom:10px"><i id="prog-bar"></i></div><div class="weeks" id="weeks"></div></section>
   </div>
 
   <!-- 탭 3: 성장 — 수업이 "이번 주 할 일"이라면 여기는 "내가 어떻게 달라지고 있나" -->
   <div id="tab-growth" hidden>
-    <section style="margin-top:0"><div class="sec-h"><h2>코치님 말씀</h2><span class="tag">피가 되고 살이 되는</span><span class="sub" id="say-sub"></span></div><div id="says" style="display:flex;flex-direction:column;gap:10px"></div></section>
-    <section><div class="sec-h"><h2>테이크오프 체크</h2><span class="tag">코치 기준</span><span class="sub" id="tko-sub"></span></div><div class="px" id="tko"></div></section>
+    <section id="cohort-cta" hidden style="margin-top:0"><div class="px sand">
+      <span class="eyebrow">양양서핑학교 6기세요?</span>
+      <div style="font-size:14px;line-height:1.6;margin-top:4px">인증 암호를 넣으면 <b>코치님 말씀 15편 · 테이크오프 7항목 · 수업 탭 · 출석 · 레벨표 · 6기 마을</b>이 열려요.</div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <input id="cta-code" type="password" placeholder="학교 인증 암호" maxlength="40" autocomplete="off" style="flex:1 1 150px;border:3px solid var(--ink);padding:8px;font-family:inherit;font-size:14px">
+        <button class="btn sm blue" type="button" id="cta-go">인증하기</button>
+      </div>
+      <div class="lab-sm" id="cta-msg" style="margin-top:6px">6기 단톡방 공지에 있어요.</div>
+    </div></section>
+    <section id="sec-says" data-cohort><div class="sec-h"><h2>코치님 말씀</h2><span class="tag">피가 되고 살이 되는</span><span class="sub" id="say-sub"></span></div><div id="says" style="display:flex;flex-direction:column;gap:10px"></div></section>
+    <section id="sec-tko" data-cohort><div class="sec-h"><h2>테이크오프 체크</h2><span class="tag">코치 기준</span><span class="sub" id="tko-sub"></span></div><div class="px" id="tko"></div></section>
     <section><div class="sec-h"><h2>내 자세 기록</h2><span class="tag">영상 → 사진</span><span class="sub" id="pose-sub"></span></div><div class="px" id="pose"></div></section>
     <section><div class="sec-h"><h2>더 배우기</h2><span class="tag">퀴즈 · 용어</span></div>
       <details class="px" id="more-quiz"><summary style="cursor:pointer;font-weight:700">용어 퀴즈 · 하루 3문제 · 맞히면 +5 XP</summary><div class="quiz" id="quiz" style="margin-top:10px"></div></details>
@@ -744,6 +760,26 @@ footer a{color:var(--paper)}
         <button class="btn sm pink" id="logout" type="button" style="margin-top:10px">로그아웃</button>
         <div class="lab-sm">기록은 서버에 남아요. 같은 아이디로 다시 들어오면 그대로예요.</div></details>
       <div class="lab-sm" style="margin-top:12px">내 홈 해변 · 파도 탭이 이 해변으로 열려요</div><div class="chips" id="home-chips"></div>
+      <details style="margin-top:10px" id="beach-add"><summary style="cursor:pointer;font-size:12px;font-weight:700">+ 타는 해변 추가 (양양 밖도 됩니다)</summary>
+        <div style="font-size:13px;line-height:1.6;margin-top:8px">좌표만 있으면 어디든 파고·주기·바람·물때·수온이 나와요.
+          지도 앱에서 그 해변을 길게 눌러 나오는 <b>위도, 경도</b>를 붙여넣으세요.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:12px">
+          <label>해변 이름<input id="nb-name" maxlength="10" placeholder="예) 중문" style="width:100%;border:3px solid var(--ink);padding:7px;font-family:inherit"></label>
+          <label>지역<input id="nb-area" maxlength="8" placeholder="예) 제주" style="width:100%;border:3px solid var(--ink);padding:7px;font-family:inherit"></label>
+          <label>위도<input id="nb-lat" inputmode="decimal" placeholder="33.2448" style="width:100%;border:3px solid var(--ink);padding:7px;font-family:inherit"></label>
+          <label>경도<input id="nb-lon" inputmode="decimal" placeholder="126.4120" style="width:100%;border:3px solid var(--ink);padding:7px;font-family:inherit"></label>
+        </div>
+        <label style="display:block;margin-top:6px;font-size:12px">해변이 바라보는 쪽
+          <select id="nb-facing" style="width:100%;border:3px solid var(--ink);padding:7px;font-family:inherit;font-size:13px">
+            <option value="0">북 (N)</option><option value="45">북동 (NE)</option><option value="90" selected>동 (E)</option>
+            <option value="135">남동 (SE)</option><option value="180">남 (S)</option><option value="225">남서 (SW)</option>
+            <option value="270">서 (W)</option><option value="315">북서 (NW)</option></select></label>
+        <div class="lab-sm" style="margin-top:4px">바다에 서서 <b>등지고 선 방향</b>이 아니라 <b>바라보는 방향</b>이에요. 온쇼어·오프쇼어 판정에 씁니다.</div>
+        <button class="btn sm mint" type="button" id="nb-save" style="margin-top:8px">해변 넣기</button>
+        <div class="lab-sm" id="nb-msg" style="margin-top:6px"></div>
+        <div class="lab-sm" style="margin-top:8px">내가 넣은 해변은 <b>파도 캠과 해변 설명이 없습니다</b> — 그건 양양 8곳에만 있어요.</div>
+        <div id="nb-list" style="margin-top:8px"></div>
+      </details>
       <div class="lab-sm" style="margin-top:12px">최근 세션</div><div class="hist" id="hist"></div>
     </div>
     <section><div class="sec-h"><h2>앱 사용법</h2><span class="tag">처음이면</span></div>
@@ -751,11 +787,11 @@ footer a{color:var(--paper)}
         <button class="btn sm blue" type="button" onclick="openHowto()" style="flex:1 1 150px">▶ 사용 설명 영상 39초</button>
         <button class="btn sm ghost" type="button" onclick="onbStart()" style="flex:1 1 150px">교장쌤 안내 다시 받기</button>
       </div><div class="lab-sm" style="margin-top:6px">영상은 소리 없이 자막으로 넘어가요. 안내는 화면을 직접 가리켜 줍니다.</div></div></section>
-    <section><div class="sec-h"><h2>출석 단계</h2><span class="tag">주 2회 × 8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
+    <section id="sec-ladder" data-cohort><div class="sec-h"><h2>출석 단계</h2><span class="tag">주 2회 × 8주</span></div><div class="px"><div class="ladder" id="ladder"></div><p class="lab-sm" style="margin-top:8px" id="ladder-txt"></p></div></section>
     <section><div class="sec-h"><h2>내 캐릭터</h2><span class="tag">꾸미기</span></div><div class="px builder"><canvas id="bld-av" data-anim></canvas><div class="opts" id="bld-opts"></div></div></section>
     <section><div class="sec-h"><h2>같이 타는 친구</h2><span class="tag">친밀도</span><span class="sub" id="petsub"></span></div><div class="px sand" id="petcard"></div></section>
     <section><div class="sec-h"><h2>받은 칭찬 카드</h2><span class="tag" id="cards-n">0</span></div><div class="cards" id="cards-in"></div><button class="btn sm pink" type="button" style="margin-top:10px" onclick="openCard()">👏 나도 보내기</button></section>
-    <section><div class="sec-h"><h2>서핑 레벨표</h2><span class="tag">양양서핑학교</span><span class="sub" id="slv-sum"></span></div><div class="slv" id="slv"></div><p class="lab-sm" style="margin-top:8px;color:#0D2846;text-shadow:0 1px 0 rgba(255,255,255,.6);font-weight:600">교육 항목을 다 채우면 그 레벨 인정. 항목 +3 XP. 코치 확인은 다음 버전에.</p></section>
+    <section id="sec-slv" data-cohort><div class="sec-h"><h2>서핑 레벨표</h2><span class="tag">양양서핑학교</span><span class="sub" id="slv-sum"></span></div><div class="slv" id="slv"></div><p class="lab-sm" style="margin-top:8px;color:#0D2846;text-shadow:0 1px 0 rgba(255,255,255,.6);font-weight:600">교육 항목을 다 채우면 그 레벨 인정. 항목 +3 XP. 코치 확인은 다음 버전에.</p></section>
     <section><div class="sec-h"><h2>배지</h2><span class="tag">모으기</span></div><div class="px badges" id="badges"></div></section>
     <section><details class="fold" id="lvl-fold"><summary><span class="fold-t">내 서핑 레벨</span><span class="tag">레벨표 기준</span></summary><div class="px levels" id="levels"></div></details></section>
     <section><details class="fold" id="res-fold"><summary><span class="fold-t">6기 자료</span><span class="tag">카페 · 캠</span></summary><div class="px cam-more" style="margin-top:0"><a href="https://naver.me/FmGtUQAq" target="_blank" rel="noopener">STC 네이버 카페 (영상 업로드)</a><a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM 캠</a><span class="lab-sm" style="width:100%;margin-top:6px">수업 영상 구글드라이브 링크는 단톡방 공지에서 (공개 리포라 여기 안 넣음)</span></div></details></section>
@@ -769,7 +805,7 @@ footer a{color:var(--paper)}
 
   <!-- 탭 4: 6기 랭킹 -->
   <div id="tab-rank" hidden>
-    <div class="sec-h" style="margin-top:0"><h2>6기 마을</h2><span class="tag">낙산 앞</span><span class="sub" id="village-sub"></span></div>
+    <div class="sec-h" style="margin-top:0"><h2 id="vill-title">6기 마을</h2><span class="tag">낙산 앞</span><span class="sub" id="village-sub"></span></div>
     <div class="village" id="village"><canvas class="sun2" data-spr="sun" width="8" height="8"></canvas><div class="wv"></div><div class="vgrid" id="vgrid"></div></div>
     <div class="lab-sm" id="mood-q" style="margin-top:10px;color:#0D2846;text-shadow:0 1px 0 rgba(255,255,255,.6);font-weight:600"></div>
     <div class="mood" style="margin-top:4px"><input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!"><button class="btn sm blue" type="button" id="mood-save">말풍선</button><button class="btn sm ghost" type="button" id="mood-clear" title="말풍선 지우기">✕</button></div>
@@ -808,7 +844,8 @@ footer a{color:var(--paper)}
     <section><div class="sec-h"><h2>관리</h2><span class="tag">슈트 수명</span></div><div class="px" id="gear-care"></div></section>
   </div>
 
-  <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.</footer>
+  <footer>파도·바람·수온·기온·일출몰: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>(해변 앞바다 격자값). 만조·간조는 조위 모델의 시간별 해면 높이에서 계산한 값으로 국립해양조사원 공식값과 10~30분 차이가 날 수 있어요. 동해는 조차가 작아 서핑 판단엔 무방. 온쇼어/오프쇼어는 각 해변이 바라보는 방향 기준, 판정 도장은 파고·주기·바람·조위를 합친 참고용. 캠은 <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">WSB FARM</a>. 폰트 <a href="https://galmuri.quiple.dev/" target="_blank" rel="noopener">갈무리</a>.
+  <br><a href="terms-of-service.html">서비스 이용약관</a> · <a href="privacy.html">개인정보처리방침</a> · 문의 <a href="mailto:infinagree@gmail.com">infinagree@gmail.com</a></footer>
 </div>
 
 <nav class="nav" id="nav" hidden>
@@ -1196,16 +1233,28 @@ const RPC_KO = { exists:'이미 있는 아이디예요', nouser:'없는 아이�
 const auth = {
   users(){ return LS.get('surf.users', {}); },
   remember(id, u){ const all = auth.users(); all[id] = { ...(all[id]||{}), ...u }; LS.set('surf.users', all); },
+  /* 학교 암호는 서버에서만 비교한다 — 앱 코드에 넣으면 브라우저로 그대로 내려간다.
+     RPC가 없거나 서버에 못 닿으면 "통과"가 아니라 "확인 불가"다. 열어주지 않는다. */
+  async verifyCohort(cohort, code){
+    if(!supaOn()) return { ok:false, why:'서버에 닿지 않아 학교 인증을 확인할 수 없어요' };
+    try{
+      const r = await rpc('verify_cohort', { p_cohort:cohort, p_code:code });
+      return r === true ? { ok:true } : { ok:false, why:'인증 암호가 달라요' };
+    }catch(e){
+      return { ok:false, why: e.code==='norpc' ? '학교 인증이 아직 준비되지 않았어요 (코치에게 supabase-cohort.sql 실행 요청)'
+                                               : '인증을 확인하지 못했어요 · 신호를 확인해 주세요' };
+    }
+  },
   async create(id, name, pw){
     const profile = { gender:pick.gender, board:pick.board, role:pick.role, cls:pick.cls, top:pick.role==='coach'?'k':'r', hat:'none', bottom:'b', boardc:'y', hair: pick.gender==='m'?'short':'bob', hairc:'k', skin:'s', face:'smile', wear:'rash', pet:'none', petc:'y', badge: pick.role==='coach' ? (COACH_DEFAULT_BADGE[name]||'코치') : undefined, birth: ($('ubirth')?.value||'').trim() || undefined };
     if(supaOn()){
       try{ const token = await rpc('signup', { p_id:id, p_name:name||id, p_pw:pw, p_profile:profile });
-        auth.remember(id, { name:name||id, cohort:'6기', profile, server:true, token, createdAt:new Date().toISOString() }); return auth.users()[id]; }
+        auth.remember(id, { name:name||id, cohort:pick.cohort||'open', profile, server:true, token, createdAt:new Date().toISOString() }); return auth.users()[id]; }
       catch(e){ if(e.code!=='norpc' && !/Failed to fetch/.test(e.message)) throw new Error(RPC_KO[e.code]||e.message); }
     }
     const u = auth.users(); if(u[id]) throw new Error('이미 있는 아이디예요');
     const salt = Math.random().toString(36).slice(2,10);
-    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:'6기', profile, createdAt: new Date().toISOString() };
+    u[id] = { name: name||id, salt, hash: await hash(salt+pw), cohort:pick.cohort||'open', profile, createdAt: new Date().toISOString() };
     LS.set('surf.users', u); return u[id];
   },
   async login(id, pw){
@@ -1233,18 +1282,22 @@ let saveT; function saveUp(){   // 진도·프로필을 서버 계정에 저장 
   saveT = setTimeout(()=>rpc('save_data', { p_id:ME.id, p_token:u.token, p_data:getData(), p_profile:u.profile||{}, p_name:u.name }).catch(()=>{}), 1500);
 }
 let ME = null;   // {id, name}
-const pick = { gender:'f', board:'long', role:'member', cls:'beginner' };   // 가입 화면 선택값
+const pick = { gender:'f', board:'long', role:'guest', cls:'beginner', cohort:'open' };   // 가입 화면 선택값
 /* 6기 가을학기 명단 (칠판 사진 기준: 이름 · 서핑 시작 연도 · 첫 파도 탄 곳). 틀린 글자는 여기서 고치면 된다. */
 const COACHES = ['이승대','김나리','이해룡','이상문','장진혁','김법성','루비','Rio','Jenny','Evan'];
 const COACH_DEFAULT_BADGE = { '이승대':'교장', '김나리':'코치', '이해룡':'코치', '이상문':'코치', '장진혁':'코치', '김법성':'매니저' };
 const ROSTER = [['김도훈','2018','금진'],['김태은','2025','죽도'],['심재영','2019','신항'],['이나영','2022',''],['이미진','2022','제주'],['이성현','2026','낙산'],['정선아','2021','인구'],['조혜미','2024','곽지'],['허예령','2018','남애리'],['홍미영','2026','낙산'],['최원재','2023','타이키'],['장은옥','2024','인구'],['박초롱','2026','낙산'],['이한솔','2022','이호테우'],['정유정','2024','죽도'],['전영훈','2017','사천'],['전인수','2025','낙산'],['엄주승','2026','낙산'],['장베드로','2017','죽도']];
 const rosterOf = name => ROSTER.find(r=>r[0]===name);
 function syncRoleUI(){
-  const isNew = !$('f-role').hidden, member = pick.role==='member';
-  $('f-role').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.role===pick.role)));
-  $('f-roster').hidden = !(isNew && member); $('f-coach').hidden = !(isNew && !member); $('f-class').hidden = !(isNew && member);
-  $('f-name').hidden = !(isNew && ((member && $('uroster').value==='__etc') || (!member && $('ucoach').value==='__etc')));
-  $('f-name').querySelector('label').textContent = member ? '이름 (닉네임)' : '코치 이름 (직접 입력)';
+  const isNew = !$('f-role').hidden, r = pick.role, member = r==='member', coach = r==='coach', guest = r==='guest';
+  $('f-role').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.role===r)));
+  $('f-roster').hidden = !(isNew && member);
+  $('f-coach').hidden  = !(isNew && coach);
+  $('f-class').hidden  = !(isNew && member);
+  $('f-code').hidden   = !(isNew && !guest);                       // 6기·코치만 인증 암호
+  /* 일반 서퍼는 명단이 없으니 이름을 직접 쓴다 */
+  $('f-name').hidden = !(isNew && (guest || (member && $('uroster').value==='__etc') || (coach && $('ucoach').value==='__etc')));
+  $('f-name').querySelector('label').textContent = guest ? '이름 (닉네임)' : coach ? '코치 이름 (직접 입력)' : '이름 (닉네임)';
   $('f-class').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.cls===pick.cls)));
 }
 function initRosterUI(){
@@ -1254,6 +1307,37 @@ $('uroster').onchange = ()=>{ $('f-name').hidden = $('uroster').value!=='__etc';
 $('ucoach').innerHTML = COACHES.map(n=>`<option value="${n}">${n}${COACH_DEFAULT_BADGE[n]?` · ${COACH_DEFAULT_BADGE[n]}`:''}</option>`).join('') + '<option value="__etc">명단에 없어요 (직접 입력)</option>';
 $('ucoach').onchange = ()=>{ $('f-name').hidden = $('ucoach').value!=='__etc'; };
 $('f-class').querySelectorAll('button').forEach(b=>b.onclick=()=>{ pick.cls=b.dataset.cls; syncRoleUI(); });
+}
+/* ── 6기 인증 ────────────────────────────────────────────────
+   학교가 단톡방에서 가르친 내용(코치님 말씀·테이크오프 7항목·레벨표·출석)은
+   인증된 6기와 코치에게만 연다. 파도·장비·자세분석은 누구나 쓴다 —
+   공개 예보와 공개 지식으로 만든 것이라 막을 이유가 없다. */
+const myCohort = () => auth.users()[ME?.id]?.cohort || 'open';
+const isCohort = () => myCohort() === '6기' || myProfile().role === 'coach';
+/* 가입 뒤에도 인증할 수 있어야 한다 — 그때 암호를 못 받았을 수 있다 */
+async function cohortUpgrade(code, msgEl, btn){
+  const set = t => { if(msgEl) msgEl.textContent = t; };
+  if(!code.trim()) return set('암호를 넣어주세요');
+  if(btn){ btn.disabled = true; btn.textContent = '확인 중…'; }
+  const v = await auth.verifyCohort('6기', code.trim());
+  if(btn){ btn.disabled = false; btn.textContent = '인증하기'; }
+  if(!v.ok) return set(v.why);
+  auth.remember(ME.id, { cohort:'6기' });
+  const pr = myProfile(); if(pr.role === 'guest') setProfile({ role:'member', cls: pr.cls || 'beginner' });
+  syncUp(); applyCohortGate(); refreshMe();
+  set('인증됐어요! 6기 기능이 열렸습니다.');
+  toast('양양서핑학교 6기 인증 완료 🎉');
+  /* 선언되지 않은 이름에 ?. 를 쓰면 ReferenceError다 — 있는 것만 부른다 */
+  renderSays(); renderTko(); renderSLV(); renderLevel(); renderMission();
+}
+function applyCohortGate(){
+  const ok = isCohort();
+  document.querySelectorAll('[data-cohort]').forEach(el=>{ el.hidden = !ok; });
+  document.querySelectorAll('[data-cohort-tab]').forEach(el=>{ el.dataset.locked = ok ? '' : '1'; });
+  const navMission = document.querySelector('.nav button[data-tab="mission"]');
+  if(navMission) navMission.hidden = !ok;                       // 수업 탭은 6기 것이다
+  const box = $('cohort-cta');
+  if(box) box.hidden = ok;
 }
 function myProfile(){ return withLook(auth.users()[ME.id]?.profile || { gender:'f', board:'long' }, ME?.name); }
 function setProfile(pr){ const u = auth.users(); if(!u[ME.id]) return; u[ME.id].profile = { ...myProfile(), ...pr }; LS.set('surf.users', u); refreshMe(); renderLevel(); syncUp(); saveUp(); }
@@ -1392,6 +1476,17 @@ function levelOf(xp){ let L=0; LEVELS.forEach(([min],i)=>{ if(xp>=min) L=i; }); 
 /* ═══════════ 해변 · 데이터 ═══════════
    facing = 해변이 바다를 보는 방위(온/오프쇼어 판정), swell = 파도 에너지가 가장 잘 들어오는 스웰 방위
    (교장쌤: 낙산은 북동쪽을 보고 있어 NE 스웰이 최고, 죽도·인구는 정동(E) 스웰이 큼) */
+const MY_BEACHES_KEY = 'surf.mybeaches';
+const myBeaches = () => LS.get(MY_BEACHES_KEY, []);
+/* facing = 해변이 바라보는 방위(도). 이걸 알아야 온쇼어/오프쇼어가 갈린다.
+   swell = 가장 잘 받는 스웰 방위. 모르면 facing과 같게 둔다 — 대부분 맞는 근사다. */
+function addMyBeach(b){
+  const all = myBeaches();
+  if(all.some(x=>x.id===b.id)) throw new Error('이미 있는 해변이에요');
+  if(all.length >= 12) throw new Error('해변은 12곳까지 넣을 수 있어요');
+  all.push(b); LS.set(MY_BEACHES_KEY, all); return all;
+}
+function delMyBeach(id){ LS.set(MY_BEACHES_KEY, myBeaches().filter(x=>x.id!==id)); }
 const BEACHES = [
   {id:'naksan',   name:'낙산',           area:'양양', lat:38.121, lon:128.632, facing:95,  swell:45, cam:'YNS1', stream:'https://wsb.live.smilecdn.com/naksan1/naksan1.stream/playlist.m3u8', camNote:'WSB FARM × 양양서핑학교 캠', note:'지형이 북동을 완전히 향해 NE 스웰 에너지를 온전히 받음'},
   {id:'dongho',   name:'동호',           area:'양양', lat:38.070, lon:128.700, facing:80,  swell:45, cam:'YDH1', stream:'https://wsb.live.smilecdn.com/dongho1/dongho1.stream/playlist.m3u8', note:'낙산과 함께 북동을 정면으로 보는 해변'},
@@ -1404,6 +1499,8 @@ const BEACHES = [
   {id:'gyeongpo', name:'경포',           area:'강릉', lat:37.805, lon:128.909, facing:75,  swell:45, cam:'GGP1', stream:'https://wsb.live.smilecdn.com/gyeongpo1/gyeongpo1.stream/playlist.m3u8'},
   {id:'geumjin',  name:'금진',           area:'강릉', lat:37.640, lon:129.045, facing:100, swell:100, cam:'GJ1', stream:'https://wsb.inforsurf.cn/live/geumjin_3745.m3u8'},
 ];
+/* 사용자가 넣은 해변을 뒤에 붙인다. 목록은 한 배열로 유지해야 state.beach 인덱스가 그대로 통한다 */
+myBeaches().forEach(b => BEACHES.push({ ...b, mine:true }));
 const CAM_URL = c => `https://www.wsbfarm.com/wavecam/WaveCamView?beach=${c}`;
 /* 파도 예보 모델. 같은 좌표라도 모델마다 파고·주기가 다르다 → 골라 보고 비교. 수온·조위는 기본 모델 값 고정 */
 const MODELS = [
@@ -3296,7 +3393,17 @@ function onbStart(){ onbI = 0; onbShow(); }
 $('onb-next').onclick = onbNext; $('onb-skip').onclick = ()=>{ if(ONB[onbI].build && onbPr) setProfile(onbPr); onbEnd(); };
 
 /* ═══════════ 렌더: 레벨 탭 ═══════════ */
+function renderMyBeaches(){
+  const list = myBeaches();
+  $('nb-list').innerHTML = list.length
+    ? list.map(b=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:2px dashed var(--grid);font-size:13px"><span style="flex:1"><b>${b.name}</b> <span style="color:var(--ink2)">${b.area||''} · ${b.lat.toFixed(3)}, ${b.lon.toFixed(3)}</span></span><button class="undo" type="button" data-delbeach="${b.id}">빼기</button></div>`).join('')
+    : '<div class="lab-sm">아직 없어요</div>';
+  $('nb-list').querySelectorAll('[data-delbeach]').forEach(x=>x.onclick=()=>{
+    if(!confirm('이 해변을 목록에서 뺄까요?')) return;
+    delMyBeach(x.dataset.delbeach); toast('뺐어요 · 새로고침하면 목록에서 사라져요'); renderMyBeaches(); });
+}
 function renderLevel(){
+  renderMyBeaches();
   const d = getData(), xp = calcXP(d), L = levelOf(xp), next = LEVELS[L+1], st = slvStat(d), curL = SLV[st.cur], nextL = SLV[st.cur] ;
   $('lv-name').textContent = ME.name; $('lv-title').textContent = `${'★'.repeat(st.cur)}${'☆'.repeat(Math.max(0,3-st.cur))} ${st.label}${certOf(ME.name)?` (코치 인증 LV.${certOf(ME.name)} ✅)`:''}${st.cur?` · ${SLV[st.cur-1].g}`:' · 입문'}`;   /* 칭호는 상단바와 바로 아래 XP줄에 이미 있다 — 여기 또 붙이면 두 줄로 접힌다 */
   const ro = rosterOf(ME.name), pr0 = myProfile();
@@ -3375,24 +3482,40 @@ function enter(u){
   $('login').hidden = true; $('app').hidden = false; $('nav').hidden = false;
   state.pref = LS.get('surf.pref', null); state.model = LS.get('surf.model', 'marine_best_match'); const sb = (auth.users()[u.id]?.profile?.home) || LS.get('surf.beach', null); if(sb){ const i = BEACHES.findIndex(b=>b.id===sb); if(i>=0) state.beach = i; }
   $('practice').value = LS.get(`surf.practice.${u.id}`, '');
-  refreshMe(); showTab('wave'); pullTerms().then(()=>{ if(state.loaded) renderWave(); }); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
+  refreshMe(); applyCohortGate(); showTab('wave'); pullTerms().then(()=>{ if(state.loaded) renderWave(); }); if(!state.loaded) bootWave(); auth.refresh().then(()=>{ refreshMe(); if(!getData().onboarded) setTimeout(onbStart, 600); }); pullCards().then(refreshMe); pullAttendance().then(()=>{ refreshMe(); if(state.tab==='mission') renderMission(); });
 }
 let mode = 'in';
-const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; $('f-birth').hidden = m!=='new'; $('reset-box').hidden = true; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
+const setMode = m => { mode = m; $('m-in').setAttribute('aria-pressed', String(m==='in')); $('m-new').setAttribute('aria-pressed', String(m==='new')); $('f-name').hidden = m!=='new'; $('f-av').hidden = m!=='new'; $('f-role').hidden = m!=='new'; $('f-birth').hidden = m!=='new'; $('f-agree').hidden = m!=='new'; $('reset-box').hidden = true; syncRoleUI(); $('submit').textContent = m==='in' ? '▶ 로그인' : '★ 계정 만들고 시작'; $('err').textContent=''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
 $('login-form').addEventListener('submit', async e=>{
   e.preventDefault(); const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value;
-  let name = $('uname').value.trim(); if(mode==='new' && pick.role==='member' && $('uroster').value!=='__etc') name = $('uroster').value;
-  if(mode==='new' && pick.role==='coach' && $('ucoach').value!=='__etc') name = $('ucoach').value;
+  const guest = pick.role==='guest';
+  let name = $('uname').value.trim();
+  if(mode==='new' && pick.role==='member' && $('uroster').value!=='__etc') name = $('uroster').value;
+  if(mode==='new' && pick.role==='coach'  && $('ucoach').value!=='__etc')  name = $('ucoach').value;
+  const btn = $('submit'); const was = btn.textContent;
   try{
     if(!/^[a-z0-9_]{2,16}$/.test(id)) throw new Error('아이디는 영문 소문자·숫자·_ 2~16자');
     if(pw.length<4) throw new Error('비밀번호는 4자 이상');
-    if(mode==='new' && !name) throw new Error('이름을 골라 주세요');
+    if(mode==='new' && !name) throw new Error(guest ? '이름(닉네임)을 적어주세요' : '이름을 골라 주세요');
     if(mode==='new' && !/^\d{6}$/.test($('ubirth').value.trim())) throw new Error('생년월일 6자리를 적어주세요 (비밀번호 재설정용)');
+    if(mode==='new' && !$('agree').checked) throw new Error('약관과 개인정보처리방침에 동의해 주세요');
+    /* 6기·코치는 학교 암호를 서버에서 확인한 다음에야 계정을 만든다.
+       확인이 안 되면(서버 불통·RPC 없음 포함) 6기로 만들지 않는다 — 닫힌 실패. */
+    pick.cohort = 'open';
+    if(mode==='new' && !guest){
+      const code = ($('ucode').value||'').trim();
+      if(!code) throw new Error('학교 인증 암호를 넣어주세요 · 없으면 "그냥 서퍼"로 가입하세요');
+      btn.textContent = '학교 인증 확인 중…'; btn.disabled = true;
+      const v = await auth.verifyCohort('6기', code);
+      btn.textContent = was; btn.disabled = false;
+      if(!v.ok) throw new Error(v.why);
+      pick.cohort = '6기';
+    }
     const u = mode==='new' ? await auth.create(id, name, pw) : await auth.login(id, pw);
-    if(mode==='new'){ toast(`${u.name} 님, 6기 환영!`); }
+    if(mode==='new'){ toast(pick.cohort==='6기' ? `${u.name} 님, 6기 환영!` : `${u.name} 님, 환영합니다!`); }
     enter({ id, name:u.name });
-  }catch(err){ $('err').textContent = err.message; }
+  }catch(err){ btn.textContent = was; btn.disabled = false; $('err').textContent = err.message; }
 });
 $('wipe').onclick = ()=>{ if(confirm('이 폰에 저장된 계정·진도를 전부 지웁니다. 서버 계정은 남아요. 계속?')){ try{ localStorage.clear(); }catch(e){} location.reload(); } };
 $('reset-open').onclick = ()=>{ $('reset-box').hidden = !$('reset-box').hidden; $('r-id').value = $('uid').value.trim(); };
@@ -3402,6 +3525,34 @@ $('r-go').onclick = async ()=>{ const id = $('r-id').value.trim().toLowerCase(),
     else { const u = auth.users()[id]; if(!u) throw new Error('없는 아이디예요'); if((u.profile?.birth||'')!==birth) throw new Error(u.profile?.birth ? '생년월일이 달라요' : '이 계정은 생년월일이 없어요'); u.hash = await hash(u.salt+pw); auth.remember(id, u); }
     toast('비밀번호를 바꿨어요'); $('reset-box').hidden = true; setMode('in'); $('uid').value = id; $('upw').value = pw; $('login-form').requestSubmit();
   }catch(e){ $('r-err').textContent = e.message; } };
+/* 성장 탭 인증 상자 — 렌더마다 다시 묶이지 않게 문서 단위로 */
+document.addEventListener('click', e=>{ if(e.target.id !== 'cta-go') return;
+  cohortUpgrade($('cta-code').value, $('cta-msg'), e.target); });
+document.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.id==='cta-code'){ e.preventDefault(); $('cta-go').click(); } });
+document.addEventListener('click', async e=>{
+  if(e.target.id !== 'nb-save') return;
+  const msg = $('nb-msg'), name = $('nb-name').value.trim(), area = $('nb-area').value.trim();
+  const lat = parseFloat($('nb-lat').value), lon = parseFloat($('nb-lon').value), facing = +$('nb-facing').value;
+  msg.textContent = '';
+  if(!name) return msg.textContent = '해변 이름을 적어주세요';
+  /* 좌표가 바다가 아니면 Open-Meteo Marine이 값을 안 준다. 넣기 전에 한 번 물어본다 —
+     나중에 파도 탭에서 빈 화면을 보는 것보다 지금 알려주는 게 낫다. */
+  if(!(lat >= -90 && lat <= 90) || !(lon >= -180 && lon <= 180)) return msg.textContent = '위도·경도를 숫자로 적어주세요';
+  msg.textContent = '바다인지 확인 중…';
+  try{
+    const r = await fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height&forecast_days=1`);
+    const j = await r.json();
+    const has = (j?.hourly?.wave_height || []).some(v => v != null);
+    if(!has){ msg.textContent = '이 좌표에서는 파도 값이 안 나와요 — 바닷가 쪽으로 조금 옮겨서 다시 해보세요'; return; }
+  }catch(err){ msg.textContent = '확인하지 못했어요 · 신호를 확인해 주세요'; return; }
+  try{
+    addMyBeach({ id:'my_'+Date.now().toString(36), name, area:area||'내 해변', lat, lon, facing, swell:facing,
+                 note:'직접 넣은 해변 — 파도 캠과 해변 설명은 없어요' });
+    msg.textContent = `${name} 넣었어요! 새로고침하면 파도 탭에 나와요.`;
+    $('nb-name').value = $('nb-area').value = $('nb-lat').value = $('nb-lon').value = '';
+    renderMyBeaches(); toast(`${name} 추가 · 새로고침하면 보여요`);
+  }catch(err){ msg.textContent = err.message; }
+});
 $('logout').onclick = ()=>{ if(!confirm('로그아웃할까요? 기록은 서버에 남아 다시 로그인하면 그대로예요.')) return;
   try{ localStorage.removeItem('surf.session'); }catch(e){} location.reload(); };
 $('copy').addEventListener('click', copyNotion);
@@ -3442,7 +3593,10 @@ const isTest = id => typeof id==='string' && (HIDE_IDS.includes(id) || (TESTID.t
 async function fetchRank(){
   const local = Object.keys(auth.users()).map(snapshot).filter(Boolean);
   if(!supaOn()) return { rows:local, remote:false };
-  try{ const r = await fetch(`${SUPA.url}/rest/v1/${SUPA.table}?cohort=eq.6기&select=*&order=xp.desc&limit=100`, { headers:supaH() }); if(!r.ok) throw 0; const rows = await r.json();
+  /* 6기는 6기 마을, 일반 회원은 오픈 마을. 예전엔 cohort=eq.6기 로 박혀 있어
+     일반 회원이 마을 탭에 가면 아무도 없는 바다를 봤다. */
+  const cohort = myCohort();
+  try{ const r = await fetch(`${SUPA.url}/rest/v1/${SUPA.table}?cohort=eq.${encodeURIComponent(cohort)}&select=*&order=xp.desc&limit=100`, { headers:supaH() }); if(!r.ok) throw 0; const rows = await r.json();
     const map = new Map(rows.map(x=>[x.id,x])); local.forEach(x=>map.set(x.id, x)); return { rows:[...map.values()].filter(x=>!isTest(x.id)), remote:true }; }
   catch(e){ return { rows:local, remote:false, err:true }; }
 }
@@ -3521,8 +3675,15 @@ async function renderVillage(){
     $('village').appendChild(c); c.querySelector('[data-close]').onclick=()=>c.remove(); c.querySelector('[data-clap]')?.addEventListener('click', ()=>{ openCard(x.name); c.remove(); });
     c.querySelector('[data-cert]')?.addEventListener('change', e=>{ if(e.target.value){ certify(x.name, +e.target.value); c.remove(); } });
     c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 ${x.name}님 안녕!`, profile:myProfile(), created_at:new Date().toISOString() }; try{ await sbUpsert('chat', row); state.chat.push(row); renderChat(); toast(`${x.name}에게 손 흔들었어요`); }catch(e){ toast('채팅 서버 준비 중'); } c.remove(); }); });
-  const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
-  $('village-sub').textContent += missing.length ? ` · 아직 안 온 동기 ${missing.length}명` : '';
+  /* 명단은 6기 것이다 — 일반 마을에서 "아직 안 온 동기"를 세면 말이 안 된다 */
+  if(isCohort()){
+    const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
+    $('village-sub').textContent += missing.length ? ` · 아직 안 온 동기 ${missing.length}명` : '';
+    $('vill-title').textContent = '6기 마을';
+  } else {
+    $('vill-title').textContent = '서퍼 마을';
+    if(rows.length <= 1) $('village-sub').textContent += ' · 아직 조용해요. 말풍선 한마디 남겨보세요';
+  }
   $('mood').value = myProfile().mood || '';
   const QS = ['오늘 가장 잘 된 동작은?','이번 주 목표 한 줄?','오늘 파도 한 단어로?','다음 주 타고 싶은 해변은?','오늘 코치 피드백 중 기억나는 것?','서핑 시작한 이유는?','요즘 제일 어려운 건?','같이 타고 싶은 사람 지목!'];
   $('mood-q').textContent = '오늘의 질문 · ' + QS[Math.floor(Date.now()/864e5) % QS.length];
