@@ -3555,7 +3555,12 @@ if('serviceWorker' in navigator && location.protocol==='https:') navigator.servi
 paintAll();
 (function boot(){
   const sid = LS.get('surf.session', null), u = sid && auth.users()[sid];
-  if(u) enter({ id:sid, name:u.name }); else setMode(Object.keys(auth.users()).length ? 'in' : 'new');
+  if(u){ enter({ id:sid, name:u.name }); return; }
+  const ids = Object.keys(auth.users());
+  setMode(ids.length ? 'in' : 'new');
+  /* 이 기기에 계정이 하나뿐이면 아이디는 뻔하다 — 폰에서 매번 치게 두지 않는다.
+     여럿이면 누구 것인지 모르니 건드리지 않는다(남의 아이디를 띄우면 안 된다). */
+  if(ids.length === 1){ $('uid').value = ids[0]; setTimeout(()=>$('upw').focus({ preventScroll:true }), 120); }
 })();
 </script>
 </body>
