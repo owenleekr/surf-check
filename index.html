@@ -422,6 +422,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
    보정량 = 캔버스높이/(24+여백2) × 펫14칸/2 = 64/26×7 ≈ 17.2px. transform이라 폭 계산엔 안 끼어든다 */
 .vp[data-pet] .nm{ transform: translateX(17.2px) }
 .vp .nm{font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink); padding:0 4px; max-width:106px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.vp .bub .rx{min-height:26px; padding:1px 5px; font-size:11px}
 .vp .bub{position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink); padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:120px; white-space:normal; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2}
 .vp .bub::after{content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--ink)}
 .vp.me .nm{background:var(--sun); border-width:3px}   /* "나"는 이름표를 노랗게 — 스프라이트에 테두리를 두르면 펫까지 감싸 창문처럼 보인다 */
@@ -431,6 +432,13 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
 .chat{display:flex; flex-direction:column; gap:6px; max-height:360px; overflow:auto; padding:4px 2px}
 .msg{display:flex; gap:8px; align-items:flex-start}
 .msg canvas{width:34px; height:34px; flex:0 0 auto}
+/* 반응 칩 — 한 탭이 목적이므로 38px를 지킨다. 안 누른 건 흐리게 둬서 내 반응이 바로 보인다 */
+.rxbar{display:flex; gap:4px; flex-wrap:wrap; margin-top:5px}
+.rx{border:2px solid var(--ink); background:#fff; padding:2px 7px; min-height:30px; font-size:13px; font-family:sans-serif; line-height:1; display:inline-flex; align-items:center; gap:3px; cursor:pointer; opacity:.55}
+.rx b{font-family:inherit; font-size:11.5px; font-weight:800; color:var(--ink)}
+.rx.on{background:var(--sun); opacity:1; box-shadow:1px 1px 0 var(--ink)}
+.rx:active{transform:translate(1px,1px)}
+.vp .rxbar{justify-content:center; margin-top:3px}
 .msg .b{background:#fff; border:3px solid var(--ink); padding:6px 9px; font-size:13px; line-height:1.4; max-width:80%; box-shadow:2px 2px 0 var(--ink)}
 .msg .b small{display:block; color:var(--ink2); font-size:10px; margin-top:2px}
 .msg.me{flex-direction:row-reverse} .msg.me .b{background:var(--sun)}
@@ -3228,6 +3236,16 @@ function buildAlerts(){
   const byBeach = {}; state.social.checkins.filter(c=>c.user_id!==ME.id).forEach(c=>{ (byBeach[c.beach]=byBeach[c.beach]||[]).push(c.name); });
   Object.entries(byBeach).forEach(([beach, names])=>out.push({ id:`ci|${beach}|${names.length}`, ic:'📍', tx:`<b>${names.join(', ')}</b> 지금 ${beach}에 있어요`, go:()=>{ const i=BEACHES.findIndex(b=>b.name===beach); if(i>=0){ state.beach=i; state.day=0; renderWave(); } } }));
   // 파티
+  /* 누가 나한테 반응했는지 안 알려주면 주고받기가 안 돌아간다 — 반응은 받는 맛으로 누른다 */
+  { const mine = (state.reacts||[]).filter(r=>r.to_user===ME.id && r.user_id!==ME.id && !isTest(r.user_id));
+    const today0 = today();
+    const fresh = mine.filter(r=>String(r.created_at||'').slice(0,10)===today0);
+    if(fresh.length){
+      const emos = [...new Set(fresh.map(r=>r.emo))].join(''), who = [...new Set(fresh.map(r=>r.name))];
+      out.push({ id:`rx|${today0}|${fresh.length}`, hot:true, ic:'💛',
+        tx:`<b>${who.slice(0,3).join(', ')}${who.length>3?` 외 ${who.length-3}명`:''}</b>이 반응했어요 ${emos}`,
+        go:()=>{ showTab('rank'); setTimeout(()=>$('chat')?.scrollIntoView({block:'center'}), 300); } });
+    } }
   const ps = state.social.parties.filter(p=>p.user_id!==ME.id); if(ps.length) out.push({ id:`party|${ps.length}`, ic:'🏄', tx:`오늘 파티 <b>${ps.length}건</b> — ${ps[0].time} ${ps[0].beach} ${ps[0].name}${ps.length>1?' 외':''}`, go:()=>$('pbar').scrollIntoView({block:'center'}) });
   const rank = x => x.hot ? 0 : ['🎒','👏','📍','🏄','💛','🤝'].includes(x.ic) ? 1 : 2;
   return out.filter(x=>!dismissed[x.id]).sort((x,y)=>rank(x)-rank(y)).slice(0,5);
@@ -3526,6 +3544,9 @@ $('r-go').onclick = async ()=>{ const id = $('r-id').value.trim().toLowerCase(),
     toast('비밀번호를 바꿨어요'); $('reset-box').hidden = true; setMode('in'); $('uid').value = id; $('upw').value = pw; $('login-form').requestSubmit();
   }catch(e){ $('r-err').textContent = e.message; } };
 /* 성장 탭 인증 상자 — 렌더마다 다시 묶이지 않게 문서 단위로 */
+document.addEventListener('click', e=>{ const rx = e.target.closest?.('[data-rx]'); if(!rx) return;
+  e.preventDefault(); e.stopPropagation();                      // 마을에선 캐릭터 카드가 같이 열리면 안 된다
+  toggleReact(rx.dataset.rx, rx.dataset.emo, rx.dataset.to || null); });
 document.addEventListener('click', e=>{ if(e.target.id !== 'cta-go') return;
   cohortUpgrade($('cta-code').value, $('cta-msg'), e.target); });
 document.addEventListener('keydown', e=>{ if(e.key==='Enter' && e.target.id==='cta-code'){ e.preventDefault(); $('cta-go').click(); } });
@@ -3660,15 +3681,17 @@ function renderGearMe(){ const pr = myProfile();
   $('gear-me').hidden = closetOf(pr).length===0 && !gearLine(pr);
   $('gear-me').innerHTML = `<div style="display:flex;gap:12px;align-items:center"><canvas id="gear-av" data-anim style="width:64px;height:64px;background:var(--sky);border:3px solid var(--ink)"></canvas><div style="flex:1"><span class="eyebrow">주력 장비 · 마을 카드에 표시</span><div style="font-size:14px;line-height:1.5;margin-top:2px">${gearLine(pr)||'옷장에서 주력을 골라주세요'}</div></div></div>`; drawSpr($('gear-av'), avatarRows(pr), avatarTint()); }
 async function renderRank(){   // = 마을
-  renderSheet(); pullSocial(true).then(()=>{ renderFeed(); renderVillage(); }); renderFeed(); renderVillage(); pullChat(true); startChatPoll(); renderSurferDay(); renderNews();
+  renderSheet(); pullSocial(true).then(()=>{ renderFeed(); renderVillage(); }); renderFeed(); renderVillage();
+  pullReacts().then(()=>{ renderChat(); renderVillage(); }); pullChat(true); startChatPoll(); renderSurferDay(); renderNews();
 }
+function renderVillageReacts(){ if(state.tab==='rank') renderVillage(); }
 async function renderVillage(){
   const { rows: raw } = await fetchRank(); const here = new Map(state.social.checkins.map(c=>[c.user_id, c.beach]));
   const byName = new Map();                                        // 같은 이름은 XP 높은 쪽만
   raw.forEach(x=>{ const cur = byName.get(x.name); if(!cur || (x.xp||0) > (cur.xp||0)) byName.set(x.name, x); });
   const rows = [...byName.values()].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
   $('village-sub').textContent = `${rows.length}명 · 탭하면 카드`;
-  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}"${x.profile?.pet&&x.profile.pet!=='none'?' data-pet':''}>${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
+  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}"${x.profile?.pet&&x.profile.pet!=='none'?' data-pet':''}>${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}${x.id!==ME.id?reactBar('mood:'+x.id, x.id):''}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
   rows.forEach(x=>{ const pf = withLook(x.profile, x.name); drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(pf), avatarTintOf(pf, x.level)); });
   $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
     const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.pet && x.profile.pet!=='none' ? `<br>${{rabbit:'🐰',cat:'🐱',dog:'🐶',seal:'🦭',penguin:'🐧'}[x.profile.pet]||'🐾'} ${x.profile.petName||PET_KO[x.profile.pet]} · ${PET_STAGE[x.profile.petLv||0].ko}` : ''}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
@@ -3693,6 +3716,7 @@ $('mood').addEventListener('keydown', e=>{ if(e.key==='Enter') $('mood-save').cl
 $('mood-clear').onclick = ()=>{ $('mood').value=''; setProfile({ mood:'' }); toast('말풍선 지웠어요'); setTimeout(renderVillage, 1200); };
 /* 채팅: 5초 폴링(마을 탭 열려 있을 때만) */
 state.chat = []; let chatT = null, chatLast = 0;
+/* 반응은 채팅과 같은 주기로 따라온다 — 따로 돌리면 화면이 어긋난다 */
 async function pullChat(force){
   if(!supaOn()) return; try{ const rows = await sbGet('chat', 'select=*&order=created_at.desc&limit=80'); state.chat = rows.reverse().filter(m=>!isTest(m.user_id)); state.chatOk = true; }catch(e){ if(e.code==='notable') state.chatOk = false; }
   renderChat();
@@ -3700,11 +3724,52 @@ async function pullChat(force){
 function renderChat(){
   if(!$('chat')) return; const box = $('chat'), atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
   $('chat-sub').textContent = state.chatOk===false ? '서버 준비 중 (supabase-village.sql)' : `${state.chat.length}개 · 5초마다 갱신`;
-  box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}"><canvas data-av="${m.id}"></canvas><div class="b"><b>${m.name}</b>${m.profile?.role==='coach'?` <span class="tagc">${m.profile.badge||'코치'}</span>`:''} ${String(m.text).replace(/</g,'&lt;')}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small></div></div>`).join('') || `<div class="lab-sm">${state.chatOk===false?'코치가 supabase-village.sql 실행하면 켜져요':'첫 메시지를 남겨봐요'}</div>`;
+  box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}"><canvas data-av="${m.id}"></canvas><div class="b"><b>${m.name}</b>${m.profile?.role==='coach'?` <span class="tagc">${m.profile.badge||'코치'}</span>`:''} ${String(m.text).replace(/</g,'&lt;')}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small>${m.user_id!==ME.id?reactBar('chat:'+m.id, m.user_id):reactBar('chat:'+m.id, m.user_id)}</div></div>`).join('') || `<div class="lab-sm">${state.chatOk===false?'코치가 supabase-village.sql 실행하면 켜져요':'첫 메시지를 남겨봐요'}</div>`;
   state.chat.forEach(m=>{ const pf = withLook(m.profile, m.name); drawSpr(box.querySelector(`canvas[data-av="${m.id}"]`), avatarRows(pf, false), avatarTintOf(pf, 0)); });
   if(atBottom || chatLast!==state.chat.length){ box.scrollTop = box.scrollHeight; chatLast = state.chat.length; }
 }
-function startChatPoll(){ clearInterval(chatT); chatT = setInterval(()=>{ if(state.tab==='rank' && !document.hidden) pullChat(); else if(state.tab!=='rank') clearInterval(chatT); }, 5000); }
+function startChatPoll(){ clearInterval(chatT); chatT = setInterval(()=>{ if(state.tab==='rank' && !document.hidden){ pullChat(); pullReacts().then(()=>{ renderChat(); renderVillage(); }); } else if(state.tab!=='rank') clearInterval(chatT); }, 5000); }
+/* ── 반응(리액션) ─────────────────────────────────────────────
+   남에게 무언가 돌려주려면 칭찬 카드(모달 여러 번)나 채팅 타이핑뿐이었다.
+   바다 앞에서 젖은 손으로 할 일이 아니다. 한 탭으로 끝나는 길을 만든다.
+   id가 '유저|대상|이모지'라 같은 걸 두 번 누르면 서버가 막고, 다시 누르면 뗀다. */
+const REACT_EMO = ['👏','🔥','🌊','💪'];
+state.reacts = [];   state.reactsOk = null;
+const reactsOf = target => (state.reacts||[]).filter(r=>r.target===target);
+const myReact  = (target, emo) => (state.reacts||[]).some(r=>r.target===target && r.emo===emo && r.user_id===ME.id);
+async function pullReacts(){
+  if(!supaOn()) return;
+  /* sbGet은 404를 code:'notable'로 던진다 — 메시지에 '404'가 없다.
+     이걸 못 잡으면 테이블이 없는데도 반응 칩이 떠서, 눌러도 아무 일이 안 일어난다. */
+  try{ state.reacts = await sbGet('reacts', 'select=*&order=created_at.desc&limit=500'); state.reactsOk = true; }
+  catch(e){ if(e.code === 'notable') state.reactsOk = false; }
+}
+async function toggleReact(target, emo, toUser){
+  if(!supaOn() || state.reactsOk===false) return toast('반응 기능이 아직 서버에 없어요 (supabase-reacts.sql)');
+  const id = `${ME.id}|${target}|${emo}`;
+  const had = myReact(target, emo);
+  /* 화면부터 바꾼다 — 서버를 기다리면 눌렀는지 안 눌렀는지 알 수가 없다 */
+  state.reacts = had ? state.reacts.filter(r=>r.id!==id)
+                     : [...state.reacts, { id, user_id:ME.id, name:ME.name, target, emo, to_user:toUser||null, created_at:new Date().toISOString() }];
+  renderChat(); renderVillageReacts();
+  try{
+    if(had) await fetch(`${SUPA.url}/rest/v1/reacts?id=eq.${encodeURIComponent(id)}`, { method:'DELETE', headers:supaH() });
+    else    await sbUpsert('reacts', { id, user_id:ME.id, name:ME.name, target, emo, to_user:toUser||null, created_at:new Date().toISOString() });
+    if(!had && toUser && toUser!==ME.id) navigator.vibrate?.(15);
+  }catch(e){ await pullReacts(); renderChat(); renderVillageReacts(); toast('반응을 보내지 못했어요 · 신호 확인'); }
+}
+/* 한 대상의 반응 줄. 누가 눌렀는지는 title로 — 좁은 화면에 이름을 늘어놓을 자리가 없다 */
+function reactBar(target, toUser){
+  if(state.reactsOk === false) return '';
+  const rs = reactsOf(target);
+  const chips = REACT_EMO.map(e=>{
+    const list = rs.filter(r=>r.emo===e), n = list.length, mine = myReact(target, e);
+    if(!n && rs.length) return '';                                  // 이미 반응이 있으면 빈 칸은 접는다
+    return `<button type="button" class="rx${mine?' on':''}" data-rx="${target}" data-emo="${e}" data-to="${toUser||''}"
+      title="${n ? list.map(r=>r.name).join(', ') : '반응 남기기'}" aria-pressed="${mine}">${e}${n?`<b>${n}</b>`:''}</button>`;
+  }).join('');
+  return `<div class="rxbar">${chips}</div>`;
+}
 function chatSys(text){ if(!supaOn() || state.chatOk===false || !ME) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text, profile:myProfile(), created_at:new Date().toISOString() }; sbUpsert('chat', row).then(()=>{ state.chat.push(row); if(state.tab==='rank') renderChat(); }).catch(()=>{}); }
 async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200), profile:{ gender:myProfile().gender, hat:myProfile().hat, top:myProfile().top, bottom:myProfile().bottom, board:myProfile().board, boardc:myProfile().boardc, role:myProfile().role, badge:myProfile().badge }, created_at:new Date().toISOString() };
   try{ await sbUpsert('chat', row); $('chat-in').value=''; state.chat.push(row); renderChat(); }catch(e){ toast(state.chatOk===false?'서버 준비 중':'전송 실패 · 신호 확인'); } }
