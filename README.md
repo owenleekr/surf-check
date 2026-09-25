@@ -77,3 +77,49 @@ select/insert/update 말고 **delete 정책도 필요**하다(처음 파일엔 �
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \
   --hide-scrollbars --window-size=1200,630 --screenshot=og.png http://localhost:8765/og/og.html
 ```
+
+## 회원 종류와 6기 인증 (2026-09-25)
+
+| | cohort | 볼 수 있는 것 |
+|---|---|---|
+| 그냥 서퍼 | `open` | 파도 · 장비 · 성장(자세분석·용어) · 나 · **서퍼 마을** |
+| 양양서핑학교 6기 | `6기` | 위 전부 + **코치님 말씀 · 테이크오프 7항목 · 수업 탭 · 출석 단계 · 레벨표 · 6기 마을** |
+| 코치 | `6기` | 위 전부 + 출석부 · 물때 입력 · 용어 수정 · 자세 피드백 |
+
+**학교가 단톡방에서 가르친 내용만 잠근다.** 파도·장비·자세분석은 공개 예보와 공개 지식으로
+만든 것이라 누구나 쓴다.
+
+### 인증 암호는 리포에 없다
+
+`cohort_codes` 테이블에 **bcrypt 해시**로 두고, `verify_cohort()` RPC가 `security definer`로
+비교해 true/false만 돌려준다. 테이블에 select 정책이 없어 **anon 키로는 읽을 수 없다.**
+설치는 `supabase-cohort.sql`.
+
+> **RPC가 없거나 서버에 못 닿으면 "통과"가 아니라 "확인 불가"다.** 6기로 만들지 않는다.
+> 설정 누락이 무방비가 되면 안 된다.
+
+앱 코드에 암호를 넣으면 브라우저로 그대로 내려간다 — 공개 리포가 아니어도 마찬가지다.
+
+### 게이팅이 걸리는 곳
+- 마크업: `data-cohort`(섹션 숨김) · `data-cohort-tab`(탭)
+- 판단: `isCohort()` = `cohort==='6기' || role==='coach'`
+- 적용: `applyCohortGate()` — 로그인 직후와 인증 직후에 부른다
+- 가입 뒤 인증: 성장 탭 맨 위 `#cohort-cta` → `cohortUpgrade()`
+
+### 마을은 기수를 따라간다
+`fetchRank()`가 `cohort=eq.${myCohort()}`로 조회한다. 예전엔 `6기`로 박혀 있어
+일반 회원이 마을 탭에서 빈 바다를 봤다. 명단 기반 "아직 안 온 동기"는 6기에만 뜬다.
+
+## 타는 해변 직접 추가
+
+`surf.mybeaches`(localStorage)에 넣고 부팅 때 `BEACHES` 뒤에 붙인다. 12곳까지.
+넣기 전에 Open-Meteo Marine으로 **그 좌표에 파도 값이 있는지** 확인한다 — 내륙 좌표는 거부된다.
+직접 넣은 해변은 **파도 캠과 해변 노트가 없다**(그건 양양 8곳 전용).
+
+## 약관·개인정보처리방침
+
+`terms-of-service.html` · `privacy.html`. 보일러플레이트가 아니라 **코드에서 실제 수집 항목을
+뽑아 적었다** — 기능을 추가해 새로 저장하는 게 생기면 **방침도 같이 고칠 것.**
+특히 `poses` 버킷(사람이 찍힌 사진)과 외부 호출 목록.
+
+카카오 로그인은 `KAKAO.md` 참고 — 개발자 앱 등록은 오웬 계정으로만 가능하다.
