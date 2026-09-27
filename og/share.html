@@ -1,0 +1,33 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8">
+<title>SurfShare OG</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<script src="../sprite.js"></script>
+<style>
+  html,body{margin:0}
+  body{width:1200px;height:630px;overflow:hidden;
+       background:linear-gradient(to bottom,#DCF3FF 0 34%,#8FD3FF 34% 62%,#F2E3B8 62% 100%);
+       font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+       display:flex;flex-direction:column;justify-content:center;padding:0 72px;box-sizing:border-box;position:relative}
+  h1{font-family:"Galmuri14","Galmuri11",sans-serif;font-size:82px;margin:0;color:#FFF9E6;text-shadow:7px 7px 0 #1B1B2F;letter-spacing:.01em}
+  .sub{font-size:31px;font-weight:800;color:#12245F;margin-top:14px;text-shadow:0 2px 0 rgba(255,255,255,.6)}
+  .row{display:flex;gap:12px;margin-top:30px}
+  .chip{background:#FFF9E6;border:5px solid #1B1B2F;box-shadow:6px 6px 0 #1B1B2F;padding:12px 20px;font-size:26px;font-weight:800}
+  .who{position:absolute;right:64px;bottom:44px;display:flex;align-items:flex-end;gap:10px}
+  .who canvas{width:132px;height:132px;image-rendering:pixelated}
+  .tag{position:absolute;right:72px;top:56px;background:#FFD23F;border:5px solid #1B1B2F;box-shadow:5px 5px 0 #1B1B2F;
+       padding:9px 18px;font-family:"Galmuri11",sans-serif;font-size:24px;font-weight:800}
+</style></head><body>
+  <div class="tag">양양 · 낙산</div>
+  <h1>SurfShare</h1>
+  <div class="sub">차 같이 타고, 숙소 같이 쓰고</div>
+  <div class="row"><span class="chip">🚗 차량</span><span class="chip">🏠 숙소</span><span class="chip">📅 일정</span><span class="chip">🙂 꾸미기</span></div>
+  <div class="who"><canvas id="a"></canvas><canvas id="b"></canvas><canvas id="c"></canvas></div>
+<script>
+const looks = [
+  { gender:'f', hair:'bob',  hairc:'k', skin:'s', face:'smile', wear:'rash', top:'r', bottom:'b', boardc:'y', hat:'none', pet:'none' },
+  { gender:'m', hair:'surf', hairc:'n', skin:'t', face:'cool',  wear:'hood', top:'g', bottom:'k', boardc:'c', hat:'cap',  pet:'none' },
+  { gender:'f', hair:'twin', hairc:'p', skin:'l', face:'happy', wear:'tank', top:'p', bottom:'r', boardc:'p', hat:'none', pet:'dog', petc:'o' },
+];
+['a','b','c'].forEach((id,i)=>{ const pr = withLook(looks[i], id);
+  drawSpr(document.getElementById(id), avatarRows(pr, i===2), avatarTintOf(pr, 0)); });
+</script></body></html>
