@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1B1B2F">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href="school.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-title" content="라인업">
 <title>라인업 — 양양서핑학교 6기</title>
@@ -633,7 +633,7 @@ footer a{color:var(--paper)}
       <button class="btn sm blue" type="button" id="gate-ok">확인</button>
     </div>
     <div class="err" id="gate-err" style="margin-top:4px"></div>
-    <a class="btn sm mint" href="/surfshare" style="display:block;margin-top:10px;text-align:center;text-decoration:none">🚗 SurfShare로 가기</a>
+    <a class="btn sm mint" href="/" style="display:block;margin-top:10px;text-align:center;text-decoration:none">🚗 SurfShare로 가기</a>
   </div>
   <form class="px" id="login-form" autocomplete="off">
     <div class="mode"><button type="button" id="m-in" aria-pressed="true">로그인</button><button type="button" id="m-new" aria-pressed="false">새 계정</button></div>
@@ -3813,7 +3813,7 @@ paintAll();
 (function boot(){
   const sid = LS.get('surf.session', null), u = sid && auth.users()[sid];
   if(u){ enter({ id:sid, name:u.name }); return; }
-  if(!appInvited() && !Object.values(auth.users()).some(x=>x.cohort==='6기' || x.profile?.role==='coach')) return showGate();
+  if(!appInvited()) return showGate();   /* 6기라서 통과 ✗ — SurfShare 가입도 6기를 남긴다 */
   const ids = Object.keys(auth.users());
   setMode(ids.length ? 'in' : 'new');
   /* 이 기기에 계정이 하나뿐이면 아이디는 뻔하다 — 폰에서 매번 치게 두지 않는다.

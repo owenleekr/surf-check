@@ -1,0 +1,2 @@
+{ "name": "라인업 — 오늘 파도 어때", "short_name": "라인업", "start_url": "/school", "scope": "/", "display": "standalone", "background_color": "#AEE2FF", "theme_color": "#1B1B2F",
+  "icons": [{ "src": "icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }] }

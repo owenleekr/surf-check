@@ -1,2 +1,2 @@
-{ "name": "라인업 — 오늘 파도 어때", "short_name": "라인업", "start_url": "./", "display": "standalone", "background_color": "#AEE2FF", "theme_color": "#1B1B2F",
+{ "name": "SurfShare — 차 같이 타고, 숙소 같이 쓰고", "short_name": "SurfShare", "start_url": "/surfshare", "scope": "/", "display": "standalone", "background_color": "#AEE2FF", "theme_color": "#5AB4EF",
   "icons": [{ "src": "icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }] }

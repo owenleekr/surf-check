@@ -10,7 +10,8 @@
 <meta property="og:description" content="양양·낙산. 출발 시각과 빈자리, 숙소와 평가를 한곳에. 매주 단톡방에서 다시 묻지 않아도 되게.">
 <meta property="og:image" content="https://surf.owenai.xyz/og-share.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
-<meta property="og:url" content="https://surf.owenai.xyz/surfshare">
+<meta property="og:url" content="https://surf.owenai.xyz/">
+<link rel="manifest" href="manifest.webmanifest">
 <meta property="og:site_name" content="라인업">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#5AB4EF">
@@ -106,15 +107,45 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .fold summary{ cursor:pointer; font-weight:700; font-size:14px }
 .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
 @media(max-width:400px){ .grid2{ grid-template-columns:1fr } }
+/* 처음 온 사람 안내 — 화면을 덮지 않는다. 덮으면 설명하는 대상이 안 보인다. */
+.onb{ position:fixed; left:0; right:0; bottom:0; z-index:60; padding:10px;
+      padding-bottom:calc(10px + env(safe-area-inset-bottom)); pointer-events:none }
+.onb-card{ pointer-events:auto; max-width:520px; margin:0 auto; background:var(--paper);
+           border:4px solid var(--ink); box-shadow:5px 5px 0 var(--ink); padding:13px }
+.onb-step{ font-size:11px; font-weight:800; color:var(--ink2); letter-spacing:.04em }
+.onb-t{ font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:16px; margin-top:3px }
+.onb-d{ font-size:13px; line-height:1.7; margin-top:5px }
+.onb-btns{ display:flex; gap:6px; margin-top:11px } .onb-btns .btn{ flex:1 }
+.onb-dots{ display:flex; gap:4px; margin-top:9px }
+.onb-dots i{ flex:1; height:5px; background:var(--grid); border:2px solid var(--ink) }
+.onb-dots i.on{ background:var(--sun) }
+.ring{ outline:4px solid #FF8A3D; outline-offset:3px; animation:ringp 1.2s ease-in-out infinite }
+@keyframes ringp{ 0%,100%{ outline-color:#FF8A3D } 50%{ outline-color:var(--sun) } }
+@media(prefers-reduced-motion:reduce){ .ring{ animation:none } }
+body.onb-on .wrap{ padding-bottom:230px }
+.new-av{ width:72px; height:72px; image-rendering:pixelated; border:3px solid var(--ink); background:#8FD3FF; flex:0 0 auto }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>SurfShare</h1>
-  <div class="sub">차 같이 타고, 숙소 같이 쓰고 · <a href="/">앱으로</a></div>
+  <div class="sub">차 같이 타고, 숙소 같이 쓰고 · 양양 낙산</div>
+
+  <!-- 입장 문 — 앱과 다른 비번이다. 한 곳이 새도 다른 한 곳은 안 열리게. -->
+  <div class="px" id="gate" hidden>
+    <span class="tag">양양서핑학교 6기</span>
+    <div class="t" style="font-size:18px;margin-top:6px">SurfShare</div>
+    <div class="note" style="margin-top:4px;line-height:1.6">같이 탈 차와 같이 쓸 숙소를 나누는 곳이에요.<br>
+      6기 단톡방에서 받은 <b>입장 비밀번호</b>를 넣어주세요.</div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      <input id="gate-code" type="password" maxlength="40" placeholder="입장 비밀번호" autocomplete="off" style="flex:1 1 150px">
+      <button class="btn blue" id="gate-ok">들어가기</button>
+    </div>
+    <div class="err" id="gate-err" style="margin-top:4px"></div>
+  </div>
 
   <!-- 로그인 -->
-  <div class="px" id="login">
+  <div class="px" id="login" hidden>
     <div class="tabs" style="margin-bottom:10px">
       <button type="button" id="m-in" aria-pressed="true">로그인</button>
       <button type="button" id="m-new" aria-pressed="false">새 계정</button>
@@ -128,8 +159,22 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
         <label for="uname">이름 직접 입력</label><input id="uname" maxlength="12" placeholder="차·숙소 글에 표시돼요">
       </div>
       <label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때</label><input id="ubirth" inputmode="numeric" maxlength="6" placeholder="예) 881102">
+      <label>내 캐릭터</label>
+      <div style="display:flex;gap:11px;align-items:center;background:#fff;border:3px solid var(--ink);padding:9px">
+        <canvas class="new-av" id="new-av"></canvas>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12.5px;line-height:1.6">차·숙소 글 옆에 이 모습으로 서 있어요.</div>
+          <button type="button" class="btn sm ghost" id="new-rand" style="margin-top:6px">🎲 다시 굴리기</button>
+          <div class="note" style="margin-top:5px">들어가서 <b>🙂 꾸미기</b>에서 더 자세히 고칠 수 있어요.</div>
+        </div>
+      </div>
     </div>
-    <label for="upw">비밀번호</label><input id="upw" type="password" placeholder="4자 이상">
+    <label for="upw">비밀번호</label>
+    <div style="display:flex;gap:6px">
+      <input id="upw" type="password" placeholder="4자 이상" style="flex:1">
+      <button type="button" class="btn sm ghost" id="pw-eye" aria-label="비밀번호 보기" style="flex:0 0 auto">👁</button>
+    </div>
+    <div class="note" id="pw-note" style="margin-top:4px" hidden>다음에 이 아이디와 비밀번호로 다시 들어옵니다. <b>기억해 두세요.</b></div>
     <label class="agree" id="agree-wrap" hidden style="display:flex;gap:7px;align-items:flex-start;margin-top:10px;font-size:13px;color:var(--ink)">
       <input type="checkbox" id="agree" style="width:auto;margin-top:3px">
       <span><a href="/terms-of-service" target="_blank" rel="noopener">이용약관</a>과
@@ -143,6 +188,7 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
     <div class="px" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <canvas class="me-av" id="me-av"></canvas><b id="who" style="flex:1"></b>
       <span class="tag" id="cohort-tag"></span>
+      <button class="btn sm ghost" id="help">❓ 사용법</button>
       <button class="btn sm ghost" id="out">나가기</button>
     </div>
     <div class="px sand" id="school" style="margin-top:10px">
@@ -150,6 +196,7 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
       <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 마을을 만들고 있어요</div>
       <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 수업 기록 · 자세 분석 · 마을 채팅.<br>
         준비되면 여기에서 바로 들어가실 수 있게 할게요.</div>
+      <a href="/school" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--ink2)">초대 코드를 받으셨다면 → 학교 문 열기</a>
     </div>
     <div class="tabs" style="margin-top:12px">
       <button type="button" id="t-ride" aria-pressed="true">🚗 차량</button>
@@ -217,6 +264,18 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
     </div>
   </div>
 </div>
+<div class="onb" id="onb" hidden>
+  <div class="onb-card">
+    <div class="onb-step" id="onb-step"></div>
+    <div class="onb-t" id="onb-t"></div>
+    <div class="onb-d" id="onb-d"></div>
+    <div class="onb-dots" id="onb-dots"></div>
+    <div class="onb-btns">
+      <button type="button" class="btn sm ghost" id="onb-skip">그만 보기</button>
+      <button type="button" class="btn sm blue" id="onb-next">다음 →</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -252,6 +311,26 @@ async function rpc(fn, args){
 }
 
 /* ── 로그인 ─────────────────────────────────────────────── */
+/* SurfShare 입장 비밀번호 — 앱(학교)과 다른 코드다.
+   cohort_codes 의 'share' 행. 같은 RPC 를 쓰되 기수 키만 다르다.
+   한 코드가 밖으로 새도 다른 곳은 안 열린다. */
+const shareInvited = () => { try{ return localStorage.getItem('lineup.share.invited') === '1'; }catch(e){ return false; } };
+function showGate(){ $('gate').hidden = false; $('login').hidden = true; setTimeout(()=>$('gate-code').focus({preventScroll:true}), 60); }
+function passGate(){ $('gate').hidden = true; $('login').hidden = false; }
+$('gate-ok').onclick = async ()=>{
+  const code = $('gate-code').value.trim(), e = $('gate-err'), btn = $('gate-ok');
+  e.textContent = ''; if(!code) return e.textContent = '비밀번호를 넣어주세요';
+  btn.disabled = true; btn.textContent = '확인 중…';
+  try{
+    const ok = await rpc('verify_cohort', { p_cohort:'share', p_code:code });
+    if(ok !== true){ e.textContent = '비밀번호가 달라요'; return; }
+    try{ localStorage.setItem('lineup.share.invited', '1'); }catch(err){}
+    passGate();
+  }catch(err){ e.textContent = err.message==='Failed to fetch' ? '서버에 닿지 않아요' : '아직 준비 중이에요 (코치에게 문의)'; }
+  finally{ btn.disabled = false; btn.textContent = '들어가기'; }
+};
+$('gate-code').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('gate-ok').click(); } });
+
 let mode = 'in';
 /* 6기 명단에서 고르게 한다 — 아무 이름이나 쓰면 차에 누가 타는지 알 수가 없다.
    명단에 없는 사람(청강·타 기수)은 직접 입력으로 빠져나간다. */
@@ -261,22 +340,41 @@ function fillRoster(){
   $('uroster').innerHTML = '<option value="">— 이름을 고르세요 —</option>'
     + ROSTER.map(([n,y,b])=>`<option value="${n}">${n}${y?` · ${y}년 ${b||''}`:''}</option>`).join('')
     + '<option value="__etc">명단에 없어요 (직접 입력)</option>';
-  $('uroster').onchange = ()=>{ $('etc-wrap').hidden = $('uroster').value !== '__etc'; };
+  $('uroster').onchange = ()=>{ $('etc-wrap').hidden = $('uroster').value !== '__etc';
+    newLook($('uroster').value === '__etc' ? ($('uname').value.trim() || '서퍼') : $('uroster').value); };
 }
 const setMode = m => { mode = m;
   $('m-in').setAttribute('aria-pressed', String(m==='in'));
   $('m-new').setAttribute('aria-pressed', String(m==='new'));
-  $('new-only').hidden = m!=='new'; $('agree-wrap').hidden = m!=='new';
+  $('new-only').hidden = m!=='new'; $('agree-wrap').hidden = m!=='new'; $('pw-note').hidden = m!=='new';
+  if(m==='new') newLook($('uroster')?.value && $('uroster').value!=='__etc' ? $('uroster').value : '');
   $('mode-note').textContent = m==='in' ? '아이디와 비밀번호로 들어와요.' : '양양서핑학교 6기 명단에서 본인을 찾아주세요.';
   $('go').textContent = m==='in' ? '들어가기' : '★ 계정 만들고 시작';
   $('lerr').textContent = ''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
 fillRoster();
+$('pw-eye').onclick = ()=>{ const i = $('upw');
+  i.type = i.type==='password' ? 'text' : 'password'; $('pw-eye').textContent = i.type==='password' ? '👁' : '🙈'; };
 
 /* 새로 만든 사람의 기본 모습 — 이름으로 흩어지게 해서 다 똑같이 생기지 않게 한다 */
 const freshProfile = name => (typeof withLook === 'function')
   ? { ...withLook({ gender:'f', board:'long', role:'guest' }, name||''), role:'guest' }
   : { gender:'f', board:'long', role:'guest' };
+
+/* 가입 화면에서 미리 캐릭터를 보여준다 — 만들고 나서야 자기 모습을 보는 건 늦다 */
+let NEWP = null;
+function newLook(name, shuffle){
+  if(typeof withLook !== 'function') return;
+  NEWP = shuffle && NEWP ? { ...NEWP, hair:pickOf(HAIR), hairc:pickOf(HAIRC), skin:pickOf(SKIN), face:pickOf(FACE),
+                             wear:pickOf(WEAR), top:pickOf(TOPS), bottom:pickOf(BOTTOMS), hat:pickOf(HAT),
+                             board:pickOf({long:1,fun:1,short:1}), boardc:pickOf(BOARDC), pet:pickOf(PET), petc:pickOf(PETC) }
+                         : freshProfile(name || '서퍼');
+  const q = withLook(NEWP, name || '서퍼');
+  drawSpr($('new-av'), avatarRows(q), avatarTintOf(q, 0));
+}
+const pickOf = o => { const k = Object.keys(o); return k[Math.floor(Math.random()*k.length)]; };
+$('new-rand').onclick = ()=>newLook($('uroster').value==='__etc' ? ($('uname').value.trim()||'서퍼') : $('uroster').value, true);
+$('uname').addEventListener('input', ()=>{ if(!NEWP) newLook($('uname').value.trim()); });
 
 $('go').onclick = async ()=>{
   const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value; $('lerr').textContent = '';
@@ -291,7 +389,7 @@ $('go').onclick = async ()=>{
       if(pw.length < 4) return E('비밀번호는 4자 이상');
       if(!/^\d{6}$/.test(birth)) return E('생년월일 6자리를 적어주세요 (비밀번호 재설정용)');
       if(!$('agree').checked) return E('약관과 개인정보처리방침에 동의해 주세요');
-      const profile = { ...freshProfile(name), birth, cls:'beginner', role: sel==='__etc' ? 'guest' : 'member' };
+      const profile = { ...(NEWP || freshProfile(name)), birth, cls:'beginner', role: sel==='__etc' ? 'guest' : 'member' };
       $('go').disabled = true;
       try{ await rpc('signup', { p_id:id, p_name:name, p_pw:pw, p_profile:profile }); }
       finally{ $('go').disabled = false; }
@@ -301,7 +399,7 @@ $('go').onclick = async ()=>{
       ME = { id, name:r.name, profile:r.profile||{}, cohort:r.cohort || 'open' };
     }
     try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
-    start();
+    start();                    // 처음이면 start() 안에서 안내가 뜬다
   }catch(e){ E({ nouser:'없는 아이디예요 · "새 계정"으로 만들어 주세요', wrongpw:'비밀번호가 달라요',
       exists:'이미 있는 아이디예요', badid:'아이디는 영문 소문자·숫자·_ 2~16자', badpw:'비밀번호는 4자 이상' }[e.message]
     || (e.message==='Failed to fetch' ? '서버에 닿지 않아요' : e.message)); }
@@ -361,6 +459,46 @@ function saveProfile(){
     catch(e){}
   }, 700);
 }
+
+/* ── 처음 온 사람 안내 ────────────────────────────────────
+   덮개(dim)를 쓰지 않는다. 앱에서 덮개의 pointer-events 가 탭을 삼켜
+   "누를 수 없는 안내"가 됐던 적이 있다. 여기선 아래 카드 + 테두리만 쓴다. */
+const ONB = [
+  { tab:'me',   at:'t-me',   t:'먼저 내 캐릭터부터',
+    d:'얼굴 · 옷 · 보드 · 같이 타는 친구를 고를 수 있어요.<br>고르는 즉시 저장되고, 아래 차·숙소 글에 <b>이 모습으로</b> 나옵니다.' },
+  { tab:'ride', at:'t-ride', t:'차 — 같이 타기',
+    d:'빈자리에 <b>[타기]</b>를 누르면 내 자리가 잡혀요. 마음이 바뀌면 [내리기].<br>내가 운전하면 <b>[+ 차 자리 올리기]</b>로 날짜·출발 시각·태울 인원을 적습니다.' },
+  { tab:'ride', at:'r-dir',  t:'가는 차 · 나가는 차',
+    d:'<b>양양 가는 차</b>는 집 → 양양, <b>나가는 차</b>는 양양 → 집이에요.<br>방향을 고르면 타는 곳·내리는 곳 예시도 같이 바뀝니다.', open:'ride' },
+  { tab:'stay', at:'t-stay', t:'숙소 — 같이 쓰기',
+    d:'남는 자리가 있는 숙소에 들어가거나, 내가 잡은 방을 올려 사람을 채웁니다.<br>지도는 <b>양양서핑학교</b>가 한가운데예요 — 거리는 학교까지 잰 값입니다.' },
+  { tab:'stay', at:'stays',  t:'다녀왔으면 별점을',
+    d:'숙소는 자보기 전엔 알 수가 없어요. 별점과 한마디를 남기면<br>다음 사람이 그걸 보고 고릅니다. 한 숙소에 한 번, 언제든 고칠 수 있어요.' },
+  { tab:'ride', at:'school', t:'학교는 곧 열려요',
+    d:'파도 예보 · 수업 기록 · 자세 분석 · 마을.<br>준비되면 여기 카드가 <b>문</b>으로 바뀝니다. 그때까지는 차와 숙소부터.' },
+];
+let onbI = -1, onbRing = null;
+const onbDone = () => { try{ return localStorage.getItem('lineup.share.onb') === '1'; }catch(e){ return false; } };
+function onbClear(){ if(onbRing){ onbRing.classList.remove('ring'); onbRing = null; } }
+function onbEnd(){ onbClear(); onbI = -1; $('onb').hidden = true; document.body.classList.remove('onb-on');
+  try{ localStorage.setItem('lineup.share.onb', '1'); }catch(e){} }
+function onbShow(i){
+  onbI = i; const st = ONB[i]; if(!st) return onbEnd();
+  setTab(st.tab);
+  if(st.open){ const d = $('pane-'+st.open)?.querySelector('details'); if(d) d.open = true; }
+  onbClear();
+  const el = $(st.at); if(el){ el.classList.add('ring'); onbRing = el;
+    setTimeout(()=>el.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
+  $('onb-step').textContent = `안내 ${i+1} / ${ONB.length}`;
+  $('onb-t').textContent = st.t; $('onb-d').innerHTML = st.d;
+  $('onb-dots').innerHTML = ONB.map((_,k)=>`<i class="${k<=i?'on':''}"></i>`).join('');
+  $('onb-next').textContent = i === ONB.length-1 ? '시작하기' : '다음 →';
+  $('onb-skip').textContent = i === 0 ? '건너뛰기' : '← 이전';
+}
+function onbStart(){ document.body.classList.add('onb-on'); $('onb').hidden = false; onbShow(0); }
+$('onb-next').onclick = ()=>{ onbI + 1 >= ONB.length ? onbEnd() : onbShow(onbI + 1); };
+$('onb-skip').onclick = ()=>{ onbI === 0 ? onbEnd() : onbShow(onbI - 1); };
+$('help').onclick = ()=>{ if($('onb').hidden) onbStart(); else onbEnd(); };
 
 /* ── 탭 ─────────────────────────────────────────────────── */
 const setTab = t => { state.tab = t;
@@ -657,6 +795,7 @@ function start(){
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
   pullRides(); pullStays();
+  if(!onbDone() && $('onb').hidden) setTimeout(()=>onbStart(), 700);   // 처음 온 사람만. 한 번 끝내면 다시 안 뜬다
 }
 /* 다음 토요일 — 수업이 토·일이라 기본값이 거기여야 손이 덜 간다 */
 function nextWeekend(plus){
@@ -666,6 +805,8 @@ function nextWeekend(plus){
 }
 (function boot(){
   if(!SUPA.url){ $('lerr').textContent = '서버 설정이 없어요 (config.js)'; return; }
+  if(!shareInvited()) return showGate();          // 비번 먼저. 계정은 그 다음이다
+  passGate();
   try{ const saved = JSON.parse(localStorage.getItem('lineup.share.me')||'null'); if(saved?.id){ ME = saved; return start(); } }catch(e){}
   /* 앱에 이미 로그인한 사람에게 또 로그인을 시키지 않는다 — terms.html과 같은 방식 */
   try{

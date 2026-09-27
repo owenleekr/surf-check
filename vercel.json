@@ -1,8 +1,10 @@
 {
-  "functions": {
-    "api/news.js": {
-      "maxDuration": 15
-    }
-  },
-  "cleanUrls": true
+  "functions": { "api/news.js": { "maxDuration": 15 } },
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/", "destination": "/surfshare", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/school", "destination": "/index.html" }
+  ]
 }
