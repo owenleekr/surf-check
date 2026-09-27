@@ -1,1 +1,8 @@
-{ "functions": { "api/news.js": { "maxDuration": 15 } } }
+{
+  "functions": {
+    "api/news.js": {
+      "maxDuration": 15
+    }
+  },
+  "cleanUrls": true
+}
