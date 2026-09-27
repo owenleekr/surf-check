@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
 <script src="config.js"></script>
 <script src="sprite.js"></script>
+<script src="roster.js"></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
@@ -95,7 +96,11 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
     <div class="note" id="mode-note" style="margin:0 0 4px">아이디와 비밀번호로 들어와요.</div>
     <label for="uid">아이디</label><input id="uid" autocapitalize="off" placeholder="영문·숫자 2~16자">
     <div id="new-only" hidden>
-      <label for="uname">이름 (닉네임)</label><input id="uname" maxlength="12" placeholder="차·숙소 글에 표시돼요">
+      <label for="uroster">이름 — 6기 명단에서 찾기</label>
+      <select id="uroster"></select>
+      <div id="etc-wrap" hidden>
+        <label for="uname">이름 직접 입력</label><input id="uname" maxlength="12" placeholder="차·숙소 글에 표시돼요">
+      </div>
       <label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때</label><input id="ubirth" inputmode="numeric" maxlength="6" placeholder="예) 881102">
     </div>
     <label for="upw">비밀번호</label><input id="upw" type="password" placeholder="4자 이상">
@@ -115,26 +120,14 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
       <button class="btn sm ghost" id="out">나가기</button>
     </div>
     <div class="px sand" id="school" style="margin-top:10px">
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <div style="flex:1;min-width:150px"><b class="t" style="font-size:15px">🏫 학교 입장하기</b>
-          <div class="note" style="margin:2px 0 0">파도 예보 · 수업 기록 · 자세 분석 · 마을</div></div>
-        <button class="btn sm grape" id="school-go">들어가기</button>
-      </div>
-      <div id="school-box" hidden style="margin-top:10px">
-        <div class="note" style="margin:0 0 6px"><b>아직 오픈하지 않았어요.</b> 먼저 열어둔 건 여기 SurfShare까지예요.<br>
-          초대 코드를 받으셨다면 넣어주세요.</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <input id="school-code" type="password" maxlength="40" placeholder="초대 코드" style="flex:1 1 150px">
-          <button class="btn sm blue" id="school-ok">확인</button>
-        </div>
-        <div class="err" id="school-err" style="margin-top:4px"></div>
-      </div>
+      <span class="tag">COMING SOON</span>
+      <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 마을을 만들고 있어요</div>
+      <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 수업 기록 · 자세 분석 · 마을 채팅.<br>
+        준비되면 여기에서 바로 들어가실 수 있게 할게요.</div>
     </div>
-
     <div class="tabs" style="margin-top:12px">
       <button type="button" id="t-ride" aria-pressed="true">🚗 차량</button>
       <button type="button" id="t-stay" aria-pressed="false">🏠 숙소</button>
-      <button type="button" id="t-plan" aria-pressed="false">📅 일정</button>
       <button type="button" id="t-me" aria-pressed="false">🙂 꾸미기</button>
     </div>
 
@@ -143,13 +136,13 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
       <details class="px sand fold"><summary>+ 차 자리 올리기</summary>
         <div class="grid2" style="margin-top:8px">
           <div><label for="r-date">날짜</label><input id="r-date" type="date"></div>
-          <div><label for="r-dir">방향</label><select id="r-dir"><option value="go">가는 편 (→ 낙산)</option><option value="back">오는 편 (낙산 →)</option></select></div>
+          <div><label for="r-dir">방향</label><select id="r-dir"><option value="go">양양 가는 차 (집 → 양양)</option><option value="back">양양에서 나가는 차 (양양 → 집)</option></select></div>
           <div><label for="r-time">출발 시각</label><input id="r-time" type="time" value="06:00"></div>
           <div><label for="r-seats">태울 수 있는 인원</label><input id="r-seats" type="number" min="1" max="8" value="3"></div>
-          <div><label for="r-from">어디서 출발</label><input id="r-from" maxlength="20" placeholder="예) 잠실역 2번 출구"></div>
-          <div><label for="r-to">어디로</label><input id="r-to" maxlength="20" placeholder="예) 낙산해변 주차장"></div>
+          <div><label for="r-from">타는 곳</label><input id="r-from" maxlength="20" placeholder="예) 잠실역 2번 출구"></div>
+          <div><label for="r-to">내리는 곳</label><input id="r-to" maxlength="20" placeholder="예) 낙산해변 주차장"></div>
         </div>
-        <label for="r-note">한마디 (선택)</label><input id="r-note" maxlength="60" placeholder="예) 보드 2개까지 실려요 · 기름값 1/n">
+        <label for="r-note">한마디 (선택)</label><input id="r-note" maxlength="60" placeholder="예) 기름값 1/n · 휴게소 한 번">
         <label for="r-contact">연락 방법 (선택)</label><input id="r-contact" maxlength="80" placeholder="오픈채팅 링크 등">
         <div class="note">전화번호는 적지 마세요. 이 글은 <b>같은 기수 전원</b>이 봅니다.</div>
         <div class="err" id="r-err"></div>
@@ -182,20 +175,6 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
       </details>
       <div class="grp"><span class="t">학교 기준 지도</span><div class="px white" id="map"></div></div>
       <div class="grp"><span class="t">숙소</span><div class="px" id="stays"></div></div>
-    </div>
-
-    <!-- 일정 · 동선 -->
-    <div id="pane-plan" hidden>
-      <div class="px sand">
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-          <b class="t" style="font-size:15px;flex:1">이번 주말</b>
-          <button class="btn sm ghost" id="plan-prev">◀</button>
-          <span id="plan-label" style="font-weight:800;font-size:13px"></span>
-          <button class="btn sm ghost" id="plan-next">▶</button>
-        </div>
-        <div class="note" style="margin-top:4px">내가 탄 차 · 같이 쓰는 숙소 · 수업 시간을 하나로 이어 봅니다.</div>
-      </div>
-      <div class="px" style="margin-top:10px" id="plan"></div>
     </div>
 
     <!-- 꾸미기 -->
@@ -247,14 +226,25 @@ async function rpc(fn, args){
 
 /* ── 로그인 ─────────────────────────────────────────────── */
 let mode = 'in';
+/* 6기 명단에서 고르게 한다 — 아무 이름이나 쓰면 차에 누가 타는지 알 수가 없다.
+   명단에 없는 사람(청강·타 기수)은 직접 입력으로 빠져나간다. */
+function fillRoster(){
+  if(typeof ROSTER === 'undefined') return;
+  const taken = new Set();                       // 이미 가입한 이름은 표시만 해둔다
+  $('uroster').innerHTML = '<option value="">— 이름을 고르세요 —</option>'
+    + ROSTER.map(([n,y,b])=>`<option value="${n}">${n}${y?` · ${y}년 ${b||''}`:''}</option>`).join('')
+    + '<option value="__etc">명단에 없어요 (직접 입력)</option>';
+  $('uroster').onchange = ()=>{ $('etc-wrap').hidden = $('uroster').value !== '__etc'; };
+}
 const setMode = m => { mode = m;
   $('m-in').setAttribute('aria-pressed', String(m==='in'));
   $('m-new').setAttribute('aria-pressed', String(m==='new'));
   $('new-only').hidden = m!=='new'; $('agree-wrap').hidden = m!=='new';
-  $('mode-note').textContent = m==='in' ? '아이디와 비밀번호로 들어와요.' : '누구나 만들 수 있어요. 차·숙소를 나눠 쓰는 곳입니다.';
+  $('mode-note').textContent = m==='in' ? '아이디와 비밀번호로 들어와요.' : '양양서핑학교 6기 명단에서 본인을 찾아주세요.';
   $('go').textContent = m==='in' ? '들어가기' : '★ 계정 만들고 시작';
   $('lerr').textContent = ''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
+fillRoster();
 
 /* 새로 만든 사람의 기본 모습 — 이름으로 흩어지게 해서 다 똑같이 생기지 않게 한다 */
 const freshProfile = name => (typeof withLook === 'function')
@@ -266,17 +256,19 @@ $('go').onclick = async ()=>{
   const E = t => { $('lerr').textContent = t; };
   try{
     if(mode === 'new'){
-      const name = $('uname').value.trim(), birth = $('ubirth').value.replace(/\D/g,'');
+      const sel = $('uroster').value;
+      const name = sel === '__etc' ? $('uname').value.trim() : sel;
+      const birth = $('ubirth').value.replace(/\D/g,'');
       if(!/^[a-z0-9_]{2,16}$/.test(id)) return E('아이디는 영문 소문자·숫자·_ 2~16자');
-      if(!name) return E('이름(닉네임)을 적어주세요');
+      if(!name) return E(sel === '__etc' ? '이름을 적어주세요' : '명단에서 본인을 찾아주세요');
       if(pw.length < 4) return E('비밀번호는 4자 이상');
       if(!/^\d{6}$/.test(birth)) return E('생년월일 6자리를 적어주세요 (비밀번호 재설정용)');
       if(!$('agree').checked) return E('약관과 개인정보처리방침에 동의해 주세요');
-      const profile = { ...freshProfile(name), birth };
+      const profile = { ...freshProfile(name), birth, cls:'beginner', role: sel==='__etc' ? 'guest' : 'member' };
       $('go').disabled = true;
       try{ await rpc('signup', { p_id:id, p_name:name, p_pw:pw, p_profile:profile }); }
       finally{ $('go').disabled = false; }
-      ME = { id, name, profile, cohort:'open' };
+      ME = { id, name, profile, cohort: sel === '__etc' ? 'open' : '6기' };
     } else {
       const r = await rpc('login', { p_id:id, p_pw:pw });
       ME = { id, name:r.name, profile:r.profile||{}, cohort:r.cohort || 'open' };
@@ -289,31 +281,8 @@ $('go').onclick = async ()=>{
 };
 $('out').onclick = ()=>{ try{ localStorage.removeItem('lineup.share.me'); }catch(e){} location.reload(); };
 
-/* ── 학교 입장 ────────────────────────────────────────────
-   세계관: SurfShare가 먼저 열리고, 학교(라인업 앱)는 나중에 열린다.
-   코드를 받은 사람만 미리 들어간다. 코드는 서버에서만 비교한다 —
-   여기 적어두면 페이지 소스를 여는 순간 다 보인다. */
-$('school-go').onclick = ()=>{ const b = $('school-box'); b.hidden = !b.hidden; if(!b.hidden) $('school-code').focus(); };
-$('school-ok').onclick = async ()=>{
-  const code = $('school-code').value.trim(), e = $('school-err'), btn = $('school-ok');
-  e.textContent = ''; if(!code) return e.textContent = '코드를 넣어주세요';
-  btn.disabled = true; btn.textContent = '확인 중…';
-  try{
-    const ok = await rpc('verify_cohort', { p_cohort:'app', p_code:code });
-    if(ok !== true){ e.textContent = '코드가 달라요'; return; }
-    try{ localStorage.setItem('lineup.app.invited', '1');
-      /* 앱이 쓰는 형식으로 계정을 넘겨준다 — 학교에 가서 또 로그인하지 않게 */
-      const users = JSON.parse(localStorage.getItem('surf.users')||'{}');
-      users[ME.id] = { ...(users[ME.id]||{}), name:ME.name, cohort:ME.cohort||'open', profile:ME.profile||{} };
-      localStorage.setItem('surf.users', JSON.stringify(users));
-      localStorage.setItem('surf.session', JSON.stringify(ME.id));
-    }catch(err){}
-    toast('학교가 열렸어요'); setTimeout(()=>location.href = '/', 700);
-  }catch(err){ e.textContent = err.message==='Failed to fetch' ? '서버에 닿지 않아요'
-    : '아직 준비 중이에요 (코치에게 문의)'; }
-  finally{ btn.disabled = false; btn.textContent = '확인'; }
-};
-$('school-code').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('school-ok').click(); } });
+/* 학교(라인업 앱)는 아직 준비 중이라 여기선 안내만 한다.
+   코드를 받은 사람은 surf.owenai.xyz 에서 바로 들어간다 — 문이 거기 있다. */
 
 /* ── 꾸미기 ───────────────────────────────────────────────
    앱의 빌더와 같은 도트·같은 옵션을 쓴다(sprite.js 공유). 저장은 서버 프로필에. */
@@ -368,13 +337,12 @@ function saveProfile(){
 
 /* ── 탭 ─────────────────────────────────────────────────── */
 const setTab = t => { state.tab = t;
-  ['ride','stay','plan','me'].forEach(k=>{
+  ['ride','stay','me'].forEach(k=>{
     $('t-'+k).setAttribute('aria-pressed', String(t===k));
     $('pane-'+k).hidden = t!==k; });
   if(t==='me') renderBuilder();
-  if(t==='plan') renderPlan();
 };
-['ride','stay','plan','me'].forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
+['ride','stay','me'].forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
 
 /* ── 차량 ───────────────────────────────────────────────── */
 async function pullRides(){
@@ -402,7 +370,7 @@ function renderRides(){
   if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
   if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>위에서 첫 자리를 올려보세요.</div>`; return; }
   box.innerHTML = state.rides.map(r=>`<div class="card">
-      <div class="hd"><span class="tag ${r.dir}">${r.dir==='go'?'가는 편':'오는 편'}</span>
+      <div class="hd"><span class="tag ${r.dir}">${r.dir==='go'?'↓ 양양 가는 차':'↑ 양양에서 나가는 차'}</span>
         <b>${dLabel(r.date)} ${esc(r.depart_at)}</b></div>
       <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b></div>
       <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span></div>
@@ -412,12 +380,16 @@ function renderRides(){
     </div>`).join('');
   bindCards(box, 'ride'); paintAvatars(box, state.rides, 'riders');
 }
+/* 방향을 바꾸면 예시도 뒤집는다 — "어디서 출발"만 있으면 어느 쪽 이야기인지 헷갈린다 */
+$('r-dir').onchange = () => { const go = $('r-dir').value === 'go';
+  $('r-from').placeholder = go ? '예) 잠실역 2번 출구' : '예) 낙산해변 주차장';
+  $('r-to').placeholder   = go ? '예) 낙산해변 주차장' : '예) 잠실역 2번 출구'; };
 $('r-save').onclick = async ()=>{
   const e = $('r-err'); e.textContent = '';
   const date=$('r-date').value, time=$('r-time').value, from=$('r-from').value.trim(), to=$('r-to').value.trim();
   if(!date) return e.textContent = '날짜를 골라주세요';
   if(!time) return e.textContent = '출발 시각을 적어주세요';
-  if(!from || !to) return e.textContent = '어디서 출발해 어디로 가는지 적어주세요';
+  if(!from || !to) return e.textContent = '타는 곳과 내리는 곳을 적어주세요';
   const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:ME.profile||{},
     date, dir:$('r-dir').value, depart_at:time, from_place:from.slice(0,20), to_place:to.slice(0,20),
     seats:Math.max(1, Math.min(8, +$('r-seats').value||3)), riders:[],
@@ -643,57 +615,6 @@ function bindCards(box, kind){
     catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
   });
 }
-
-/* ── 일정 · 동선 ──────────────────────────────────────────
-   차 글·숙소 글·수업 시간이 따로 흩어져 있으면 "몇 시에 나가야 하지"가 안 풀린다.
-   하루를 시간순으로 한 줄에 세운다. 내 것만 — 남의 차까지 섞으면 못 읽는다. */
-const CLASS_TIME = {
-  beginner:[['09:00','이론 수업 (웻수트 입고 10분 전 강의실)'],['10:00~11:30','라인업 수업 · 영상 촬영'],['13:00~14:00','리뷰']],
-  inter:   [['13:30','이론 수업'],['14:00~15:30','라인업 수업 · 영상 촬영'],['17:00~18:00','리뷰']],
-};
-let planOffset = 0;                                   // 0 = 이번 주말
-function weekendDates(off){
-  const d = new Date(); const add = (6 - d.getDay() + 7) % 7;
-  d.setDate(d.getDate() + (d.getDay()===6 ? 0 : add) + (off||0)*7);
-  const sat = new Date(d), sun = new Date(d); sun.setDate(sun.getDate()+1);
-  const f = x => new Date(x.getTime() - x.getTimezoneOffset()*6e4).toISOString().slice(0,10);
-  return [f(sat), f(sun)];
-}
-function renderPlan(){
-  const [sat, sun] = weekendDates(planOffset);
-  $('plan-label').textContent = planOffset===0 ? '이번 주' : planOffset>0 ? `${planOffset}주 뒤` : `${-planOffset}주 전`;
-  const cls = ME.profile?.cls === 'inter' ? 'inter' : 'beginner';
-  const mineRide = r => r.user_id===ME.id || (r.riders||[]).some(x=>x.id===ME.id);
-  const mineStay = s => s.user_id===ME.id || (s.guests||[]).some(x=>x.id===ME.id);
-  const day = (date) => {
-    const rides = (state.rides||[]).filter(r=>r.date===date && mineRide(r));
-    const stays = (state.stays||[]).filter(s=>mineStay(s) && s.date_from<=date && s.date_to>=date);
-    const items = [];
-    rides.filter(r=>r.dir==='go').forEach(r=>items.push([r.depart_at, '🚗', `<b>${esc(r.from_place)}</b> 출발 → ${esc(r.to_place)}`,
-      `${esc(r.name)} 님 차 · ${(r.riders||[]).length}/${r.seats}명`]));
-    stays.forEach(st=>{ if(st.date_from===date) items.push(['15:00','🏠', `<b>${esc(st.place)}</b> 체크인`,
-      st.lat&&st.lon ? `학교에서 ${distKm(st.lat,st.lon).toFixed(1)}km` : '']); });
-    CLASS_TIME[cls].forEach(([t,what])=>items.push([t.split('~')[0], '🏄', esc(what), t.includes('~') ? `${t} · 양양서핑학교` : '양양서핑학교']));
-    stays.forEach(st=>{ if(st.date_to===date) items.push(['11:00','🏠', `<b>${esc(st.place)}</b> 체크아웃`, '']); });
-    rides.filter(r=>r.dir==='back').forEach(r=>items.push([r.depart_at, '🚗', `${esc(r.from_place)} → <b>${esc(r.to_place)}</b>`,
-      `${esc(r.name)} 님 차`]));
-    items.sort((a,b)=>a[0].localeCompare(b[0]));
-    return `<div class="grp" style="margin-top:${date===sat?0:16}px"><span class="t" style="color:var(--ink);text-shadow:none;font-size:15px">${dLabel(date)}</span>
-      ${items.length ? items.map(([t,ic,main,sub])=>`<div style="display:flex;gap:8px;border-top:2px dashed var(--grid);padding:8px 0">
-          <b style="flex:0 0 46px;font-family:'Galmuri11',sans-serif;font-size:13px">${esc(t)}</b>
-          <span style="flex:0 0 18px">${ic}</span>
-          <span style="flex:1;font-size:13px;line-height:1.5">${main}${sub?`<div class="note" style="margin:1px 0 0">${sub}</div>`:''}</span></div>`).join('')
-        : `<div class="empty" style="padding:10px 0">수업 시간만 있어요. 차·숙소를 잡으면 여기 같이 뜹니다.</div>`}</div>`;
-  };
-  const anyMine = (state.rides||[]).some(mineRide) || (state.stays||[]).some(mineStay);
-  $('plan').innerHTML = day(sat) + day(sun)
-    + (anyMine ? '' : `<div class="note" style="margin-top:14px">아직 잡은 차·숙소가 없어요 —
-        <b>차량</b>에서 자리를 타거나 <b>숙소</b>에서 같이 쓸 곳을 고르면 이 일정에 붙습니다.</div>`)
-    + `<div class="note" style="margin-top:10px">수업 시간은 <b>${cls==='inter'?'중급반':'비기너반'}</b> 기준이에요.
-        반이 다르면 <b>꾸미기</b>에서 바꿀 수 있게 할게요 — 지금은 비기너반으로 보입니다.</div>`;
-}
-$('plan-prev').onclick = ()=>{ planOffset--; renderPlan(); };
-$('plan-next').onclick = ()=>{ planOffset++; renderPlan(); };
 
 /* ── 시작 ───────────────────────────────────────────────── */
 function start(){

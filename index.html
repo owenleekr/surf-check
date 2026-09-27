@@ -23,6 +23,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js"></script>
 <script src="config.js"></script>
 <script src="sprite.js"></script>
+<script src="roster.js"></script>
 <script src="lex.js"></script>
 <style>
 /* ─────────────────────────────────────────────────────────────
@@ -1047,9 +1048,7 @@ let saveT; function saveUp(){   // 진도·프로필을 서버 계정에 저장 
 let ME = null;   // {id, name}
 const pick = { gender:'f', board:'long', role:'guest', cls:'beginner', cohort:'open' };   // 가입 화면 선택값
 /* 6기 가을학기 명단 (칠판 사진 기준: 이름 · 서핑 시작 연도 · 첫 파도 탄 곳). 틀린 글자는 여기서 고치면 된다. */
-const COACHES = ['이승대','김나리','이해룡','이상문','장진혁','김법성','루비','Rio','Jenny','Evan'];
-const COACH_DEFAULT_BADGE = { '이승대':'교장', '김나리':'코치', '이해룡':'코치', '이상문':'코치', '장진혁':'코치', '김법성':'매니저' };
-const ROSTER = [['김도훈','2018','금진'],['김태은','2025','죽도'],['심재영','2019','신항'],['이나영','2022',''],['이미진','2022','제주'],['이성현','2026','낙산'],['정선아','2021','인구'],['조혜미','2024','곽지'],['허예령','2018','남애리'],['홍미영','2026','낙산'],['최원재','2023','타이키'],['장은옥','2024','인구'],['박초롱','2026','낙산'],['이한솔','2022','이호테우'],['정유정','2024','죽도'],['전영훈','2017','사천'],['전인수','2025','낙산'],['엄주승','2026','낙산'],['장베드로','2017','죽도']];
+/* 6기 명단은 roster.js 로 뺐다 — surfshare.html 과 같은 파일을 쓴다 */
 const rosterOf = name => ROSTER.find(r=>r[0]===name);
 function syncRoleUI(){
   const isNew = !$('f-role').hidden, r = pick.role, member = r==='member', coach = r==='coach', guest = r==='guest';
@@ -3473,29 +3472,25 @@ function showTab(t){
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
 /* 학교에 들어올 수 있는 사람 — 초대 코드를 쓴 적 있거나, 이미 6기·코치이거나 */
 const appInvited = () => { try{ return localStorage.getItem('lineup.app.invited') === '1'; }catch(e){ return false; } };
-function appAllowed(id){
-  if(appInvited()) return true;
-  const u = auth.users()[id];
-  return (u?.cohort === '6기') || (u?.profile?.role === 'coach');
-}
+function appAllowed(){ return appInvited(); }   /* 예외 없음 — 예외를 두면 문이 아니다 */
 function showGate(){
   $('login-form').hidden = true; $('gate').hidden = false;
   $('gate-code').focus({ preventScroll:true });
 }
 $('gate-ok').onclick = async ()=>{
   const code = $('gate-code').value.trim(), e = $('gate-err'), btn = $('gate-ok');
-  e.textContent = ''; if(!code) return e.textContent = '코드를 넣어주세요';
+  e.textContent = ''; if(!code) return e.textContent = '비밀번호를 넣어주세요';
   btn.disabled = true; btn.textContent = '확인 중…';
   try{
     const ok = await rpc('verify_cohort', { p_cohort:'app', p_code:code });
-    if(ok !== true){ e.textContent = '코드가 달라요'; return; }
+    if(ok !== true){ e.textContent = '비밀번호가 달라요'; return; }
     try{ localStorage.setItem('lineup.app.invited', '1'); }catch(err){}
     toast('환영합니다'); $('gate').hidden = true; $('login-form').hidden = false;
     const sid = LS.get('surf.session', null), u = sid && auth.users()[sid];
     if(u) enter({ id:sid, name:u.name });
   }catch(err){ e.textContent = err.code==='norpc' ? '아직 준비 중이에요 (코치에게 문의)'
     : err.message==='Failed to fetch' ? '서버에 닿지 않아요' : '확인하지 못했어요'; }
-  finally{ btn.disabled = false; btn.textContent = '확인'; }
+  finally{ btn.disabled = false; btn.textContent = '들어가기'; }
 };
 $('gate-code').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('gate-ok').click(); } });
 
