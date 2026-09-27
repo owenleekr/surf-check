@@ -422,8 +422,7 @@ textarea{width:100%; min-height:64px; border:4px solid var(--ink); padding:10px 
    보정량 = 캔버스높이/(24+여백2) × 펫14칸/2 = 64/26×7 ≈ 17.2px. transform이라 폭 계산엔 안 끼어든다 */
 .vp[data-pet] .nm{ transform: translateX(17.2px) }
 .vp .nm{font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink); padding:0 4px; max-width:106px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.vp .bub .rx{min-height:26px; padding:1px 5px; font-size:11px}
-.vp .bub{position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink); padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:120px; white-space:normal; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2}
+.vp .bub{position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink); padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:150px; height:auto; white-space:normal; word-break:keep-all; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2}
 .vp .bub::after{content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%); border:4px solid transparent; border-top-color:var(--ink)}
 .vp.me .nm{background:var(--sun); border-width:3px}   /* "나"는 이름표를 노랗게 — 스프라이트에 테두리를 두르면 펫까지 감싸 창문처럼 보인다 */
 .vp.here::before{content:"📍"; position:absolute; top:-2px; right:-2px; font-size:11px; font-family:sans-serif; z-index:3}
@@ -3691,7 +3690,7 @@ async function renderVillage(){
   raw.forEach(x=>{ const cur = byName.get(x.name); if(!cur || (x.xp||0) > (cur.xp||0)) byName.set(x.name, x); });
   const rows = [...byName.values()].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
   $('village-sub').textContent = `${rows.length}명 · 탭하면 카드`;
-  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}"${x.profile?.pet&&x.profile.pet!=='none'?' data-pet':''}>${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}${x.id!==ME.id?reactBar('mood:'+x.id, x.id):''}</div>`:''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
+  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}"${x.profile?.pet&&x.profile.pet!=='none'?' data-pet':''}>${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}${x.profile?.mood&&x.id!==ME.id?reactBar('mood:'+x.id, x.id):''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
   rows.forEach(x=>{ const pf = withLook(x.profile, x.name); drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(pf), avatarTintOf(pf, x.level)); });
   $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
     const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.pet && x.profile.pet!=='none' ? `<br>${{rabbit:'🐰',cat:'🐱',dog:'🐶',seal:'🦭',penguin:'🐧'}[x.profile.pet]||'🐾'} ${x.profile.petName||PET_KO[x.profile.pet]} · ${PET_STAGE[x.profile.petLv||0].ko}` : ''}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
@@ -3707,7 +3706,11 @@ async function renderVillage(){
     $('vill-title').textContent = '서퍼 마을';
     if(rows.length <= 1) $('village-sub').textContent += ' · 아직 조용해요. 말풍선 한마디 남겨보세요';
   }
-  $('mood').value = myProfile().mood || '';
+  /* 반응 폴링 때문에 마을이 5초마다 다시 그려진다. 그때마다 여기서 입력칸을 덮어써서
+     말풍선을 치는 도중에 글자가 사라졌다. 쓰고 있는 사람 것은 건드리지 않는다. */
+  { const el = $('mood'), saved = myProfile().mood || '';
+    const 쓰는중 = document.activeElement === el || (el.value && el.value !== el.dataset.synced);
+    if(!쓰는중){ el.value = saved; el.dataset.synced = saved; } }
   const QS = ['오늘 가장 잘 된 동작은?','이번 주 목표 한 줄?','오늘 파도 한 단어로?','다음 주 타고 싶은 해변은?','오늘 코치 피드백 중 기억나는 것?','서핑 시작한 이유는?','요즘 제일 어려운 건?','같이 타고 싶은 사람 지목!'];
   $('mood-q').textContent = '오늘의 질문 · ' + QS[Math.floor(Date.now()/864e5) % QS.length];
 }
