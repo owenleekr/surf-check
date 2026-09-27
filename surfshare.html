@@ -391,12 +391,15 @@ $('go').onclick = async ()=>{
       if(!$('agree').checked) return E('약관과 개인정보처리방침에 동의해 주세요');
       const profile = { ...(NEWP || freshProfile(name)), birth, cls:'beginner', role: sel==='__etc' ? 'guest' : 'member' };
       $('go').disabled = true;
-      try{ await rpc('signup', { p_id:id, p_name:name, p_pw:pw, p_profile:profile }); }
+      let token;
+      /* 토큰을 버리지 않는다 — 나중에 카카오를 물릴 때 "이 계정이 내 것"임을
+         증명하는 물건이 이것뿐이다. 버리면 비밀번호를 다시 받아야 한다. */
+      try{ token = await rpc('signup', { p_id:id, p_name:name, p_pw:pw, p_profile:profile }); }
       finally{ $('go').disabled = false; }
-      ME = { id, name, profile, cohort: sel === '__etc' ? 'open' : '6기' };
+      ME = { id, name, profile, token, cohort: sel === '__etc' ? 'open' : '6기' };
     } else {
       const r = await rpc('login', { p_id:id, p_pw:pw });
-      ME = { id, name:r.name, profile:r.profile||{}, cohort:r.cohort || 'open' };
+      ME = { id, name:r.name, profile:r.profile||{}, token:r.token, cohort:r.cohort || 'open' };
     }
     try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
     start();                    // 처음이면 start() 안에서 안내가 뜬다
