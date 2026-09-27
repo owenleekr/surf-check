@@ -10,7 +10,7 @@ import { mkdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const APP = process.env.URL || 'http://localhost:8765/index.html';   // 전역 URL을 가리지 않게
+const APP = process.env.URL || 'http://localhost:8765/school.html';   // 전역 URL을 가리지 않게
 const TMP = '/tmp/surf-film';
 const FPS = 10;
 rmSync(TMP, { recursive:true, force:true }); mkdirSync(TMP, { recursive:true });

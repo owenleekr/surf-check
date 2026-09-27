@@ -2,7 +2,7 @@ import puppeteer from 'puppeteer-core';
 import { mkdirSync } from 'node:fs';
 
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const BASE = 'http://localhost:8765/index.html';
+const BASE = 'http://localhost:8765/school.html';
 const OUT = process.argv[2] || '/Users/owen/Desktop/surf-check/guide';
 mkdirSync(OUT, { recursive: true });
 

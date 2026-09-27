@@ -1,4 +1,4 @@
-/* 6기 명단 — index.html 과 surfshare.html 이 같이 쓴다.
+/* 6기 명단 — school.html(앱) 과 surfshare.html 이 같이 쓴다.
    sprite.js 와 같은 이유다: 복사해 두면 명단이 바뀔 때 한쪽만 고쳐지고
    그걸 알아채기가 어렵다. 기수가 바뀌면 이 파일만 고치면 된다.
 

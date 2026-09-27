@@ -1,4 +1,4 @@
-/* 라인업 문구 레지스트리 — index.html과 terms.html이 함께 쓴다 */
+/* 라인업 문구 레지스트리 — school.html(앱)과 terms.html이 함께 쓴다 */
 window.LEX_SEED = {
   'rel.on':      { ko:'온쇼어',   def:'바다에서 해변으로 부는 바람. 파도 면이 무너져 거칠어짐', src:'일반 용어' },
   'rel.off':     { ko:'오프쇼어', def:'해변에서 바다로 부는 바람. 파도 면이 매끈해지고 립이 섬', src:'일반 용어' },

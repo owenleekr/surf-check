@@ -1,6 +1,9 @@
 # 라인업 (LINEUP) — 오늘 파도 어때
 
-양양서핑학교 6기 파도 체크 · 미션 · 레벨. 단일 `index.html`, 빌드 없음.
+양양서핑학교 6기 파도 체크 · 미션 · 레벨. 빌드 없음.
+
+**주소** — `/` 는 대문인 **SurfShare**(`surfshare.html`)로 넘어간다. 학교 앱은 `/school`(`school.html`).
+비번은 둘이 다르다 — `cohort_codes` 의 `share` 행과 `app` 행(`supabase-codes.sql`).
 
 - 파도·바람·수온·조위: Open-Meteo (키 없음, 브라우저 직접 호출)
 - 캠: WSB FARM 웨이브캠 링크
@@ -35,7 +38,7 @@
 
 ## 용어 정확도 관리 (학교 기준 맞추기)
 앱의 핵심 표현은 `lex.js`(`window.LEX_SEED`) 한 곳에 모아두고, 각 항목에 **출처**(강의노트 / 단톡 코칭 날짜 / 일반 용어 / 앱 제안)를 단다.
-index.html과 terms.html이 같은 파일을 읽으므로 표현을 한 곳에서만 고치면 된다.
+school.html과 terms.html이 같은 파일을 읽으므로 표현을 한 곳에서만 고치면 된다.
 
 `supabase-terms.sql` 실행 후(2026-09-24 적용 완료) **`terms.html`(용어 검수)** 에서 코치가 표현·설명을 고쳐 저장하면
 **앱 전체가 즉시 그 표현으로 바뀐다**(판정·바람·스웰·물때·동작). 멤버는 "고쳐주세요"로 신고 → 코치 큐(status=fix).
@@ -71,7 +74,7 @@ select/insert/update 말고 **delete 정책도 필요**하다(처음 파일엔 �
 ## 생성 스크립트
 - `og/og.html` → og.png (1200×630, 카톡·슬랙 링크 미리보기)
 - `og/icon.html` → icon-180.png (홈 화면 아이콘)
-둘 다 index.html의 도트 정의를 복사해 두므로, 캐릭터를 고치면 다시 뽑아야 한다.
+둘 다 school.html의 도트 정의를 복사해 두므로, 캐릭터를 고치면 다시 뽑아야 한다.
 
 ```bash
 "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu \
@@ -131,7 +134,7 @@ select/insert/update 말고 **delete 정책도 필요**하다(처음 파일엔 �
                  │
             초대 코드 입력 (cohort_codes 의 'app' 행)
                  ↓
-        index.html  파도 예보 · 수업 · 자세 분석 · 마을
+       school.html  파도 예보 · 수업 · 자세 분석 · 마을
                  │
             6기 인증 암호 ('6기' 행)
                  ↓
@@ -146,9 +149,9 @@ select/insert/update 말고 **delete 정책도 필요**하다(처음 파일엔 �
 
 ### 캐릭터 도트는 `sprite.js` 한 곳에만 있다
 
-예전엔 `index.html` 안에 있고 `og/og.html`·`og/icon.html` 이 통째로 복사해 뒀다.
+예전엔 앱 HTML 안에 있고 `og/og.html`·`og/icon.html` 이 통째로 복사해 뒀다.
 캐릭터를 고치면 **두 곳이 조용히 갈라진다** — 화면은 멀쩡한데 옛 모습만 나온다.
-이제 `index.html` 과 `surfshare.html` 이 같은 `sprite.js` 를 읽는다.
+이제 `school.html` 과 `surfshare.html` 이 같은 `sprite.js` 를 읽는다.
 
 > `og/*.html` 은 아직 제 복사본을 쓴다. 캐릭터를 고쳤으면 거기도 맞출 것.
 > 쓰는 법: `drawSpr(canvas, avatarRows(profile), avatarTintOf(profile, level))`,

@@ -1,4 +1,4 @@
-/* 캐릭터 도트 — index.html과 surfshare.html이 같이 쓴다.
+/* 캐릭터 도트 — school.html(앱)과 surfshare.html이 같이 쓴다.
    예전엔 og/og.html·og/icon.html에 통째로 복사해 뒀는데, 캐릭터를 고치면
    두 곳이 조용히 갈라졌다. 화면은 멀쩡해 보이는데 옛 모습만 나온다 —
    알아채기가 특히 어렵다. 그래서 한 파일로 뺀다.
