@@ -63,6 +63,10 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .perks{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
 .perk{ border:2px solid var(--ink); background:#fff; padding:1px 6px; font-size:11px; font-weight:700 }
 .perk.on{ background:var(--mint) }
+.star{ background:none; border:0; font-size:22px; line-height:1; padding:0 1px; cursor:pointer; color:#B45309; font-family:inherit; min-height:34px }
+.star.ro{ cursor:default; font-size:14px }
+.rv-av{ width:20px; height:20px; image-rendering:pixelated; flex:0 0 auto }
+.starrow{ display:flex; align-items:center; flex-wrap:wrap }
 .fold summary{ cursor:pointer; font-weight:700; font-size:14px }
 .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
 @media(max-width:400px){ .grid2{ grid-template-columns:1fr } }
@@ -121,6 +125,7 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
     <div class="tabs" style="margin-top:12px">
       <button type="button" id="t-ride" aria-pressed="true">🚗 차량</button>
       <button type="button" id="t-stay" aria-pressed="false">🏠 숙소</button>
+      <button type="button" id="t-plan" aria-pressed="false">📅 일정</button>
       <button type="button" id="t-me" aria-pressed="false">🙂 꾸미기</button>
     </div>
 
@@ -166,8 +171,22 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
         <div class="err" id="s-err"></div>
         <button class="btn mint" id="s-save" style="width:100%;margin-top:6px">올리기</button>
       </details>
-      <div class="grp"><span class="t">낙산 기준 지도</span><div class="px white" id="map"></div></div>
+      <div class="grp"><span class="t">학교 기준 지도</span><div class="px white" id="map"></div></div>
       <div class="grp"><span class="t">숙소</span><div class="px" id="stays"></div></div>
+    </div>
+
+    <!-- 일정 · 동선 -->
+    <div id="pane-plan" hidden>
+      <div class="px sand">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <b class="t" style="font-size:15px;flex:1">이번 주말</b>
+          <button class="btn sm ghost" id="plan-prev">◀</button>
+          <span id="plan-label" style="font-weight:800;font-size:13px"></span>
+          <button class="btn sm ghost" id="plan-next">▶</button>
+        </div>
+        <div class="note" style="margin-top:4px">내가 탄 차 · 같이 쓰는 숙소 · 수업 시간을 하나로 이어 봅니다.</div>
+      </div>
+      <div class="px" style="margin-top:10px" id="plan"></div>
     </div>
 
     <!-- 꾸미기 -->
@@ -191,8 +210,10 @@ const $ = id => document.getElementById(id);
 const SUPA = { url:(window.SURF_CONFIG?.supabaseUrl||'').replace(/\/$/,''), key:window.SURF_CONFIG?.supabaseKey||'' };
 const H = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json',
                    Prefer:'resolution=merge-duplicates,return=minimal' });
-let ME = null, state = { rides:[], stays:[], tab:'ride' };
-const NAKSAN = { lat:38.121, lon:128.632 };
+let ME = null, state = { rides:[], stays:[], reviews:[], tab:'ride' };
+/* 기준은 낙산 해변이 아니라 양양서핑학교다 — 숙소를 고를 때 재는 건 "학교까지" 거리다. */
+const SCHOOL = { lat:38.121, lon:128.632, ko:'양양서핑학교' };
+const NAKSAN = SCHOOL;
 const PERKS = ['해변 도보','주차','보드 보관','온수 샤워','취사','세탁기','수건 제공','조식'];
 let toastT;
 const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'),1900); };
@@ -338,12 +359,13 @@ function saveProfile(){
 
 /* ── 탭 ─────────────────────────────────────────────────── */
 const setTab = t => { state.tab = t;
-  ['ride','stay','me'].forEach(k=>{
+  ['ride','stay','plan','me'].forEach(k=>{
     $('t-'+k).setAttribute('aria-pressed', String(t===k));
     $('pane-'+k).hidden = t!==k; });
   if(t==='me') renderBuilder();
+  if(t==='plan') renderPlan();
 };
-['ride','stay','me'].forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
+['ride','stay','plan','me'].forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
 
 /* ── 차량 ───────────────────────────────────────────────── */
 async function pullRides(){
@@ -399,6 +421,7 @@ $('r-save').onclick = async ()=>{
 
 /* ── 숙소 ───────────────────────────────────────────────── */
 async function pullStays(){
+  await pullReviews();
   try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${today()}&select=*&order=date_from.asc&limit=200`); }
   catch(e){ state.stays = null; }
   renderStays(); renderMap();
@@ -416,9 +439,84 @@ function renderStays(){
       ${s.contact ? `<div class="meta">연락 · ${esc(s.contact)}</div>` : ''}
       ${s.lat&&s.lon ? `<div class="meta"><a href="https://map.kakao.com/link/to/${encodeURIComponent(s.place)},${s.lat},${s.lon}" target="_blank" rel="noopener">지도 앱에서 열기 ↗</a></div>` : ''}
       ${seatRow(s,'stay')}
+      ${reviewBlock(s)}
     </div>`).join('');
-  bindCards(box, 'stay'); paintAvatars(box, state.stays, 'guests');
+  bindCards(box, 'stay'); paintAvatars(box, state.stays, 'guests'); bindReviews(box);
 }
+/* ── 숙소 평가 ────────────────────────────────────────────
+   숙소는 한 번 자보기 전엔 알 수가 없다. 다녀온 사람이 남겨야 다음 사람이 고른다.
+   같은 이름의 숙소면 누가 올렸든 평이 모인다 — 다음 주에 다시 올라와도 이어진다. */
+const GOOD_TAGS = ['해변 가까움','따뜻함','깨끗함','주차 편함','보드 두기 좋음','조용함','사장님 친절','가성비'];
+function reviewOf(place){
+  const rs = (state.reviews||[]).filter(r=>r.place===place);
+  if(!rs.length) return { n:0, avg:0, rs:[] };
+  return { n:rs.length, avg:(rs.reduce((a,b)=>a+ +b.stars,0)/rs.length).toFixed(1), rs };
+}
+const myReview = place => (state.reviews||[]).find(r=>r.place===place && r.user_id===ME.id);
+async function pullReviews(){
+  try{ state.reviews = await api('stay_reviews?select=*&order=created_at.desc&limit=500'); }
+  catch(e){ state.reviews = null; }
+}
+const starsHTML = (v, edit, place) => Array.from({length:5}).map((_,i)=>{
+  const full = v >= i+1, half = !full && v >= i+0.5;
+  const ch = full ? '★' : half ? '◐' : '☆';
+  return edit ? `<button type="button" class="star" data-place="${esc(place)}" data-v="${i+0.5}">${ch}</button>
+                 <button type="button" class="star" data-place="${esc(place)}" data-v="${i+1}" style="margin-left:-14px">&nbsp;</button>`
+              : `<span class="star ro">${ch}</span>`; }).join('');
+function reviewBlock(s){
+  if(state.reviews === null) return '';
+  const { n, avg, rs } = reviewOf(s.place), mine = myReview(s.place);
+  return `<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12.5px;font-weight:700">
+      ${n ? `평가 <b style="color:#B45309">★${avg}</b> · ${n}명` : '아직 평가가 없어요 — 다녀오셨다면 남겨주세요'}</summary>
+    <div style="margin-top:6px">
+      ${rs.map(r=>`<div style="border-top:2px dashed var(--grid);padding:6px 0;font-size:12.5px;line-height:1.5">
+        <div style="display:flex;align-items:center;gap:5px"><canvas class="rv-av" data-rv="${esc(r.id)}"></canvas>
+          <b>${esc(r.name)}</b><span style="color:#B45309;font-weight:700">★${r.stars}</span>
+          ${r.user_id===ME.id?`<button class="btn sm ghost" data-rvdel="${esc(r.id)}" style="margin-left:auto;min-height:28px;padding:2px 7px">지우기</button>`:''}</div>
+        ${(r.good||[]).length?`<div class="perks" style="margin-top:3px">${r.good.map(g=>`<span class="perk on">${esc(g)}</span>`).join('')}</div>`:''}
+        ${r.text?`<div style="margin-top:3px">${esc(r.text)}</div>`:''}</div>`).join('')}
+      ${mine ? '' : `<div style="border-top:2px dashed var(--grid);padding-top:8px;margin-top:6px">
+        <div class="note" style="margin:0 0 3px">다녀오셨나요?</div>
+        <div class="starrow" data-for="${esc(s.place)}">${starsHTML(0, true, s.place)}<span class="rv-num" style="margin-left:6px;font-weight:700">–</span></div>
+        <div class="perks" data-good="${esc(s.place)}" style="margin-top:6px">${GOOD_TAGS.map(g=>`<button type="button" class="perk">${g}</button>`).join('')}</div>
+        <input data-rvtext="${esc(s.place)}" maxlength="60" placeholder="한 줄 (선택)" style="margin-top:6px">
+        <button class="btn sm mint" data-rvsave="${esc(s.place)}" style="margin-top:6px">평가 남기기</button></div>`}
+    </div></details>`;
+}
+function bindReviews(box){
+  box.querySelectorAll('.starrow').forEach(row=>{
+    row.querySelectorAll('[data-v]').forEach(b=>b.onclick = ()=>{
+      const v = +b.dataset.v; row.dataset.val = v;
+      row.innerHTML = starsHTML(v, true, row.dataset.for) + `<span class="rv-num" style="margin-left:6px;font-weight:700">${v.toFixed(1)}</span>`;
+      row.dataset.val = v; bindReviews(box); });
+  });
+  box.querySelectorAll('[data-good] button').forEach(b=>b.onclick = ()=>{ b.classList.toggle('on'); });
+  box.querySelectorAll('[data-rvsave]').forEach(b=>b.onclick = async ()=>{
+    const place = b.dataset.rvsave;
+    const row = box.querySelector(`.starrow[data-for="${CSS.escape(place)}"]`);
+    const v = +(row?.dataset.val || 0);
+    if(!v) return toast('별점을 먼저 눌러주세요');
+    const stay = (state.stays||[]).find(x=>x.place===place);
+    const good = [...box.querySelectorAll(`[data-good="${CSS.escape(place)}"] button.on`)].map(x=>x.textContent);
+    const text = box.querySelector(`[data-rvtext="${CSS.escape(place)}"]`)?.value.trim().slice(0,60) || null;
+    b.disabled = true;
+    try{ await api('stay_reviews', { method:'POST', body:JSON.stringify({
+        id:`${stay?.id||place}|${ME.id}`, stay_id:stay?.id||'', place, user_id:ME.id, name:ME.name,
+        profile:ME.profile||{}, stars:v, good, text }) });
+      toast('고마워요'); await pullReviews(); renderStays(); renderMap(); }
+    catch(e){ b.disabled = false; toast(e.code==='notable' ? '평가 표가 아직 없어요 (supabase-reviews.sql)' : '실패 · 신호 확인'); }
+  });
+  box.querySelectorAll('[data-rvdel]').forEach(b=>b.onclick = async ()=>{
+    if(!confirm('내 평가를 지울까요?')) return; b.disabled = true;
+    try{ await api(`stay_reviews?id=eq.${encodeURIComponent(b.dataset.rvdel)}`, { method:'DELETE' });
+      await pullReviews(); renderStays(); renderMap(); }
+    catch(e){ b.disabled = false; toast('실패'); }
+  });
+  if(typeof drawSpr === 'function') (state.reviews||[]).forEach(r=>{
+    const c = box.querySelector(`canvas[data-rv="${CSS.escape(r.id)}"]`);
+    if(c){ const pr = withLook(r.profile||{}, r.name); drawSpr(c, avatarRows(pr, false), avatarTintOf(pr, 0)); } });
+}
+
 /* 캐릭터는 앱과 같은 도트를 쓴다(sprite.js 공유). 이름만 있으면 누군지 잘 안 들어온다 —
    마을에서 보던 그 얼굴이 여기서도 보여야 같은 세계처럼 느껴진다. */
 function paintAvatars(box, rows, field){
@@ -446,27 +544,37 @@ const distLabel = s => (s.lat&&s.lon) ? ` · 낙산에서 <b>${distKm(s.lat,s.lo
 function renderMap(){
   const list = (state.stays||[]).filter(s=>s.lat&&s.lon);
   if(!list.length){ $('map').innerHTML = `<div class="empty">좌표가 있는 숙소가 없어요.<br>숙소를 올릴 때 위도·경도를 넣으면 여기 찍힙니다.</div>`; return; }
-  const maxKm = Math.max(2, ...list.map(s=>distKm(s.lat,s.lon))) * 1.25;
-  const W=300, H=300, C=W/2;
+  const maxKm = Math.max(1.5, ...list.map(s=>distKm(s.lat,s.lon))) * 1.3;
+  const W=320, H=320, C=W/2, R=C-30;
   const px = s => { const r=Math.PI/180;
-    const dx=(s.lon-NAKSAN.lon)*Math.cos(NAKSAN.lat*r)*111.32, dy=(s.lat-NAKSAN.lat)*110.57;   // km
-    return [C + dx/maxKm*(C-24), C - dy/maxKm*(C-24)]; };
-  const ring = k => `<circle cx="${C}" cy="${C}" r="${(k/maxKm*(C-24)).toFixed(1)}" fill="none" stroke="var(--grid)" stroke-width="2" stroke-dasharray="4 4"/>
-    <text x="${C+2}" y="${(C - k/maxKm*(C-24) + 11).toFixed(1)}" font-size="9" fill="var(--ink2)">${k}km</text>`;
-  const rings = [1,2,5,10].filter(k=>k < maxKm).map(ring).join('');
-  $('map').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:#EAF7FF;border:3px solid var(--ink);display:block" role="img" aria-label="낙산 기준 숙소 위치">
-      <path d="M0 0 H${W} V${H} H0 Z" fill="#EAF7FF"/>
-      <!-- 낙산은 동해를 바라본다. 오른쪽이 바다여야 지도가 말이 된다. -->
-      <path d="M${C+62} 0 Q${C+80} ${H/2} ${C+62} ${H} L${W} ${H} L${W} 0 Z" fill="#8FD3FF"/>
-      <path d="M${C+62} 0 Q${C+80} ${H/2} ${C+62} ${H}" fill="none" stroke="#5FBDF2" stroke-width="2.5"/>
-      <text x="${W-10}" y="20" font-size="11" font-weight="800" fill="var(--deep)" text-anchor="end">동해</text>
+    const dx=(s.lon-SCHOOL.lon)*Math.cos(SCHOOL.lat*r)*111.32, dy=(s.lat-SCHOOL.lat)*110.57;   // km
+    return [C + dx/maxKm*R, C - dy/maxKm*R]; };
+  const ring = k => `<circle cx="${C}" cy="${C}" r="${(k/maxKm*R).toFixed(1)}" fill="none" stroke="#B9C6D6" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <text x="${C+3}" y="${(C - k/maxKm*R + 11).toFixed(1)}" font-size="9" fill="#6E7A8C">${k}km</text>`;
+  const rings = [0.5,1,2,5,10].filter(k=>k < maxKm).map(ring).join('');
+  /* 동해는 오른쪽이다. 해안선을 그려야 "바다 쪽인지 산 쪽인지"가 한눈에 온다. */
+  const sea = C + (0.55/maxKm*R);
+  $('map').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:#F4FAFF;border:3px solid var(--ink);display:block" role="img" aria-label="양양서핑학교 기준 숙소 위치">
+      <path d="M${sea} 0 Q${sea+22} ${H/2} ${sea} ${H} L${W} ${H} L${W} 0 Z" fill="#8FD3FF"/>
+      <path d="M${sea} 0 Q${sea+22} ${H/2} ${sea} ${H}" fill="none" stroke="#5FBDF2" stroke-width="2.5"/>
+      <text x="${W-8}" y="20" font-size="11" font-weight="800" fill="var(--deep)" text-anchor="end">동해</text>
       ${rings}
-      <path d="M${C-8} ${C} h16 M${C} ${C-8} v16" stroke="var(--ink)" stroke-width="3"/>
-      <text x="${C}" y="${C-14}" font-size="11" font-weight="800" text-anchor="middle" fill="var(--ink)">낙산</text>
-      ${list.map((s,i)=>{ const [x,y]=px(s); return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.5"/>
-        <text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" font-size="10" font-weight="800" text-anchor="middle">${i+1}</text></g>`; }).join('')}
+      ${list.map((s,i)=>{ const [x,y]=px(s);
+        return `<g><path d="M${x.toFixed(1)} ${(y+11).toFixed(1)} L${(x-8).toFixed(1)} ${(y-2).toFixed(1)} L${(x+8).toFixed(1)} ${(y-2).toFixed(1)} Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2"/>
+          <circle cx="${x.toFixed(1)}" cy="${(y-6).toFixed(1)}" r="10" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.5"/>
+          <text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" font-size="11" font-weight="800" text-anchor="middle">${i+1}</text></g>`; }).join('')}
+      <g>
+        <path d="M${C-11} ${C+8} L${C} ${C-2} L${C+11} ${C+8} Z" fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+        <rect x="${C-8}" y="${C+6}" width="16" height="11" fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5"/>
+        <text x="${C}" y="${C-8}" font-size="11" font-weight="800" text-anchor="middle" fill="var(--ink)"
+          stroke="#F4FAFF" stroke-width="3.5" paint-order="stroke">양양서핑학교</text>
+      </g>
     </svg>
-    <div class="note" style="margin-top:6px">${list.map((s,i)=>`<b>${i+1}</b> ${esc(s.place)} · ${distKm(s.lat,s.lon).toFixed(1)}km`).join(' · ')}</div>
+    <div style="margin-top:7px;font-size:12.5px;line-height:1.6">${list.map((s,i)=>{
+      const rv = reviewOf(s.place);
+      return `<div style="padding:3px 0"><b>${i+1}</b> ${esc(s.place)}
+        <span style="color:var(--ink2)">· 학교에서 ${distKm(s.lat,s.lon).toFixed(1)}km</span>
+        ${rv.n ? `<span style="color:#B45309;font-weight:700"> ★${rv.avg}</span><span style="color:var(--ink2)">(${rv.n})</span>` : ''}</div>`; }).join('')}</div>
     <div class="note">직선 거리입니다. 실제 이동 거리는 더 깁니다.</div>`;
 }
 $('s-save').onclick = async ()=>{
@@ -526,6 +634,57 @@ function bindCards(box, kind){
     catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
   });
 }
+
+/* ── 일정 · 동선 ──────────────────────────────────────────
+   차 글·숙소 글·수업 시간이 따로 흩어져 있으면 "몇 시에 나가야 하지"가 안 풀린다.
+   하루를 시간순으로 한 줄에 세운다. 내 것만 — 남의 차까지 섞으면 못 읽는다. */
+const CLASS_TIME = {
+  beginner:[['09:00','이론 수업 (웻수트 입고 10분 전 강의실)'],['10:00~11:30','라인업 수업 · 영상 촬영'],['13:00~14:00','리뷰']],
+  inter:   [['13:30','이론 수업'],['14:00~15:30','라인업 수업 · 영상 촬영'],['17:00~18:00','리뷰']],
+};
+let planOffset = 0;                                   // 0 = 이번 주말
+function weekendDates(off){
+  const d = new Date(); const add = (6 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + (d.getDay()===6 ? 0 : add) + (off||0)*7);
+  const sat = new Date(d), sun = new Date(d); sun.setDate(sun.getDate()+1);
+  const f = x => new Date(x.getTime() - x.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+  return [f(sat), f(sun)];
+}
+function renderPlan(){
+  const [sat, sun] = weekendDates(planOffset);
+  $('plan-label').textContent = planOffset===0 ? '이번 주' : planOffset>0 ? `${planOffset}주 뒤` : `${-planOffset}주 전`;
+  const cls = ME.profile?.cls === 'inter' ? 'inter' : 'beginner';
+  const mineRide = r => r.user_id===ME.id || (r.riders||[]).some(x=>x.id===ME.id);
+  const mineStay = s => s.user_id===ME.id || (s.guests||[]).some(x=>x.id===ME.id);
+  const day = (date) => {
+    const rides = (state.rides||[]).filter(r=>r.date===date && mineRide(r));
+    const stays = (state.stays||[]).filter(s=>mineStay(s) && s.date_from<=date && s.date_to>=date);
+    const items = [];
+    rides.filter(r=>r.dir==='go').forEach(r=>items.push([r.depart_at, '🚗', `<b>${esc(r.from_place)}</b> 출발 → ${esc(r.to_place)}`,
+      `${esc(r.name)} 님 차 · ${(r.riders||[]).length}/${r.seats}명`]));
+    stays.forEach(st=>{ if(st.date_from===date) items.push(['15:00','🏠', `<b>${esc(st.place)}</b> 체크인`,
+      st.lat&&st.lon ? `학교에서 ${distKm(st.lat,st.lon).toFixed(1)}km` : '']); });
+    CLASS_TIME[cls].forEach(([t,what])=>items.push([t.split('~')[0], '🏄', esc(what), t.includes('~') ? `${t} · 양양서핑학교` : '양양서핑학교']));
+    stays.forEach(st=>{ if(st.date_to===date) items.push(['11:00','🏠', `<b>${esc(st.place)}</b> 체크아웃`, '']); });
+    rides.filter(r=>r.dir==='back').forEach(r=>items.push([r.depart_at, '🚗', `${esc(r.from_place)} → <b>${esc(r.to_place)}</b>`,
+      `${esc(r.name)} 님 차`]));
+    items.sort((a,b)=>a[0].localeCompare(b[0]));
+    return `<div class="grp" style="margin-top:${date===sat?0:16}px"><span class="t" style="color:var(--ink);text-shadow:none;font-size:15px">${dLabel(date)}</span>
+      ${items.length ? items.map(([t,ic,main,sub])=>`<div style="display:flex;gap:8px;border-top:2px dashed var(--grid);padding:8px 0">
+          <b style="flex:0 0 46px;font-family:'Galmuri11',sans-serif;font-size:13px">${esc(t)}</b>
+          <span style="flex:0 0 18px">${ic}</span>
+          <span style="flex:1;font-size:13px;line-height:1.5">${main}${sub?`<div class="note" style="margin:1px 0 0">${sub}</div>`:''}</span></div>`).join('')
+        : `<div class="empty" style="padding:10px 0">수업 시간만 있어요. 차·숙소를 잡으면 여기 같이 뜹니다.</div>`}</div>`;
+  };
+  const anyMine = (state.rides||[]).some(mineRide) || (state.stays||[]).some(mineStay);
+  $('plan').innerHTML = day(sat) + day(sun)
+    + (anyMine ? '' : `<div class="note" style="margin-top:14px">아직 잡은 차·숙소가 없어요 —
+        <b>차량</b>에서 자리를 타거나 <b>숙소</b>에서 같이 쓸 곳을 고르면 이 일정에 붙습니다.</div>`)
+    + `<div class="note" style="margin-top:10px">수업 시간은 <b>${cls==='inter'?'중급반':'비기너반'}</b> 기준이에요.
+        반이 다르면 <b>꾸미기</b>에서 바꿀 수 있게 할게요 — 지금은 비기너반으로 보입니다.</div>`;
+}
+$('plan-prev').onclick = ()=>{ planOffset--; renderPlan(); };
+$('plan-next').onclick = ()=>{ planOffset++; renderPlan(); };
 
 /* ── 시작 ───────────────────────────────────────────────── */
 function start(){
