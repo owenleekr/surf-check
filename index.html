@@ -2600,6 +2600,69 @@ function waveFaceSVG(){
     <b style="color:#B3202B">파워존(크리티컬 섹션)</b>이 립 바로 앞, 힘이 가장 센 자리입니다.
   </div>`;
 }
+/* 서프보드 구조 — 용어 사전에 낱말은 17개 있었지만 "어디를 가리키는 말인지"가 없었다.
+   위에서 본 그림과 옆에서 본 그림 두 장이면 끝난다. 락커는 옆에서만 보이기 때문. */
+const BOARD_PARTS = [
+  ['노즈', '보드 앞쪽 끝. 여기에 체중이 쏠리면 <b>노즈다이브(펄링)</b>가 난다.'],
+  ['테일', '뒤쪽 끝. 모양에 따라 물을 놓는 방식이 달라진다 — 아래 표 참고.'],
+  ['데크', '올라서는 윗면. 스케이트보드도 같은 이름이다. 왁스를 바르는 쪽.'],
+  ['바텀', '물에 닿는 아랫면. 여기 파인 모양(컨케이브)이 물의 흐름을 만든다.'],
+  ['레일', '보드의 양 옆선. <b>하드 레일</b>은 물을 날카롭게 끊고, <b>소프트 레일</b>은 부드럽게 감싼다. 턴은 레일로 한다.'],
+  ['스트링거', '보드 가운데를 세로로 지나는 나무 심. 휨을 잡아주고, <b>발 위치의 기준선</b>이 된다.'],
+  ['락커', '옆에서 봤을 때 보드가 휜 정도. 많이 휘면 급한 파도에서 잘 돌지만 느리고, 평평하면 빠르지만 노즈가 박히기 쉽다.'],
+  ['핀', '아랫면 뒤쪽 지느러미. 보드가 옆으로 미끄러지지 않게 잡아준다. 1개·3개(쓰러스터)·4개 등.'],
+  ['리쉬', '발목과 보드를 잇는 줄. <b>보드가 남을 치지 않게</b> 하는 안전 장비다.'],
+];
+const BOARD_TYPES = [
+  ['롱보드', '9피트 이상', '크게 뜨고 안정적. 작은 파도도 잡힌다. 6기 비기너 기본.'],
+  ['펀보드 · 미드랭스', '7~8피트대', '롱보드의 편함과 숏보드의 회전 중간. 다음 단계로 많이 간다.'],
+  ['숏보드', '6피트 안팎', '잘 돌고 빠르지만 <b>뜨는 힘이 작아</b> 패들과 테이크오프가 어렵다.'],
+];
+const BOARD_TAILS = [
+  ['스퀘어 · 스쿼시', '가장 흔함. 물을 끊어주는 모서리가 있어 <b>턴이 잘 걸린다</b>. 만능.'],
+  ['라운드', '둥글다. 물이 부드럽게 흘러 <b>턴이 이어진다</b>. 큰 파도에서 안정적.'],
+  ['핀 · 라운드핀', '뾰족하다. 물을 꽉 잡아 <b>급한 파도</b>에서 안 미끄러진다.'],
+  ['스왈로', '제비꼬리처럼 갈라짐. 뒤쪽 면적이 남아 <b>작은 파도에서도 뜬다</b>.'],
+];
+function boardSVG(){
+  /* 위에서 본 그림에 락커를 그릴 수 없다 — 휜 정도는 옆에서만 보인다. 두 장으로 나눈다. */
+  const lab = (x,y,t,anchor) => `<text x="${x}" y="${y}" font-size="10" font-weight="800" fill="var(--ink)" text-anchor="${anchor||'middle'}" stroke="#fff" stroke-width="3" paint-order="stroke">${t}</text>`;
+  const tick = (x1,y1,x2,y2) => `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="var(--ink)" stroke-width="1.5"/>`;
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <figure style="margin:0">
+      <svg viewBox="0 0 150 200" style="width:100%;background:#fff;border:3px solid var(--ink);display:block" role="img" aria-label="위에서 본 서프보드 — 노즈·테일·레일·스트링거·핀">
+        <path d="M75 10 Q104 56 104 116 Q104 168 75 186 Q46 168 46 116 Q46 56 75 10 Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="3"/>
+        <path d="M75 12 L75 184" stroke="var(--ink)" stroke-width="2" stroke-dasharray="5 4" opacity=".65"/>
+        <path d="M75 150 L75 172 M75 150 L64 170 M75 150 L86 170" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="75" cy="182" r="3.5" fill="#fff" stroke="var(--ink)" stroke-width="2"/>
+        ${tick(75,10,75,2)}${lab(75,12,'노즈')}
+        ${tick(75,186,75,196)}${lab(75,199,'테일')}
+        ${tick(104,96,140,96)}${lab(146,99,'레일','end')}
+        ${tick(75,86,24,86)}${lab(20,89,'스트링거','start')}
+        ${tick(64,170,26,170)}${lab(22,173,'핀','start')}
+        ${tick(75,182,118,182)}${lab(122,185,'리쉬 컵','start')}
+      </svg>
+      <figcaption class="lab-sm" style="margin:3px 0 0;text-align:center">위에서</figcaption></figure>
+    <figure style="margin:0">
+      <svg viewBox="0 0 150 200" style="width:100%;background:#fff;border:3px solid var(--ink);display:block" role="img" aria-label="옆에서 본 서프보드 — 데크·바텀·락커·핀">
+        <!-- 두 번 고쳤다. 진폭을 크게 줬더니 보드가 아니라 그릇이 됐고, 얇게 했더니 노란 몸통이 안 보였다.
+             그리고 락커는 "두께"가 아니라 "평평한 바닥에 뒀을 때 양끝이 뜨는 높이"다 — 바닥선을 그려 재야 맞다. -->
+        <path d="M12 76 Q75 100 138 78 Q75 113 12 76 Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M6 114 L144 114" stroke="var(--ink2)" stroke-width="2" stroke-dasharray="5 4"/>
+        <text x="144" y="126" font-size="9" fill="var(--ink2)" text-anchor="end">평평한 바닥에 뒀을 때</text>
+        <path d="M17 112 L17 82" stroke="#B3202B" stroke-width="2.5"/><path d="M17 80 l-3.5 6 l7 0 Z" fill="#B3202B"/>
+        <path d="M133 112 L133 84" stroke="#B3202B" stroke-width="2.5"/><path d="M133 82 l-3.5 6 l7 0 Z" fill="#B3202B"/>
+        <text x="75" y="60" font-size="10" font-weight="800" fill="#B3202B" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke">락커 = 양끝이 뜨는 높이</text>
+        <text x="75" y="70" font-size="9" font-weight="700" fill="#B3202B" text-anchor="middle" stroke="#fff" stroke-width="3" paint-order="stroke">많이 휘면 잘 돌고, 평평하면 빠름</text>
+        <path d="M114 103 L120 130" stroke="var(--ink)" stroke-width="3.5" stroke-linecap="round"/>
+        ${tick(120,130,138,148)}${lab(140,152,'핀','end')}
+        ${tick(62,90,40,144)}${lab(36,148,'데크','start')}
+        ${tick(66,106,52,170)}${lab(48,174,'바텀','start')}
+        ${lab(10,72,'노즈','start')}${lab(142,74,'테일','end')}
+      </svg>
+      <figcaption class="lab-sm" style="margin:3px 0 0;text-align:center">옆에서 — 락커는 여기서만 보입니다</figcaption></figure>
+  </div>`;
+}
 function renderLand(){
   if(!$('land')) return;
   const row = (a,b) => `<div style="display:flex;gap:8px;padding:6px 0;border-top:2px dashed var(--grid);font-size:13px;line-height:1.55"><b style="flex:0 0 74px">${a}</b><span style="flex:1">${b}</span></div>`;
@@ -2613,17 +2676,29 @@ function renderLand(){
         <div class="lab-sm" style="margin-top:6px">🛹 <b>지상 연습</b> — ${m.land}</div>
         <div class="lab-sm" style="margin-top:2px">💡 ${m.why}</div></details>`).join('')}
     </details>
-    <details class="px" style="background:#fff;margin-top:10px"><summary style="cursor:pointer;font-weight:700">🛹 보드 구조 — 이름부터</summary>
+    <details class="px" style="background:#fff;margin-top:10px"><summary style="cursor:pointer;font-weight:700">🏄 서프보드 구조 — 어디를 가리키는 말인가</summary>
+      <div style="margin-top:8px">${boardSVG()}</div>
+      <div style="margin-top:8px">${BOARD_PARTS.map(([a,b])=>row(a,b)).join('')}</div>
+      <div class="eyebrow" style="margin-top:12px">보드 종류</div>
+      <div>${BOARD_TYPES.map(([a,len,b])=>`<div style="padding:6px 0;border-top:2px dashed var(--grid);font-size:13px;line-height:1.5"><b>${a}</b> <span class="lab-sm" style="display:inline">${len}</span><div>${b}</div></div>`).join('')}</div>
+      <div class="eyebrow" style="margin-top:12px">테일 모양 — 물을 어떻게 놓느냐</div>
+      <div>${BOARD_TAILS.map(([a,b])=>row(a,b)).join('')}</div>
+      <div class="lab-sm" style="margin-top:8px">낱말 하나하나는 <b>성장 탭 › 더 배우기 › 서핑 용어 사전</b>에도 있어요.</div>
+    </details>
+    <details class="px" style="background:#fff;margin-top:10px"><summary style="cursor:pointer;font-weight:700">🛹 스케이트보드 구조 — 이름부터</summary>
+      <div class="lab-sm" style="margin-top:6px">데크·컨케이브는 <b>서프보드와 같은 말</b>입니다. 만든 사람들이 서퍼였으니까요.</div>
       <div style="margin-top:6px">${LAND_PARTS.map(([a,b])=>row(a,b)).join('')}</div></details>
     <details class="px" style="background:#fff;margin-top:10px"><summary style="cursor:pointer;font-weight:700">⚙️ 트럭 C7 · CX — 실제 차이</summary>
       <div style="margin-top:6px">${LAND_TRUCK.map(([a,b])=>row(a,b)).join('')}</div>
-      <div class="lab-sm" style="margin-top:8px;line-height:1.6"><b>회사 설명만큼 큰 차이는 아닙니다.</b> 실제로 갈리는 건 <b>수리가 되느냐</b>예요.<br>
+      <div class="lab-sm" style="margin-top:8px;line-height:1.6"><b>회사 설명만큼 큰 차이는 아닙니다.</b> 실제로 갈리는 건 <b>수리가 되느냐</b>예요. CX가 나중에 나온 쪽입니다.<br>
         트럭 볼트를 <b>조이면 덜 흔들리고(초보), 풀면 많이 흔들립니다(중·상급)</b>. 처음엔 조여놓고 시작해서 익숙해질수록 풀어갑니다.</div>
       <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:700">왜 서프스케이트라는 게 생겼나</summary>
         <div class="lab-sm" style="margin-top:5px;line-height:1.6">
           스케이트보드는 원래 <b>서퍼들이 파도 없는 날 연습하려고</b> 1950년대 캘리포니아에서 시작했습니다. 그런데 보통 트럭은 마찰로 속도가 줄어 계속 발로 밀어야 하니, 정작 서핑 연습이 안 됐어요.<br>
           1996년 베니스비치의 서퍼 둘(Neil Carver · Greg Falk)이 <b>앞트럭이 크게 돌고 뒷트럭이 축을 잡는</b> 구조를 만들어 냈습니다. 이게 <b>카버(Carver)</b>이고 그 트럭이 C7이에요. 발로 밀지 않고 체중 이동만으로 속도를 내는 게 그때 가능해졌습니다.<br>
           특허가 만료되면서 지금은 여러 브랜드가 같은 구조를 씁니다 — 저렴한 것도 많아요.
+          <b>카버 · 우디프레스 · YOW</b> 같은 이름을 보게 될 거예요.<br>
+          <b>살 때 전용 툴이 같이 옵니다.</b> 그거 하나로 보드를 전부 분해·조립할 수 있으니 <b>항상 들고 다니세요</b> — 타다 보면 볼트가 풀립니다.
           <span style="display:block;margin-top:4px">출처 · <a href="https://carverskateboards.com/pages/about-us" target="_blank" rel="noopener">Carver Skateboards</a> ·
           <a href="https://en.wikipedia.org/wiki/Surfskating" target="_blank" rel="noopener">Surfskating</a></span>
           <span style="display:block;margin-top:4px;color:var(--ink2)">참고 — "랜드서핑"은 한국에서 만들어진 말입니다. 영어권에서는 surfskate라고 해요.</span>
