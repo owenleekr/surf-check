@@ -22,6 +22,32 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js"></script>
 <script src="config.js"></script>
+<script>
+/* 도트(sprite.js)·명단(roster.js)을 따로 뺀 뒤로, 그 파일 하나만 못 받아도
+   앱이 통째로 죽었다 — ReferenceError 하나에 화면이 백지가 된다.
+   신호가 끊기든 앞단이 막든 일어날 수 있는 일이다. 백지 대신 말이 되는 화면을 띄운다. */
+/* 주의 — 최상위 const 는 window 에 안 붙는다. window['ROSTER'] 로 보면
+   정상인데도 "없음"으로 잡힌다. 이름 그대로 typeof 로 본다(호출 시점엔 이미 초기화됨). */
+window.__missing = () => { const out = [];
+  try{ if(typeof drawSpr !== 'function' || typeof avatarRows !== 'function') out.push('sprite.js'); }catch(e){ out.push('sprite.js'); }
+  try{ if(typeof ROSTER === 'undefined' || !Array.isArray(ROSTER)) out.push('roster.js'); }catch(e){ out.push('roster.js'); }
+  return out; };
+window.__bootFail = (files) => {
+  document.documentElement.innerHTML = `<head><meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1"></head>
+    <body style="margin:0;background:#8FD3FF;font-family:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo',sans-serif;
+                 display:grid;place-items:center;min-height:100vh;padding:20px;box-sizing:border-box">
+      <div style="background:#FFF9E6;border:4px solid #1B1B2F;box-shadow:5px 5px 0 #1B1B2F;padding:20px;max-width:420px">
+        <div style="font-size:19px;font-weight:800">파일을 다 받지 못했어요</div>
+        <div style="font-size:14px;line-height:1.65;margin-top:8px;color:#1B1B2F">
+          신호가 약하거나 잠시 막혔을 수 있어요. <b>새로고침</b>하면 대개 됩니다.</div>
+        <div style="font-size:12px;color:#5A5F7A;margin-top:8px">못 받은 것 · ${files.join(', ')}</div>
+        <button onclick="location.reload()" style="margin-top:14px;width:100%;border:4px solid #1B1B2F;background:#FFD23F;
+          padding:11px;font-weight:800;font-size:15px;box-shadow:3px 3px 0 #1B1B2F;font-family:inherit">↻ 새로고침</button>
+        <a href="/surfshare" style="display:block;margin-top:8px;text-align:center;font-size:13px;color:#2E6BFF">SurfShare로 가기</a>
+      </div></body>`;
+};
+</script>
 <script src="sprite.js"></script>
 <script src="roster.js"></script>
 <script src="lex.js"></script>
@@ -907,6 +933,7 @@ footer a{color:var(--paper)}
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
+{ const miss = window.__missing(); if(miss.length){ window.__bootFail(miss); throw new Error('boot: '+miss.join(',')); } }
 const $ = id => document.getElementById(id);
 const state = { day:0, beach:0, loaded:false, fetchedAt:null, tab:'wave', attRecords:[], pref:null, model:'marine_best_match' };
 /* 캐릭터 도트는 sprite.js 로 뺐다 — surfshare.html과 같은 파일을 쓴다 */
