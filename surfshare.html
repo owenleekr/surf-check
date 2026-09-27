@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SurfShare — 라인업</title>
+<meta name="description" content="양양서핑학교 6기 차량·숙소 나눠 쓰기">
+<link rel="icon" href="icon-180.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<script src="config.js"></script>
+<style>
+:root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
+       --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
+*{box-sizing:border-box} html,body{margin:0}
+body{ background:#5AB4EF; background-image:linear-gradient(to bottom,#DCF3FF 0 120px,#AEE2FF 120px 280px,#83CCF7 280px 560px,#5AB4EF 560px);
+      background-repeat:no-repeat; color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+      font-size:15px; line-height:1.6; -webkit-text-size-adjust:100% }
+.wrap{ max-width:720px; margin:0 auto; padding-inline:14px; padding-block:16px 70px }
+h1,h2,.t{ font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700 }
+h1{ color:var(--paper); text-shadow:3px 3px 0 var(--ink); font-size:26px; margin:0 }
+.sub{ color:var(--ink); font-size:13px; margin:4px 0 14px; text-shadow:1px 1px 0 rgba(255,255,255,.7) }
+.sub a{ color:var(--deep) }
+.px{ background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:14px }
+.px.sand{ background:var(--sand) } .px.white{ background:#fff }
+.btn{ border:4px solid var(--ink); background:var(--sun); color:var(--ink); padding:9px 14px; font-weight:700; font-size:14px;
+      box-shadow:3px 3px 0 var(--ink); cursor:pointer; font-family:inherit; min-height:42px }
+.btn.sm{ padding:8px 11px; min-height:38px; font-size:12.5px; border-width:3px; box-shadow:2px 2px 0 var(--ink) }
+.btn.blue{ background:var(--sea); color:#fff } .btn.mint{ background:var(--mint) } .btn.ghost{ background:#fff }
+.btn.coral{ background:var(--coral) } .btn.grape{ background:var(--grape); color:#fff }
+.btn:active{ transform:translate(3px,3px); box-shadow:0 0 0 }
+.btn[disabled]{ opacity:.5; cursor:default }
+input,select,textarea{ border:3px solid var(--ink); padding:8px 9px; font-family:inherit; font-size:14px; background:#fff; width:100% }
+textarea{ min-height:54px; resize:vertical }
+label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
+.err{ color:#C2303A; font-size:13px; min-height:1.3em; font-weight:700 }
+.tabs{ display:flex; gap:0; margin-bottom:10px }
+.tabs button{ flex:1; border:4px solid var(--ink); background:var(--paper); padding:10px; font-weight:800; font-size:14px; font-family:inherit; cursor:pointer; min-height:46px }
+.tabs button + button{ border-left:0 }
+.tabs button[aria-pressed="true"]{ background:var(--ink); color:var(--sun) }
+.grp{ margin-top:14px }
+.grp > .t{ display:block; color:var(--paper); text-shadow:2px 2px 0 var(--ink); font-size:17px; margin-bottom:6px }
+.card{ border-top:3px dashed var(--grid); padding:11px 0 }
+.card:first-child{ border-top:0; padding-top:2px }
+.hd{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap }
+.hd b{ font-size:16px }
+.tag{ display:inline-block; background:var(--sun); border:3px solid var(--ink); padding:1px 7px; font-size:11px; font-weight:800; font-family:"Galmuri11",sans-serif }
+.tag.go{ background:var(--mint) } .tag.back{ background:#8FD3FF } .tag.full{ background:var(--coral) }
+.meta{ font-size:12.5px; color:var(--ink2); margin-top:3px; line-height:1.55 }
+.seats{ display:flex; gap:4px; flex-wrap:wrap; margin-top:7px }
+.seat{ border:3px solid var(--ink); background:#fff; padding:3px 8px; font-size:12px; font-weight:700; min-height:30px; display:inline-flex; align-items:center }
+.seat.on{ background:var(--mint) } .seat.me{ background:var(--sun) }
+.acts{ display:flex; gap:6px; flex-wrap:wrap; margin-top:9px }
+.note{ font-size:12px; color:var(--ink2); margin-top:10px; line-height:1.6 }
+.empty{ font-size:13px; color:var(--ink2); padding:14px 0; text-align:center }
+.toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:var(--ink); color:var(--sun);
+        border:3px solid var(--sun); padding:9px 16px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50 }
+.toast.show{ opacity:1 }
+.perks{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
+.perk{ border:2px solid var(--ink); background:#fff; padding:1px 6px; font-size:11px; font-weight:700 }
+.perk.on{ background:var(--mint) }
+.fold summary{ cursor:pointer; font-weight:700; font-size:14px }
+.grid2{ display:grid; grid-template-columns:1fr 1fr; gap:8px }
+@media(max-width:400px){ .grid2{ grid-template-columns:1fr } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SurfShare</h1>
+  <div class="sub">차 같이 타고, 숙소 같이 쓰고 · <a href="index.html">앱으로</a></div>
+
+  <!-- 로그인 -->
+  <div class="px" id="login">
+    <b class="t">먼저 로그인</b>
+    <div class="note" style="margin-top:4px">앱과 같은 아이디·비밀번호예요. 같은 폰에서 앱에 로그인돼 있으면 그냥 들어와집니다.</div>
+    <label for="uid">아이디</label><input id="uid" autocapitalize="off">
+    <label for="upw">비밀번호</label><input id="upw" type="password">
+    <div class="err" id="lerr"></div>
+    <button class="btn blue" id="go" style="width:100%">들어가기</button>
+  </div>
+
+  <!-- 본문 -->
+  <div id="main" hidden>
+    <div class="px" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <b id="who" style="flex:1"></b>
+      <span class="tag" id="cohort-tag"></span>
+      <button class="btn sm ghost" id="out">나가기</button>
+    </div>
+
+    <div class="tabs" style="margin-top:12px">
+      <button type="button" id="t-ride" aria-pressed="true">🚗 차량</button>
+      <button type="button" id="t-stay" aria-pressed="false">🏠 숙소</button>
+    </div>
+
+    <!-- 차량 -->
+    <div id="pane-ride">
+      <details class="px sand fold"><summary>+ 차 자리 올리기</summary>
+        <div class="grid2" style="margin-top:8px">
+          <div><label for="r-date">날짜</label><input id="r-date" type="date"></div>
+          <div><label for="r-dir">방향</label><select id="r-dir"><option value="go">가는 편 (→ 낙산)</option><option value="back">오는 편 (낙산 →)</option></select></div>
+          <div><label for="r-time">출발 시각</label><input id="r-time" type="time" value="06:00"></div>
+          <div><label for="r-seats">태울 수 있는 인원</label><input id="r-seats" type="number" min="1" max="8" value="3"></div>
+          <div><label for="r-from">어디서 출발</label><input id="r-from" maxlength="20" placeholder="예) 잠실역 2번 출구"></div>
+          <div><label for="r-to">어디로</label><input id="r-to" maxlength="20" placeholder="예) 낙산해변 주차장"></div>
+        </div>
+        <label for="r-note">한마디 (선택)</label><input id="r-note" maxlength="60" placeholder="예) 보드 2개까지 실려요 · 기름값 1/n">
+        <label for="r-contact">연락 방법 (선택)</label><input id="r-contact" maxlength="80" placeholder="오픈채팅 링크 등">
+        <div class="note">전화번호는 적지 마세요. 이 글은 <b>같은 기수 전원</b>이 봅니다.</div>
+        <div class="err" id="r-err"></div>
+        <button class="btn mint" id="r-save" style="width:100%;margin-top:6px">올리기</button>
+      </details>
+      <div class="grp"><span class="t">다가오는 차량</span><div class="px" id="rides"></div></div>
+    </div>
+
+    <!-- 숙소 -->
+    <div id="pane-stay" hidden>
+      <details class="px sand fold"><summary>+ 숙소 올리기</summary>
+        <div class="grid2" style="margin-top:8px">
+          <div><label for="s-place">숙소 이름</label><input id="s-place" maxlength="20" placeholder="예) 낙산 OO펜션"></div>
+          <div><label for="s-cap">총 인원</label><input id="s-cap" type="number" min="1" max="20" value="4"></div>
+          <div><label for="s-from">체크인</label><input id="s-from" type="date"></div>
+          <div><label for="s-to">체크아웃</label><input id="s-to" type="date"></div>
+          <div><label for="s-price">비용 (선택)</label><input id="s-price" maxlength="20" placeholder="예) 1인 2만"></div>
+          <div><label for="s-contact">연락 방법 (선택)</label><input id="s-contact" maxlength="80" placeholder="오픈채팅 링크 등"></div>
+        </div>
+        <label>좌표 — 지도에 찍으려면 (선택)</label>
+        <div class="grid2">
+          <input id="s-lat" inputmode="decimal" placeholder="위도 38.1210">
+          <input id="s-lon" inputmode="decimal" placeholder="경도 128.6320">
+        </div>
+        <div class="note">지도 앱에서 숙소를 길게 눌러 나오는 <b>위도, 경도</b>를 붙여넣으면 아래 지도에 찍혀요.</div>
+        <label>특장점</label><div class="perks" id="s-perks"></div>
+        <label for="s-note">한마디 (선택)</label><input id="s-note" maxlength="60" placeholder="예) 해변까지 걸어서 3분">
+        <div class="err" id="s-err"></div>
+        <button class="btn mint" id="s-save" style="width:100%;margin-top:6px">올리기</button>
+      </details>
+      <div class="grp"><span class="t">낙산 기준 지도</span><div class="px white" id="map"></div></div>
+      <div class="grp"><span class="t">숙소</span><div class="px" id="stays"></div></div>
+    </div>
+
+    <div class="note" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
+      올린 사람만 지울 수 있어요. 자리는 아무나 넣고 뺄 수 있습니다 — 서로 믿고 쓰는 곳이에요.
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const SUPA = { url:(window.SURF_CONFIG?.supabaseUrl||'').replace(/\/$/,''), key:window.SURF_CONFIG?.supabaseKey||'' };
+const H = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json',
+                   Prefer:'resolution=merge-duplicates,return=minimal' });
+let ME = null, state = { rides:[], stays:[], tab:'ride' };
+const NAKSAN = { lat:38.121, lon:128.632 };
+const PERKS = ['해변 도보','주차','보드 보관','온수 샤워','취사','세탁기','수건 제공','조식'];
+let toastT;
+const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'),1900); };
+const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const today = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const DOW = ['일','월','화','수','목','금','토'];
+const dLabel = d => { const x=new Date(d+'T00:00'); return `${d.slice(5).replace('-','.')} (${DOW[x.getDay()]})`; };
+
+/* ── 서버 ───────────────────────────────────────────────── */
+async function api(path, opt){
+  const r = await fetch(`${SUPA.url}/rest/v1/${path}`, { headers:H(), ...opt });
+  if(r.status === 404) throw Object.assign(new Error('notable'), { code:'notable' });
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.status === 204 ? null : r.json().catch(()=>null);
+}
+async function rpc(fn, args){
+  const r = await fetch(`${SUPA.url}/rest/v1/rpc/${fn}`, { method:'POST', headers:H(), body:JSON.stringify(args) });
+  const b = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((b?.message||'').replace(/.*?(nouser|wrongpw).*/,'$1') || ('오류 '+r.status));
+  return b;
+}
+
+/* ── 로그인 ─────────────────────────────────────────────── */
+$('go').onclick = async ()=>{
+  const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value; $('lerr').textContent = '';
+  try{
+    const r = await rpc('login', { p_id:id, p_pw:pw });
+    ME = { id, name:r.name, profile:r.profile||{}, cohort:r.cohort || '6기' };
+    try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
+    start();
+  }catch(e){ $('lerr').textContent = { nouser:'없는 아이디예요', wrongpw:'비밀번호가 달라요' }[e.message]
+    || (e.message==='Failed to fetch' ? '서버에 닿지 않아요' : e.message); }
+};
+$('out').onclick = ()=>{ try{ localStorage.removeItem('lineup.share.me'); }catch(e){} location.reload(); };
+
+/* ── 탭 ─────────────────────────────────────────────────── */
+const setTab = t => { state.tab = t;
+  $('t-ride').setAttribute('aria-pressed', String(t==='ride'));
+  $('t-stay').setAttribute('aria-pressed', String(t==='stay'));
+  $('pane-ride').hidden = t!=='ride'; $('pane-stay').hidden = t!=='stay'; };
+$('t-ride').onclick = ()=>setTab('ride'); $('t-stay').onclick = ()=>setTab('stay');
+
+/* ── 차량 ───────────────────────────────────────────────── */
+async function pullRides(){
+  try{ state.rides = await api(`rides?cohort=eq.${encodeURIComponent(ME.cohort)}&date=gte.${today()}&select=*&order=date.asc,depart_at.asc&limit=200`); }
+  catch(e){ state.rides = null; }
+  renderRides();
+}
+function seatRow(r, kind){
+  const list = (kind==='ride' ? r.riders : r.guests) || [];
+  const cap  = kind==='ride' ? r.seats : r.capacity;
+  const mine = list.some(x=>x.id===ME.id);
+  const left = cap - list.length;
+  const chips = list.map(x=>`<span class="seat ${x.id===ME.id?'me':'on'}">${esc(x.name)}</span>`).join('');
+  const open  = Array.from({length: Math.max(0,left)}).map(()=>`<span class="seat">빈자리</span>`).join('');
+  return `<div class="seats">${chips}${open}</div>
+    <div class="acts">
+      ${mine ? `<button class="btn sm ghost" data-leave="${r.id}">빼기</button>`
+             : left>0 ? `<button class="btn sm mint" data-join="${r.id}">${kind==='ride'?'탈래요':'같이 쓸래요'}</button>`
+                      : `<span class="tag full">자리 없음</span>`}
+      ${r.user_id===ME.id ? `<button class="btn sm coral" data-del="${r.id}">내리기</button>` : ''}
+    </div>`;
+}
+function renderRides(){
+  const box = $('rides');
+  if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>위에서 첫 자리를 올려보세요.</div>`; return; }
+  box.innerHTML = state.rides.map(r=>`<div class="card">
+      <div class="hd"><span class="tag ${r.dir}">${r.dir==='go'?'가는 편':'오는 편'}</span>
+        <b>${dLabel(r.date)} ${esc(r.depart_at)}</b></div>
+      <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b> · ${esc(r.name)} 님 차</div>
+      ${r.note ? `<div class="meta">${esc(r.note)}</div>` : ''}
+      ${r.contact ? `<div class="meta">연락 · ${esc(r.contact)}</div>` : ''}
+      ${seatRow(r,'ride')}
+    </div>`).join('');
+  bindCards(box, 'ride');
+}
+$('r-save').onclick = async ()=>{
+  const e = $('r-err'); e.textContent = '';
+  const date=$('r-date').value, time=$('r-time').value, from=$('r-from').value.trim(), to=$('r-to').value.trim();
+  if(!date) return e.textContent = '날짜를 골라주세요';
+  if(!time) return e.textContent = '출발 시각을 적어주세요';
+  if(!from || !to) return e.textContent = '어디서 출발해 어디로 가는지 적어주세요';
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort,
+    date, dir:$('r-dir').value, depart_at:time, from_place:from.slice(0,20), to_place:to.slice(0,20),
+    seats:Math.max(1, Math.min(8, +$('r-seats').value||3)), riders:[],
+    note:$('r-note').value.trim().slice(0,60)||null, contact:$('r-contact').value.trim().slice(0,80)||null };
+  try{ await api('rides', { method:'POST', body:JSON.stringify(row) });
+    toast('올렸어요'); ['r-from','r-to','r-note','r-contact'].forEach(x=>$(x).value='');
+    document.querySelector('#pane-ride details').open = false; pullRides(); }
+  catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 (supabase-surfshare.sql)' : '올리지 못했어요 · 신호 확인'; }
+};
+
+/* ── 숙소 ───────────────────────────────────────────────── */
+async function pullStays(){
+  try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${today()}&select=*&order=date_from.asc&limit=200`); }
+  catch(e){ state.stays = null; }
+  renderStays(); renderMap();
+}
+function renderStays(){
+  const box = $('stays');
+  if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.</div>`; return; }
+  box.innerHTML = state.stays.map(s=>`<div class="card">
+      <div class="hd"><b>${esc(s.place)}</b>${s.price?`<span class="tag">${esc(s.price)}</span>`:''}</div>
+      <div class="meta">${dLabel(s.date_from)} → ${dLabel(s.date_to)} · ${esc(s.name)} 님이 올림${distLabel(s)}</div>
+      ${(s.perks||[]).length ? `<div class="perks">${s.perks.map(p=>`<span class="perk on">${esc(p)}</span>`).join('')}</div>` : ''}
+      ${s.note ? `<div class="meta">${esc(s.note)}</div>` : ''}
+      ${s.contact ? `<div class="meta">연락 · ${esc(s.contact)}</div>` : ''}
+      ${s.lat&&s.lon ? `<div class="meta"><a href="https://map.kakao.com/link/to/${encodeURIComponent(s.place)},${s.lat},${s.lon}" target="_blank" rel="noopener">지도 앱에서 열기 ↗</a></div>` : ''}
+      ${seatRow(s,'stay')}
+    </div>`).join('');
+  bindCards(box, 'stay');
+}
+/* 낙산에서 얼마나 떨어졌는지 — 숙소를 고를 때 제일 먼저 궁금한 것 */
+function distKm(lat, lon){
+  const R=6371, r=Math.PI/180;
+  const dLat=(lat-NAKSAN.lat)*r, dLon=(lon-NAKSAN.lon)*r;
+  const a=Math.sin(dLat/2)**2 + Math.cos(NAKSAN.lat*r)*Math.cos(lat*r)*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(a));
+}
+const distLabel = s => (s.lat&&s.lon) ? ` · 낙산에서 <b>${distKm(s.lat,s.lon).toFixed(1)}km</b>` : '';
+/* 지도 — 외부 지도 라이브러리를 쓰지 않는다. 바다 앞에서 신호가 약해도 떠야 하고,
+   여기서 필요한 건 "낙산 기준 어느 쪽 얼마나 먼가" 하나뿐이다. */
+function renderMap(){
+  const list = (state.stays||[]).filter(s=>s.lat&&s.lon);
+  if(!list.length){ $('map').innerHTML = `<div class="empty">좌표가 있는 숙소가 없어요.<br>숙소를 올릴 때 위도·경도를 넣으면 여기 찍힙니다.</div>`; return; }
+  const maxKm = Math.max(2, ...list.map(s=>distKm(s.lat,s.lon))) * 1.25;
+  const W=300, H=300, C=W/2;
+  const px = s => { const r=Math.PI/180;
+    const dx=(s.lon-NAKSAN.lon)*Math.cos(NAKSAN.lat*r)*111.32, dy=(s.lat-NAKSAN.lat)*110.57;   // km
+    return [C + dx/maxKm*(C-24), C - dy/maxKm*(C-24)]; };
+  const ring = k => `<circle cx="${C}" cy="${C}" r="${(k/maxKm*(C-24)).toFixed(1)}" fill="none" stroke="var(--grid)" stroke-width="2" stroke-dasharray="4 4"/>
+    <text x="${C+2}" y="${(C - k/maxKm*(C-24) + 11).toFixed(1)}" font-size="9" fill="var(--ink2)">${k}km</text>`;
+  const rings = [1,2,5,10].filter(k=>k < maxKm).map(ring).join('');
+  $('map').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:#EAF7FF;border:3px solid var(--ink);display:block" role="img" aria-label="낙산 기준 숙소 위치">
+      <path d="M0 0 H${W} V${H} H0 Z" fill="#EAF7FF"/>
+      <!-- 낙산은 동해를 바라본다. 오른쪽이 바다여야 지도가 말이 된다. -->
+      <path d="M${C+62} 0 Q${C+80} ${H/2} ${C+62} ${H} L${W} ${H} L${W} 0 Z" fill="#8FD3FF"/>
+      <path d="M${C+62} 0 Q${C+80} ${H/2} ${C+62} ${H}" fill="none" stroke="#5FBDF2" stroke-width="2.5"/>
+      <text x="${W-10}" y="20" font-size="11" font-weight="800" fill="var(--deep)" text-anchor="end">동해</text>
+      ${rings}
+      <path d="M${C-8} ${C} h16 M${C} ${C-8} v16" stroke="var(--ink)" stroke-width="3"/>
+      <text x="${C}" y="${C-14}" font-size="11" font-weight="800" text-anchor="middle" fill="var(--ink)">낙산</text>
+      ${list.map((s,i)=>{ const [x,y]=px(s); return `<g><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.5"/>
+        <text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" font-size="10" font-weight="800" text-anchor="middle">${i+1}</text></g>`; }).join('')}
+    </svg>
+    <div class="note" style="margin-top:6px">${list.map((s,i)=>`<b>${i+1}</b> ${esc(s.place)} · ${distKm(s.lat,s.lon).toFixed(1)}km`).join(' · ')}</div>
+    <div class="note">직선 거리입니다. 실제 이동 거리는 더 깁니다.</div>`;
+}
+$('s-save').onclick = async ()=>{
+  const e = $('s-err'); e.textContent = '';
+  const place=$('s-place').value.trim(), from=$('s-from').value, to=$('s-to').value;
+  if(!place) return e.textContent = '숙소 이름을 적어주세요';
+  if(!from || !to) return e.textContent = '체크인·체크아웃 날짜를 골라주세요';
+  if(to < from) return e.textContent = '체크아웃이 체크인보다 빠릅니다';
+  const lat=parseFloat($('s-lat').value), lon=parseFloat($('s-lon').value);
+  const hasXY = !isNaN(lat) && !isNaN(lon);
+  if(($('s-lat').value.trim() || $('s-lon').value.trim()) && !hasXY) return e.textContent = '위도·경도를 둘 다 숫자로 적어주세요';
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort,
+    place:place.slice(0,20), date_from:from, date_to:to,
+    capacity:Math.max(1, Math.min(20, +$('s-cap').value||4)), guests:[],
+    price:$('s-price').value.trim().slice(0,20)||null, lat:hasXY?lat:null, lon:hasXY?lon:null,
+    perks:[...$('s-perks').querySelectorAll('[aria-pressed="true"]')].map(b=>b.textContent),
+    note:$('s-note').value.trim().slice(0,60)||null, contact:$('s-contact').value.trim().slice(0,80)||null };
+  try{ await api('stays', { method:'POST', body:JSON.stringify(row) });
+    toast('올렸어요'); ['s-place','s-price','s-note','s-contact','s-lat','s-lon'].forEach(x=>$(x).value='');
+    $('s-perks').querySelectorAll('[aria-pressed="true"]').forEach(b=>b.setAttribute('aria-pressed','false'));
+    document.querySelector('#pane-stay details').open = false; pullStays(); }
+  catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 (supabase-surfshare.sql)' : '올리지 못했어요 · 신호 확인'; }
+};
+
+/* ── 자리 넣고 빼기 · 내리기 ───────────────────────────── */
+function bindCards(box, kind){
+  const table = kind==='ride' ? 'rides' : 'stays';
+  const field = kind==='ride' ? 'riders' : 'guests';
+  const rows  = kind==='ride' ? state.rides : state.stays;
+  const patch = async (id, list) => {
+    await api(`${table}?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', body:JSON.stringify({ [field]:list }) });
+    kind==='ride' ? pullRides() : pullStays();
+  };
+  box.querySelectorAll('[data-join]').forEach(b=>b.onclick = async ()=>{
+    const r = rows.find(x=>x.id===b.dataset.join); if(!r) return;
+    const list = [...(r[field]||[])];
+    if(list.some(x=>x.id===ME.id)) return;
+    const cap = kind==='ride' ? r.seats : r.capacity;
+    if(list.length >= cap) return toast('자리가 찼어요');
+    b.disabled = true;
+    try{ await patch(r.id, [...list, { id:ME.id, name:ME.name }]); toast(kind==='ride'?'탔어요':'같이 써요'); }
+    catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
+  });
+  box.querySelectorAll('[data-leave]').forEach(b=>b.onclick = async ()=>{
+    const r = rows.find(x=>x.id===b.dataset.leave); if(!r) return;
+    b.disabled = true;
+    try{ await patch(r.id, (r[field]||[]).filter(x=>x.id!==ME.id)); toast('뺐어요'); }
+    catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
+  });
+  box.querySelectorAll('[data-del]').forEach(b=>b.onclick = async ()=>{
+    const r = rows.find(x=>x.id===b.dataset.del); if(!r) return;
+    const n = (r[field]||[]).length;
+    if(!confirm(n ? `이미 ${n}명이 들어와 있어요. 정말 내릴까요?` : '내릴까요?')) return;
+    b.disabled = true;
+    try{ await api(`${table}?id=eq.${encodeURIComponent(r.id)}`, { method:'DELETE' }); toast('내렸어요');
+      kind==='ride' ? pullRides() : pullStays(); }
+    catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
+  });
+}
+
+/* ── 시작 ───────────────────────────────────────────────── */
+function start(){
+  $('login').hidden = true; $('main').hidden = false;
+  $('who').textContent = ME.name;
+  $('cohort-tag').textContent = ME.cohort === '6기' ? '양양서핑학교 6기' : '서퍼';
+  $('r-date').value = nextWeekend(); $('s-from').value = nextWeekend();
+  $('s-to').value = nextWeekend(1);
+  $('s-perks').innerHTML = PERKS.map(p=>`<button type="button" class="perk" aria-pressed="false">${p}</button>`).join('');
+  $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
+    const on = b.getAttribute('aria-pressed')==='true';
+    b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
+  pullRides(); pullStays();
+}
+/* 다음 토요일 — 수업이 토·일이라 기본값이 거기여야 손이 덜 간다 */
+function nextWeekend(plus){
+  const d = new Date(); const add = (6 - d.getDay() + 7) % 7;
+  d.setDate(d.getDate() + (add || (d.getDay()===6 ? 0 : 7)) + (plus||0));
+  return new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
+}
+(function boot(){
+  if(!SUPA.url){ $('lerr').textContent = '서버 설정이 없어요 (config.js)'; return; }
+  try{ const saved = JSON.parse(localStorage.getItem('lineup.share.me')||'null'); if(saved?.id){ ME = saved; return start(); } }catch(e){}
+  /* 앱에 이미 로그인한 사람에게 또 로그인을 시키지 않는다 — terms.html과 같은 방식 */
+  try{
+    const sid = JSON.parse(localStorage.getItem('surf.session')||'null');
+    const users = JSON.parse(localStorage.getItem('surf.users')||'{}');
+    const u = sid && users[sid];
+    if(u){ ME = { id:sid, name:u.name, profile:u.profile||{}, cohort:u.cohort||'6기' }; return start(); }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
