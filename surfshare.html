@@ -8,6 +8,7 @@
 <link rel="icon" href="icon-180.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
 <script src="config.js"></script>
+<script src="sprite.js"></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
@@ -47,7 +48,11 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .tag.go{ background:var(--mint) } .tag.back{ background:#8FD3FF } .tag.full{ background:var(--coral) }
 .meta{ font-size:12.5px; color:var(--ink2); margin-top:3px; line-height:1.55 }
 .seats{ display:flex; gap:4px; flex-wrap:wrap; margin-top:7px }
-.seat{ border:3px solid var(--ink); background:#fff; padding:3px 8px; font-size:12px; font-weight:700; min-height:30px; display:inline-flex; align-items:center }
+.seat{ border:3px solid var(--ink); background:#fff; padding:3px 8px 3px 4px; font-size:12px; font-weight:700; min-height:34px; display:inline-flex; align-items:center; gap:4px }
+.seat canvas{ width:22px; height:22px; image-rendering:pixelated; flex:0 0 auto }
+.me-av{ width:42px; height:42px; image-rendering:pixelated; border:3px solid var(--ink); background:#8FD3FF; flex:0 0 auto }
+.owner{ display:flex; align-items:center; gap:6px; margin-top:4px }
+.owner canvas{ width:30px; height:30px; image-rendering:pixelated; border:2px solid var(--ink); background:#8FD3FF; flex:0 0 auto }
 .seat.on{ background:var(--mint) } .seat.me{ background:var(--sun) }
 .acts{ display:flex; gap:6px; flex-wrap:wrap; margin-top:9px }
 .note{ font-size:12px; color:var(--ink2); margin-top:10px; line-height:1.6 }
@@ -70,10 +75,21 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 
   <!-- 로그인 -->
   <div class="px" id="login">
-    <b class="t">먼저 로그인</b>
-    <div class="note" style="margin-top:4px">앱과 같은 아이디·비밀번호예요. 같은 폰에서 앱에 로그인돼 있으면 그냥 들어와집니다.</div>
-    <label for="uid">아이디</label><input id="uid" autocapitalize="off">
-    <label for="upw">비밀번호</label><input id="upw" type="password">
+    <div class="tabs" style="margin-bottom:10px">
+      <button type="button" id="m-in" aria-pressed="true">로그인</button>
+      <button type="button" id="m-new" aria-pressed="false">새 계정</button>
+    </div>
+    <div class="note" id="mode-note" style="margin:0 0 4px">아이디와 비밀번호로 들어와요.</div>
+    <label for="uid">아이디</label><input id="uid" autocapitalize="off" placeholder="영문·숫자 2~16자">
+    <div id="new-only" hidden>
+      <label for="uname">이름 (닉네임)</label><input id="uname" maxlength="12" placeholder="차·숙소 글에 표시돼요">
+      <label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때</label><input id="ubirth" inputmode="numeric" maxlength="6" placeholder="예) 881102">
+    </div>
+    <label for="upw">비밀번호</label><input id="upw" type="password" placeholder="4자 이상">
+    <label class="agree" id="agree-wrap" hidden style="display:flex;gap:7px;align-items:flex-start;margin-top:10px;font-size:13px;color:var(--ink)">
+      <input type="checkbox" id="agree" style="width:auto;margin-top:3px">
+      <span><a href="terms-of-service.html" target="_blank" rel="noopener">이용약관</a>과
+        <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>에 동의합니다</span></label>
     <div class="err" id="lerr"></div>
     <button class="btn blue" id="go" style="width:100%">들어가기</button>
   </div>
@@ -81,14 +97,31 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
   <!-- 본문 -->
   <div id="main" hidden>
     <div class="px" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <b id="who" style="flex:1"></b>
+      <canvas class="me-av" id="me-av"></canvas><b id="who" style="flex:1"></b>
       <span class="tag" id="cohort-tag"></span>
       <button class="btn sm ghost" id="out">나가기</button>
+    </div>
+    <div class="px sand" id="school" style="margin-top:10px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px"><b class="t" style="font-size:15px">🏫 학교 입장하기</b>
+          <div class="note" style="margin:2px 0 0">파도 예보 · 수업 기록 · 자세 분석 · 마을</div></div>
+        <button class="btn sm grape" id="school-go">들어가기</button>
+      </div>
+      <div id="school-box" hidden style="margin-top:10px">
+        <div class="note" style="margin:0 0 6px"><b>아직 오픈하지 않았어요.</b> 먼저 열어둔 건 여기 SurfShare까지예요.<br>
+          초대 코드를 받으셨다면 넣어주세요.</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <input id="school-code" type="password" maxlength="40" placeholder="초대 코드" style="flex:1 1 150px">
+          <button class="btn sm blue" id="school-ok">확인</button>
+        </div>
+        <div class="err" id="school-err" style="margin-top:4px"></div>
+      </div>
     </div>
 
     <div class="tabs" style="margin-top:12px">
       <button type="button" id="t-ride" aria-pressed="true">🚗 차량</button>
       <button type="button" id="t-stay" aria-pressed="false">🏠 숙소</button>
+      <button type="button" id="t-me" aria-pressed="false">🙂 꾸미기</button>
     </div>
 
     <!-- 차량 -->
@@ -137,6 +170,15 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
       <div class="grp"><span class="t">숙소</span><div class="px" id="stays"></div></div>
     </div>
 
+    <!-- 꾸미기 -->
+    <div id="pane-me" hidden>
+      <div class="px white" style="text-align:center">
+        <canvas id="bld-av" style="width:140px;height:140px;image-rendering:pixelated;background:#8FD3FF;border:4px solid var(--ink)"></canvas>
+        <div class="note" style="margin-top:6px">여기서 만든 캐릭터가 <b>차·숙소 글에 그대로 나와요.</b><br>학교가 열리면 마을에도 이 모습으로 서 있습니다.</div>
+      </div>
+      <div class="px" style="margin-top:10px"><div id="bld-opts"></div></div>
+    </div>
+
     <div class="note" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
       올린 사람만 지울 수 있어요. 자리는 아무나 넣고 뺄 수 있습니다 — 서로 믿고 쓰는 곳이에요.
     </div>
@@ -174,24 +216,134 @@ async function rpc(fn, args){
 }
 
 /* ── 로그인 ─────────────────────────────────────────────── */
+let mode = 'in';
+const setMode = m => { mode = m;
+  $('m-in').setAttribute('aria-pressed', String(m==='in'));
+  $('m-new').setAttribute('aria-pressed', String(m==='new'));
+  $('new-only').hidden = m!=='new'; $('agree-wrap').hidden = m!=='new';
+  $('mode-note').textContent = m==='in' ? '아이디와 비밀번호로 들어와요.' : '누구나 만들 수 있어요. 차·숙소를 나눠 쓰는 곳입니다.';
+  $('go').textContent = m==='in' ? '들어가기' : '★ 계정 만들고 시작';
+  $('lerr').textContent = ''; };
+$('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
+
+/* 새로 만든 사람의 기본 모습 — 이름으로 흩어지게 해서 다 똑같이 생기지 않게 한다 */
+const freshProfile = name => (typeof withLook === 'function')
+  ? { ...withLook({ gender:'f', board:'long', role:'guest' }, name||''), role:'guest' }
+  : { gender:'f', board:'long', role:'guest' };
+
 $('go').onclick = async ()=>{
   const id = $('uid').value.trim().toLowerCase(), pw = $('upw').value; $('lerr').textContent = '';
+  const E = t => { $('lerr').textContent = t; };
   try{
-    const r = await rpc('login', { p_id:id, p_pw:pw });
-    ME = { id, name:r.name, profile:r.profile||{}, cohort:r.cohort || '6기' };
+    if(mode === 'new'){
+      const name = $('uname').value.trim(), birth = $('ubirth').value.replace(/\D/g,'');
+      if(!/^[a-z0-9_]{2,16}$/.test(id)) return E('아이디는 영문 소문자·숫자·_ 2~16자');
+      if(!name) return E('이름(닉네임)을 적어주세요');
+      if(pw.length < 4) return E('비밀번호는 4자 이상');
+      if(!/^\d{6}$/.test(birth)) return E('생년월일 6자리를 적어주세요 (비밀번호 재설정용)');
+      if(!$('agree').checked) return E('약관과 개인정보처리방침에 동의해 주세요');
+      const profile = { ...freshProfile(name), birth };
+      $('go').disabled = true;
+      try{ await rpc('signup', { p_id:id, p_name:name, p_pw:pw, p_profile:profile }); }
+      finally{ $('go').disabled = false; }
+      ME = { id, name, profile, cohort:'open' };
+    } else {
+      const r = await rpc('login', { p_id:id, p_pw:pw });
+      ME = { id, name:r.name, profile:r.profile||{}, cohort:r.cohort || 'open' };
+    }
     try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
     start();
-  }catch(e){ $('lerr').textContent = { nouser:'없는 아이디예요', wrongpw:'비밀번호가 달라요' }[e.message]
-    || (e.message==='Failed to fetch' ? '서버에 닿지 않아요' : e.message); }
+  }catch(e){ E({ nouser:'없는 아이디예요 · "새 계정"으로 만들어 주세요', wrongpw:'비밀번호가 달라요',
+      exists:'이미 있는 아이디예요', badid:'아이디는 영문 소문자·숫자·_ 2~16자', badpw:'비밀번호는 4자 이상' }[e.message]
+    || (e.message==='Failed to fetch' ? '서버에 닿지 않아요' : e.message)); }
 };
 $('out').onclick = ()=>{ try{ localStorage.removeItem('lineup.share.me'); }catch(e){} location.reload(); };
 
+/* ── 학교 입장 ────────────────────────────────────────────
+   세계관: SurfShare가 먼저 열리고, 학교(라인업 앱)는 나중에 열린다.
+   코드를 받은 사람만 미리 들어간다. 코드는 서버에서만 비교한다 —
+   여기 적어두면 페이지 소스를 여는 순간 다 보인다. */
+$('school-go').onclick = ()=>{ const b = $('school-box'); b.hidden = !b.hidden; if(!b.hidden) $('school-code').focus(); };
+$('school-ok').onclick = async ()=>{
+  const code = $('school-code').value.trim(), e = $('school-err'), btn = $('school-ok');
+  e.textContent = ''; if(!code) return e.textContent = '코드를 넣어주세요';
+  btn.disabled = true; btn.textContent = '확인 중…';
+  try{
+    const ok = await rpc('verify_cohort', { p_cohort:'app', p_code:code });
+    if(ok !== true){ e.textContent = '코드가 달라요'; return; }
+    try{ localStorage.setItem('lineup.app.invited', '1');
+      /* 앱이 쓰는 형식으로 계정을 넘겨준다 — 학교에 가서 또 로그인하지 않게 */
+      const users = JSON.parse(localStorage.getItem('surf.users')||'{}');
+      users[ME.id] = { ...(users[ME.id]||{}), name:ME.name, cohort:ME.cohort||'open', profile:ME.profile||{} };
+      localStorage.setItem('surf.users', JSON.stringify(users));
+      localStorage.setItem('surf.session', JSON.stringify(ME.id));
+    }catch(err){}
+    toast('학교가 열렸어요'); setTimeout(()=>location.href = 'index.html', 700);
+  }catch(err){ e.textContent = err.message==='Failed to fetch' ? '서버에 닿지 않아요'
+    : '아직 준비 중이에요 (코치에게 문의)'; }
+  finally{ btn.disabled = false; btn.textContent = '확인'; }
+};
+$('school-code').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('school-ok').click(); } });
+
+/* ── 꾸미기 ───────────────────────────────────────────────
+   앱의 빌더와 같은 도트·같은 옵션을 쓴다(sprite.js 공유). 저장은 서버 프로필에. */
+let bldTab = 'face';
+function renderBuilder(){
+  if(typeof HAIR !== 'function' && typeof HAIR !== 'object') return;
+  const pr = ME.profile || (ME.profile = freshProfile(ME.name));
+  const cur = { ...pr, hair: (typeof hairOf==='function' ? hairOf(pr) : pr.hair) };
+  const sw = map => (v,t)=>`<i style="display:inline-block;width:10px;height:10px;border:2px solid var(--ink);background:${map[v]};vertical-align:-1px;margin-right:3px"></i>${t}`;
+  const opt = (label, key, items, render) => `<div style="margin-top:10px"><div class="note" style="margin:0 0 4px">${label}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>`<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}" style="min-height:34px">${render?render(v,t):t}</button>`).join('')}</div></div>`;
+  const keys = o => Object.keys(o);
+  const G = {
+    face: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k]]))
+        + opt('머리 색', 'hairc', keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), sw(HAIRC))
+        + opt('피부 톤', 'skin', keys(SKIN).map(k=>[k,SKIN_KO[k]]), sw(SKIN))
+        + opt('표정', 'face', keys(FACE).map(k=>[k,FACE_KO[k]])),
+    wear: opt('상의', 'wear', keys(WEAR).map(k=>[k,WEAR_KO[k]]))
+        + (cur.wear==='bare' ? '' : opt('상의 색', 'top', keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)))
+        + opt('팬츠 · 웻수트', 'bottom', keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS))
+        + opt('모자', 'hat', keys(HAT).map(k=>[k,HAT_KO[k]])),
+    board: opt('보드', 'board', [['long','롱보드'],['fun','펀보드'],['short','숏보드']])
+        + opt('보드 색', 'boardc', keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), sw(BOARDC)),
+    pet:  opt('같이 타는 친구', 'pet', keys(PET).map(k=>[k,PET_KO[k]]))
+        + (cur.pet==='none' ? '' : opt('친구 색', 'petc', keys(PETC).map(k=>[k,PETC_KO[k]]), sw(PETC))),
+  };
+  const TABS = [['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
+  $('bld-opts').innerHTML = `<div style="display:flex;gap:4px;flex-wrap:wrap">${TABS.map(([k,t])=>
+      `<button type="button" class="btn sm ${bldTab===k?'blue':'ghost'}" data-bt="${k}">${t}</button>`).join('')}
+      <button type="button" class="btn sm ghost" id="bld-rand" style="margin-left:auto">🎲 랜덤</button></div>
+    ${G[bldTab]}`;
+  const paint = () => { if(typeof drawSpr==='function'){ const q = withLook(ME.profile, ME.name);
+      drawSpr($('bld-av'), avatarRows(q), avatarTintOf(q, 0)); if($('me-av')) drawSpr($('me-av'), avatarRows(q, false), avatarTintOf(q, 0)); } };
+  paint();
+  $('bld-opts').querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{ bldTab=b.dataset.bt; renderBuilder(); });
+  $('bld-rand').onclick = ()=>{ const pick = o => Object.keys(o)[Math.floor(Math.random()*Object.keys(o).length)];
+    Object.assign(ME.profile, { hair:pick(HAIR), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
+      wear:pick(WEAR), top:pick(TOPS), bottom:pick(BOTTOMS), hat:pick(HAT), boardc:pick(BOARDC), pet:pick(PET), petc:pick(PETC) });
+    renderBuilder(); saveProfile(); };
+  $('bld-opts').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+    ME.profile[b.dataset.k] = b.dataset.v; renderBuilder(); saveProfile(); });
+}
+let saveT;
+function saveProfile(){
+  try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
+  clearTimeout(saveT);                       // 버튼을 연달아 누르면 요청이 그만큼 나간다
+  saveT = setTimeout(async ()=>{
+    try{ await api(`surfers?id=eq.${encodeURIComponent(ME.id)}`, { method:'PATCH', body:JSON.stringify({ profile:ME.profile }) }); }
+    catch(e){}
+  }, 700);
+}
+
 /* ── 탭 ─────────────────────────────────────────────────── */
 const setTab = t => { state.tab = t;
-  $('t-ride').setAttribute('aria-pressed', String(t==='ride'));
-  $('t-stay').setAttribute('aria-pressed', String(t==='stay'));
-  $('pane-ride').hidden = t!=='ride'; $('pane-stay').hidden = t!=='stay'; };
-$('t-ride').onclick = ()=>setTab('ride'); $('t-stay').onclick = ()=>setTab('stay');
+  ['ride','stay','me'].forEach(k=>{
+    $('t-'+k).setAttribute('aria-pressed', String(t===k));
+    $('pane-'+k).hidden = t!==k; });
+  if(t==='me') renderBuilder();
+};
+['ride','stay','me'].forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
 
 /* ── 차량 ───────────────────────────────────────────────── */
 async function pullRides(){
@@ -204,7 +356,7 @@ function seatRow(r, kind){
   const cap  = kind==='ride' ? r.seats : r.capacity;
   const mine = list.some(x=>x.id===ME.id);
   const left = cap - list.length;
-  const chips = list.map(x=>`<span class="seat ${x.id===ME.id?'me':'on'}">${esc(x.name)}</span>`).join('');
+  const chips = list.map(x=>`<span class="seat ${x.id===ME.id?'me':'on'}"><canvas data-av="${esc(r.id)}|${esc(x.id)}"></canvas>${esc(x.name)}</span>`).join('');
   const open  = Array.from({length: Math.max(0,left)}).map(()=>`<span class="seat">빈자리</span>`).join('');
   return `<div class="seats">${chips}${open}</div>
     <div class="acts">
@@ -221,12 +373,13 @@ function renderRides(){
   box.innerHTML = state.rides.map(r=>`<div class="card">
       <div class="hd"><span class="tag ${r.dir}">${r.dir==='go'?'가는 편':'오는 편'}</span>
         <b>${dLabel(r.date)} ${esc(r.depart_at)}</b></div>
-      <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b> · ${esc(r.name)} 님 차</div>
+      <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b></div>
+      <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span></div>
       ${r.note ? `<div class="meta">${esc(r.note)}</div>` : ''}
       ${r.contact ? `<div class="meta">연락 · ${esc(r.contact)}</div>` : ''}
       ${seatRow(r,'ride')}
     </div>`).join('');
-  bindCards(box, 'ride');
+  bindCards(box, 'ride'); paintAvatars(box, state.rides, 'riders');
 }
 $('r-save').onclick = async ()=>{
   const e = $('r-err'); e.textContent = '';
@@ -234,7 +387,7 @@ $('r-save').onclick = async ()=>{
   if(!date) return e.textContent = '날짜를 골라주세요';
   if(!time) return e.textContent = '출발 시각을 적어주세요';
   if(!from || !to) return e.textContent = '어디서 출발해 어디로 가는지 적어주세요';
-  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort,
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:ME.profile||{},
     date, dir:$('r-dir').value, depart_at:time, from_place:from.slice(0,20), to_place:to.slice(0,20),
     seats:Math.max(1, Math.min(8, +$('r-seats').value||3)), riders:[],
     note:$('r-note').value.trim().slice(0,60)||null, contact:$('r-contact').value.trim().slice(0,80)||null };
@@ -256,14 +409,29 @@ function renderStays(){
   if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.</div>`; return; }
   box.innerHTML = state.stays.map(s=>`<div class="card">
       <div class="hd"><b>${esc(s.place)}</b>${s.price?`<span class="tag">${esc(s.price)}</span>`:''}</div>
-      <div class="meta">${dLabel(s.date_from)} → ${dLabel(s.date_to)} · ${esc(s.name)} 님이 올림${distLabel(s)}</div>
+      <div class="meta">${dLabel(s.date_from)} → ${dLabel(s.date_to)}${distLabel(s)}</div>
+      <div class="owner"><canvas data-own="${esc(s.id)}"></canvas><span class="meta" style="margin:0">${esc(s.name)} 님이 올림</span></div>
       ${(s.perks||[]).length ? `<div class="perks">${s.perks.map(p=>`<span class="perk on">${esc(p)}</span>`).join('')}</div>` : ''}
       ${s.note ? `<div class="meta">${esc(s.note)}</div>` : ''}
       ${s.contact ? `<div class="meta">연락 · ${esc(s.contact)}</div>` : ''}
       ${s.lat&&s.lon ? `<div class="meta"><a href="https://map.kakao.com/link/to/${encodeURIComponent(s.place)},${s.lat},${s.lon}" target="_blank" rel="noopener">지도 앱에서 열기 ↗</a></div>` : ''}
       ${seatRow(s,'stay')}
     </div>`).join('');
-  bindCards(box, 'stay');
+  bindCards(box, 'stay'); paintAvatars(box, state.stays, 'guests');
+}
+/* 캐릭터는 앱과 같은 도트를 쓴다(sprite.js 공유). 이름만 있으면 누군지 잘 안 들어온다 —
+   마을에서 보던 그 얼굴이 여기서도 보여야 같은 세계처럼 느껴진다. */
+function paintAvatars(box, rows, field){
+  if(typeof drawSpr !== 'function') return;                  // sprite.js 를 못 받았으면 조용히 넘어간다
+  const look = pr => (typeof withLook === 'function' ? withLook(pr||{}, '') : (pr||{}));
+  (rows||[]).forEach(r=>{
+    const own = box.querySelector(`canvas[data-own="${CSS.escape(r.id)}"]`);
+    if(own){ const pr = look(r.profile); drawSpr(own, avatarRows(pr, false), avatarTintOf(pr, 0)); }
+    (r[field]||[]).forEach(x=>{
+      const c = box.querySelector(`canvas[data-av="${CSS.escape(r.id+'|'+x.id)}"]`);
+      if(c){ const pr = look(x.profile); drawSpr(c, avatarRows(pr, false), avatarTintOf(pr, 0)); }
+    });
+  });
 }
 /* 낙산에서 얼마나 떨어졌는지 — 숙소를 고를 때 제일 먼저 궁금한 것 */
 function distKm(lat, lon){
@@ -310,7 +478,7 @@ $('s-save').onclick = async ()=>{
   const lat=parseFloat($('s-lat').value), lon=parseFloat($('s-lon').value);
   const hasXY = !isNaN(lat) && !isNaN(lon);
   if(($('s-lat').value.trim() || $('s-lon').value.trim()) && !hasXY) return e.textContent = '위도·경도를 둘 다 숫자로 적어주세요';
-  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort,
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:ME.profile||{},
     place:place.slice(0,20), date_from:from, date_to:to,
     capacity:Math.max(1, Math.min(20, +$('s-cap').value||4)), guests:[],
     price:$('s-price').value.trim().slice(0,20)||null, lat:hasXY?lat:null, lon:hasXY?lon:null,
@@ -339,7 +507,7 @@ function bindCards(box, kind){
     const cap = kind==='ride' ? r.seats : r.capacity;
     if(list.length >= cap) return toast('자리가 찼어요');
     b.disabled = true;
-    try{ await patch(r.id, [...list, { id:ME.id, name:ME.name }]); toast(kind==='ride'?'탔어요':'같이 써요'); }
+    try{ await patch(r.id, [...list, { id:ME.id, name:ME.name, profile:ME.profile||{} }]); toast(kind==='ride'?'탔어요':'같이 써요'); }
     catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
   });
   box.querySelectorAll('[data-leave]').forEach(b=>b.onclick = async ()=>{
@@ -363,9 +531,11 @@ function bindCards(box, kind){
 function start(){
   $('login').hidden = true; $('main').hidden = false;
   $('who').textContent = ME.name;
+  if(typeof drawSpr === 'function'){ const pr = withLook(ME.profile||{}, ME.name); drawSpr($('me-av'), avatarRows(pr, false), avatarTintOf(pr, 0)); }
   $('cohort-tag').textContent = ME.cohort === '6기' ? '양양서핑학교 6기' : '서퍼';
   $('r-date').value = nextWeekend(); $('s-from').value = nextWeekend();
   $('s-to').value = nextWeekend(1);
+  if(!ME.profile || !Object.keys(ME.profile).length) ME.profile = freshProfile(ME.name);
   $('s-perks').innerHTML = PERKS.map(p=>`<button type="button" class="perk" aria-pressed="false">${p}</button>`).join('');
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';

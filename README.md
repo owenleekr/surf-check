@@ -123,3 +123,33 @@ select/insert/update 말고 **delete 정책도 필요**하다(처음 파일엔 �
 특히 `poses` 버킷(사람이 찍힌 사진)과 외부 호출 목록.
 
 카카오 로그인은 `KAKAO.md` 참고 — 개발자 앱 등록은 오웬 계정으로만 가능하다.
+
+## 세계관 — SurfShare가 먼저, 학교는 코드로 (2026-09-27)
+
+```
+누구나 → surfshare.html  차·숙소 나눔 + 캐릭터 꾸미기 + "학교 입장하기"
+                 │
+            초대 코드 입력 (cohort_codes 의 'app' 행)
+                 ↓
+        index.html  파도 예보 · 수업 · 자세 분석 · 마을
+                 │
+            6기 인증 암호 ('6기' 행)
+                 ↓
+        코치님 말씀 · 테이크오프 체크 · 수업 탭 · 레벨표 · 6기 마을
+```
+
+문이 두 개다. **앱 문**(`lineup.app.invited`)과 **6기 문**(`cohort`). 둘 다 같은
+`verify_cohort()` RPC를 쓰고 코드는 `cohort_codes` 에 bcrypt로만 있다.
+6기·코치는 앱 문을 그냥 통과한다 — 이미 학교 사람이다.
+
+설치는 `supabase-open.sql` 하나로 끝난다(앱 코드 + rides/stays + surfers update 정책).
+
+### 캐릭터 도트는 `sprite.js` 한 곳에만 있다
+
+예전엔 `index.html` 안에 있고 `og/og.html`·`og/icon.html` 이 통째로 복사해 뒀다.
+캐릭터를 고치면 **두 곳이 조용히 갈라진다** — 화면은 멀쩡한데 옛 모습만 나온다.
+이제 `index.html` 과 `surfshare.html` 이 같은 `sprite.js` 를 읽는다.
+
+> `og/*.html` 은 아직 제 복사본을 쓴다. 캐릭터를 고쳤으면 거기도 맞출 것.
+> 쓰는 법: `drawSpr(canvas, avatarRows(profile), avatarTintOf(profile, level))`,
+> `data-anim` 을 붙이면 550ms마다 몸이 1px 움직인다.
