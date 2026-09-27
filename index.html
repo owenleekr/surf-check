@@ -743,6 +743,7 @@ footer a{color:var(--paper)}
     </div></section>
     <section id="sec-says" data-cohort><div class="sec-h"><h2>코치님 말씀</h2><span class="tag">피가 되고 살이 되는</span><span class="sub" id="say-sub"></span></div><div id="says" style="display:flex;flex-direction:column;gap:10px"></div></section>
     <section id="sec-tko" data-cohort><div class="sec-h"><h2>테이크오프 체크</h2><span class="tag">코치 기준</span><span class="sub" id="tko-sub"></span></div><div class="px" id="tko"></div></section>
+    <section id="sec-land" data-cohort><div class="sec-h"><h2>랜드서핑 · 기술</h2><span class="tag">파도 없는 날</span></div><div class="px" id="land"></div></section>
     <section><div class="sec-h"><h2>내 자세 기록</h2><span class="tag">영상 → 사진</span><span class="sub" id="pose-sub"></span></div><div class="px" id="pose"></div></section>
     <section><div class="sec-h"><h2>더 배우기</h2><span class="tag">퀴즈 · 용어</span></div>
       <details class="px" id="more-quiz"><summary style="cursor:pointer;font-weight:700">용어 퀴즈 · 하루 3문제 · 맞히면 +5 XP</summary><div class="quiz" id="quiz" style="margin-top:10px"></div></details>
@@ -1335,7 +1336,7 @@ async function cohortUpgrade(code, msgEl, btn){
   set('인증됐어요! 6기 기능이 열렸습니다.');
   toast('양양서핑학교 6기 인증 완료 🎉');
   /* 선언되지 않은 이름에 ?. 를 쓰면 ReferenceError다 — 있는 것만 부른다 */
-  renderSays(); renderTko(); renderSLV(); renderLevel(); renderMission();
+  renderSays(); renderTko(); renderLand(); renderSLV(); renderLevel(); renderMission();
 }
 function applyCohortGate(){
   const ok = isCohort();
@@ -2313,6 +2314,67 @@ function renderSays(){
   $('says').querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{ state.sayCat = b.dataset.cat; renderSays(); });
 }
 
+/* ═══════════ 랜드서핑(서프스케이트) · 기술 ═══════════
+   2026-09-27 수업 "스케이트보드 구조 및 안전" 녹취에서 정리했다.
+   녹취는 자동 전사라 잘못 받아적힌 곳이 있어(브랜드·연도 등) 사실은 공개 출처로 확인해 적었고,
+   가르치는 방법·순서·비유는 코치 말을 그대로 살렸다. 출처는 각 항목에 붙여둔다. */
+const LAND_PARTS = [
+  ['데크', '발이 올라가는 판. 합판을 겹겹이 쌓아 프레스로 찍어낸다. 서핑보드에서도 같은 이름이다.'],
+  ['컨케이브', '데크 가운데가 오목한 것. ① 회전할 때 발이 걸려 접지력이 올라가고 ② 옆으로 기울였을 때 데크가 바닥에 안 닿게 해준다. 평평한 데크도 있다.'],
+  ['휠', '바퀴. 65~75mm. 단면이 <b>둥근 것</b>은 평소엔 양 끝만 닿다가 체중으로 누르면 펴지면서 접지력이 확 올라간다 — 파워풀한 코너에서 안정감이 다르다. 평평한 것도 있다.'],
+  ['트럭', '바퀴가 달린 두 덩어리. 앞트럭이 서프스케이트의 핵심이다.'],
+  ['휠베이스', '앞바퀴와 뒷바퀴 사이 간격. <b>여기가 제일 중요하다.</b> 넓을수록 회전 반경이 커지고 좁을수록 작아진다 — 버스가 유턴하려면 3차선이 필요하지만 미니쿠퍼는 1~2차선이면 되는 것과 같다.'],
+  ['부싱', '트럭 안의 고무. 단단함과 모양으로 트럭이 얼마나 흔들릴지를 바꾼다. 양쪽이 깎인 것은 잘 흔들리고, 정사각형은 덜 눌린다. <span style="color:var(--ink2)">바꿔 끼우며 타는 사람은 거의 못 봤다 — 이런 게 있다는 정도만.</span>'],
+];
+const LAND_TRUCK = [
+  ['C7', '스프링식. <b>볼트·너트·스프링까지 파츠를 따로 판다</b> — 고장나면 고쳐 쓴다. 회사 설명은 "롱보드·안정적인 회전에 유리".'],
+  ['CX', '부싱식. <b>파츠 수리가 안 된다</b> — 망가지면 트럭째 새로 사야 한다. 회사 설명은 "숏보드·짧은 턴에 유리".'],
+  ['C2', '뒷바퀴용. 앞트럭처럼 움직이지 않고 축 역할만 한다.'],
+];
+const LAND_SPOTS = [
+  ['넓은 평지 · 약간의 내리막', '★ 가장 좋다', '경사가 완만하게 시작해 점점 생기는 곳. 아스팔트라면 <b>빗자루로 먼저 쓸 것</b> — 돌멩이 하나에 걸려 넘어진다.'],
+  ['스케이트파크 (조산리)', '걸어갈 수 있음', '쿼터파이프 같은 기물이 있다. 스피드 제너레이팅 연습이 되는 곳.'],
+  ['죽도해변 볼파크', '초보는 주의', '랜드서핑에 최적이지만 <b>초보가 가면 다친다.</b> 무릎 높이에서 내려가는 드랍인부터 쉽지 않다.'],
+  ['강릉 펌프트랙', '겨울 학기', '파도 없는 날 다 같이 간다. 연습하기 정말 좋다.'],
+  ['대전 볼파크', '국내 최대급', '놀러 갈 일 있으면 보드 챙겨 가볼 만하다.'],
+];
+/* 순서가 곧 커리큘럼이다. 건너뛰면 다음 게 안 된다. */
+const LAND_STEPS = [
+  ['1', '푸시오프 · 올라타고 내려오기', '첫날 하는 것. 보드와 친해지는 단계.'],
+  ['2', '로테이션', '상체 로테이션과 하체 로테이션. 오른쪽으로 가는 것, 왼쪽으로 가는 것.'],
+  ['3', 'J턴', '경사면을 내려가 로테이션으로 <b>유턴하듯 다시 올라오는</b> 연습. 이게 되면 바텀턴이 된다.'],
+  ['4', '바텀턴', 'J턴이 곧 바텀턴이다. 파도 아래에서 되돌아 올라가는 동작.'],
+  ['5', '업다운 (스피드 제너레이팅)', '발로 밀지 않고 왔다 갔다 하며 속도를 내는 것. 서핑의 스피드 제너레이팅과 <b>같은 움직임</b>이다.'],
+  ['6', '라운드하우스 컷백', '중급 이상. 나중에.'],
+];
+/* 기술 세 가지 — 파도 위에서 무엇을 하는가 */
+const MANEUVERS = [
+  { k:'speed', ko:'스피드 제너레이팅', en:'Speed Generating',
+    one:'발로 밀지 않고 <b>몸의 업다운만으로</b> 속도를 만드는 것.',
+    how:['파도 면을 위아래로 오가며 탄다',
+         '<b>내려갈 때 컴프레스</b>(무릎 굽혀 낮게) — 힘을 모은다',
+         '<b>올라갈 때 익스텐션</b>(펴면서 눌린 걸 푼다) — 더 높이 올라간다',
+         '이 리듬이 반복되면 속도가 붙는다'],
+    land:'쿼터파이프 한쪽 면을 타면서 똑같이 연습한다. 파크에서 업다운.',
+    why:'속도가 없으면 어떤 기술도 안 된다. 바텀턴도 탑턴도 여기서 나온다.' },
+  { k:'bottom', ko:'바텀턴 · 탑턴', en:'Bottom Turn · Top Turn',
+    one:'파도 <b>아래에서 되돌려 올라가고</b>(바텀턴), <b>위에서 되돌려 내려온다</b>(탑턴).',
+    how:['파도 면을 내려가며 <b>컴프레스</b>',
+         '아래에서 로테이션으로 방향을 바꾼다 — 이게 바텀턴',
+         '올라가며 <b>익스텐션</b>. 눌린 걸 풀어야 더 높이 간다',
+         '위(립 근처)에서 다시 돌려 내려온다 — 이게 탑턴'],
+    land:'<b>J턴</b>이 바텀턴 연습이다. 경사면을 내려가 유턴하듯 올라오기.',
+    why:'컴프레스를 바텀에서 만들고 올라가며 푸는 감각 — 이게 전부다.' },
+  { k:'cutback', ko:'라운드하우스 컷백', en:'Roundhouse Cutback',
+    one:'파도의 <b>파워존(크리티컬 섹션)으로 되돌아가는</b> 기술.',
+    how:['앞서 나가면 파워가 없는 어깨 쪽으로 빠진다',
+         '크게 돌아 <b>깨지는 곳으로 다시 돌아간다</b>',
+         '바텀턴 → 탑턴 → 다시 탑턴으로 이어지는 흐름',
+         '돌아와서 화이트워터를 치고 다시 나간다'],
+    land:'스케이트보드로 연습 가능. 다만 <b>중급 이상</b>이다.',
+    why:'파도에서 가장 힘 있는 자리를 떠나지 않으려는 기술. 한 파도를 길게 쓴다.' },
+];
+
 /* ═══════════ 테이크오프 체크 (Rio 코치 7항목 자가 점검) ═══════════ */
 const TKO = [
   ['시선', '가고 싶은 방향을 본다 (보드를 보지 않는다)'],
@@ -2491,6 +2553,91 @@ function bindGuideVids(root){
     f.setAttribute('allowfullscreen',''); f.loading = 'lazy';
     b.replaceWith(f);
   });
+}
+/* 파도 면 위에서 세 기술이 각각 어디서 일어나는지 — 말로는 "바텀"·"탑"·"파워존"이
+   어디를 가리키는지 알 수가 없다. 한 장에 겹쳐 그린다. */
+function waveFaceSVG(){
+  /* 네 번 고쳐 그렸다. 한 장에 기술 넷을 다 얹으려 한 게 애초에 무리였다 —
+     라벨이 겹치고, 좌표를 맞추면 이번엔 화살표가 물 밖으로 나갔다.
+     기술마다 한 칸씩 준다. 칸마다 파도 하나·길 하나면 겹칠 게 없다. */
+  const A = [34, 26], B = [138, 86];
+  const P = t => [A[0]+(B[0]-A[0])*t, A[1]+(B[1]-A[1])*t];
+  const L = Math.hypot(B[0]-A[0], B[1]-A[1]);
+  const N = [-(B[1]-A[1])/L, (B[0]-A[0])/L];
+  const o = (t,d) => { const q=P(t); return [q[0]+N[0]*d, q[1]+N[1]*d]; };
+  const f = ([x,y]) => `${x.toFixed(1)} ${y.toFixed(1)}`;
+  const ANG = (Math.atan2(B[1]-A[1], B[0]-A[0])*180/Math.PI).toFixed(1);
+
+  const panel = (id, color, title, pathD, extra) => `<figure style="margin:0">
+    <svg viewBox="0 0 150 112" style="width:100%;background:#EAF7FF;border:3px solid var(--ink);display:block" role="img" aria-label="${title}">
+      <defs><marker id="a-${id}" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="4.5" markerHeight="4.5" orient="auto"><path d="M0 0 L8 4 L0 8 z" fill="${color}"/></marker></defs>
+      <path d="M0 96 H150 V112 H0 Z" fill="#8FD3FF"/>
+      <path d="M${f(A)} L${f(B)} L144 96 L14 96 Z" fill="#5FBDF2" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M${f(A)} Q20 4 6 14 Q20 20 23 34 Q31 31 ${f(o(0.08,0))} Z" fill="#fff" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>
+      ${extra||''}
+      <path d="${pathD}" stroke="${color}" stroke-width="3.5" fill="none" stroke-linecap="round" marker-end="url(#a-${id})"/>
+    </svg>
+    <figcaption style="font-size:12px;font-weight:800;color:${color};margin-top:3px;line-height:1.35">${title}</figcaption></figure>`;
+
+  const pz = o(0.16, 4);
+  const zone = `<ellipse cx="${pz[0].toFixed(1)}" cy="${pz[1].toFixed(1)}" rx="20" ry="10"
+      transform="rotate(${ANG} ${pz[0].toFixed(1)} ${pz[1].toFixed(1)})"
+      fill="#FF6B6B" fill-opacity=".45" stroke="#B3202B" stroke-width="2" stroke-dasharray="5 3"/>`;
+
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    ${panel('bt','#1A47C9','① 바텀턴 — 아래에서 되돌려 올라감',
+      `M${f(o(0.74,18))} Q${f(o(0.56,24))} ${f(o(0.42,8))}`)}
+    ${panel('tt','#12784B','② 탑턴 — 립 근처에서 되돌려 내려옴',
+      `M${f(o(0.30,10))} Q${f(o(0.10,-8))} ${f(o(0.30,-2))} Q${f(o(0.40,8))} ${f(o(0.46,18))}`)}
+    ${panel('cb','#7A4FD6','③ 라운드하우스 컷백 — 어깨로 빠졌다 파워존으로 되돌아옴',
+      `M${f(o(0.78,12))} Q${f(o(0.96,34))} ${f(o(0.70,42))} Q${f(o(0.42,36))} ${f(o(0.24,10))}`, zone)}
+    ${panel('ud','#B45309','④ 업다운 — 위아래로 속도 만들기 (스피드 제너레이팅)',
+      `M${f(o(0.78,22))} Q${f(o(0.66,4))} ${f(o(0.56,20))} Q${f(o(0.44,2))} ${f(o(0.34,18))}`)}
+  </div>
+  <div class="lab-sm" style="margin-top:6px;line-height:1.6">
+    네 칸 모두 <b>왼쪽이 깨진 립, 오른쪽이 아직 안 깨진 어깨</b>입니다. 서퍼는 왼쪽에서 오른쪽으로 달아나요.<br>
+    ③의 <span style="display:inline-block;width:10px;height:10px;border:2px dashed #B3202B;background:rgba(255,107,107,.45);vertical-align:-1px"></span>
+    <b style="color:#B3202B">파워존(크리티컬 섹션)</b>이 립 바로 앞, 힘이 가장 센 자리입니다.
+  </div>`;
+}
+function renderLand(){
+  if(!$('land')) return;
+  const row = (a,b) => `<div style="display:flex;gap:8px;padding:6px 0;border-top:2px dashed var(--grid);font-size:13px;line-height:1.55"><b style="flex:0 0 74px">${a}</b><span style="flex:1">${b}</span></div>`;
+  $('land').innerHTML = `
+    <div class="lab-sm">서핑·스노보드·스케이트보드는 움직이는 방식이 거의 같습니다. 그래서 <b>파도 없는 날 지상에서 연습</b>합니다.</div>
+    <details class="px sand" style="margin-top:10px" open><summary style="cursor:pointer;font-weight:700">🌊 파도 위 어디서 무엇을 하나</summary>
+      <div style="margin-top:8px">${waveFaceSVG()}</div>
+      ${MANEUVERS.map(m=>`<details style="margin-top:8px;border-top:2px dashed var(--grid);padding-top:6px"><summary style="cursor:pointer;font-weight:700;font-size:13.5px">${m.ko} <span class="lab-sm" style="font-weight:400">${m.en}</span></summary>
+        <div style="font-size:13px;line-height:1.6;margin-top:5px">${m.one}</div>
+        <ol style="font-size:13px;line-height:1.6;margin:6px 0 0;padding-left:20px">${m.how.map(x=>`<li>${x}</li>`).join('')}</ol>
+        <div class="lab-sm" style="margin-top:6px">🛹 <b>지상 연습</b> — ${m.land}</div>
+        <div class="lab-sm" style="margin-top:2px">💡 ${m.why}</div></details>`).join('')}
+    </details>
+    <details class="px" style="background:#fff;margin-top:10px"><summary style="cursor:pointer;font-weight:700">🛹 보드 구조 — 이름부터</summary>
+      <div style="margin-top:6px">${LAND_PARTS.map(([a,b])=>row(a,b)).join('')}</div></details>
+    <details class="px" style="background:#fff;margin-top:10px"><summary style="cursor:pointer;font-weight:700">⚙️ 트럭 C7 · CX — 실제 차이</summary>
+      <div style="margin-top:6px">${LAND_TRUCK.map(([a,b])=>row(a,b)).join('')}</div>
+      <div class="lab-sm" style="margin-top:8px;line-height:1.6"><b>회사 설명만큼 큰 차이는 아닙니다.</b> 실제로 갈리는 건 <b>수리가 되느냐</b>예요.<br>
+        트럭 볼트를 <b>조이면 덜 흔들리고(초보), 풀면 많이 흔들립니다(중·상급)</b>. 처음엔 조여놓고 시작해서 익숙해질수록 풀어갑니다.</div>
+      <details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;font-weight:700">왜 서프스케이트라는 게 생겼나</summary>
+        <div class="lab-sm" style="margin-top:5px;line-height:1.6">
+          스케이트보드는 원래 <b>서퍼들이 파도 없는 날 연습하려고</b> 1950년대 캘리포니아에서 시작했습니다. 그런데 보통 트럭은 마찰로 속도가 줄어 계속 발로 밀어야 하니, 정작 서핑 연습이 안 됐어요.<br>
+          1996년 베니스비치의 서퍼 둘(Neil Carver · Greg Falk)이 <b>앞트럭이 크게 돌고 뒷트럭이 축을 잡는</b> 구조를 만들어 냈습니다. 이게 <b>카버(Carver)</b>이고 그 트럭이 C7이에요. 발로 밀지 않고 체중 이동만으로 속도를 내는 게 그때 가능해졌습니다.<br>
+          특허가 만료되면서 지금은 여러 브랜드가 같은 구조를 씁니다 — 저렴한 것도 많아요.
+          <span style="display:block;margin-top:4px">출처 · <a href="https://carverskateboards.com/pages/about-us" target="_blank" rel="noopener">Carver Skateboards</a> ·
+          <a href="https://en.wikipedia.org/wiki/Surfskating" target="_blank" rel="noopener">Surfskating</a></span>
+          <span style="display:block;margin-top:4px;color:var(--ink2)">참고 — "랜드서핑"은 한국에서 만들어진 말입니다. 영어권에서는 surfskate라고 해요.</span>
+        </div></details></details>
+    <details class="px" style="background:#fff;margin-top:10px"><summary style="cursor:pointer;font-weight:700">📍 어디서 타나</summary>
+      <div style="margin-top:6px">${LAND_SPOTS.map(([a,tag,b])=>`<div style="padding:7px 0;border-top:2px dashed var(--grid);font-size:13px;line-height:1.55"><b>${a}</b> <span class="tag" style="font-size:10px">${tag}</span><div style="margin-top:2px">${b}</div></div>`).join('')}</div>
+      <div class="px coral" style="margin-top:10px;padding:9px 11px;box-shadow:none;border-width:3px">
+        <div style="font-weight:800;font-size:13.5px">보호 장비는 필수입니다</div>
+        <div style="font-size:12.5px;line-height:1.55;margin-top:2px">볼파크·펌프트랙은 물론이고 평지에서도요. 넘어지는 게 정상인 운동이에요.</div></div></details>
+    <details class="px sand" style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">📈 연습 순서 — 건너뛰면 다음이 안 됩니다</summary>
+      <div style="margin-top:6px">${LAND_STEPS.map(([n,a,b])=>`<div style="display:flex;gap:9px;padding:7px 0;border-top:2px dashed var(--grid);font-size:13px;line-height:1.55"><b style="flex:0 0 20px;font-family:'Galmuri14','Galmuri11',sans-serif;font-size:15px">${n}</b><span style="flex:1"><b>${a}</b><div style="margin-top:1px">${b}</div></span></div>`).join('')}</div>
+      <div class="lab-sm" style="margin-top:8px;line-height:1.6"><b>기술 하나를 "메이드"한다는 것</b> — 처음엔 10번 시도해서 1번도 안 됩니다. 그러다 2번, 3번이 되고, 10번 중 10번이 되면 그때 완성이에요.<br>
+        바다에서는 내가 탈 수 있는 파도가 하루에 몇 개 안 됩니다. 그래서 <b>지상에서 몸의 움직임을 먼저 만들어두고</b> 바다에 가서 확률을 끌어올리는 거예요.</div></details>
+    <div class="lab-sm" style="margin-top:10px">출처 · 2026-09-27 수업 「스케이트보드 구조 및 안전 수칙」 녹취를 정리했습니다. 브랜드·연도 같은 사실은 공개 출처로 다시 확인했어요.</div>`;
 }
 function renderTko(){
   if(!$('tko')) return; const d = getData(), k = `surf.tko.${ME.id}`, saved = LS.get(k, {}), n = TKO.filter((_,i)=>saved[i]).length;
@@ -3487,7 +3634,7 @@ function showTab(t){
   state.tab = t; ['wave','mission','growth','level','rank','gear'].forEach(x=>$('tab-'+x).hidden = x!==t);
   $('nav').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.tab===t)));
   if(t==='mission'){ renderMission(); pullAttendance().then(()=>{ if(state.tab==='mission') renderMission(); refreshMe(); }); }
-  if(t==='growth'){ renderQuiz(); renderGloss($('gloss-q')?.value||''); renderSays(); renderTko(); renderPose(); renderLexLink();
+  if(t==='growth'){ renderQuiz(); renderGloss($('gloss-q')?.value||''); renderSays(); renderTko(); renderLand(); renderPose(); renderLexLink();
     pullTerms().then(()=>{ if(state.tab==='growth') renderLexLink(); if(state.loaded && state.tab==='wave') renderWave(); });
     pullPoses().then(()=>{ if(state.tab==='growth') renderPose(); }); }
   if(t==='level') renderLevel(); if(t==='rank') renderRank(); if(t==='gear') renderGear(); window.scrollTo({top:0, behavior:'instant'});
