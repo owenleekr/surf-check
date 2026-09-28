@@ -17,6 +17,7 @@ create table if not exists places (
   lon          double precision,
   addr         text,
   phone        text,
+  url          text,                            -- 네이버지도 링크. 좌표를 손으로 찍는 것보다 이게 낫다
   note         text,
   perks        jsonb not null default '[]',
   updated_at   timestamptz default now(),
@@ -36,6 +37,9 @@ create table if not exists place_edits (
   after      text,
   created_at timestamptz default now()
 );
+-- 올라온 숙소 글에도 네이버지도 링크를 붙인다(좌표 입력칸을 없앴다)
+alter table stays add column if not exists url text;
+
 create index if not exists place_edits_idx on place_edits (place_id, created_at desc);
 create index if not exists place_edits_all on place_edits (created_at desc);
 

@@ -122,6 +122,9 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .perks{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
 .perk{ border:2px solid var(--ink); background:#fff; padding:1px 6px; font-size:11px; font-weight:700 }
 .perk.on{ background:var(--mint) }
+.fav{ border:0; background:none; font-size:20px; line-height:1; padding:0 4px 0 0; cursor:pointer;
+      color:#C9CDDC; font-family:sans-serif; min-height:30px }
+.fav.on{ color:#F5A623 }
 .star{ background:none; border:0; font-size:22px; line-height:1; padding:0 1px; cursor:pointer; color:#B45309; font-family:inherit; min-height:34px }
 .star.ro{ cursor:default; font-size:14px }
 .rv-av{ width:20px; height:20px; image-rendering:pixelated; flex:0 0 auto }
@@ -298,12 +301,9 @@ body.onb-on .wrap{ padding-bottom:230px }
         </div>
         <label>학교 근처 숙소 — 누르면 이름과 좌표가 채워져요</label>
         <div class="perks" id="s-near"></div>
-        <label>좌표 — 지도에 찍으려면 (선택)</label>
-        <div class="grid2">
-          <input id="s-lat" inputmode="decimal" placeholder="위도 38.1085">
-          <input id="s-lon" inputmode="decimal" placeholder="경도 128.6405">
-        </div>
-        <div class="note">목록에 없으면, 지도 앱에서 숙소를 길게 눌러 나오는 <b>위도, 경도</b>를 붙여넣으세요.</div>
+        <label for="s-url">네이버지도 링크 (선택)</label>
+        <input id="s-url" inputmode="url" placeholder="네이버지도에서 숙소 → 공유 → 링크 복사">
+        <div class="note" id="s-url-note">링크를 붙이면 <b>길찾기</b>가 열리고, 주소에 좌표가 들어 있으면 아래 지도에도 핀이 찍혀요.</div>
         <label>특장점</label><div class="perks" id="s-perks"></div>
         <label for="s-note">한마디 (선택)</label><input id="s-note" maxlength="60" placeholder="예) 해변까지 걸어서 3분">
         <div class="err" id="s-err"></div>
@@ -985,7 +985,7 @@ function renderStays(){
       ${(s.perks||[]).length ? `<div class="perks">${s.perks.map(p=>`<span class="perk on">${esc(p)}</span>`).join('')}</div>` : ''}
       ${s.note ? `<div class="meta">${esc(s.note)}</div>` : ''}
       ${s.contact ? `<div class="meta">연락 · ${esc(s.contact)}</div>` : ''}
-      ${s.lat&&s.lon ? `<div class="meta"><a href="${mapLink(s.place,s.lat,s.lon)}" target="_blank" rel="noopener">길찾기 · 지도 앱에서 열기 ↗</a></div>` : ''}
+      ${(s.url || (s.lat&&s.lon)) ? `<div class="meta"><a href="${mapLink(s.place,s.lat,s.lon,s.url)}" target="_blank" rel="noopener">네이버지도에서 길찾기 ↗</a></div>` : ''}
       ${seatRow(s,'stay',gone)}
       ${reviewBlock(s)}
     </div>`; }).join('');
@@ -996,10 +996,10 @@ function renderStays(){
    운영자가 목록을 손으로 관리해야 하는 구조는 결국 안 관리된다. */
 function nearAll(){
   const seed = (state.places && state.places.length)
-    ? state.places.filter(p=>p.lat && p.lon).map(p=>[p.name, +p.lat, +p.lon])
-    : NEAR;                                                   // 표가 없으면 박아 둔 목록으로 버틴다
-  const seen = new Map(seed.map(([n,la,lo])=>[n,[n,la,lo,true]]));
-  (state.stays||[]).forEach(s=>{ if(s.lat && s.lon && !seen.has(s.place)) seen.set(s.place, [s.place, +s.lat, +s.lon, false]); });
+    ? state.places.filter(p=>p.lat && p.lon).map(p=>[p.name, +p.lat, +p.lon, true, p.url])
+    : NEAR.map(([n,la,lo])=>[n,la,lo,true,null]);             // 표가 없으면 박아 둔 목록으로 버틴다
+  const seen = new Map(seed.map(x=>[x[0], x]));
+  (state.stays||[]).forEach(s=>{ if(s.lat && s.lon && !seen.has(s.place)) seen.set(s.place, [s.place, +s.lat, +s.lon, false, s.url]); });
   return [...seen.values()];
 }
 function renderNear(){
@@ -1011,12 +1011,13 @@ function renderNear(){
   box.querySelectorAll('[data-near]').forEach(b=>b.onclick = ()=>{
     box.querySelectorAll('[data-near]').forEach(x=>x.classList.toggle('on', x===b));
     if(b.dataset.near === 'new'){
-      $('s-place').value = ''; $('s-lat').value = ''; $('s-lon').value = '';
+      $('s-place').value = ''; $('s-url').value = ''; delete $('s-near').dataset.xy;
       $('s-place').focus({preventScroll:true});
-      return toast('이름을 적고, 좌표는 지도 앱에서 길게 눌러 복사하세요');
+      return toast('이름을 적고, 네이버지도에서 링크를 복사해 붙여주세요');
     }
-    const [n,la,lo] = all[+b.dataset.near];
-    $('s-place').value = n; $('s-lat').value = la; $('s-lon').value = lo;
+    const [n,la,lo,,u] = all[+b.dataset.near];
+    $('s-place').value = n; $('s-url').value = u || mapLink(n, la, lo);
+    $('s-near').dataset.xy = `${la},${lo}`;
     toast(`${n} · 학교에서 ${distKm(la,lo).toFixed(1)}km · ${travel(distKm(la,lo))}`); });
 }
 
@@ -1031,14 +1032,14 @@ const josa = (w, pair) => { const [a,b] = pair.split('/'); const c = String(w||'
   return (c - 0xAC00) % 28 ? a : b; };
 const PF = [
   ['name','이름'], ['kind','종류'], ['addr','주소'], ['phone','연락처'],
-  ['note','한마디'], ['lat','위도'], ['lon','경도'],
+  ['url','네이버지도 링크'], ['note','한마디'],
 ];
 async function pullPlaces(){
   try{ state.places = await api('places?select=*&order=name.asc&limit=200'); }
   catch(e){ state.places = null; }
   try{ state.edits = await api('place_edits?select=*&order=created_at.desc&limit=200'); }
   catch(e){ state.edits = []; }
-  renderPlaces(); renderNear();
+  renderPlaces(); renderNear(); renderMap();
 }
 const editsOf = id => (state.edits||[]).filter(e=>e.place_id===id);
 function renderPlaces(){
@@ -1047,18 +1048,27 @@ function renderPlaces(){
     코치가 <b>supabase-places.sql</b>을 실행하면 켜집니다.</div>`; return; }
   if(!state.places.length){ box.innerHTML = `<div class="empty">아직 등록된 숙소가 없어요.</div>`; return; }
   const withXY = p => p.lat && p.lon;
+  /* 순서 — ① 내가 별 단 곳 ② 해변 도보·주차·취사가 되는 곳 ③ 가까운 곳 ④ 핀 없는 곳은 아래로.
+     시설이 많아도 멀면 뒤로 가야 해서, 시설은 같은 거리대 안에서만 힘을 쓰게 0.6km 단위로 묶는다. */
   box.innerHTML = [...state.places].sort((a,b)=>{
-      if(withXY(a) !== withXY(b)) return withXY(a) ? -1 : 1;       // 좌표 없는 건 아래로
-      return withXY(a) ? distKm(a.lat,a.lon) - distKm(b.lat,b.lon) : a.name.localeCompare(b.name);
+      if(isFav(a.id) !== isFav(b.id)) return isFav(a.id) ? -1 : 1;
+      if(withXY(a) !== withXY(b)) return withXY(a) ? -1 : 1;
+      if(!withXY(a)) return a.name.localeCompare(b.name);
+      const ba = Math.floor(distKm(a.lat,a.lon)/0.6), bb = Math.floor(distKm(b.lat,b.lon)/0.6);
+      if(ba !== bb) return ba - bb;
+      if(perkScore(a) !== perkScore(b)) return perkScore(b) - perkScore(a);
+      return distKm(a.lat,a.lon) - distKm(b.lat,b.lon);
     }).map(p=>{
     const rv = reviewOf(p.name), ed = editsOf(p.id);
     return `<div class="card">
-      <div class="hd"><b>${esc(p.name)}</b>${p.kind?`<span class="tag">${esc(p.kind)}</span>`:''}
+      <div class="hd"><button class="fav ${isFav(p.id)?'on':''}" data-fav="${esc(p.id)}"
+          aria-label="즐겨찾기" title="즐겨찾기">${isFav(p.id)?'★':'☆'}</button>
+        <b>${esc(p.name)}</b>${p.kind?`<span class="tag">${esc(p.kind)}</span>`:''}
         ${rv.n ? `<span style="color:#B45309;font-weight:700">★${rv.avg}</span><span style="color:var(--ink2);font-size:12px">(${rv.n})</span>` : ''}</div>
       <div class="meta">${withXY(p)
-        ? `학교에서 <b>${distKm(p.lat,p.lon).toFixed(1)}km</b> · ${travel(distKm(p.lat,p.lon))}
-           · <a href="${mapLink(p.name,p.lat,p.lon)}" target="_blank" rel="noopener">길찾기 ↗</a>`
-        : `<span style="color:#C2303A;font-weight:700">좌표가 없어 지도에 안 떠요</span> — 아시는 분이 넣어주세요`}</div>
+        ? `학교에서 <b>${distKm(p.lat,p.lon).toFixed(1)}km</b> · ${travel(distKm(p.lat,p.lon))}`
+        : `<span style="color:#C2303A;font-weight:700">지도에 핀이 없어요</span> — 네이버지도 링크를 넣어주세요`}
+        ${(p.url || withXY(p)) ? ` · <a href="${mapLink(p.name,p.lat,p.lon,p.url)}" target="_blank" rel="noopener">네이버지도에서 길찾기 ↗</a>` : ''}</div>
       ${p.addr ? `<div class="meta">${esc(p.addr)}</div>` : ''}
       ${p.phone ? `<div class="meta">연락처 · ${esc(p.phone)}</div>` : ''}
       ${p.note ? `<div class="meta">${esc(p.note)}</div>` : ''}
@@ -1080,6 +1090,9 @@ function renderPlaces(){
       </div>
       <div data-plogbox="${esc(p.id)}" hidden style="border-top:2px dashed var(--grid);margin-top:8px;padding-top:6px">
         ${ed.map(e=>{ const f = `<b>${esc(e.field)}</b>${josa(e.field,'을/를')}`;
+          /* 링크는 통째로 찍으면 한 줄이 화면을 다 먹는다 */
+          const cut = v => !v ? v : (v.length > 42 ? v.slice(0,40) + '…' : v);
+          e = { ...e, before:cut(e.before), after:cut(e.after) };
           const what = !e.after ? `${f} 지웠어요`
             : !e.before ? `${f} <b style="color:var(--ink)">${esc(e.after)}</b>${josa(e.after,'으로/로')} 채웠어요`
             : `${f} <span style="text-decoration:line-through">${esc(e.before)}</span> → <b style="color:var(--ink)">${esc(e.after)}</b> 로 고쳤어요`;
@@ -1098,6 +1111,10 @@ function bindPlaces(box){
   box.querySelectorAll('[data-plog]').forEach(b=>b.onclick = ()=>{
     const f = box.querySelector(`[data-plogbox="${CSS.escape(b.dataset.plog)}"]`); f.hidden = !f.hidden; });
   box.querySelectorAll('[data-pperk] button').forEach(b=>b.onclick = ()=>b.classList.toggle('on'));
+  box.querySelectorAll('[data-fav]').forEach(b=>b.onclick = ()=>{
+    const on = toggleFav(b.dataset.fav);
+    toast(on ? '즐겨찾기에 담았어요' : '즐겨찾기에서 뺐어요');
+    renderPlaces(); renderMap(); });
   box.querySelectorAll('[data-psave]').forEach(b=>b.onclick = async ()=>{
     const id = b.dataset.psave, cur = state.places.find(x=>x.id===id);
     const err = box.querySelector(`[data-perr="${CSS.escape(id)}"]`); err.textContent = '';
@@ -1105,7 +1122,7 @@ function bindPlaces(box){
     for(const [k,ko] of PF){
       const raw = box.querySelector(`[data-pf="${CSS.escape(id+'|'+k)}"]`).value.trim();
       let v = raw === '' ? null : raw;
-      if(k==='lat' || k==='lon'){ if(v !== null){ v = parseFloat(v); if(isNaN(v)) return err.textContent = '위도·경도는 숫자로 적어주세요'; } }
+      if(k==='url' && v && !/^https?:\/\//i.test(v)) return err.textContent = '링크는 http 로 시작해야 해요';
       const was = cur[k] == null ? null : String(cur[k]);
       const now = v == null ? null : String(v);
       if(was !== now){ next[k] = v; diffs.push([ko, was, now]); }
@@ -1115,6 +1132,12 @@ function bindPlaces(box){
     const perks = [...box.querySelectorAll(`[data-pperk="${CSS.escape(id)}"] button.on`)].map(x=>x.textContent);
     if(JSON.stringify(perks) !== JSON.stringify(cur.perks||[])){ next.perks = perks;
       diffs.push(['시설', (cur.perks||[]).join(' ') || null, perks.join(' ') || null]); }
+    /* 링크에 좌표가 들어 있으면 같이 갱신한다 — 손으로 위도·경도를 치게 두지 않는다 */
+    if('url' in next){ const xy = naverXY(next.url);
+      if(xy && (xy.lat !== cur.lat || xy.lon !== cur.lon)){
+        next.lat = xy.lat; next.lon = xy.lon;
+        diffs.push(['위치', cur.lat ? `${(+cur.lat).toFixed(4)}, ${(+cur.lon).toFixed(4)}` : null,
+                            `${xy.lat.toFixed(4)}, ${xy.lon.toFixed(4)}`]); } }
     if(!diffs.length) return err.textContent = '바뀐 게 없어요';
     b.disabled = true; b.textContent = '올리는 중…';
     try{
@@ -1248,12 +1271,49 @@ const travel = km => { const w = Math.max(1, Math.round(km/4.5*60)), d = Math.ma
   return km <= 1.2 ? `걸어서 ${w}분` : `차로 ${d}분 · 걸어서 ${w}분`; };
 const distLabel = s => (s.lat&&s.lon)
   ? ` · 학교에서 <b>${distKm(s.lat,s.lon).toFixed(1)}km</b> <span style="color:var(--ink2)">${travel(distKm(s.lat,s.lon))}</span>` : '';
-const mapLink = (place,lat,lon) => `https://map.kakao.com/link/to/${encodeURIComponent(place)},${lat},${lon}`;
+/* 길찾기는 네이버지도로 통일한다. 붙여 둔 링크가 있으면 그걸 그대로 열고(그게 제일 정확하다),
+   없으면 좌표로 길찾기를 연다. */
+const mapLink = (place, lat, lon, url) => url ? url
+  : `https://map.naver.com/p/directions/-/${lon},${lat},${encodeURIComponent(place)}/-/car`;
+
+/* 네이버지도 링크에서 좌표를 캐낸다. 형식이 여러 번 바뀌어서 파라미터 이름을 믿지 않고,
+   소수점 숫자 중 '한국 경위도 범위에 들어맞는 이웃한 한 쌍'을 찾는다.
+   naver.me 짧은 링크는 좌표가 없어서 못 캔다 — 그때는 링크만 쓰고 핀은 못 찍는다. */
+function naverXY(url){
+  const nums = String(url||'').match(/-?\d+\.\d{3,}/g) || [];
+  for(let i=0;i<nums.length-1;i++){
+    const a = +nums[i], b = +nums[i+1];
+    if(a>=124 && a<=132 && b>=33 && b<=39) return { lat:b, lon:a };
+    if(b>=124 && b<=132 && a>=33 && a<=39) return { lat:a, lon:b };
+  }
+  return null;
+}
+const isNaverUrl = u => /^https?:\/\/(m\.)?(map\.)?naver\.(com|me)\//i.test(String(u||'').trim());
+
+/* 즐겨찾기 — 이 기기에만 남는다. 서버에 두려면 표가 하나 더 필요한데,
+   "내가 눈여겨보는 곳"은 남에게 보일 것도 아니라서 여기 둔다. */
+const favs = () => { try{ return JSON.parse(localStorage.getItem('lineup.share.fav')||'[]'); }catch(e){ return []; } };
+const isFav = id => favs().includes(id);
+function toggleFav(id){ const f = favs(), i = f.indexOf(id);
+  i >= 0 ? f.splice(i,1) : f.push(id);
+  try{ localStorage.setItem('lineup.share.fav', JSON.stringify(f)); }catch(e){}
+  return i < 0; }
+/* 위로 올라오는 순서 — 먼저 챙겨봐야 할 것부터. 먼 곳을 시설 때문에 위로 올리진 않는다 */
+const PERK_TOP = ['해변 도보','주차','취사'];
+const perkScore = p => (p.perks||[]).filter(x=>PERK_TOP.includes(x)).length;
 /* 지도 — 외부 지도 라이브러리를 쓰지 않는다. 바다 앞에서 신호가 약해도 떠야 하고,
    여기서 필요한 건 "낙산 기준 어느 쪽 얼마나 먼가" 하나뿐이다. */
 function renderMap(){
-  const list = (state.stays||[]).filter(s=>s.lat&&s.lon && !isGone(s,'stay'));   // 지난 숙소까지 찍으면 지도가 과거로 덮인다
-  if(!list.length){ $('map').innerHTML = `<div class="empty">좌표가 있는 숙소가 없어요.<br>숙소를 올릴 때 위도·경도를 넣으면 여기 찍힙니다.</div>`; return; }
+  /* 두 가지를 같이 찍는다 — 정보판에 등록된 숙소(노랑)와 이번에 올라온 숙소(민트).
+     따로 그리면 "올라온 곳이 어디쯤인지"와 "근처에 뭐가 있는지"를 두 번 봐야 한다. */
+  const up = (state.stays||[]).filter(s=>s.lat&&s.lon && !isGone(s,'stay'))
+    .map(s=>({ key:'s'+s.id, name:s.place, lat:+s.lat, lon:+s.lon, url:s.url, kind:'up' }));
+  const cat = (state.places||[]).filter(p=>p.lat&&p.lon)
+    .filter(p=>!up.some(u=>u.name===p.name))                      // 같은 곳이 올라왔으면 그쪽을 쓴다
+    .map(p=>({ key:p.id, name:p.name, lat:+p.lat, lon:+p.lon, url:p.url, kind:'cat', fav:isFav(p.id) }));
+  const list = [...up, ...cat.filter(c=>c.fav), ...cat.filter(c=>!c.fav)];
+  if(!list.length){ $('map').innerHTML = `<div class="empty">지도에 찍을 곳이 아직 없어요.<br>
+    숙소를 올릴 때 <b>네이버지도 링크</b>를 붙이면 여기 핀이 찍힙니다.</div>`; return; }
   const maxKm = Math.max(1.5, ...list.map(s=>distKm(s.lat,s.lon))) * 1.3;
   const W=320, H=320, C=W/2, R=C-30;
   const px = s => { const r=Math.PI/180;
@@ -1264,17 +1324,18 @@ function renderMap(){
   const rings = [0.5,1,2,5,10].filter(k=>k < maxKm).map(ring).join('');
   /* 동해는 오른쪽이다. 해안선을 그려야 "바다 쪽인지 산 쪽인지"가 한눈에 온다. */
   const sea = C + (0.55/maxKm*R);
+  const COL = { up:'var(--mint)', cat:'var(--sun)', fav:'#F5A623' };
   $('map').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:#F4FAFF;border:3px solid var(--ink);display:block" role="img" aria-label="양양서핑학교 기준 숙소 위치">
       <path d="M${sea} 0 Q${sea+22} ${H/2} ${sea} ${H} L${W} ${H} L${W} 0 Z" fill="#8FD3FF"/>
       <path d="M${sea} 0 Q${sea+22} ${H/2} ${sea} ${H}" fill="none" stroke="#5FBDF2" stroke-width="2.5"/>
       <text x="${W-8}" y="20" font-size="11" font-weight="800" fill="var(--deep)" text-anchor="end">동해</text>
       ${rings}
-      ${list.map((s,i)=>{ const [x,y]=px(s);      /* 학교에서 뻗는 선 — 어느 쪽으로 얼마나 가는지가 보여야 한다 */
-        return `<line x1="${C}" y1="${C}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#1B1B2F" stroke-width="1.2" stroke-dasharray="3 3" opacity=".45"/>`; }).join('')}
-      ${list.map((s,i)=>{ const [x,y]=px(s);
-        return `<g><path d="M${x.toFixed(1)} ${(y+11).toFixed(1)} L${(x-8).toFixed(1)} ${(y-2).toFixed(1)} L${(x+8).toFixed(1)} ${(y-2).toFixed(1)} Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2"/>
-          <circle cx="${x.toFixed(1)}" cy="${(y-6).toFixed(1)}" r="10" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.5"/>
-          <text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" font-size="11" font-weight="800" text-anchor="middle">${i+1}</text></g>`; }).join('')}
+      ${list.map(s=>{ const [x,y]=px(s);
+        return `<line x1="${C}" y1="${C}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#1B1B2F" stroke-width="1.2" stroke-dasharray="3 3" opacity=".4"/>`; }).join('')}
+      ${list.map((s,i)=>{ const [x,y]=px(s), c = s.fav ? COL.fav : COL[s.kind];
+        return `<g><path d="M${x.toFixed(1)} ${(y+11).toFixed(1)} L${(x-8).toFixed(1)} ${(y-2).toFixed(1)} L${(x+8).toFixed(1)} ${(y-2).toFixed(1)} Z" fill="${c}" stroke="var(--ink)" stroke-width="2"/>
+          <circle cx="${x.toFixed(1)}" cy="${(y-6).toFixed(1)}" r="10" fill="${c}" stroke="var(--ink)" stroke-width="2.5"/>
+          <text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" font-size="${s.fav?12:11}" font-weight="800" text-anchor="middle">${s.fav?'★':i+1}</text></g>`; }).join('')}
       <g>
         <path d="M${C-11} ${C+8} L${C} ${C-2} L${C+11} ${C+8} Z" fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
         <rect x="${C-8}" y="${C+6}" width="16" height="11" fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5"/>
@@ -1282,16 +1343,21 @@ function renderMap(){
           stroke="#F4FAFF" stroke-width="3.5" paint-order="stroke">양양서핑학교</text>
       </g>
     </svg>
+    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px;font-size:11.5px;color:var(--ink2)">
+      <span><i style="display:inline-block;width:10px;height:10px;background:var(--mint);border:2px solid var(--ink);vertical-align:-1px"></i> 올라온 숙소</span>
+      <span><i style="display:inline-block;width:10px;height:10px;background:var(--sun);border:2px solid var(--ink);vertical-align:-1px"></i> 정보판</span>
+      <span><i style="display:inline-block;width:10px;height:10px;background:#F5A623;border:2px solid var(--ink);vertical-align:-1px"></i> 내 즐겨찾기</span>
+    </div>
     <div style="margin-top:7px;font-size:12.5px;line-height:1.6">${list.map((s,i)=>{
-      const rv = reviewOf(s.place);
-      const km = distKm(s.lat,s.lon);
-      return `<div style="padding:4px 0;border-top:1px dashed var(--grid)"><b>${i+1}</b> ${esc(s.place)}
+      const rv = reviewOf(s.name), km = distKm(s.lat,s.lon);
+      return `<div style="padding:4px 0;border-top:1px dashed var(--grid)"><b>${s.fav?'★':i+1}</b> ${esc(s.name)}
+        ${s.kind==='up' ? '<span class="tag go" style="font-size:10px">올라옴</span>' : ''}
         ${rv.n ? `<span style="color:#B45309;font-weight:700"> ★${rv.avg}</span><span style="color:var(--ink2)">(${rv.n})</span>` : ''}
         ${paidLabel(rv)}
         <div style="color:var(--ink2);margin-left:14px">학교에서 ${km.toFixed(1)}km · ${travel(km)}
-          · <a href="${mapLink(s.place,s.lat,s.lon)}" target="_blank" rel="noopener">길찾기 ↗</a></div></div>`; }).join('')}</div>
+          · <a href="${mapLink(s.name,s.lat,s.lon,s.url)}" target="_blank" rel="noopener">길찾기 ↗</a></div></div>`; }).join('')}</div>
     <div class="note">가운데가 <b>양양서핑학교</b>(양양읍 일출로 159-12)예요. 점선은 학교에서 숙소까지 직선이고,
-      실제로 걷거나 달리는 길은 이보다 조금 깁니다. <b>길찾기</b>를 누르면 지도 앱이 열려요.</div>`;
+      실제로 걷거나 달리는 길은 이보다 조금 깁니다. <b>길찾기</b>를 누르면 네이버지도가 열려요.</div>`;
 }
 $('s-save').onclick = async ()=>{
   const e = $('s-err'); e.textContent = '';
@@ -1299,17 +1365,23 @@ $('s-save').onclick = async ()=>{
   if(!place) return e.textContent = '숙소 이름을 적어주세요';
   if(!from || !to) return e.textContent = '체크인·체크아웃 날짜를 골라주세요';
   if(to < from) return e.textContent = '체크아웃이 체크인보다 빠릅니다';
-  const lat=parseFloat($('s-lat').value), lon=parseFloat($('s-lon').value);
-  const hasXY = !isNaN(lat) && !isNaN(lon);
-  if(($('s-lat').value.trim() || $('s-lon').value.trim()) && !hasXY) return e.textContent = '위도·경도를 둘 다 숫자로 적어주세요';
+  const url = $('s-url').value.trim() || null;
+  if(url && !isNaN(+url)) return e.textContent = '좌표 말고 네이버지도 링크를 붙여주세요';
+  if(url && !/^https?:\/\//i.test(url)) return e.textContent = '링크는 http 로 시작해야 해요';
+  /* 링크에 좌표가 들어 있으면 캐내고, 없으면 칩으로 고른 좌표를 쓴다.
+     둘 다 없으면 핀은 못 찍지만 링크만으로도 길찾기는 된다 — 글은 올라가게 둔다. */
+  const xy = naverXY(url) || (()=>{ const d = ($('s-near').dataset.xy||'').split(',');
+    return d.length===2 ? { lat:+d[0], lon:+d[1] } : null; })();
+  const lat = xy?.lat, lon = xy?.lon, hasXY = !!xy;
   const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:ME.profile||{},
     place:place.slice(0,20), date_from:from, date_to:to,
-    capacity:Math.max(1, Math.min(20, +$('s-cap').value||4)), guests:[],
+    capacity:Math.max(1, Math.min(20, +$('s-cap').value||4)), guests:[], url,
     price:$('s-price').value.trim().slice(0,20)||null, lat:hasXY?lat:null, lon:hasXY?lon:null,
     perks:[...$('s-perks').querySelectorAll('[aria-pressed="true"]')].map(b=>b.textContent),
     note:$('s-note').value.trim().slice(0,60)||null, contact:$('s-contact').value.trim().slice(0,80)||null };
   try{ await api('stays', { method:'POST', body:JSON.stringify(row) });
-    toast('올렸어요'); ['s-place','s-price','s-note','s-contact','s-lat','s-lon'].forEach(x=>$(x).value='');
+    toast('올렸어요'); ['s-place','s-price','s-note','s-contact','s-url'].forEach(x=>$(x).value='');
+    delete $('s-near').dataset.xy;
     $('s-perks').querySelectorAll('[aria-pressed="true"]').forEach(b=>b.setAttribute('aria-pressed','false'));
     document.querySelector('#pane-stay details').open = false; pullStays(); }
   catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 (supabase-surfshare.sql)' : '올리지 못했어요 · 신호 확인'; }
