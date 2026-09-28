@@ -496,13 +496,20 @@ $('go').onclick = async ()=>{
       const r = await rpc('login', { p_id:id, p_pw:pw });
       ME = { id, name:r.name, profile:r.profile||{}, token:r.token, cohort:r.cohort || 'open' };
     }
-    try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
+    try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME));
+         localStorage.removeItem('lineup.share.out'); }catch(e){}
     start();                    // 처음이면 start() 안에서 안내가 뜬다
   }catch(e){ E({ nouser:'없는 아이디예요 · "새 계정"으로 만들어 주세요', wrongpw:'비밀번호가 달라요',
       exists:'이미 있는 아이디예요', badid:'아이디는 영문 소문자·숫자·_ 2~16자', badpw:'비밀번호는 4자 이상' }[e.message]
     || (e.message==='Failed to fetch' ? '서버에 닿지 않아요' : e.message)); }
 };
-$('out').onclick = ()=>{ try{ localStorage.removeItem('lineup.share.me'); }catch(e){} location.reload(); };
+/* 나가기가 안 먹던 이유 — lineup.share.me 만 지우면 아래 boot() 의 "학교 세션으로 자동 입장"
+   경로가 곧바로 다시 들여보낸다. 화면이 깜빡이고 제자리로 돌아온다.
+   학교 세션(surf.session)까지 지우면 학교 앱에서도 로그아웃되니 그건 건드리지 않고,
+   "여기서는 나갔다"는 표시를 따로 남긴다. */
+$('out').onclick = ()=>{
+  try{ localStorage.removeItem('lineup.share.me'); localStorage.setItem('lineup.share.out','1'); }catch(e){}
+  location.reload(); };
 
 /* 학교(라인업 앱)는 아직 준비 중이라 여기선 안내만 한다.
    코드를 받은 사람은 surf.owenai.xyz 에서 바로 들어간다 — 문이 거기 있다. */
@@ -1192,12 +1199,15 @@ function nextWeekend(plus){
   if(!shareInvited()) return showGate();          // 비번 먼저. 계정은 그 다음이다
   passGate();
   try{ const saved = JSON.parse(localStorage.getItem('lineup.share.me')||'null'); if(saved?.id){ ME = saved; return start(); } }catch(e){}
-  /* 앱에 이미 로그인한 사람에게 또 로그인을 시키지 않는다 — terms.html과 같은 방식 */
+  /* 앱에 이미 로그인한 사람에게 또 로그인을 시키지 않는다 — terms.html과 같은 방식.
+     단, 방금 '나가기'를 눌렀으면 들이지 않는다. 그게 로그아웃이 안 되던 이유다. */
+  try{ if(localStorage.getItem('lineup.share.out') === '1') return; }catch(e){}
   try{
     const sid = JSON.parse(localStorage.getItem('surf.session')||'null');
     const users = JSON.parse(localStorage.getItem('surf.users')||'{}');
     const u = sid && users[sid];
-    if(u){ ME = { id:sid, name:u.name, profile:u.profile||{}, cohort:u.cohort||'6기' }; return start(); }
+    /* 토큰까지 들고 온다 — 이게 빠져 있어서 이 경로로 들어온 사람은 쪽지를 못 썼다 */
+    if(u){ ME = { id:sid, name:u.name, profile:u.profile||{}, token:u.token, cohort:u.cohort||'6기' }; return start(); }
   }catch(e){}
 })();
 </script>
