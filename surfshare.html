@@ -103,7 +103,8 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .hd{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap }
 .hd b{ font-size:16px }
 .tag{ display:inline-block; background:var(--sun); border:3px solid var(--ink); padding:1px 7px; font-size:11px; font-weight:800; font-family:"Galmuri11",sans-serif }
-.tag.go{ background:var(--mint) } .tag.back{ background:#8FD3FF } .tag.full{ background:var(--coral) }
+.tag.go{ background:var(--mint) } .tag.back{ background:#8FD3FF } .tag.local{ background:var(--grape); color:#fff }
+.tag.full{ background:var(--coral) }
 .meta{ font-size:12.5px; color:var(--ink2); margin-top:3px; line-height:1.55 }
 .seats{ display:flex; gap:4px; flex-wrap:wrap; margin-top:7px }
 .seat{ border:3px solid var(--ink); background:#fff; padding:3px 8px 3px 4px; font-size:12px; font-weight:700; min-height:34px; display:inline-flex; align-items:center; gap:4px }
@@ -266,7 +267,10 @@ body.onb-on .wrap{ padding-bottom:230px }
       <details class="px sand fold"><summary>+ 차 자리 올리기</summary>
         <div class="grid2" style="margin-top:8px">
           <div><label for="r-date">날짜</label><input id="r-date" type="date"></div>
-          <div><label for="r-dir">방향</label><select id="r-dir"><option value="go">양양 가는 차 (집 → 양양)</option><option value="back">양양에서 나가는 차 (양양 → 집)</option></select></div>
+          <div><label for="r-dir">방향</label><select id="r-dir">
+            <option value="go">양양 가는 차 (집 → 양양)</option>
+            <option value="back">양양에서 나가는 차 (양양 → 집)</option>
+            <option value="local">양양 안에서 (읍내·터미널 ↔ 해변)</option></select></div>
           <div><label for="r-time">출발 시각</label><input id="r-time" type="time" value="06:00"></div>
           <div><label for="r-seats">태울 수 있는 인원</label><input id="r-seats" type="number" min="1" max="8" value="3"></div>
           <div><label for="r-from">타는 곳</label><input id="r-from" maxlength="20" placeholder="예) 잠실역 2번 출구"></div>
@@ -306,6 +310,11 @@ body.onb-on .wrap{ padding-bottom:230px }
         <button class="btn mint" id="s-save" style="width:100%;margin-top:6px">올리기</button>
       </details>
       <div class="grp"><span class="t">학교 기준 지도</span><div class="px white" id="map"></div></div>
+      <div class="grp"><span class="t">낙산 숙소 정보판</span>
+        <div class="px" id="places"></div>
+        <div class="note" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
+          누구나 고칠 수 있어요. 대신 <b>누가 무엇을 고쳤는지 다 보입니다.</b></div>
+      </div>
       <div class="grp"><span class="t">숙소</span><div class="px" id="stays"></div></div>
     </div>
 
@@ -316,6 +325,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="note" style="margin-top:6px">여기서 만든 캐릭터가 <b>차·숙소 글에 그대로 나와요.</b><br>학교가 열리면 마을에도 이 모습으로 서 있습니다.</div>
       </div>
       <div class="px" style="margin-top:10px"><div id="bld-opts"></div></div>
+
     </div>
 
     <div class="note" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
@@ -362,7 +372,7 @@ const $ = id => document.getElementById(id);
 const SUPA = { url:(window.SURF_CONFIG?.supabaseUrl||'').replace(/\/$/,''), key:window.SURF_CONFIG?.supabaseKey||'' };
 const H = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json',
                    Prefer:'resolution=merge-duplicates,return=minimal' });
-let ME = null, state = { rides:[], stays:[], reviews:[], tab:'ride' };
+let ME = null, state = { rides:[], stays:[], reviews:[], places:[], edits:[], tab:'ride' };
 /* 기준은 낙산 해변이 아니라 양양서핑학교다 — 숙소를 고를 때 재는 건 "학교까지" 거리다.
    좌표 정정(2026-09-28): 예전 값 38.121,128.632 는 낙산사 쪽이라 1.57km 어긋나 있었고,
    지도에 찍히는 거리가 전부 그만큼 틀렸다. 학교 주소는 양양읍 일출로 159-12(조산리)이고
@@ -370,7 +380,7 @@ let ME = null, state = { rides:[], stays:[], reviews:[], tab:'ride' };
    잡았다 — 오차 100m 안쪽. 수업도 낙산해변 남쪽 조산리 구간에서 한다. */
 const SCHOOL = { lat:38.1085, lon:128.6405, ko:'양양서핑학교' };
 
-/* 학교에서 걸어갈 만한 숙소들. 좌표는 OpenStreetMap 에서 확인한 값이다.
+/* 서버에 places 표가 아직 없을 때만 쓰는 대비책. 표가 생기면 거기서 읽는다.
    좌표를 직접 찍게 두면 아무도 안 찍는다 — 찍어야 지도에 뜨는데, 그게 제일 귀찮은 칸이다. */
 const NEAR = [
   ['디그니티 호텔',   38.10858, 128.64053],
@@ -383,6 +393,7 @@ const NEAR = [
 ];
 const NAKSAN = SCHOOL;
 const PERKS = ['해변 도보','주차','보드 보관','온수 샤워','취사','세탁기','수건 제공','조식'];
+const PLACE_KINDS = ['호텔','콘도','펜션','민박','게스트하우스','스테이','기타'];
 let toastT;
 const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'),1900); };
 const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
@@ -615,17 +626,7 @@ const CAR = padR([
   '......kkk..........kkk......',
 ]);
 const CARL = flipR(CAR);
-/* 물에 뜬 보드 — 위에서 본 모양. W=데크, S=스트링거(가운데 줄) */
-const BOARD_F = padR([
-  '.....kkkkkk.....',
-  '..kkkWWWWWWkkk..',
-  '.kWWWWWWWWWWWWk.',
-  'kWSSSSSSSSSSSSWk',      // 가운데 줄이 스트링거
-  '.kWWWWWWWWWWWWk.',
-  '..kkkWWWWWWkkk..',
-  '.....kkkkkk.....',
-]);
-const BOARD_C = ['#FFD23F','#4DE1A5','#FF6B6B','#9B6BFF','#FFF9E6'];
+const BOARD_C = ['#FFD23F','#4DE1A5','#FF6B6B','#9B6BFF','#2ED3E6','#FF9F1C'];
 const POT = padR([
   '...kkkkkkkk...',
   '..kLLLLLLLLk..',
@@ -679,42 +680,43 @@ function drawScene(t){
   B(CARL, Math.round(xb), 28 + (Math.sin(t/97)>0?1:0), carB);
 
   /* ── 모래 ── */
-  R(0,43,SW,37,'#F2E3B8'); R(0,43,SW,1,'#E0CF9E');
+  const base = 74;
+  R(0,43,SW,74-43,'#F2E3B8'); R(0,43,SW,1,'#E0CF9E');
 
-  /* ── 집 ──
-     상자에 빨간 삼각형만 얹으면 집이 아니라 도형으로 보인다. 처마를 내고,
-     벽에 판자 줄을 넣고, 창에 창틀을 긋고, 문 앞에 디딤돌을 둔다.
-     그리고 서퍼가 사는 집이라는 걸 한 컷으로 말하는 건 벽에 기대 둔 보드다. */
-  const hx = 2, wallT = 54, base = 76, hw = 42;
-  for(let i=0;i<12;i++){                                   // 박공지붕 — 처마가 벽보다 3 나온다
-    const w = 6 + i*3.2, x = hx + hw/2 - w/2;
-    R(x, wallT-12+i, w, 1, i===0 ? '#1B1B2F' : (i%3===0 ? '#E05555' : '#FF6B6B'));
+  /* ── 양양서핑학교 깃발 ──
+     집을 세웠더니 "누구 집이지"가 되고 장면이 사유지처럼 읽혔다.
+     여기는 학교 앞 해변이다. 그걸 말하는 건 건물이 아니라 깃발이다. */
+  const px0 = 11, fTop = 44;
+  R(px0-1, base-1, 4, 2, '#1B1B2F');                                  // 받침
+  R(px0, fTop, 2, base-fTop, '#8A8FA6'); R(px0, fTop, 1, base-fTop, '#C9CDDC');
+  R(px0-1, fTop-2, 4, 2, '#1B1B2F');                                  // 깃봉
+  const fw = 48, fh = 13;
+  for(let k=0;k<fh;k++){                                              // 바람에 끝이 흔들린다
+    const w = fw + Math.round(Math.sin(t/300 + k/3)*2);
+    R(px0+2, fTop+2+k, w, 1, k===0||k===fh-1 ? '#1B1B2F' : '#2E6BFF');
+    R(px0+2+w-1, fTop+2+k, 1, 1, '#1B1B2F');
   }
-  R(hx-3, wallT-1, hw+6, 2, '#1B1B2F');                    // 처마 그림자선
-  R(hx, wallT, hw, base-wallT, '#FFF6DE');
-  for(let y=wallT+3; y<base-1; y+=4) R(hx+1, y, hw-2, 1, 'rgba(27,27,47,.10)');   // 판자 줄
-  R(hx, wallT, hw, 1, '#1B1B2F'); R(hx, base-1, hw, 1, '#1B1B2F');
-  R(hx, wallT, 1, base-wallT, '#1B1B2F'); R(hx+hw-1, wallT, 1, base-wallT, '#1B1B2F');
-  const win = (wx)=>{ R(wx, wallT+5, 10, 9, '#1B1B2F'); R(wx+1, wallT+6, 8, 7, '#9FDcFF');
-    R(wx+4, wallT+6, 1, 7, '#1B1B2F'); R(wx+1, wallT+9, 8, 1, '#1B1B2F');         // 창틀 십자
-    R(wx+1, wallT+6, 8, 2, 'rgba(255,255,255,.55)'); };                            // 유리 반사
-  win(hx+4); win(hx+28);
-  R(hx+17, wallT+8, 9, 14, '#1B1B2F'); R(hx+18, wallT+9, 7, 13, '#C98A4B');
-  for(let y=wallT+10; y<base-2; y+=3) R(hx+18, y, 7, 1, 'rgba(27,27,47,.16)');     // 문 판자
-  R(hx+23, wallT+15, 1, 1, '#FFD23F');                                             // 손잡이
-  R(hx+15, base-1, 13, 2, '#C9C3AE');                                              // 디딤돌
+  TXT('양양서핑학교', px0+3+fw/2 + Math.sin(t/300)*1, fTop+8.5, 6.5, '#FFF9E6');
 
-  /* 벽에 기대 둔 보드 두 장. 코와 테일이 좁아야 보드로 읽힌다 —
-     같은 폭으로 쭉 뽑으면 기둥이 된다(처음에 그렇게 그렸다가 검은 막대가 됐다). */
-  const lean = (x0, tilt, col)=>{
-    for(let k=0;k<23;k++){
-      const x = x0 + k*tilt, w = (k===0||k===22) ? 2 : (k<2||k>20) ? 3 : 4;
-      R(x + (4-w)/2, base-1-k, w, 1, '#1B1B2F');
-      if(w > 2) R(x + (4-w)/2 + 1, base-1-k, w-2, 1, col);
+  /* ── 해변에 세워 둔 보드들 ──
+     수업 전 모래에 꽂아 둔 줄. 나란히 서 있어야 '정리된 것'으로 읽힌다 —
+     간격이 흔들리면 버려둔 것처럼 보인다. */
+  /* 폭이 갑자기 좁아지면 병으로 보인다(처음에 그렇게 그렸다). 코까지 완만하게 좁아져야
+     보드가 된다. 스트링거도 점선으로 찍으면 라벨처럼 읽혀서 한 줄로 잇는다. */
+  const stand = (x, h, col, tilt)=>{
+    for(let k=0;k<h;k++){
+      const y = base-1-k, dx = x + k*tilt;
+      const r = k / (h-1);                                            // 0=테일 1=코
+      /* 가장 넓은 데가 가운데보다 살짝 아래다. 아래를 평평하게 두면 병이 된다. */
+      const w = r <= 0.45 ? 4 + Math.round(3*(r/0.45))
+                          : Math.max(2, Math.round(7 - 5*Math.pow((r-0.45)/0.55, 1.5)));
+      R(dx + (7-w)/2, y, w, 1, '#1B1B2F');
+      if(w > 2) R(dx + (7-w)/2 + 1, y, w-2, 1, col);
+      if(r > 0.06 && r < 0.86) R(dx + 3, y, 1, 1, 'rgba(255,255,255,.38)');
     }
-    R(x0-1, base-1, 6, 1, 'rgba(27,27,47,.2)');                     // 발치 그림자
+    R(x-1, base-1, 9, 1, 'rgba(27,27,47,.22)');                       // 모래에 꽂힌 자리
   };
-  lean(hx+hw+2, 0.13, '#FFD23F'); lean(hx+hw+7, 0.17, '#4DE1A5');
+  [0,1,2,3,4].forEach(k=> stand(62 + k*10, 27 + (k%2)*2, BOARD_C[k], k%2 ? 0.035 : -0.03));
 
   /* 말풍선 — 캔버스에 이모지를 맨몸으로 띄우면 배경에 묻혀 뭔지 안 읽힌다 */
   const BUB = (emo,cx,cy,px)=>{ const w=px+4, h=px+3;
@@ -724,42 +726,31 @@ function drawScene(t){
 
   /* ── 사람들 — 각자 다른 박자로 들썩인다 ── */
   CREW.forEach((c,i)=>{ if(i>2) return;
-    B(c.rows, 54 + i*16, base-16 - (Math.sin(t/(510+i*137))>0 ? 1 : 0), c.tint); });
+    B(c.rows, 118 + i*16, base-16 - (Math.sin(t/(510+i*137))>0 ? 1 : 0), c.tint); });
 
   /* ── 모닥불 · 냄비 · 김 ── */
-  const fx = 104, ft = base-14;
+  const fx = 172, ft = base-14;
   R(fx-3, base-3, 20, 2, '#6B4A2A'); R(fx-1, base-5, 16, 2, '#8A6238');
   B(SPR.fire, fx, ft + (Math.sin(t/110)>0?0:1), null, 2);
   B(POT, fx, ft-8, POTC);
   for(let i=0;i<3;i++) R(fx+6+Math.sin(t/(430+i*160))*1.8, ft-10-((t/22+i*6)%9), 1, 1, 'rgba(255,255,255,.95)');
-  BUB('🍲', 86, base-25 + Math.sin(t/430)*1.2, 8);
+  /* 사람 머리 위 음식 말풍선은 뺐다 — 불 위에 냄비가 이미 걸려 있는데
+     그 위에 또 그릇 그림을 띄우니 같은 말을 두 번 하고 화면만 복잡해졌다. */
 
   /* ── 바다 ── */
-  R(0,78,SW,SH-78,'#2E6BFF');
-  const crest = x => 85 + Math.sin(x/23 + t/780)*2.4 + Math.sin(x/9.5 - t/415)*1.2;
+  R(0,74,SW,SH-74,'#2E6BFF');
+  const crest = x => 88 + Math.sin(x/23 + t/780)*2.4 + Math.sin(x/9.5 - t/415)*1.2;
   for(let x=0;x<SW;x++){ const y = crest(x);
-    R(x, 76, 1, y-76, '#F2E3B8');                                   // 젖은 모래
-    R(x, y-2, 1, 2, '#EBD9A8');
+    R(x, 74, 1, y-74, '#7FC4FF');                                     // 얕은 물
     R(x, y, 1, SH-y, '#2E6BFF'); R(x, y, 1, 3, '#BFE9FF'); R(x, y-1, 1, 1, '#FFF9E6'); }
-  for(let x=0;x<SW;x++) R(x, crest(x) + 9 + Math.sin(x/13 - t/520)*1.5, 1, 1, 'rgba(255,255,255,.5)');
+  for(let x=0;x<SW;x++) R(x, crest(x) + 8 + Math.sin(x/13 - t/520)*1.5, 1, 1, 'rgba(255,255,255,.5)');
 
-  /* 물에 뜬 보드들 — 파도 위에서 각자 다른 박자로 까딱인다.
-     바다가 비어 있으면 "들어갈 곳"으로 안 읽힌다. */
-  [[22,0],[58,1],[148,2],[176,3]].forEach(([bx0,k])=>{
-    const bx = bx0 + Math.sin(t/(2300+k*640))*5;                     // 조류에 아주 천천히 떠다닌다
-    const y = crest(bx+8) + 5 + Math.sin(t/(620+k*190))*1.3;
-    R(bx+3, y+7, 10, 1, 'rgba(27,27,47,.18)');                       // 물그림자
-    B(BOARD_F, Math.round(bx), Math.round(y), { W:BOARD_C[k%BOARD_C.length], S:'#FFF9E6' }); });
-
-  /* 서퍼는 오른쪽 바다에서만 탄다 — 왼쪽엔 집과 사람이 있고, 그 위로 지나가면 유령처럼 보인다.
-     양 끝에서 흐리게 들고 난다. 그래야 툭 나타나고 툭 사라지지 않는다. */
-  const span = SW - 118, rx = SW - 2 - ((t*0.0126) % (span+26));
-  const edge = Math.max(0, Math.min(1, Math.min(rx-(SW-2-span), (SW-2)-rx) / 11));
-  if(edge > 0){ g.globalAlpha = edge;
-    const ry = Math.round(crest(rx+8)) - 15;
-    B(RIDER.rows, Math.round(rx), ry, RIDER.tint);
-    BUB('🤙', rx+8, ry-3 + Math.sin(t/380)*0.8, 7);
-    g.globalAlpha = 1; }
+  /* 타고 있는 사람 하나. 집이 빠져서 이제 해변 전 구간을 지날 수 있다 —
+     화면 밖에서 들어오고 화면 밖으로 나가니 흐리게 감출 것도 없다. */
+  const rx = SW + 18 - ((t*0.0126) % (SW+36));
+  const ry = Math.round(crest(rx+8)) - 15;
+  B(RIDER.rows, Math.round(rx), ry, RIDER.tint);
+  BUB('🤙', rx+8, ry-3 + Math.sin(t/380)*0.8, 7);
 }
 function sceneLoop(ts){
   sceneRAF = requestAnimationFrame(sceneLoop);
@@ -937,7 +928,7 @@ function renderRides(){
   box.innerHTML = [...state.rides].sort(byWhen('ride')).map(r=>{ const gone = isGone(r,'ride');
     const hd = gone && !head ? (head = true, `<div class="gone-hd">지난 차 — 기록으로 남겨둡니다</div>`) : '';
     return hd + `<div class="card ${gone?'gone':''}">
-      <div class="hd"><span class="tag ${gone?'':r.dir}">${r.dir==='go'?'↓ 양양 가는 차':'↑ 양양에서 나가는 차'}</span>
+      <div class="hd"><span class="tag ${gone?'':r.dir}">${(DIRS[r.dir]||DIRS.go).ko}</span>
         <b>${dLabel(r.date)} ${esc(r.depart_at)}</b>${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
       <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b></div>
       <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span>${noteBtn(r)}</div>
@@ -947,10 +938,16 @@ function renderRides(){
     </div>`; }).join('');
   bindCards(box, 'ride'); bindNotes(box); paintAvatars(box, state.rides, 'riders');
 }
-/* 방향을 바꾸면 예시도 뒤집는다 — "어디서 출발"만 있으면 어느 쪽 이야기인지 헷갈린다 */
-$('r-dir').onchange = () => { const go = $('r-dir').value === 'go';
-  $('r-from').placeholder = go ? '예) 잠실역 2번 출구' : '예) 낙산해변 주차장';
-  $('r-to').placeholder   = go ? '예) 낙산해변 주차장' : '예) 잠실역 2번 출구'; };
+/* 방향을 바꾸면 예시도 바뀐다 — "어디서 출발"만 있으면 어느 쪽 이야기인지 헷갈린다.
+   서울만 오가는 게 아니다. 버스로 내려와 읍내 터미널에서 해변까지,
+   숙소에서 학교까지 — 양양 안에서 태워 주는 차가 실제로는 더 자주 필요하다. */
+const DIRS = {
+  go:    { ko:'↓ 양양 가는 차',      from:'예) 잠실역 2번 출구',        to:'예) 낙산해변 주차장' },
+  back:  { ko:'↑ 양양에서 나가는 차', from:'예) 낙산해변 주차장',        to:'예) 잠실역 2번 출구' },
+  local: { ko:'↔ 양양 안에서',       from:'예) 양양시외버스터미널',      to:'예) 양양서핑학교' },
+};
+$('r-dir').onchange = () => { const d = DIRS[$('r-dir').value] || DIRS.go;
+  $('r-from').placeholder = d.from; $('r-to').placeholder = d.to; };
 $('r-save').onclick = async ()=>{
   const e = $('r-err'); e.textContent = '';
   const date=$('r-date').value, time=$('r-time').value, from=$('r-from').value.trim(), to=$('r-to').value.trim();
@@ -998,7 +995,10 @@ function renderStays(){
 /* 목록은 스스로 자란다 — 누가 새 숙소를 좌표까지 넣어 올리면 다음 사람에겐 그게 버튼이 된다.
    운영자가 목록을 손으로 관리해야 하는 구조는 결국 안 관리된다. */
 function nearAll(){
-  const seen = new Map(NEAR.map(([n,la,lo])=>[n,[n,la,lo,true]]));
+  const seed = (state.places && state.places.length)
+    ? state.places.filter(p=>p.lat && p.lon).map(p=>[p.name, +p.lat, +p.lon])
+    : NEAR;                                                   // 표가 없으면 박아 둔 목록으로 버틴다
+  const seen = new Map(seed.map(([n,la,lo])=>[n,[n,la,lo,true]]));
   (state.stays||[]).forEach(s=>{ if(s.lat && s.lon && !seen.has(s.place)) seen.set(s.place, [s.place, +s.lat, +s.lon, false]); });
   return [...seen.values()];
 }
@@ -1018,6 +1018,116 @@ function renderNear(){
     const [n,la,lo] = all[+b.dataset.near];
     $('s-place').value = n; $('s-lat').value = la; $('s-lon').value = lo;
     toast(`${n} · 학교에서 ${distKm(la,lo).toFixed(1)}km · ${travel(distKm(la,lo))}`); });
+}
+
+/* ── 숙소 정보판 ──────────────────────────────────────────
+   차·숙소 글은 "내가 이번 주에 잡은 방"이라 올린 사람 것이다.
+   이건 다르다 — "낙산에 어떤 숙소가 있나"는 같이 쌓는 정보다.
+   그래서 누구나 고칠 수 있게 열어두고, 잠그는 대신 **누가 무엇을 고쳤는지 보이게** 했다.
+   20명이 쓰는 곳에서는 그게 더 잘 굴러간다. */
+/* "시설 를" 처럼 조사가 어긋나면 기계가 쓴 문장으로 읽힌다. 받침을 보고 고른다. */
+const josa = (w, pair) => { const [a,b] = pair.split('/'); const c = String(w||'').slice(-1).charCodeAt(0);
+  if(isNaN(c) || c < 0xAC00 || c > 0xD7A3) return b;             // 한글이 아니면 받침 없는 쪽
+  return (c - 0xAC00) % 28 ? a : b; };
+const PF = [
+  ['name','이름'], ['kind','종류'], ['addr','주소'], ['phone','연락처'],
+  ['note','한마디'], ['lat','위도'], ['lon','경도'],
+];
+async function pullPlaces(){
+  try{ state.places = await api('places?select=*&order=name.asc&limit=200'); }
+  catch(e){ state.places = null; }
+  try{ state.edits = await api('place_edits?select=*&order=created_at.desc&limit=200'); }
+  catch(e){ state.edits = []; }
+  renderPlaces(); renderNear();
+}
+const editsOf = id => (state.edits||[]).filter(e=>e.place_id===id);
+function renderPlaces(){
+  const box = $('places'); if(!box) return;
+  if(state.places === null){ box.innerHTML = `<div class="empty">아직 서버에 정보판이 없어요.<br>
+    코치가 <b>supabase-places.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  if(!state.places.length){ box.innerHTML = `<div class="empty">아직 등록된 숙소가 없어요.</div>`; return; }
+  const withXY = p => p.lat && p.lon;
+  box.innerHTML = [...state.places].sort((a,b)=>{
+      if(withXY(a) !== withXY(b)) return withXY(a) ? -1 : 1;       // 좌표 없는 건 아래로
+      return withXY(a) ? distKm(a.lat,a.lon) - distKm(b.lat,b.lon) : a.name.localeCompare(b.name);
+    }).map(p=>{
+    const rv = reviewOf(p.name), ed = editsOf(p.id);
+    return `<div class="card">
+      <div class="hd"><b>${esc(p.name)}</b>${p.kind?`<span class="tag">${esc(p.kind)}</span>`:''}
+        ${rv.n ? `<span style="color:#B45309;font-weight:700">★${rv.avg}</span><span style="color:var(--ink2);font-size:12px">(${rv.n})</span>` : ''}</div>
+      <div class="meta">${withXY(p)
+        ? `학교에서 <b>${distKm(p.lat,p.lon).toFixed(1)}km</b> · ${travel(distKm(p.lat,p.lon))}
+           · <a href="${mapLink(p.name,p.lat,p.lon)}" target="_blank" rel="noopener">길찾기 ↗</a>`
+        : `<span style="color:#C2303A;font-weight:700">좌표가 없어 지도에 안 떠요</span> — 아시는 분이 넣어주세요`}</div>
+      ${p.addr ? `<div class="meta">${esc(p.addr)}</div>` : ''}
+      ${p.phone ? `<div class="meta">연락처 · ${esc(p.phone)}</div>` : ''}
+      ${p.note ? `<div class="meta">${esc(p.note)}</div>` : ''}
+      ${(p.perks||[]).length ? `<div class="perks">${p.perks.map(x=>`<span class="perk on">${esc(x)}</span>`).join('')}</div>` : ''}
+      <div class="meta" style="font-size:11.5px">마지막 수정 · ${esc(p.updated_name||'씨앗')}${p.updated_at?` · ${ago(p.updated_at)}`:''}</div>
+      <div class="acts"><button class="btn sm ghost" data-pedit="${esc(p.id)}">✎ 고치기</button>
+        ${ed.length ? `<button class="btn sm ghost" data-plog="${esc(p.id)}">기록 ${ed.length}</button>` : ''}</div>
+      <div data-pform="${esc(p.id)}" hidden style="border-top:2px dashed var(--grid);margin-top:8px;padding-top:8px">
+        ${PF.map(([k,ko])=>`<label>${ko}</label><input data-pf="${esc(p.id)}|${k}" value="${esc(p[k]==null?'':String(p[k]))}"
+            ${k==='lat'||k==='lon'?'inputmode="decimal"':''} maxlength="${k==='note'?120:60}">`).join('')}
+        <label>시설</label>
+        <div class="perks" data-pperk="${esc(p.id)}">${PERKS.map(x=>
+          `<button type="button" class="perk ${(p.perks||[]).includes(x)?'on':''}">${x}</button>`).join('')}</div>
+        <div class="err" data-perr="${esc(p.id)}"></div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="btn sm ghost" data-pcancel="${esc(p.id)}" style="flex:0 0 auto">취소</button>
+          <button class="btn mint" data-psave="${esc(p.id)}" style="flex:1">고친 내용 올리기</button></div>
+        <div class="note">고치면 <b>누가 무엇을 바꿨는지</b> 아래 기록에 남고 모두가 봅니다.</div>
+      </div>
+      <div data-plogbox="${esc(p.id)}" hidden style="border-top:2px dashed var(--grid);margin-top:8px;padding-top:6px">
+        ${ed.map(e=>{ const f = `<b>${esc(e.field)}</b>${josa(e.field,'을/를')}`;
+          const what = !e.after ? `${f} 지웠어요`
+            : !e.before ? `${f} <b style="color:var(--ink)">${esc(e.after)}</b>${josa(e.after,'으로/로')} 채웠어요`
+            : `${f} <span style="text-decoration:line-through">${esc(e.before)}</span> → <b style="color:var(--ink)">${esc(e.after)}</b> 로 고쳤어요`;
+          return `<div style="font-size:12px;line-height:1.6;padding:3px 0;color:var(--ink2)">
+            <b style="color:var(--ink)">${esc(e.name)}</b> 님이 ${what} · ${ago(e.created_at)}</div>`; }).join('')
+          || '<div class="note">아직 고친 기록이 없어요.</div>'}
+      </div>
+    </div>`; }).join('');
+  bindPlaces(box);
+}
+function bindPlaces(box){
+  box.querySelectorAll('[data-pedit]').forEach(b=>b.onclick = ()=>{
+    const f = box.querySelector(`[data-pform="${CSS.escape(b.dataset.pedit)}"]`); f.hidden = !f.hidden; });
+  box.querySelectorAll('[data-pcancel]').forEach(b=>b.onclick = ()=>{
+    box.querySelector(`[data-pform="${CSS.escape(b.dataset.pcancel)}"]`).hidden = true; });
+  box.querySelectorAll('[data-plog]').forEach(b=>b.onclick = ()=>{
+    const f = box.querySelector(`[data-plogbox="${CSS.escape(b.dataset.plog)}"]`); f.hidden = !f.hidden; });
+  box.querySelectorAll('[data-pperk] button').forEach(b=>b.onclick = ()=>b.classList.toggle('on'));
+  box.querySelectorAll('[data-psave]').forEach(b=>b.onclick = async ()=>{
+    const id = b.dataset.psave, cur = state.places.find(x=>x.id===id);
+    const err = box.querySelector(`[data-perr="${CSS.escape(id)}"]`); err.textContent = '';
+    const next = {}, diffs = [];
+    for(const [k,ko] of PF){
+      const raw = box.querySelector(`[data-pf="${CSS.escape(id+'|'+k)}"]`).value.trim();
+      let v = raw === '' ? null : raw;
+      if(k==='lat' || k==='lon'){ if(v !== null){ v = parseFloat(v); if(isNaN(v)) return err.textContent = '위도·경도는 숫자로 적어주세요'; } }
+      const was = cur[k] == null ? null : String(cur[k]);
+      const now = v == null ? null : String(v);
+      if(was !== now){ next[k] = v; diffs.push([ko, was, now]); }
+    }
+    if(!next.name && cur.name === null) return err.textContent = '이름은 비울 수 없어요';
+    if('name' in next && !next.name) return err.textContent = '이름은 비울 수 없어요';
+    const perks = [...box.querySelectorAll(`[data-pperk="${CSS.escape(id)}"] button.on`)].map(x=>x.textContent);
+    if(JSON.stringify(perks) !== JSON.stringify(cur.perks||[])){ next.perks = perks;
+      diffs.push(['시설', (cur.perks||[]).join(' ') || null, perks.join(' ') || null]); }
+    if(!diffs.length) return err.textContent = '바뀐 게 없어요';
+    b.disabled = true; b.textContent = '올리는 중…';
+    try{
+      next.updated_at = new Date().toISOString(); next.updated_by = ME.id; next.updated_name = ME.name;
+      await api(`places?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', body:JSON.stringify(next) });
+      /* 기록이 먼저 실패하면 무엇이 바뀌었는지 알 수 없게 되므로, 바뀐 항목마다 한 줄씩 남긴다 */
+      await api('place_edits', { method:'POST', body:JSON.stringify(diffs.map(([f,bf,af],i)=>({
+        id:`${id}|${ME.id}|${Date.now()}|${i}`, place_id:id, place_name:cur.name,
+        user_id:ME.id, name:ME.name, field:f, before:bf, after:af }))) });
+      toast('고마워요 · 기록에 남았어요'); await pullPlaces();
+    }catch(e){ b.disabled = false; b.textContent = '고친 내용 올리기';
+      err.textContent = e.code==='notable' ? '정보판 표가 아직 없어요 (supabase-places.sql)' : '올리지 못했어요 · 신호 확인'; }
+  });
 }
 
 /* ── 숙소 평가 ────────────────────────────────────────────
@@ -1255,7 +1365,7 @@ function start(){
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
-  pullRides(); pullStays(); pullMail(true);
+  pullRides(); pullStays(); pullPlaces(); pullMail(true);
   clearInterval(mailPoll); mailPoll = setInterval(()=>{ if(!document.hidden) pullMail(true); }, 25000);
   if(!onbDone() && $('onb').hidden) setTimeout(()=>onbStart(), 700);   // 처음 온 사람만. 한 번 끝내면 다시 안 뜬다
 }
