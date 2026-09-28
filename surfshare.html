@@ -392,6 +392,28 @@ const NEAR = [
   ['낙산느티나무민박', 38.10965, 128.63342],
 ];
 const NAKSAN = SCHOOL;
+
+/* ── 지도에 깔 지형과 랜드마크 ────────────────────────────
+   예전 지도는 학교를 가운데 두고 동심원만 그렸다. 거리는 읽혔지만
+   "어느 쪽인지"가 안 읽혔다 — 해안선이 진짜가 아니라 그럴듯한 곡선이었기 때문이다.
+   OpenStreetMap 의 실제 해안선·남대천을 한 번 뽑아 단순화해 넣었다(2026-09-28).
+   타일을 불러오지 않으므로 신호가 약한 바다 앞에서도 그려진다. */
+const COAST = [[128.62138,38.13474],[128.62125,38.13429],[128.622,38.13353],[128.62374,38.13351],[128.62376,38.13316],[128.62262,38.13308],[128.62425,38.13278],[128.62517,38.13219],[128.62365,38.13211],[128.62425,38.13202],[128.62499,38.13201],[128.62359,38.13184],[128.62267,38.13172],[128.62344,38.1317],[128.62343,38.13092],[128.62384,38.12991],[128.62471,38.12897],[128.62898,38.12887],[128.62715,38.12857],[128.62773,38.12836],[128.62706,38.12823],[128.62626,38.12819],[128.62994,38.12815],[128.62977,38.12679],[128.63072,38.12628],[128.63026,38.12618],[128.63052,38.12578],[128.63114,38.12548],[128.63153,38.12459],[128.63205,38.12445],[128.63324,38.12432],[128.63313,38.12401],[128.63245,38.12391],[128.63303,38.12379],[128.63248,38.12363],[128.63267,38.12309],[128.6347,38.12279],[128.63378,38.12276],[128.63218,38.12269],[128.63443,38.12262],[128.63283,38.12219],[128.63234,38.12203],[128.63269,38.12185],[128.63206,38.12179],[128.63207,38.1207],[128.63246,38.1199],[128.63467,38.11739],[128.63939,38.11293],[128.64596,38.10731]];
+const RIVER = [[[128.64172,38.096],[128.64174,38.10163],[128.64447,38.10564],[128.64456,38.10615],[128.64611,38.10647],[128.64617,38.10711]]];
+
+/* 길을 찾을 때 실제로 기준이 되는 것들. 숙소는 핀으로 따로 찍으므로 여기 넣지 않는다. */
+const LAND = [
+  ['낙산해수욕장', 38.11548, 128.63751, 'beach'],
+  ['낙산사',      38.12451, 128.62914, 'spot'],
+  ['낙산도립공원', 38.11420, 128.63632, 'park'],
+  ['송림 야영장',  38.11292, 128.63750, 'park'],
+  ['조산초등학교', 38.11372, 128.63238, 'spot'],
+  ['조산삼거리',   38.11148, 128.63332, 'cross'],
+  ['사천사거리',   38.10721, 128.63391, 'cross'],
+  ['조산리',      38.10807, 128.63464, 'town'],
+  ['주청리',      38.11590, 128.62988, 'town'],
+  ['남대천 하구',  38.10748, 128.64446, 'river'],
+];
 const PERKS = ['해변 도보','주차','보드 보관','온수 샤워','취사','세탁기','수건 제공','조식'];
 const PLACE_KINDS = ['호텔','콘도','펜션','민박','게스트하우스','스테이','기타'];
 let toastT;
@@ -1304,43 +1326,111 @@ const perkScore = p => (p.perks||[]).filter(x=>PERK_TOP.includes(x)).length;
 /* 지도 — 외부 지도 라이브러리를 쓰지 않는다. 바다 앞에서 신호가 약해도 떠야 하고,
    여기서 필요한 건 "낙산 기준 어느 쪽 얼마나 먼가" 하나뿐이다. */
 function renderMap(){
-  /* 두 가지를 같이 찍는다 — 정보판에 등록된 숙소(노랑)와 이번에 올라온 숙소(민트).
-     따로 그리면 "올라온 곳이 어디쯤인지"와 "근처에 뭐가 있는지"를 두 번 봐야 한다. */
+  /* 두 가지를 같이 찍는다 — 정보판에 등록된 숙소(노랑)와 이번에 올라온 숙소(민트). */
   const up = (state.stays||[]).filter(s=>s.lat&&s.lon && !isGone(s,'stay'))
     .map(s=>({ key:'s'+s.id, name:s.place, lat:+s.lat, lon:+s.lon, url:s.url, kind:'up' }));
   const cat = (state.places||[]).filter(p=>p.lat&&p.lon)
-    .filter(p=>!up.some(u=>u.name===p.name))                      // 같은 곳이 올라왔으면 그쪽을 쓴다
+    .filter(p=>!up.some(u=>u.name===p.name))
     .map(p=>({ key:p.id, name:p.name, lat:+p.lat, lon:+p.lon, url:p.url, kind:'cat', fav:isFav(p.id) }));
   const list = [...up, ...cat.filter(c=>c.fav), ...cat.filter(c=>!c.fav)];
   if(!list.length){ $('map').innerHTML = `<div class="empty">지도에 찍을 곳이 아직 없어요.<br>
     숙소를 올릴 때 <b>네이버지도 링크</b>를 붙이면 여기 핀이 찍힙니다.</div>`; return; }
-  const maxKm = Math.max(1.5, ...list.map(s=>distKm(s.lat,s.lon))) * 1.3;
-  const W=320, H=320, C=W/2, R=C-30;
-  const px = s => { const r=Math.PI/180;
-    const dx=(s.lon-SCHOOL.lon)*Math.cos(SCHOOL.lat*r)*111.32, dy=(s.lat-SCHOOL.lat)*110.57;   // km
-    return [C + dx/maxKm*R, C - dy/maxKm*R]; };
-  const ring = k => `<circle cx="${C}" cy="${C}" r="${(k/maxKm*R).toFixed(1)}" fill="none" stroke="#B9C6D6" stroke-width="1.5" stroke-dasharray="4 4"/>
-    <text x="${C+3}" y="${(C - k/maxKm*R + 11).toFixed(1)}" font-size="9" fill="#6E7A8C">${k}km</text>`;
-  const rings = [0.5,1,2,5,10].filter(k=>k < maxKm).map(ring).join('');
-  /* 동해는 오른쪽이다. 해안선을 그려야 "바다 쪽인지 산 쪽인지"가 한눈에 온다. */
-  const sea = C + (0.55/maxKm*R);
+
+  /* ── 보이는 범위 ──
+     예전엔 제일 먼 곳에 맞춰 축척을 잡았다. 그래서 한 곳만 멀어도 나머지가 전부
+     가운데 한 점으로 뭉쳤다. 학교와 핀들을 담되, **최소 1.1km 는 채워서** 확대한다. */
+  const KM_LAT = 110.57, KM_LON = 111.32*Math.cos(SCHOOL.lat*Math.PI/180);
+  const pts = [[SCHOOL.lat, SCHOOL.lon], ...list.map(s=>[s.lat,s.lon])];
+  let latC = (Math.min(...pts.map(p=>p[0])) + Math.max(...pts.map(p=>p[0])))/2;
+  let lonC = (Math.min(...pts.map(p=>p[1])) + Math.max(...pts.map(p=>p[1])))/2;
+  const spanKm = Math.max(1.1,
+    (Math.max(...pts.map(p=>p[0])) - Math.min(...pts.map(p=>p[0]))) * KM_LAT * 1.5,
+    (Math.max(...pts.map(p=>p[1])) - Math.min(...pts.map(p=>p[1]))) * KM_LON * 1.35);
+  const W = 320, H = 340, PAD = 6;
+  const sc = (H - PAD*2) / spanKm;                                  // px per km
+  const X = lon => W/2 + (lon - lonC) * KM_LON * sc;
+  const Y = lat => H/2 - (lat - latC) * KM_LAT * sc;
+  const inView = (la,lo) => X(lo) > -20 && X(lo) < W+20 && Y(la) > -20 && Y(la) < H+20;
+
+  /* 바다 — 해안선을 따라가다 오른쪽 모서리로 닫는다. 동해가 오른쪽이라는 게
+     그럴듯한 곡선이 아니라 실제 선으로 보여야 방향을 잡을 수 있다. */
+  const cpath = COAST.map(([lo,la],i)=>`${i?'L':'M'}${X(lo).toFixed(1)} ${Y(la).toFixed(1)}`).join('');
+  const c0 = COAST[0], cN = COAST[COAST.length-1];
+  const seaPath = `${cpath}L${W+30} ${Y(cN[1]).toFixed(1)}L${W+30} ${Y(c0[1]).toFixed(1)}Z`;
+  const rpath = RIVER.map(seg=>seg.map(([lo,la],i)=>`${i?'L':'M'}${X(lo).toFixed(1)} ${Y(la).toFixed(1)}`).join('')).join(' ');
+
+  /* 눈금자 — 동심원보다 이쪽이 읽기 쉽다. 축척이 바뀌어도 숫자가 따라간다 */
+  const barKm = spanKm > 3 ? 1 : spanKm > 1.6 ? 0.5 : 0.2;
+  const barPx = barKm * sc;
+
+  const MK = { beach:'#2E6BFF', park:'#2F9E68', cross:'#8A6238', town:'#6E6F86', spot:'#9B6BFF', river:'#2E6BFF' };
   const COL = { up:'var(--mint)', cat:'var(--sun)', fav:'#F5A623' };
-  $('map').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:#F4FAFF;border:3px solid var(--ink);display:block" role="img" aria-label="양양서핑학교 기준 숙소 위치">
-      <path d="M${sea} 0 Q${sea+22} ${H/2} ${sea} ${H} L${W} ${H} L${W} 0 Z" fill="#8FD3FF"/>
-      <path d="M${sea} 0 Q${sea+22} ${H/2} ${sea} ${H}" fill="none" stroke="#5FBDF2" stroke-width="2.5"/>
-      <text x="${W-8}" y="20" font-size="11" font-weight="800" fill="var(--deep)" text-anchor="end">동해</text>
-      ${rings}
-      ${list.map(s=>{ const [x,y]=px(s);
-        return `<line x1="${C}" y1="${C}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#1B1B2F" stroke-width="1.2" stroke-dasharray="3 3" opacity=".4"/>`; }).join('')}
-      ${list.map((s,i)=>{ const [x,y]=px(s), c = s.fav ? COL.fav : COL[s.kind];
+
+  /* 학교 바로 옆 숙소(디그니티 10m, 비치콘도 70m)는 같은 점에 찍혀 학교 아이콘에 묻혔다.
+     겹치면 조금씩 밀어낸다 — 위치가 몇 픽셀 어긋나도 "학교 옆"이라는 사실이 더 중요하다. */
+  const taken = [[X(SCHOOL.lon), Y(SCHOOL.lat), 19]];
+  const place = (x0,y0)=>{
+    for(const [r,steps] of [[0,1],[17,8],[30,10],[44,12]]){
+      for(let i=0;i<steps;i++){
+        const a = -Math.PI/2 + i*2*Math.PI/steps;
+        const x = x0 + Math.cos(a)*r, y = y0 + Math.sin(a)*r;
+        if(x<14 || x>W-14 || y<16 || y>H-16) continue;
+        if(taken.every(([tx,ty,tr])=>Math.hypot(x-tx,y-ty) >= tr)){ taken.push([x,y,19]); return [x,y,r>0]; }
+      }
+    }
+    taken.push([x0,y0,19]); return [x0,y0,false];
+  };
+  const put = list.map(s=>{ const [x,y,moved] = place(X(s.lon), Y(s.lat)); return { ...s, x, y, moved, tx:X(s.lon), ty:Y(s.lat) }; });
+  /* 라벨이 화면 밖으로 잘리지 않게 가둔다 */
+  const clampX = x => Math.max(6, Math.min(W-6, x));
+  /* 글자끼리 겹치면 둘 다 못 읽는다. 먼저 자리 잡은 쪽이 이기고, 진 쪽은 점만 남긴다.
+     학교 이름이 제일 중요하므로 그 자리를 먼저 잡아 둔다. */
+  const lab = [[clampX(X(SCHOOL.lon)) - 40, Y(SCHOOL.lat)+21, 80, 16]];
+  const fits = (x,y,w) => { const box=[x,y-7,w,14];
+    if(lab.some(([a,b,c,d])=> box[0] < a+c && a < box[0]+box[2] && box[1] < b+d && b < box[1]+box[3])) return false;
+    lab.push(box); return true; };
+
+  $('map').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;background:#F7F3E4;border:3px solid var(--ink);display:block" role="img" aria-label="양양서핑학교 주변 숙소 지도">
+      <path d="${seaPath}" fill="#9FD8F7"/>
+      <path d="${cpath}" fill="none" stroke="#4FA8DC" stroke-width="2.5"/>
+      ${rpath ? `<path d="${rpath}" fill="none" stroke="#7FC4FF" stroke-width="4" stroke-linecap="round"/>` : ''}
+      <text x="${W-7}" y="17" font-size="11" font-weight="800" fill="#1B5E8A" text-anchor="end">동해</text>
+
+      ${LAND.filter(([n,la,lo])=>inView(la,lo)).map(([n,la,lo,k])=>{
+        const x = X(lo), y = Y(la), right = x < W*0.58;
+        const lx = clampX(x + (right?6:-6)), ly = Math.max(11, Math.min(H-5, y+3.5));
+        const wid = n.length*10;
+        const ok = fits(right ? lx : lx-wid, ly, wid);
+        return `<g opacity=".92"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="${MK[k]||'#6E6F86'}" stroke="#F7F3E4" stroke-width="1.5"/>
+          ${ok ? `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="9.5" fill="#4B4A6B"
+            text-anchor="${right?'start':'end'}" stroke="#F7F3E4" stroke-width="2.6" paint-order="stroke">${n}</text>` : ''}</g>`; }).join('')}
+
+      <g>
+        <path d="M${(X(SCHOOL.lon)-11).toFixed(1)} ${(Y(SCHOOL.lat)+8).toFixed(1)} L${X(SCHOOL.lon).toFixed(1)} ${(Y(SCHOOL.lat)-2).toFixed(1)} L${(X(SCHOOL.lon)+11).toFixed(1)} ${(Y(SCHOOL.lat)+8).toFixed(1)} Z"
+          fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
+        <rect x="${(X(SCHOOL.lon)-8).toFixed(1)}" y="${(Y(SCHOOL.lat)+6).toFixed(1)}" width="16" height="11" fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5"/>
+        <text x="${clampX(X(SCHOOL.lon)).toFixed(1)}" y="${(Y(SCHOOL.lat)+29).toFixed(1)}" font-size="11" font-weight="800"
+          text-anchor="${X(SCHOOL.lon) < 44 ? 'start' : X(SCHOOL.lon) > W-44 ? 'end' : 'middle'}" fill="var(--ink)"
+          stroke="#F7F3E4" stroke-width="3.5" paint-order="stroke">양양서핑학교</text>
+      </g>
+
+      ${put.map(s=>`<line x1="${X(SCHOOL.lon).toFixed(1)}" y1="${Y(SCHOOL.lat).toFixed(1)}" x2="${s.x.toFixed(1)}" y2="${s.y.toFixed(1)}"
+          stroke="#1B1B2F" stroke-width="1.1" stroke-dasharray="3 3" opacity=".35"/>`).join('')}
+      ${put.filter(s=>s.moved).map(s=>`<line x1="${s.tx.toFixed(1)}" y1="${s.ty.toFixed(1)}" x2="${s.x.toFixed(1)}" y2="${(s.y+4).toFixed(1)}"
+          stroke="#1B1B2F" stroke-width="1" opacity=".3"/><circle cx="${s.tx.toFixed(1)}" cy="${s.ty.toFixed(1)}" r="1.8" fill="#1B1B2F" opacity=".45"/>`).join('')}
+
+      ${put.map((s,i)=>{ const x=s.x, y=s.y, c = s.fav ? COL.fav : COL[s.kind];
         return `<g><path d="M${x.toFixed(1)} ${(y+11).toFixed(1)} L${(x-8).toFixed(1)} ${(y-2).toFixed(1)} L${(x+8).toFixed(1)} ${(y-2).toFixed(1)} Z" fill="${c}" stroke="var(--ink)" stroke-width="2"/>
           <circle cx="${x.toFixed(1)}" cy="${(y-6).toFixed(1)}" r="10" fill="${c}" stroke="var(--ink)" stroke-width="2.5"/>
           <text x="${x.toFixed(1)}" y="${(y-2).toFixed(1)}" font-size="${s.fav?12:11}" font-weight="800" text-anchor="middle">${s.fav?'★':i+1}</text></g>`; }).join('')}
-      <g>
-        <path d="M${C-11} ${C+8} L${C} ${C-2} L${C+11} ${C+8} Z" fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round"/>
-        <rect x="${C-8}" y="${C+6}" width="16" height="11" fill="var(--coral)" stroke="var(--ink)" stroke-width="2.5"/>
-        <text x="${C}" y="${C-8}" font-size="11" font-weight="800" text-anchor="middle" fill="var(--ink)"
-          stroke="#F4FAFF" stroke-width="3.5" paint-order="stroke">양양서핑학교</text>
+
+
+      <g transform="translate(10 ${H-12})">
+        <line x1="0" y1="0" x2="${barPx.toFixed(1)}" y2="0" stroke="#1B1B2F" stroke-width="2.5"/>
+        <line x1="0" y1="-4" x2="0" y2="4" stroke="#1B1B2F" stroke-width="2.5"/>
+        <line x1="${barPx.toFixed(1)}" y1="-4" x2="${barPx.toFixed(1)}" y2="4" stroke="#1B1B2F" stroke-width="2.5"/>
+        <text x="${(barPx/2).toFixed(1)}" y="-7" font-size="10" font-weight="800" text-anchor="middle" fill="#1B1B2F"
+          stroke="#F7F3E4" stroke-width="2.6" paint-order="stroke">${barKm < 1 ? barKm*1000+'m' : barKm+'km'}</text>
       </g>
     </svg>
     <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px;font-size:11.5px;color:var(--ink2)">
@@ -1356,8 +1446,8 @@ function renderMap(){
         ${paidLabel(rv)}
         <div style="color:var(--ink2);margin-left:14px">학교에서 ${km.toFixed(1)}km · ${travel(km)}
           · <a href="${mapLink(s.name,s.lat,s.lon,s.url)}" target="_blank" rel="noopener">길찾기 ↗</a></div></div>`; }).join('')}</div>
-    <div class="note">가운데가 <b>양양서핑학교</b>(양양읍 일출로 159-12)예요. 점선은 학교에서 숙소까지 직선이고,
-      실제로 걷거나 달리는 길은 이보다 조금 깁니다. <b>길찾기</b>를 누르면 네이버지도가 열려요.</div>`;
+    <div class="note">해안선과 남대천은 OpenStreetMap 자료예요. 점선은 학교에서 숙소까지 직선이라
+      실제로 걷는 길은 조금 더 깁니다. <b>길찾기</b>를 누르면 네이버지도가 열려요.</div>`;
 }
 $('s-save').onclick = async ()=>{
   const e = $('s-err'); e.textContent = '';
