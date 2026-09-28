@@ -56,7 +56,7 @@ body{ background:#5AB4EF; background-image:linear-gradient(to bottom,#DCF3FF 0 1
 .wrap{ max-width:720px; margin:0 auto; padding-inline:14px; padding-block:16px 70px }
 h1,h2,.t{ font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700 }
 h1{ color:var(--paper); text-shadow:3px 3px 0 var(--ink); font-size:26px; margin:0 }
-.sub{ color:var(--ink); font-size:13px; margin:4px 0 14px; text-shadow:1px 1px 0 rgba(255,255,255,.7) }
+.sub{ color:var(--ink); font-size:13.5px; margin:4px 0 12px; text-shadow:1px 1px 0 rgba(255,255,255,.7) }
 .sub a{ color:var(--deep) }
 .px{ background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:14px }
 .px.sand{ background:var(--sand) } .px.white{ background:#fff }
@@ -67,12 +67,25 @@ h1{ color:var(--paper); text-shadow:3px 3px 0 var(--ink); font-size:26px; margin
 .btn.coral{ background:var(--coral) } .btn.grape{ background:var(--grape); color:#fff }
 .btn:active{ transform:translate(3px,3px); box-shadow:0 0 0 }
 .btn[disabled]{ opacity:.5; cursor:default }
-input,select,textarea{ border:3px solid var(--ink); padding:8px 9px; font-family:inherit; font-size:14px; background:#fff; width:100% }
+/* hidden 을 인라인 display 가 덮는 사고를 막는다 — 로그인 모드인데 약관 동의가 떠 있었다 */
+[hidden]{ display:none !important }
+/* 16px 미만이면 iOS 사파리가 포커스할 때 화면을 확대한다. 확대되면 레이아웃이 튀어 되돌아오지 않는다. */
+input,select,textarea{ border:3px solid var(--ink); padding:11px 10px; font-family:inherit; font-size:16px;
+                       background:#fff; width:100%; min-height:48px; border-radius:0; -webkit-appearance:none }
+input[type=checkbox]{ width:22px; height:22px; min-height:22px; flex:0 0 auto; accent-color:var(--sea) }
+.agree{ display:flex; gap:9px; align-items:center; margin-top:12px; font-size:13.5px; color:var(--ink);
+        padding:9px; border:3px dashed var(--grid); cursor:pointer }
+.agree a{ color:var(--deep); padding:3px 0 }
+.btn.big{ min-height:52px; font-size:16px; padding:13px }
+.foot{ margin-top:14px; padding:12px 2px 4px; font-size:12.5px; line-height:1.9; color:var(--ink);
+       text-shadow:1px 1px 0 rgba(255,255,255,.7); text-align:center }
+.foot a{ color:var(--deep) }
+.foot-row + .foot-row{ margin-top:2px }
 textarea{ min-height:54px; resize:vertical }
 label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .err{ color:#C2303A; font-size:13px; min-height:1.3em; font-weight:700 }
 .tabs{ display:flex; gap:0; margin-bottom:10px }
-.tabs button{ flex:1; border:4px solid var(--ink); background:var(--paper); padding:10px; font-weight:800; font-size:14px; font-family:inherit; cursor:pointer; min-height:46px }
+.tabs button{ flex:1; border:4px solid var(--ink); background:var(--paper); padding:10px; font-weight:800; font-size:14.5px; font-family:inherit; cursor:pointer; min-height:48px }
 .tabs button + button{ border-left:0 }
 .tabs button[aria-pressed="true"]{ background:var(--ink); color:var(--sun) }
 .grp{ margin-top:14px }
@@ -123,12 +136,33 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 @keyframes ringp{ 0%,100%{ outline-color:#FF8A3D } 50%{ outline-color:var(--sun) } }
 @media(prefers-reduced-motion:reduce){ .ring{ animation:none } }
 body.onb-on .wrap{ padding-bottom:230px }
-.scene-wrap{ margin-top:12px }
+.scene-wrap{ margin-bottom:12px }
 #scene{ display:block; width:100%; height:auto; aspect-ratio:200/104; image-rendering:pixelated;
         border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); background:#BFE9FF }
 .scene-cap{ margin-top:6px; font-size:12px; color:var(--ink); text-shadow:1px 1px 0 rgba(255,255,255,.75);
             line-height:1.7; text-align:center }
-.new-av{ width:72px; height:72px; image-rendering:pixelated; border:3px solid var(--ink); background:#8FD3FF; flex:0 0 auto }
+.newav-box{ background:#fff; border:3px solid var(--ink); padding:12px; text-align:center }
+.new-av{ width:104px; height:104px; image-rendering:pixelated; border:3px solid var(--ink); background:#8FD3FF }
+.newav-txt{ font-size:12.5px; line-height:1.7; color:var(--ink2); margin-top:7px }
+
+/* ── 쪽지 ──────────────────────────────────────────────────
+   사이트 전체가 "같은 기수 전원이 본다"로 돼 있지만 이건 아니다.
+   서버에서도 정책을 열지 않았고(supabase-notes.sql), 화면도 나만 본다. */
+.sheet{ position:fixed; inset:0; z-index:90; display:flex; align-items:flex-end; justify-content:center }
+.sheet-dim{ position:absolute; inset:0; background:rgba(27,27,47,.5) }
+.sheet-in{ position:relative; width:100%; max-width:560px; max-height:86vh; overflow:auto; background:var(--paper);
+           border:4px solid var(--ink); border-bottom:0; padding:14px;
+           padding-bottom:calc(14px + env(safe-area-inset-bottom)) }
+@media(min-width:560px){ .sheet{ align-items:center } .sheet-in{ border-bottom:4px solid var(--ink); box-shadow:6px 6px 0 var(--ink) } }
+.sheet-hd{ display:flex; align-items:center; gap:8px; margin-bottom:10px }
+.sheet-hd .t{ font-size:17px; flex:1 }
+.note-row{ border-top:2px dashed var(--grid); padding:9px 0; font-size:13px; line-height:1.6 }
+.note-row.new{ background:#FFF3C4; margin-inline:-6px; padding-inline:6px }
+.note-who{ display:flex; align-items:center; gap:6px }
+.note-who canvas{ width:24px; height:24px; image-rendering:pixelated; flex:0 0 auto }
+.note-when{ color:var(--ink2); font-size:11.5px; margin-left:auto }
+.dot{ display:inline-block; min-width:18px; height:18px; line-height:18px; padding:0 4px; background:var(--coral);
+      color:#fff; border:2px solid var(--ink); font-size:11px; font-weight:800; text-align:center; margin-left:3px }
 </style>
 </head>
 <body>
@@ -136,17 +170,21 @@ body.onb-on .wrap{ padding-bottom:230px }
   <h1>SurfShare</h1>
   <div class="sub">차 같이 타고, 숙소 같이 쓰고 · 양양 낙산</div>
 
-  <!-- 입장 문 — 앱과 다른 비번이다. 한 곳이 새도 다른 한 곳은 안 열리게. -->
+  <!-- 장면이 먼저다. 문 앞에 선 사람은 설명을 안 읽는다 — 그림이 먼저 말하게 한다 -->
+  <div class="scene-wrap" id="scene-wrap" hidden>
+    <canvas id="scene" role="img" aria-label="서울에서 양양으로 가는 차, 같이 묵는 집, 불 위의 냄비, 그리고 바다"></canvas>
+    <div class="scene-cap">🚗 같이 내려오고 · 🏠 한 집에 묵고 · 🍲 같이 해 먹고 · 🌊 같이 들어가고</div>
+  </div>
+
+  <!-- 입장 문 — 앱과 다른 비번이다. 한 곳이 새도 다른 한 곳은 안 열리게 -->
   <div class="px" id="gate" hidden>
     <span class="tag">양양서핑학교 6기</span>
-    <div class="t" style="font-size:18px;margin-top:6px">SurfShare</div>
-    <div class="note" style="margin-top:4px;line-height:1.6">같이 탈 차와 같이 쓸 숙소를 나누는 곳이에요.<br>
-      6기 단톡방에서 받은 <b>입장 비밀번호</b>를 넣어주세요.</div>
-    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-      <input id="gate-code" type="password" maxlength="40" placeholder="입장 비밀번호" autocomplete="off" style="flex:1 1 150px">
-      <button class="btn blue" id="gate-ok">들어가기</button>
-    </div>
-    <div class="err" id="gate-err" style="margin-top:4px"></div>
+    <div class="note" style="margin-top:7px;line-height:1.65">6기 단톡방에서 받은 <b>입장 비밀번호</b>를 넣어주세요.</div>
+    <label for="gate-code">입장 비밀번호</label>
+    <input id="gate-code" type="password" maxlength="40" placeholder="단톡방에서 받은 비밀번호" autocomplete="off">
+    <div class="err" id="gate-err"></div>
+    <button class="btn blue big" id="gate-ok" style="width:100%">들어가기</button>
+    <div class="note" style="margin-top:9px">비밀번호를 못 받으셨다면 단톡방에 물어보세요.</div>
   </div>
 
   <!-- 로그인 -->
@@ -165,13 +203,11 @@ body.onb-on .wrap{ padding-bottom:230px }
       </div>
       <label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때</label><input id="ubirth" inputmode="numeric" maxlength="6" placeholder="예) 881102">
       <label>내 캐릭터</label>
-      <div style="display:flex;gap:11px;align-items:center;background:#fff;border:3px solid var(--ink);padding:9px">
+      <div class="newav-box">
         <canvas class="new-av" id="new-av"></canvas>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12.5px;line-height:1.6">차·숙소 글 옆에 이 모습으로 서 있어요.</div>
-          <button type="button" class="btn sm ghost" id="new-rand" style="margin-top:6px">🎲 다시 굴리기</button>
-          <div class="note" style="margin-top:5px">들어가서 <b>🙂 꾸미기</b>에서 더 자세히 고칠 수 있어요.</div>
-        </div>
+        <div class="newav-txt">차·숙소 글 옆에 <b>이 모습</b>으로 서 있어요.<br>
+          들어가서 <b>🙂 꾸미기</b>에서 더 고칠 수 있어요.</div>
+        <button type="button" class="btn ghost" id="new-rand" style="width:100%;margin-top:9px">🎲 다시 굴리기</button>
       </div>
     </div>
     <label for="upw">비밀번호</label>
@@ -180,18 +216,19 @@ body.onb-on .wrap{ padding-bottom:230px }
       <button type="button" class="btn sm ghost" id="pw-eye" aria-label="비밀번호 보기" style="flex:0 0 auto">👁</button>
     </div>
     <div class="note" id="pw-note" style="margin-top:4px" hidden>다음에 이 아이디와 비밀번호로 다시 들어옵니다. <b>기억해 두세요.</b></div>
-    <label class="agree" id="agree-wrap" hidden style="display:flex;gap:7px;align-items:flex-start;margin-top:10px;font-size:13px;color:var(--ink)">
-      <input type="checkbox" id="agree" style="width:auto;margin-top:3px">
+    <label class="agree" id="agree-wrap" hidden>
+      <input type="checkbox" id="agree">
       <span><a href="/terms-of-service" target="_blank" rel="noopener">이용약관</a>과
         <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>에 동의합니다</span></label>
     <div class="err" id="lerr"></div>
-    <button class="btn blue" id="go" style="width:100%">들어가기</button>
+    <button class="btn blue big" id="go" style="width:100%">들어가기</button>
   </div>
 
-  <!-- 대문 장면 — 문 앞에 선 사람은 설명을 안 읽는다. 그래서 보여준다 -->
-  <div class="scene-wrap" id="scene-wrap" hidden>
-    <canvas id="scene" role="img" aria-label="서울에서 양양으로 가는 차, 같이 묵는 집, 불 위의 냄비, 그리고 바다"></canvas>
-    <div class="scene-cap">🚗 같이 내려오고 · 🏠 한 집에 묵고 · 🍲 같이 해 먹고 · 🌊 같이 들어가고</div>
+  <!-- 첫 화면 바닥 — 빈 하늘만 남기지 않는다 -->
+  <div class="foot" id="foot" hidden>
+    <div class="foot-row"><b>🏫 학교</b>는 준비 중이에요 — 파도 예보 · 수업 기록 · 자세 분석 · 마을</div>
+    <div class="foot-row"><a href="/terms-of-service" target="_blank" rel="noopener">이용약관</a>
+      · <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a></div>
   </div>
 
   <!-- 본문 -->
@@ -199,6 +236,7 @@ body.onb-on .wrap{ padding-bottom:230px }
     <div class="px" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <canvas class="me-av" id="me-av"></canvas><b id="who" style="flex:1"></b>
       <span class="tag" id="cohort-tag"></span>
+      <button class="btn sm ghost" id="mail">✉️ 쪽지<span class="dot" id="mail-dot" hidden>0</span></button>
       <button class="btn sm ghost" id="help">❓ 사용법</button>
       <button class="btn sm ghost" id="out">나가기</button>
     </div>
@@ -277,6 +315,25 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
   </div>
 </div>
+<!-- 쪽지 -->
+<div class="sheet" id="mail-sheet" hidden>
+  <div class="sheet-dim" data-mailclose></div>
+  <div class="sheet-in">
+    <div class="sheet-hd"><span class="t">✉️ 쪽지</span>
+      <button class="btn sm ghost" data-mailclose>닫기</button></div>
+    <div id="mail-to" hidden>
+      <div class="note" style="margin:0 0 4px"><b id="mail-to-name"></b> 님에게</div>
+      <textarea id="mail-text" maxlength="300" placeholder="예) 토요일 새벽 차 한 자리 아직 있을까요?"></textarea>
+      <div class="err" id="mail-err"></div>
+      <div style="display:flex;gap:6px">
+        <button class="btn sm ghost" id="mail-back" style="flex:0 0 auto">← 목록</button>
+        <button class="btn blue" id="mail-send" style="flex:1">보내기</button>
+      </div>
+    </div>
+    <div id="mail-list"></div>
+  </div>
+</div>
+
 <div class="onb" id="onb" hidden>
   <div class="onb-card">
     <div class="onb-step" id="onb-step"></div>
@@ -344,8 +401,16 @@ async function rpc(fn, args){
    cohort_codes 의 'share' 행. 같은 RPC 를 쓰되 기수 키만 다르다.
    한 코드가 밖으로 새도 다른 곳은 안 열린다. */
 const shareInvited = () => { try{ return localStorage.getItem('lineup.share.invited') === '1'; }catch(e){ return false; } };
-function showGate(){ $('gate').hidden = false; $('login').hidden = true; sceneOn(); setTimeout(()=>$('gate-code').focus({preventScroll:true}), 60); }
-function passGate(){ $('gate').hidden = true; $('login').hidden = false; sceneOn(); }
+function showGate(){ $('gate').hidden = false; $('login').hidden = true; $('foot').hidden = false; sceneOn();
+  setTimeout(()=>$('gate-code').focus({preventScroll:true}), 60); }
+function passGate(){ $('gate').hidden = true; $('login').hidden = false; $('foot').hidden = false; sceneOn();
+  /* 문을 막 지난 사람은 대개 계정이 없다. 이 기기에 흔적이 없으면 '새 계정'으로 연다 —
+     기본이 '로그인'이면 없는 계정을 찾다가 튕기고, 그게 첫인상이 된다. */
+  let known = false;
+  try{ known = !!JSON.parse(localStorage.getItem('lineup.share.me')||'null')
+             || Object.keys(JSON.parse(localStorage.getItem('surf.users')||'{}')).length > 0; }catch(e){}
+  setMode(known ? 'in' : 'new');
+  setTimeout(()=>$('uid').focus({preventScroll:true}), 80); }
 $('gate-ok').onclick = async ()=>{
   const code = $('gate-code').value.trim(), e = $('gate-err'), btn = $('gate-ok');
   e.textContent = ''; if(!code) return e.textContent = '비밀번호를 넣어주세요';
@@ -377,7 +442,8 @@ const setMode = m => { mode = m;
   $('m-new').setAttribute('aria-pressed', String(m==='new'));
   $('new-only').hidden = m!=='new'; $('agree-wrap').hidden = m!=='new'; $('pw-note').hidden = m!=='new';
   if(m==='new') newLook($('uroster')?.value && $('uroster').value!=='__etc' ? $('uroster').value : '');
-  $('mode-note').textContent = m==='in' ? '아이디와 비밀번호로 들어와요.' : '양양서핑학교 6기 명단에서 본인을 찾아주세요.';
+  $('mode-note').textContent = m==='in' ? '전에 만든 아이디와 비밀번호로 들어와요.'
+    : '처음이시죠? 6기 명단에서 본인을 찾고 비밀번호만 정하면 끝이에요.';
   $('go').textContent = m==='in' ? '들어가기' : '★ 계정 만들고 시작';
   $('lerr').textContent = ''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
@@ -638,6 +704,89 @@ function sceneOff(){ $('scene-wrap').hidden = true; if(sceneRAF){ cancelAnimatio
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden && sceneRAF){ cancelAnimationFrame(sceneRAF); sceneRAF=0; }
   else if(!document.hidden && !$('scene-wrap').hidden) sceneOn(); });
 
+/* ── 쪽지 ─────────────────────────────────────────────────
+   차·숙소 글은 전원이 본다. 그래서 "그 자리 아직 있나요"를 물으려면 지금까진
+   단톡방으로 나가야 했다. 나갔다 오면 대개 안 돌아온다.
+
+   보관과 조회는 전부 서버 함수(note_send/note_box/...)가 한다. 이 표만은
+   RLS 정책을 하나도 열지 않았다 — anon 키는 브라우저에 그대로 내려가므로
+   다른 표처럼 using(true) 로 두면 누구나 남의 쪽지를 전부 읽는다.
+   함수는 accounts.token 을 확인하고, 그 토큰은 로그인할 때만 나온다. */
+let mailBox = { inbox:[], sent:[], unread:0 }, mailTo = null, mailPoll = 0;
+const canMail = () => !!(ME && ME.token);
+
+async function pullMail(quiet){
+  if(!canMail()) return;
+  try{ const r = await rpc('note_box', { p_id:ME.id, p_token:ME.token });
+    mailBox = { inbox:r.inbox||[], sent:r.sent||[], unread:+r.unread||0 };
+    const d = $('mail-dot'); d.textContent = mailBox.unread; d.hidden = !mailBox.unread;
+    if(!$('mail-sheet').hidden) renderMail();
+  }catch(e){ if(!quiet && e.code==='norpc') toast('쪽지 표가 아직 없어요 (supabase-notes.sql)'); }
+}
+const ago = t => { const m = Math.floor((Date.now()-new Date(t))/60000);
+  return m<1?'방금':m<60?`${m}분 전`:m<1440?`${Math.floor(m/60)}시간 전`:`${Math.floor(m/1440)}일 전`; };
+
+function renderMail(){
+  const box = $('mail-list');
+  if(!canMail()){ box.innerHTML = `<div class="empty">쪽지를 쓰려면 한 번 다시 로그인해 주세요.<br>
+    <span class="note">예전에 가입하신 분은 기기에 인증 표가 없어요. 나가기 → 로그인이면 됩니다.</span></div>`; return; }
+  const rows = [...mailBox.inbox.map(n=>({...n, dir:'in'})), ...mailBox.sent.map(n=>({...n, dir:'out'}))]
+    .sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)).slice(0,120);
+  if(!rows.length){ box.innerHTML = `<div class="empty">아직 주고받은 쪽지가 없어요.<br>
+    <span class="note">차·숙소 글에서 올린 사람 옆 <b>✉️</b>를 누르면 여기로 옵니다.</span></div>`; return; }
+  box.innerHTML = rows.map(n=>{
+    const out = n.dir==='out', who = out ? n.to_name : n.from_name, wid = out ? n.to_id : n.from_id;
+    return `<div class="note-row ${!out && !n.read_at ? 'new' : ''}">
+      <div class="note-who">${out ? '' : `<canvas data-nav="${esc(n.id)}"></canvas>`}
+        <b>${out ? `→ ${esc(who)}` : esc(who)}</b>
+        <span class="note-when">${ago(n.created_at)}</span></div>
+      <div style="margin-top:3px;white-space:pre-wrap">${esc(n.text)}</div>
+      <div style="display:flex;gap:5px;margin-top:5px">
+        ${out ? '' : `<button class="btn sm mint" data-reply="${esc(wid)}|${esc(who)}" style="min-height:32px;padding:3px 9px">답장</button>`}
+        <button class="btn sm ghost" data-ndel="${esc(n.id)}" style="min-height:32px;padding:3px 9px">지우기</button></div>
+    </div>`; }).join('');
+  /* 보낸 사람 캐릭터 — 이름만 있으면 누군지 잘 안 붙는다 */
+  box.querySelectorAll('[data-nav]').forEach(c=>{ const n = mailBox.inbox.find(x=>x.id===c.dataset.nav);
+    if(n && typeof drawSpr==='function'){ const q = withLook(n.from_profile||{}, n.from_name);
+      drawSpr(c, avatarRows(q, false), avatarTintOf(q, 0)); } });
+  box.querySelectorAll('[data-reply]').forEach(b=>b.onclick = ()=>{ const [id,nm] = b.dataset.reply.split('|'); mailOpen(id, nm); });
+  box.querySelectorAll('[data-ndel]').forEach(b=>b.onclick = async ()=>{ b.disabled = true;
+    try{ await rpc('note_del', { p_id:ME.id, p_token:ME.token, p_note:b.dataset.ndel }); await pullMail(); }
+    catch(e){ b.disabled = false; toast('실패 · 신호 확인'); } });
+}
+
+function mailOpen(toId, toName){
+  $('mail-sheet').hidden = false;
+  if(toId && toId !== ME.id){ mailTo = toId; $('mail-to').hidden = false; $('mail-to-name').textContent = toName;
+    $('mail-err').textContent = ''; setTimeout(()=>$('mail-text').focus({preventScroll:true}), 80); }
+  else { mailTo = null; $('mail-to').hidden = true; }
+  renderMail();
+  if(mailBox.unread) rpc('note_read', { p_id:ME.id, p_token:ME.token }).then(()=>pullMail(true)).catch(()=>{});
+}
+function mailClose(){ $('mail-sheet').hidden = true; mailTo = null; $('mail-text').value = ''; }
+document.querySelectorAll('[data-mailclose]').forEach(b=>b.onclick = mailClose);
+$('mail-back').onclick = ()=>{ mailTo = null; $('mail-to').hidden = true; };
+$('mail').onclick = ()=>{ $('mail-sheet').hidden ? mailOpen(null) : mailClose(); };
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('mail-sheet').hidden) mailClose(); });
+$('mail-send').onclick = async ()=>{
+  const t = $('mail-text').value.trim(), e = $('mail-err'), b = $('mail-send');
+  e.textContent = ''; if(!t) return e.textContent = '내용을 적어주세요';
+  if(!mailTo) return e.textContent = '받는 사람이 없어요';
+  b.disabled = true; b.textContent = '보내는 중…';
+  try{ await rpc('note_send', { p_id:ME.id, p_token:ME.token, p_to:mailTo, p_text:t });
+    $('mail-text').value = ''; mailTo = null; $('mail-to').hidden = true; toast('보냈어요'); await pullMail(); }
+  catch(err){ e.textContent = { unauthorized:'다시 로그인해 주세요', nouser:'그 사람을 찾지 못했어요',
+      toofast:'조금 천천히 보내주세요', empty:'내용을 적어주세요', self:'나에게는 못 보내요' }[err.message]
+      || (err.code==='norpc' ? '쪽지 표가 아직 없어요 (supabase-notes.sql)' : '보내지 못했어요'); }
+  finally{ b.disabled = false; b.textContent = '보내기'; }
+};
+/* 글 올린 사람에게 바로 — 여기서 물어볼 수 있어야 단톡방으로 안 나간다 */
+const noteBtn = r => r.user_id === ME.id ? '' :
+  `<button class="btn sm ghost" data-note="${esc(r.user_id)}|${esc(r.name)}" style="margin-left:auto;min-height:30px;padding:2px 8px">✉️</button>`;
+function bindNotes(box){ box.querySelectorAll('[data-note]').forEach(b=>b.onclick = ()=>{
+  if(!canMail()) return toast('쪽지를 쓰려면 한 번 다시 로그인해 주세요');
+  const [id,nm] = b.dataset.note.split('|'); mailOpen(id, nm); }); }
+
 /* ── 처음 온 사람 안내 ────────────────────────────────────
    덮개(dim)를 쓰지 않는다. 앱에서 덮개의 pointer-events 가 탭을 삼켜
    "누를 수 없는 안내"가 됐던 적이 있다. 여기선 아래 카드 + 테두리만 쓴다. */
@@ -716,12 +865,12 @@ function renderRides(){
       <div class="hd"><span class="tag ${r.dir}">${r.dir==='go'?'↓ 양양 가는 차':'↑ 양양에서 나가는 차'}</span>
         <b>${dLabel(r.date)} ${esc(r.depart_at)}</b></div>
       <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b></div>
-      <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span></div>
+      <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span>${noteBtn(r)}</div>
       ${r.note ? `<div class="meta">${esc(r.note)}</div>` : ''}
       ${r.contact ? `<div class="meta">연락 · ${esc(r.contact)}</div>` : ''}
       ${seatRow(r,'ride')}
     </div>`).join('');
-  bindCards(box, 'ride'); paintAvatars(box, state.rides, 'riders');
+  bindCards(box, 'ride'); bindNotes(box); paintAvatars(box, state.rides, 'riders');
 }
 /* 방향을 바꾸면 예시도 뒤집는다 — "어디서 출발"만 있으면 어느 쪽 이야기인지 헷갈린다 */
 $('r-dir').onchange = () => { const go = $('r-dir').value === 'go';
@@ -757,24 +906,62 @@ function renderStays(){
   box.innerHTML = state.stays.map(s=>`<div class="card">
       <div class="hd"><b>${esc(s.place)}</b>${s.price?`<span class="tag">${esc(s.price)}</span>`:''}</div>
       <div class="meta">${dLabel(s.date_from)} → ${dLabel(s.date_to)}${distLabel(s)}</div>
-      <div class="owner"><canvas data-own="${esc(s.id)}"></canvas><span class="meta" style="margin:0">${esc(s.name)} 님이 올림</span></div>
+      <div class="owner"><canvas data-own="${esc(s.id)}"></canvas><span class="meta" style="margin:0">${esc(s.name)} 님이 올림</span>${noteBtn(s)}</div>
       ${(s.perks||[]).length ? `<div class="perks">${s.perks.map(p=>`<span class="perk on">${esc(p)}</span>`).join('')}</div>` : ''}
       ${s.note ? `<div class="meta">${esc(s.note)}</div>` : ''}
       ${s.contact ? `<div class="meta">연락 · ${esc(s.contact)}</div>` : ''}
-      ${s.lat&&s.lon ? `<div class="meta"><a href="https://map.kakao.com/link/to/${encodeURIComponent(s.place)},${s.lat},${s.lon}" target="_blank" rel="noopener">지도 앱에서 열기 ↗</a></div>` : ''}
+      ${s.lat&&s.lon ? `<div class="meta"><a href="${mapLink(s.place,s.lat,s.lon)}" target="_blank" rel="noopener">길찾기 · 지도 앱에서 열기 ↗</a></div>` : ''}
       ${seatRow(s,'stay')}
       ${reviewBlock(s)}
     </div>`).join('');
-  bindCards(box, 'stay'); paintAvatars(box, state.stays, 'guests'); bindReviews(box);
+  bindCards(box, 'stay'); bindNotes(box); paintAvatars(box, state.stays, 'guests'); bindReviews(box);
+  renderNear();                       // 새로 올라온 숙소가 곧바로 다음 사람의 버튼이 된다
 }
+/* 목록은 스스로 자란다 — 누가 새 숙소를 좌표까지 넣어 올리면 다음 사람에겐 그게 버튼이 된다.
+   운영자가 목록을 손으로 관리해야 하는 구조는 결국 안 관리된다. */
+function nearAll(){
+  const seen = new Map(NEAR.map(([n,la,lo])=>[n,[n,la,lo,true]]));
+  (state.stays||[]).forEach(s=>{ if(s.lat && s.lon && !seen.has(s.place)) seen.set(s.place, [s.place, +s.lat, +s.lon, false]); });
+  return [...seen.values()];
+}
+function renderNear(){
+  const box = $('s-near'); if(!box) return;
+  const all = nearAll();
+  box.innerHTML = all.map(([n,la,lo,seed],i)=>
+      `<button type="button" class="perk" data-near="${i}" style="min-height:32px">${esc(n)} · ${distKm(la,lo).toFixed(1)}km${seed?'':' ✚'}</button>`).join('')
+    + `<button type="button" class="perk" data-near="new" style="min-height:32px">+ 여기 없어요</button>`;
+  box.querySelectorAll('[data-near]').forEach(b=>b.onclick = ()=>{
+    box.querySelectorAll('[data-near]').forEach(x=>x.classList.toggle('on', x===b));
+    if(b.dataset.near === 'new'){
+      $('s-place').value = ''; $('s-lat').value = ''; $('s-lon').value = '';
+      $('s-place').focus({preventScroll:true});
+      return toast('이름을 적고, 좌표는 지도 앱에서 길게 눌러 복사하세요');
+    }
+    const [n,la,lo] = all[+b.dataset.near];
+    $('s-place').value = n; $('s-lat').value = la; $('s-lon').value = lo;
+    toast(`${n} · 학교에서 ${distKm(la,lo).toFixed(1)}km · ${travel(distKm(la,lo))}`); });
+}
+
 /* ── 숙소 평가 ────────────────────────────────────────────
    숙소는 한 번 자보기 전엔 알 수가 없다. 다녀온 사람이 남겨야 다음 사람이 고른다.
    같은 이름의 숙소면 누가 올렸든 평이 모인다 — 다음 주에 다시 올라와도 이어진다. */
-const GOOD_TAGS = ['해변 가까움','따뜻함','깨끗함','주차 편함','보드 두기 좋음','조용함','사장님 친절','가성비'];
+const GOOD_TAGS = ['해변 가까움','따뜻함','깨끗함','주차 편함','보드 두기 좋음','조용함','사장님 친절','가성비','취사 가능'];
+/* 평균 하나만 보여주면 "그래서 얼마 들까"에 답이 안 된다. 성수기·비수기 차이가 곧 폭이다. */
+const paidLabel = rv => rv.paidN
+  ? ` <span style="color:var(--deep);font-weight:700">· 1인 ${rv.paidLo===rv.paidHi ? won(rv.paidAvg)
+      : `${won(rv.paidLo)}~${won(rv.paidHi)}`}</span><span style="color:var(--ink2)">(${rv.paidN}명이 낸 값)</span>`
+  : '';
+const won = v => v >= 10000 ? `${(v/10000).toFixed(v%10000?1:0)}만` : `${Math.round(v/1000)}천`;
+/* 요금은 예약 사이트에서 긁어다 박아 두면 조용히 썩는다 — 날짜·객실·플랫폼마다 다르고
+   성수기엔 두 배가 된다. 그래서 값을 적지 않고, 다녀온 사람이 **실제로 낸 돈**을 남기게 한다.
+   틀릴 수는 있어도 낡지는 않는다. */
 function reviewOf(place){
   const rs = (state.reviews||[]).filter(r=>r.place===place);
-  if(!rs.length) return { n:0, avg:0, rs:[] };
-  return { n:rs.length, avg:(rs.reduce((a,b)=>a+ +b.stars,0)/rs.length).toFixed(1), rs };
+  const paid = rs.map(r=>+r.paid).filter(v=>v>0);
+  if(!rs.length) return { n:0, avg:0, rs:[], paidN:0 };
+  return { n:rs.length, avg:(rs.reduce((a,b)=>a+ +b.stars,0)/rs.length).toFixed(1), rs,
+           paidN:paid.length, paidAvg: paid.length ? Math.round(paid.reduce((a,b)=>a+b,0)/paid.length) : 0,
+           paidLo: paid.length ? Math.min(...paid) : 0, paidHi: paid.length ? Math.max(...paid) : 0 };
 }
 const myReview = place => (state.reviews||[]).find(r=>r.place===place && r.user_id===ME.id);
 async function pullReviews(){
@@ -791,11 +978,13 @@ function reviewBlock(s){
   if(state.reviews === null) return '';
   const { n, avg, rs } = reviewOf(s.place), mine = myReview(s.place);
   return `<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12.5px;font-weight:700">
-      ${n ? `평가 <b style="color:#B45309">★${avg}</b> · ${n}명` : '아직 평가가 없어요 — 다녀오셨다면 남겨주세요'}</summary>
+      ${n ? `평가 <b style="color:#B45309">★${avg}</b> · ${n}명` : '아직 평가가 없어요 — 다녀오셨다면 남겨주세요'}
+      ${paidLabel(reviewOf(s.place))}</summary>
     <div style="margin-top:6px">
       ${rs.map(r=>`<div style="border-top:2px dashed var(--grid);padding:6px 0;font-size:12.5px;line-height:1.5">
         <div style="display:flex;align-items:center;gap:5px"><canvas class="rv-av" data-rv="${esc(r.id)}"></canvas>
           <b>${esc(r.name)}</b><span style="color:#B45309;font-weight:700">★${r.stars}</span>
+          ${+r.paid ? `<span class="tag" style="font-size:10px">1인 ${won(+r.paid)}</span>` : ''}
           ${r.user_id===ME.id?`<button class="btn sm ghost" data-rvdel="${esc(r.id)}" style="margin-left:auto;min-height:28px;padding:2px 7px">지우기</button>`:''}</div>
         ${(r.good||[]).length?`<div class="perks" style="margin-top:3px">${r.good.map(g=>`<span class="perk on">${esc(g)}</span>`).join('')}</div>`:''}
         ${r.text?`<div style="margin-top:3px">${esc(r.text)}</div>`:''}</div>`).join('')}
@@ -803,6 +992,7 @@ function reviewBlock(s){
         <div class="note" style="margin:0 0 3px">다녀오셨나요?</div>
         <div class="starrow" data-for="${esc(s.place)}">${starsHTML(0, true, s.place)}<span class="rv-num" style="margin-left:6px;font-weight:700">–</span></div>
         <div class="perks" data-good="${esc(s.place)}" style="margin-top:6px">${GOOD_TAGS.map(g=>`<button type="button" class="perk">${g}</button>`).join('')}</div>
+        <input data-rvpaid="${esc(s.place)}" inputmode="numeric" maxlength="7" placeholder="1인 1박에 얼마 내셨어요? 예) 25000 (선택)" style="margin-top:6px">
         <input data-rvtext="${esc(s.place)}" maxlength="60" placeholder="한 줄 (선택)" style="margin-top:6px">
         <button class="btn sm mint" data-rvsave="${esc(s.place)}" style="margin-top:6px">평가 남기기</button></div>`}
     </div></details>`;
@@ -823,10 +1013,12 @@ function bindReviews(box){
     const stay = (state.stays||[]).find(x=>x.place===place);
     const good = [...box.querySelectorAll(`[data-good="${CSS.escape(place)}"] button.on`)].map(x=>x.textContent);
     const text = box.querySelector(`[data-rvtext="${CSS.escape(place)}"]`)?.value.trim().slice(0,60) || null;
+    const paidRaw = box.querySelector(`[data-rvpaid="${CSS.escape(place)}"]`)?.value.replace(/\D/g,'');
+    const paid = paidRaw ? Math.min(2000000, +paidRaw) : null;
     b.disabled = true;
     try{ await api('stay_reviews', { method:'POST', body:JSON.stringify({
         id:`${stay?.id||place}|${ME.id}`, stay_id:stay?.id||'', place, user_id:ME.id, name:ME.name,
-        profile:ME.profile||{}, stars:v, good, text }) });
+        profile:ME.profile||{}, stars:v, good, text, paid }) });
       toast('고마워요'); await pullReviews(); renderStays(); renderMap(); }
     catch(e){ b.disabled = false; toast(e.code==='notable' ? '평가 표가 아직 없어요 (supabase-reviews.sql)' : '실패 · 신호 확인'); }
   });
@@ -862,7 +1054,13 @@ function distKm(lat, lon){
   const a=Math.sin(dLat/2)**2 + Math.cos(NAKSAN.lat*r)*Math.cos(lat*r)*Math.sin(dLon/2)**2;
   return 2*R*Math.asin(Math.sqrt(a));
 }
-const distLabel = s => (s.lat&&s.lon) ? ` · 낙산에서 <b>${distKm(s.lat,s.lon).toFixed(1)}km</b>` : '';
+/* km 만 보여주면 "그래서 걸어갈 만한가"가 안 나온다. 웻수트 들고 갈지 차를 뺄지가 실제 질문이다.
+   도보 4.5km/h, 차는 마을길이라 25km/h 로 본다. 직선 거리라 실제론 조금 더 걸린다. */
+const travel = km => { const w = Math.max(1, Math.round(km/4.5*60)), d = Math.max(1, Math.round(km/25*60));
+  return km <= 1.2 ? `걸어서 ${w}분` : `차로 ${d}분 · 걸어서 ${w}분`; };
+const distLabel = s => (s.lat&&s.lon)
+  ? ` · 학교에서 <b>${distKm(s.lat,s.lon).toFixed(1)}km</b> <span style="color:var(--ink2)">${travel(distKm(s.lat,s.lon))}</span>` : '';
+const mapLink = (place,lat,lon) => `https://map.kakao.com/link/to/${encodeURIComponent(place)},${lat},${lon}`;
 /* 지도 — 외부 지도 라이브러리를 쓰지 않는다. 바다 앞에서 신호가 약해도 떠야 하고,
    여기서 필요한 건 "낙산 기준 어느 쪽 얼마나 먼가" 하나뿐이다. */
 function renderMap(){
@@ -883,6 +1081,8 @@ function renderMap(){
       <path d="M${sea} 0 Q${sea+22} ${H/2} ${sea} ${H}" fill="none" stroke="#5FBDF2" stroke-width="2.5"/>
       <text x="${W-8}" y="20" font-size="11" font-weight="800" fill="var(--deep)" text-anchor="end">동해</text>
       ${rings}
+      ${list.map((s,i)=>{ const [x,y]=px(s);      /* 학교에서 뻗는 선 — 어느 쪽으로 얼마나 가는지가 보여야 한다 */
+        return `<line x1="${C}" y1="${C}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#1B1B2F" stroke-width="1.2" stroke-dasharray="3 3" opacity=".45"/>`; }).join('')}
       ${list.map((s,i)=>{ const [x,y]=px(s);
         return `<g><path d="M${x.toFixed(1)} ${(y+11).toFixed(1)} L${(x-8).toFixed(1)} ${(y-2).toFixed(1)} L${(x+8).toFixed(1)} ${(y-2).toFixed(1)} Z" fill="var(--sun)" stroke="var(--ink)" stroke-width="2"/>
           <circle cx="${x.toFixed(1)}" cy="${(y-6).toFixed(1)}" r="10" fill="var(--sun)" stroke="var(--ink)" stroke-width="2.5"/>
@@ -896,10 +1096,14 @@ function renderMap(){
     </svg>
     <div style="margin-top:7px;font-size:12.5px;line-height:1.6">${list.map((s,i)=>{
       const rv = reviewOf(s.place);
-      return `<div style="padding:3px 0"><b>${i+1}</b> ${esc(s.place)}
-        <span style="color:var(--ink2)">· 학교에서 ${distKm(s.lat,s.lon).toFixed(1)}km</span>
-        ${rv.n ? `<span style="color:#B45309;font-weight:700"> ★${rv.avg}</span><span style="color:var(--ink2)">(${rv.n})</span>` : ''}</div>`; }).join('')}</div>
-    <div class="note">직선 거리입니다. 실제 이동 거리는 더 깁니다.</div>`;
+      const km = distKm(s.lat,s.lon);
+      return `<div style="padding:4px 0;border-top:1px dashed var(--grid)"><b>${i+1}</b> ${esc(s.place)}
+        ${rv.n ? `<span style="color:#B45309;font-weight:700"> ★${rv.avg}</span><span style="color:var(--ink2)">(${rv.n})</span>` : ''}
+        ${paidLabel(rv)}
+        <div style="color:var(--ink2);margin-left:14px">학교에서 ${km.toFixed(1)}km · ${travel(km)}
+          · <a href="${mapLink(s.place,s.lat,s.lon)}" target="_blank" rel="noopener">길찾기 ↗</a></div></div>`; }).join('')}</div>
+    <div class="note">가운데가 <b>양양서핑학교</b>(양양읍 일출로 159-12)예요. 점선은 학교에서 숙소까지 직선이고,
+      실제로 걷거나 달리는 길은 이보다 조금 깁니다. <b>길찾기</b>를 누르면 지도 앱이 열려요.</div>`;
 }
 $('s-save').onclick = async ()=>{
   const e = $('s-err'); e.textContent = '';
@@ -961,24 +1165,20 @@ function bindCards(box, kind){
 
 /* ── 시작 ───────────────────────────────────────────────── */
 function start(){
-  $('login').hidden = true; $('main').hidden = false; sceneOff();
+  $('login').hidden = true; $('main').hidden = false; $('foot').hidden = true; sceneOff();
   $('who').textContent = ME.name;
   if(typeof drawSpr === 'function'){ const pr = withLook(ME.profile||{}, ME.name); drawSpr($('me-av'), avatarRows(pr, false), avatarTintOf(pr, 0)); }
   $('cohort-tag').textContent = ME.cohort === '6기' ? '양양서핑학교 6기' : '서퍼';
   $('r-date').value = nextWeekend(); $('s-from').value = nextWeekend();
   $('s-to').value = nextWeekend(1);
   if(!ME.profile || !Object.keys(ME.profile).length) ME.profile = freshProfile(ME.name);
-  $('s-near').innerHTML = NEAR.map(([n],i)=>`<button type="button" class="perk" data-near="${i}" style="min-height:32px">${n} · ${distKm(NEAR[i][1],NEAR[i][2]).toFixed(1)}km</button>`).join('');
-  $('s-near').querySelectorAll('[data-near]').forEach(b=>b.onclick = ()=>{
-    const [n,la,lo] = NEAR[+b.dataset.near];
-    $('s-place').value = n; $('s-lat').value = la; $('s-lon').value = lo;
-    $('s-near').querySelectorAll('[data-near]').forEach(x=>x.classList.toggle('on', x===b));
-    toast(`${n} · 학교에서 ${distKm(la,lo).toFixed(1)}km`); });
+  renderNear();
   $('s-perks').innerHTML = PERKS.map(p=>`<button type="button" class="perk" aria-pressed="false">${p}</button>`).join('');
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
-  pullRides(); pullStays();
+  pullRides(); pullStays(); pullMail(true);
+  clearInterval(mailPoll); mailPoll = setInterval(()=>{ if(!document.hidden) pullMail(true); }, 25000);
   if(!onbDone() && $('onb').hidden) setTimeout(()=>onbStart(), 700);   // 처음 온 사람만. 한 번 끝내면 다시 안 뜬다
 }
 /* 다음 토요일 — 수업이 토·일이라 기본값이 거기여야 손이 덜 간다 */
