@@ -267,7 +267,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 차량 -->
     <div id="pane-ride">
-      <details class="px sand fold"><summary>+ 차 자리 올리기</summary>
+      <details class="px sand fold"><summary>🚗 차량 쉐어 올리기</summary>
         <div class="grid2" style="margin-top:8px">
           <div><label for="r-date">날짜</label><input id="r-date" type="date"></div>
           <div><label for="r-dir">방향</label><select id="r-dir">
@@ -290,7 +290,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 숙소 -->
     <div id="pane-stay" hidden>
-      <details class="px sand fold"><summary>+ 숙소 올리기</summary>
+      <details class="px sand fold"><summary>🏠 숙소 쉐어 올리기</summary>
         <div class="grid2" style="margin-top:8px">
           <div><label for="s-place">숙소 이름</label><input id="s-place" maxlength="20" placeholder="예) 낙산 OO펜션"></div>
           <div><label for="s-cap">총 인원</label><input id="s-cap" type="number" min="1" max="20" value="4"></div>
@@ -299,7 +299,7 @@ body.onb-on .wrap{ padding-bottom:230px }
           <div><label for="s-price">비용 (선택)</label><input id="s-price" maxlength="20" placeholder="예) 1인 2만"></div>
           <div><label for="s-contact">연락 방법 (선택)</label><input id="s-contact" maxlength="80" placeholder="오픈채팅 링크 등"></div>
         </div>
-        <label>학교 근처 숙소 — 누르면 이름과 좌표가 채워져요</label>
+        <label>학교 근처 숙소 — 누르면 이름과 지도 링크가 채워져요</label>
         <div class="perks" id="s-near"></div>
         <label for="s-url">네이버지도 링크 (선택)</label>
         <input id="s-url" inputmode="url" placeholder="네이버지도에서 숙소 → 공유 → 링크 복사">
@@ -877,7 +877,7 @@ const ONB = [
   { tab:'me',   at:'t-me',   t:'먼저 내 캐릭터부터',
     d:'얼굴 · 옷 · 보드 · 같이 타는 친구를 고를 수 있어요.<br>고르는 즉시 저장되고, 아래 차·숙소 글에 <b>이 모습으로</b> 나옵니다.' },
   { tab:'ride', at:'t-ride', t:'차 — 같이 타기',
-    d:'빈자리에 <b>[타기]</b>를 누르면 내 자리가 잡혀요. 마음이 바뀌면 [내리기].<br>내가 운전하면 <b>[+ 차 자리 올리기]</b>로 날짜·출발 시각·태울 인원을 적습니다.' },
+    d:'빈자리에 <b>[타기]</b>를 누르면 내 자리가 잡혀요. 마음이 바뀌면 [내리기].<br>내가 운전하면 <b>[🚗 차량 쉐어 올리기]</b>로 날짜·출발 시각·태울 인원을 적습니다.' },
   { tab:'ride', at:'r-dir',  t:'가는 차 · 나가는 차',
     d:'<b>양양 가는 차</b>는 집 → 양양, <b>나가는 차</b>는 양양 → 집이에요.<br>방향을 고르면 타는 곳·내리는 곳 예시도 같이 바뀝니다.', open:'ride' },
   { tab:'stay', at:'t-stay', t:'숙소 — 같이 쓰기',
