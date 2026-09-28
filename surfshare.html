@@ -123,6 +123,11 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 @keyframes ringp{ 0%,100%{ outline-color:#FF8A3D } 50%{ outline-color:var(--sun) } }
 @media(prefers-reduced-motion:reduce){ .ring{ animation:none } }
 body.onb-on .wrap{ padding-bottom:230px }
+.scene-wrap{ margin-top:12px }
+#scene{ display:block; width:100%; height:auto; aspect-ratio:200/104; image-rendering:pixelated;
+        border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); background:#BFE9FF }
+.scene-cap{ margin-top:6px; font-size:12px; color:var(--ink); text-shadow:1px 1px 0 rgba(255,255,255,.75);
+            line-height:1.7; text-align:center }
 .new-av{ width:72px; height:72px; image-rendering:pixelated; border:3px solid var(--ink); background:#8FD3FF; flex:0 0 auto }
 </style>
 </head>
@@ -181,6 +186,12 @@ body.onb-on .wrap{ padding-bottom:230px }
         <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>에 동의합니다</span></label>
     <div class="err" id="lerr"></div>
     <button class="btn blue" id="go" style="width:100%">들어가기</button>
+  </div>
+
+  <!-- 대문 장면 — 문 앞에 선 사람은 설명을 안 읽는다. 그래서 보여준다 -->
+  <div class="scene-wrap" id="scene-wrap" hidden>
+    <canvas id="scene" role="img" aria-label="서울에서 양양으로 가는 차, 같이 묵는 집, 불 위의 냄비, 그리고 바다"></canvas>
+    <div class="scene-cap">🚗 같이 내려오고 · 🏠 한 집에 묵고 · 🍲 같이 해 먹고 · 🌊 같이 들어가고</div>
   </div>
 
   <!-- 본문 -->
@@ -315,8 +326,8 @@ async function rpc(fn, args){
    cohort_codes 의 'share' 행. 같은 RPC 를 쓰되 기수 키만 다르다.
    한 코드가 밖으로 새도 다른 곳은 안 열린다. */
 const shareInvited = () => { try{ return localStorage.getItem('lineup.share.invited') === '1'; }catch(e){ return false; } };
-function showGate(){ $('gate').hidden = false; $('login').hidden = true; setTimeout(()=>$('gate-code').focus({preventScroll:true}), 60); }
-function passGate(){ $('gate').hidden = true; $('login').hidden = false; }
+function showGate(){ $('gate').hidden = false; $('login').hidden = true; sceneOn(); setTimeout(()=>$('gate-code').focus({preventScroll:true}), 60); }
+function passGate(){ $('gate').hidden = true; $('login').hidden = false; sceneOn(); }
 $('gate-ok').onclick = async ()=>{
   const code = $('gate-code').value.trim(), e = $('gate-err'), btn = $('gate-ok');
   e.textContent = ''; if(!code) return e.textContent = '비밀번호를 넣어주세요';
@@ -462,6 +473,152 @@ function saveProfile(){
     catch(e){}
   }, 700);
 }
+
+/* ── 대문 장면 ───────────────────────────────────────────
+   서울에서 내려오는 차, 한 집, 불 위의 냄비, 그리고 바다.
+   여기서 뭘 하는 곳인지 문장으로 읽히기 전에 그림으로 먼저 읽히게 한다.
+
+   CSS @keyframes 는 쓰지 않는다. 키프레임은 정의상 주기 함수라 차와 파도와
+   김이 같은 박자로 돌아오고, 그러면 '지나가는 중'이 아니라 컨베이어로 읽힌다.
+   서로 무관한 주기의 합으로 굴려야 마침 지나가는 것처럼 보인다. */
+const SW = 200, SH = 104;
+const padR = rows => { const w = Math.max(...rows.map(r=>r.length)); return rows.map(r=>r.padEnd(w,'.')); };
+const flipR = rows => rows.map(r=>[...r].reverse().join(''));
+
+/* 지붕에 보드를 얹은 차. C=창, B=차체 — 차마다 색이 달라야 두 대로 보인다 */
+const CAR = padR([
+  '.......yyyyyyyyyyyyyy.......',
+  '......kyyyyyyyyyyyyyyk......',
+  '.......gggggggggggggg.......',
+  '......kggggggggggggggk......',
+  '........kkkkkkkkkkkk........',
+  '.......kkCCCCCCCCCCkk.......',
+  '......kkCCCCkkCCCCCCkk......',
+  '.....kBBBBBBBBBBBBBBBBk.....',
+  '....kBBBBBBBBBBBBBBBBBBk....',
+  '....kBBBBBBBBBBBBBBBBBBk....',
+  '....kkkkkkkkkkkkkkkkkkkk....',
+  '......kkk..........kkk......',
+  '.....kkkkk........kkkkk.....',
+  '......kkk..........kkk......',
+]);
+const CARL = flipR(CAR);
+const POT = padR([
+  '...kkkkkkkk...',
+  '..kLLLLLLLLk..',
+  '.kkkkkkkkkkkk.',
+  'kkPPPPPPPPPPkk',      // 양옆이 손잡이
+  'kkPPPPPPPPPPkk',
+  '.kPPPPPPPPPPk.',
+  '..kPPPPPPPPk..',
+  '...kkkkkkkk...',
+]);
+const POTC = { L:'#D8DCE8', P:'#5A5F7A' };
+
+/* 마을에 선 사람들 — 이름을 주면 sprite.js 가 알아서 다르게 생기게 한다 */
+const CREW = ['라인업','서프쉐어','낙산','죽도'].map(n => {
+  const pr = withLook({ gender: n.length%2 ? 'f':'m', board:'long' }, n);
+  return { rows: avatarRows(pr, false), tint: avatarTintOf(pr, 0) };
+});
+const RIDER = (()=>{ const pr = withLook({ gender:'f', board:'short' }, '파도');
+  return { rows: avatarRows(pr, false), tint: avatarTintOf(pr, 0) }; })();
+
+let sceneRAF = 0, sceneT0 = 0;
+function drawScene(t){
+  const cv = $('scene'); if(!cv) return;
+  const wCss = cv.clientWidth; if(!wCss) return;
+  const S = Math.max(2, Math.round(wCss * Math.min(3, devicePixelRatio||1) / SW));
+  if(cv.width !== SW*S){ cv.width = SW*S; cv.height = SH*S; }
+  const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+  const R = (x,y,w,h,c)=>{ g.fillStyle=c; g.fillRect(Math.round(x*S),Math.round(y*S),Math.max(S,Math.round(w*S)),Math.max(S,Math.round(h*S))); };
+  const B = (rows,ox,oy,tint,k)=>rows.forEach((r,y)=>[...r].forEach((ch,x)=>{
+    if(ch==='.') return; const z = k||1;
+    R(ox+x*z, oy+y*z, z, z, (tint&&tint[ch]) || PAL[ch] || ch); }));
+  const TXT = (str,x,y,px,col,align)=>{ g.fillStyle=col; g.textAlign=align||'center'; g.textBaseline='middle';
+    g.font = `700 ${px*S}px "Galmuri11","Galmuri14",-apple-system,sans-serif`; g.fillText(str, x*S, y*S); };
+
+  g.clearRect(0,0,cv.width,cv.height);
+
+  /* ── 갓길 · 표지판 ──
+     표지판을 차보다 먼저 그리면 차가 덮는다. 차선 밖에 따로 자리를 준다. */
+  R(0,0,SW,9,'#7FD6A8'); R(0,8,SW,1,'#1B1B2F');
+  for(let x=-((t*0.010)%34)+4; x<SW; x+=34){ R(x,3,1,5,'#1B1B2F'); R(x-2,1,5,3,'#2F9E68'); }
+  R(3,1,22,7,'#1B1B2F'); R(4,2,20,5,'#2E6BFF');   TXT('서울 ←', 14, 4.5, 5, '#FFF9E6');
+  R(SW-25,1,22,7,'#1B1B2F'); R(SW-24,2,20,5,'#4DE1A5'); TXT('→ 양양', SW-14, 4.5, 5, '#1B1B2F');
+
+  /* ── 도로 ── */
+  R(0,9,SW,34,'#6E6F86'); R(0,42,SW,1,'#4A4B60');
+  for(let x=-((t*0.038)%18); x<SW; x+=18) R(x,25,10,2,'#FFD23F');          // 중앙선이 흐른다
+  const carA = { C:'#BFE9FF', B:'#FF6B6B' }, carB = { C:'#BFE9FF', B:'#4DE1A5' };
+  const xa = ((t*0.021) % (SW+60)) - 30;                                    // → 양양
+  const xb = SW + 30 - ((t*0.0153) % (SW+60));                              // → 서울 (주기가 다르다)
+  B(CAR,  Math.round(xa), 11 + (Math.sin(t/140)>0?0:1), carA);              // 노면 요철에 살짝 튄다
+  B(CARL, Math.round(xb), 28 + (Math.sin(t/97)>0?1:0), carB);
+
+  /* ── 모래 ── */
+  R(0,43,SW,37,'#F2E3B8'); R(0,43,SW,1,'#E0CF9E');
+
+  /* ── 집 ──
+     굴뚝과 연기를 뺐다. 지붕 위로 올라갈 자리가 도로뿐이라, 연기가 아스팔트를
+     뚫고 올라가는 그림이 됐다. 요리는 아래 모닥불이 이미 말하고 있다. */
+  const hx = 3, wallT = 56, base = 76;
+  for(let i=0;i<10;i++) R(hx+10-i, wallT-10+i, 14+i*2, 1, i===0?'#1B1B2F':'#FF6B6B');
+  R(hx,wallT,34,base-wallT,'#FFF9E6');
+  R(hx,wallT,34,1,'#1B1B2F'); R(hx,base-1,34,1,'#1B1B2F');
+  R(hx,wallT,1,base-wallT,'#1B1B2F'); R(hx+33,wallT,1,base-wallT,'#1B1B2F');
+  R(hx+4,wallT+4,7,6,'#1B1B2F'); R(hx+5,wallT+5,5,4,'#8FD3FF');
+  R(hx+23,wallT+4,7,6,'#1B1B2F'); R(hx+24,wallT+5,5,4,'#8FD3FF');
+  R(hx+14,wallT+7,6,13,'#1B1B2F'); R(hx+15,wallT+8,4,12,'#E2B96A');
+  R(hx+35,base-21,5,21,'#1B1B2F'); R(hx+36,base-20,3,19,'#FFD23F');      // 벽에 기대 둔 보드
+  R(hx+36,base-21,3,1,'#1B1B2F'); R(hx+37,base-19,1,15,'#FFF0A8');
+
+  /* 말풍선 — 캔버스에 이모지를 맨몸으로 띄우면 배경에 묻혀 뭔지 안 읽힌다 */
+  const BUB = (emo,cx,cy,px)=>{ const w=px+4, h=px+3;
+    R(cx-1, cy+h/2, 2, 2, '#1B1B2F');                                   // 꼬리가 먼저 — 몸통이 덮게
+    R(cx-w/2, cy-h/2, w, h, '#1B1B2F'); R(cx-w/2+1, cy-h/2+1, w-2, h-2, '#FFF9E6');
+    TXT(emo, cx, cy-0.5, px, '#000'); };
+
+  /* ── 사람들 — 각자 다른 박자로 들썩인다 ── */
+  CREW.forEach((c,i)=>{ if(i>2) return;
+    B(c.rows, 40 + i*17, base-16 - (Math.sin(t/(510+i*137))>0 ? 1 : 0), c.tint); });
+
+  /* ── 모닥불 · 냄비 · 김 ── */
+  const fx = 97, ft = base-14;
+  R(fx-3, base-3, 20, 2, '#6B4A2A'); R(fx-1, base-5, 16, 2, '#8A6238');     // 장작
+  B(SPR.fire, fx, ft + (Math.sin(t/110)>0?0:1), null, 2);                    // 8×8 은 너무 작다 — 두 배로
+  B(POT, fx, ft-8, POTC);
+  for(let i=0;i<3;i++) R(fx+6+Math.sin(t/(430+i*160))*1.8, ft-11-((t/20+i*8)%12), 1, 1, 'rgba(255,255,255,.95)');
+  BUB('🍲', 82, base-25 + Math.sin(t/430)*1.2, 8);                       // 요리하는 사람 머리 위
+
+  /* ── 바다 ── */
+  R(0,80,SW,SH-80,'#2E6BFF');
+  const crest = x => 87 + Math.sin(x/23 + t/780)*2.4 + Math.sin(x/9.5 - t/415)*1.2;
+  for(let x=0;x<SW;x++){ const y = crest(x);
+    R(x, 80, 1, y-80, '#7FC4FF'); R(x, y, 1, SH-y, '#2E6BFF'); R(x, y, 1, 2, '#BFE9FF'); R(x, y-1, 1, 1, '#FFF9E6'); }
+  for(let x=0;x<SW;x++) R(x, crest(x) + 8 + Math.sin(x/13 - t/520)*1.5, 1, 1, 'rgba(255,255,255,.5)');
+
+  /* 서퍼는 오른쪽 바다에서만 탄다 — 왼쪽엔 집과 사람이 있고, 그 위로 지나가면 유령처럼 보인다.
+     양 끝에서 흐리게 들고 난다. 그래야 툭 나타나고 툭 사라지지 않는다. */
+  const span = SW - 118, rx = SW - 2 - ((t*0.0126) % (span+26));
+  const edge = Math.max(0, Math.min(1, Math.min(rx-(SW-2-span), (SW-2)-rx) / 11));
+  if(edge > 0){ g.globalAlpha = edge;
+    const ry = Math.round(crest(rx+8)) - 15;
+    B(RIDER.rows, Math.round(rx), ry, RIDER.tint);
+    BUB('🤙', rx+8, ry-3 + Math.sin(t/380)*0.8, 7);
+    g.globalAlpha = 1; }
+}
+function sceneLoop(ts){
+  sceneRAF = requestAnimationFrame(sceneLoop);
+  if(!sceneT0) sceneT0 = ts;
+  if(ts - (sceneLoop.last||0) < 55) return;                 // 18fps면 충분하다. 폰 배터리를 태울 일이 아니다
+  sceneLoop.last = ts; drawScene(ts - sceneT0);
+}
+function sceneOn(){ if($('scene-wrap').hidden){ $('scene-wrap').hidden = false; }
+  if(!sceneRAF && !matchMedia('(prefers-reduced-motion: reduce)').matches) sceneRAF = requestAnimationFrame(sceneLoop);
+  else if(!sceneRAF) drawScene(0); }                        // 움직임을 줄인 기기에선 한 장만 그린다
+function sceneOff(){ $('scene-wrap').hidden = true; if(sceneRAF){ cancelAnimationFrame(sceneRAF); sceneRAF = 0; } }
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden && sceneRAF){ cancelAnimationFrame(sceneRAF); sceneRAF=0; }
+  else if(!document.hidden && !$('scene-wrap').hidden) sceneOn(); });
 
 /* ── 처음 온 사람 안내 ────────────────────────────────────
    덮개(dim)를 쓰지 않는다. 앱에서 덮개의 pointer-events 가 탭을 삼켜
@@ -786,7 +943,7 @@ function bindCards(box, kind){
 
 /* ── 시작 ───────────────────────────────────────────────── */
 function start(){
-  $('login').hidden = true; $('main').hidden = false;
+  $('login').hidden = true; $('main').hidden = false; sceneOff();
   $('who').textContent = ME.name;
   if(typeof drawSpr === 'function'){ const pr = withLook(ME.profile||{}, ME.name); drawSpr($('me-av'), avatarRows(pr, false), avatarTintOf(pr, 0)); }
   $('cohort-tag').textContent = ME.cohort === '6기' ? '양양서핑학교 6기' : '서퍼';
