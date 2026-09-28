@@ -90,6 +90,14 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .tabs button[aria-pressed="true"]{ background:var(--ink); color:var(--sun) }
 .grp{ margin-top:14px }
 .grp > .t{ display:block; color:var(--paper); text-shadow:2px 2px 0 var(--ink); font-size:17px; margin-bottom:6px }
+/* 지난 글은 지우지 않는다 — 누가 언제 뭘 올렸는지는 남아야 하고,
+   올린 사람이 나중에 지울 수도 있어야 한다. 대신 눈에서 한 겹 뒤로 보낸다. */
+.card.gone{ opacity:.45; filter:grayscale(.55) }
+/* 버튼을 통째로 막지 않는다 — 지난 글에 남는 건 '지우기'와 '쪽지'와 '평가'뿐이고
+   그건 지난 글에서 오히려 더 필요하다. 타고 내리는 버튼은 아예 안 그린다(seatRow). */
+.card.gone:focus-within, .card.gone:hover{ opacity:.9; filter:none }   /* 들여다보면 다시 또렷해진다 */
+.gone-hd{ display:block; margin:14px 0 2px; font-size:12px; font-weight:800; color:var(--paper);
+          text-shadow:1px 1px 0 var(--ink); border-top:3px dashed rgba(255,255,255,.55); padding-top:9px }
 .card{ border-top:3px dashed var(--grid); padding:11px 0 }
 .card:first-child{ border-top:0; padding-top:2px }
 .hd{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap }
@@ -381,6 +389,19 @@ const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&g
 const today = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const DOW = ['일','월','화','수','목','금','토'];
 const dLabel = d => { const x=new Date(d+'T00:00'); return `${d.slice(5).replace('-','.')} (${DOW[x.getDay()]})`; };
+const daysAgo = n => new Date(Date.now()-n*864e5-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const nowHM = () => new Date().toTimeString().slice(0,5);
+/* 차는 떠나면 끝이다 — 오늘 06:00 차를 저녁에 보여주며 '탈래요'를 열어두면 안 된다.
+   숙소는 체크아웃 날까지 살아 있다. */
+const isGone = (r, kind) => kind === 'ride'
+  ? (r.date < today() || (r.date === today() && (r.depart_at||'23:59') < nowHM()))
+  : (r.date_to < today());
+/* 다가오는 것 먼저(가까운 순), 지난 것은 뒤로(최근 순) */
+const byWhen = (kind) => (a,b) => {
+  const ga = isGone(a,kind), gb = isGone(b,kind);
+  if(ga !== gb) return ga ? 1 : -1;
+  const ka = kind==='ride' ? a.date+a.depart_at : a.date_from, kb = kind==='ride' ? b.date+b.depart_at : b.date_from;
+  return ga ? (kb < ka ? -1 : 1) : (ka < kb ? -1 : 1); };
 
 /* ── 서버 ───────────────────────────────────────────────── */
 async function api(path, opt){
@@ -594,6 +615,17 @@ const CAR = padR([
   '......kkk..........kkk......',
 ]);
 const CARL = flipR(CAR);
+/* 물에 뜬 보드 — 위에서 본 모양. W=데크, S=스트링거(가운데 줄) */
+const BOARD_F = padR([
+  '.....kkkkkk.....',
+  '..kkkWWWWWWkkk..',
+  '.kWWWWWWWWWWWWk.',
+  'kWSSSSSSSSSSSSWk',      // 가운데 줄이 스트링거
+  '.kWWWWWWWWWWWWk.',
+  '..kkkWWWWWWkkk..',
+  '.....kkkkkk.....',
+]);
+const BOARD_C = ['#FFD23F','#4DE1A5','#FF6B6B','#9B6BFF','#FFF9E6'];
 const POT = padR([
   '...kkkkkkkk...',
   '..kLLLLLLLLk..',
@@ -650,43 +682,74 @@ function drawScene(t){
   R(0,43,SW,37,'#F2E3B8'); R(0,43,SW,1,'#E0CF9E');
 
   /* ── 집 ──
-     굴뚝과 연기를 뺐다. 지붕 위로 올라갈 자리가 도로뿐이라, 연기가 아스팔트를
-     뚫고 올라가는 그림이 됐다. 요리는 아래 모닥불이 이미 말하고 있다. */
-  const hx = 3, wallT = 56, base = 76;
-  for(let i=0;i<10;i++) R(hx+10-i, wallT-10+i, 14+i*2, 1, i===0?'#1B1B2F':'#FF6B6B');
-  R(hx,wallT,34,base-wallT,'#FFF9E6');
-  R(hx,wallT,34,1,'#1B1B2F'); R(hx,base-1,34,1,'#1B1B2F');
-  R(hx,wallT,1,base-wallT,'#1B1B2F'); R(hx+33,wallT,1,base-wallT,'#1B1B2F');
-  R(hx+4,wallT+4,7,6,'#1B1B2F'); R(hx+5,wallT+5,5,4,'#8FD3FF');
-  R(hx+23,wallT+4,7,6,'#1B1B2F'); R(hx+24,wallT+5,5,4,'#8FD3FF');
-  R(hx+14,wallT+7,6,13,'#1B1B2F'); R(hx+15,wallT+8,4,12,'#E2B96A');
-  R(hx+35,base-21,5,21,'#1B1B2F'); R(hx+36,base-20,3,19,'#FFD23F');      // 벽에 기대 둔 보드
-  R(hx+36,base-21,3,1,'#1B1B2F'); R(hx+37,base-19,1,15,'#FFF0A8');
+     상자에 빨간 삼각형만 얹으면 집이 아니라 도형으로 보인다. 처마를 내고,
+     벽에 판자 줄을 넣고, 창에 창틀을 긋고, 문 앞에 디딤돌을 둔다.
+     그리고 서퍼가 사는 집이라는 걸 한 컷으로 말하는 건 벽에 기대 둔 보드다. */
+  const hx = 2, wallT = 54, base = 76, hw = 42;
+  for(let i=0;i<12;i++){                                   // 박공지붕 — 처마가 벽보다 3 나온다
+    const w = 6 + i*3.2, x = hx + hw/2 - w/2;
+    R(x, wallT-12+i, w, 1, i===0 ? '#1B1B2F' : (i%3===0 ? '#E05555' : '#FF6B6B'));
+  }
+  R(hx-3, wallT-1, hw+6, 2, '#1B1B2F');                    // 처마 그림자선
+  R(hx, wallT, hw, base-wallT, '#FFF6DE');
+  for(let y=wallT+3; y<base-1; y+=4) R(hx+1, y, hw-2, 1, 'rgba(27,27,47,.10)');   // 판자 줄
+  R(hx, wallT, hw, 1, '#1B1B2F'); R(hx, base-1, hw, 1, '#1B1B2F');
+  R(hx, wallT, 1, base-wallT, '#1B1B2F'); R(hx+hw-1, wallT, 1, base-wallT, '#1B1B2F');
+  const win = (wx)=>{ R(wx, wallT+5, 10, 9, '#1B1B2F'); R(wx+1, wallT+6, 8, 7, '#9FDcFF');
+    R(wx+4, wallT+6, 1, 7, '#1B1B2F'); R(wx+1, wallT+9, 8, 1, '#1B1B2F');         // 창틀 십자
+    R(wx+1, wallT+6, 8, 2, 'rgba(255,255,255,.55)'); };                            // 유리 반사
+  win(hx+4); win(hx+28);
+  R(hx+17, wallT+8, 9, 14, '#1B1B2F'); R(hx+18, wallT+9, 7, 13, '#C98A4B');
+  for(let y=wallT+10; y<base-2; y+=3) R(hx+18, y, 7, 1, 'rgba(27,27,47,.16)');     // 문 판자
+  R(hx+23, wallT+15, 1, 1, '#FFD23F');                                             // 손잡이
+  R(hx+15, base-1, 13, 2, '#C9C3AE');                                              // 디딤돌
+
+  /* 벽에 기대 둔 보드 두 장. 코와 테일이 좁아야 보드로 읽힌다 —
+     같은 폭으로 쭉 뽑으면 기둥이 된다(처음에 그렇게 그렸다가 검은 막대가 됐다). */
+  const lean = (x0, tilt, col)=>{
+    for(let k=0;k<23;k++){
+      const x = x0 + k*tilt, w = (k===0||k===22) ? 2 : (k<2||k>20) ? 3 : 4;
+      R(x + (4-w)/2, base-1-k, w, 1, '#1B1B2F');
+      if(w > 2) R(x + (4-w)/2 + 1, base-1-k, w-2, 1, col);
+    }
+    R(x0-1, base-1, 6, 1, 'rgba(27,27,47,.2)');                     // 발치 그림자
+  };
+  lean(hx+hw+2, 0.13, '#FFD23F'); lean(hx+hw+7, 0.17, '#4DE1A5');
 
   /* 말풍선 — 캔버스에 이모지를 맨몸으로 띄우면 배경에 묻혀 뭔지 안 읽힌다 */
   const BUB = (emo,cx,cy,px)=>{ const w=px+4, h=px+3;
-    R(cx-1, cy+h/2, 2, 2, '#1B1B2F');                                   // 꼬리가 먼저 — 몸통이 덮게
+    R(cx-1, cy+h/2, 2, 2, '#1B1B2F');
     R(cx-w/2, cy-h/2, w, h, '#1B1B2F'); R(cx-w/2+1, cy-h/2+1, w-2, h-2, '#FFF9E6');
     TXT(emo, cx, cy-0.5, px, '#000'); };
 
   /* ── 사람들 — 각자 다른 박자로 들썩인다 ── */
   CREW.forEach((c,i)=>{ if(i>2) return;
-    B(c.rows, 40 + i*17, base-16 - (Math.sin(t/(510+i*137))>0 ? 1 : 0), c.tint); });
+    B(c.rows, 54 + i*16, base-16 - (Math.sin(t/(510+i*137))>0 ? 1 : 0), c.tint); });
 
   /* ── 모닥불 · 냄비 · 김 ── */
-  const fx = 97, ft = base-14;
-  R(fx-3, base-3, 20, 2, '#6B4A2A'); R(fx-1, base-5, 16, 2, '#8A6238');     // 장작
-  B(SPR.fire, fx, ft + (Math.sin(t/110)>0?0:1), null, 2);                    // 8×8 은 너무 작다 — 두 배로
+  const fx = 104, ft = base-14;
+  R(fx-3, base-3, 20, 2, '#6B4A2A'); R(fx-1, base-5, 16, 2, '#8A6238');
+  B(SPR.fire, fx, ft + (Math.sin(t/110)>0?0:1), null, 2);
   B(POT, fx, ft-8, POTC);
-  for(let i=0;i<3;i++) R(fx+6+Math.sin(t/(430+i*160))*1.8, ft-11-((t/20+i*8)%12), 1, 1, 'rgba(255,255,255,.95)');
-  BUB('🍲', 82, base-25 + Math.sin(t/430)*1.2, 8);                       // 요리하는 사람 머리 위
+  for(let i=0;i<3;i++) R(fx+6+Math.sin(t/(430+i*160))*1.8, ft-10-((t/22+i*6)%9), 1, 1, 'rgba(255,255,255,.95)');
+  BUB('🍲', 86, base-25 + Math.sin(t/430)*1.2, 8);
 
   /* ── 바다 ── */
-  R(0,80,SW,SH-80,'#2E6BFF');
-  const crest = x => 87 + Math.sin(x/23 + t/780)*2.4 + Math.sin(x/9.5 - t/415)*1.2;
+  R(0,78,SW,SH-78,'#2E6BFF');
+  const crest = x => 85 + Math.sin(x/23 + t/780)*2.4 + Math.sin(x/9.5 - t/415)*1.2;
   for(let x=0;x<SW;x++){ const y = crest(x);
-    R(x, 80, 1, y-80, '#7FC4FF'); R(x, y, 1, SH-y, '#2E6BFF'); R(x, y, 1, 2, '#BFE9FF'); R(x, y-1, 1, 1, '#FFF9E6'); }
-  for(let x=0;x<SW;x++) R(x, crest(x) + 8 + Math.sin(x/13 - t/520)*1.5, 1, 1, 'rgba(255,255,255,.5)');
+    R(x, 76, 1, y-76, '#F2E3B8');                                   // 젖은 모래
+    R(x, y-2, 1, 2, '#EBD9A8');
+    R(x, y, 1, SH-y, '#2E6BFF'); R(x, y, 1, 3, '#BFE9FF'); R(x, y-1, 1, 1, '#FFF9E6'); }
+  for(let x=0;x<SW;x++) R(x, crest(x) + 9 + Math.sin(x/13 - t/520)*1.5, 1, 1, 'rgba(255,255,255,.5)');
+
+  /* 물에 뜬 보드들 — 파도 위에서 각자 다른 박자로 까딱인다.
+     바다가 비어 있으면 "들어갈 곳"으로 안 읽힌다. */
+  [[22,0],[58,1],[148,2],[176,3]].forEach(([bx0,k])=>{
+    const bx = bx0 + Math.sin(t/(2300+k*640))*5;                     // 조류에 아주 천천히 떠다닌다
+    const y = crest(bx+8) + 5 + Math.sin(t/(620+k*190))*1.3;
+    R(bx+3, y+7, 10, 1, 'rgba(27,27,47,.18)');                       // 물그림자
+    B(BOARD_F, Math.round(bx), Math.round(y), { W:BOARD_C[k%BOARD_C.length], S:'#FFF9E6' }); });
 
   /* 서퍼는 오른쪽 바다에서만 탄다 — 왼쪽엔 집과 사람이 있고, 그 위로 지나가면 유령처럼 보인다.
      양 끝에서 흐리게 들고 난다. 그래야 툭 나타나고 툭 사라지지 않는다. */
@@ -845,11 +908,12 @@ const setTab = t => { state.tab = t;
 
 /* ── 차량 ───────────────────────────────────────────────── */
 async function pullRides(){
-  try{ state.rides = await api(`rides?cohort=eq.${encodeURIComponent(ME.cohort)}&date=gte.${today()}&select=*&order=date.asc,depart_at.asc&limit=200`); }
+  /* 지난 것도 한 달치는 들고 온다. 쿼리에서 빼버리면 올린 사람도 자기 글을 못 지운다. */
+  try{ state.rides = await api(`rides?cohort=eq.${encodeURIComponent(ME.cohort)}&date=gte.${daysAgo(30)}&select=*&order=date.asc,depart_at.asc&limit=200`); }
   catch(e){ state.rides = null; }
   renderRides();
 }
-function seatRow(r, kind){
+function seatRow(r, kind, gone){
   const list = (kind==='ride' ? r.riders : r.guests) || [];
   const cap  = kind==='ride' ? r.seats : r.capacity;
   const mine = list.some(x=>x.id===ME.id);
@@ -858,25 +922,29 @@ function seatRow(r, kind){
   const open  = Array.from({length: Math.max(0,left)}).map(()=>`<span class="seat">빈자리</span>`).join('');
   return `<div class="seats">${chips}${open}</div>
     <div class="acts">
-      ${mine ? `<button class="btn sm ghost" data-leave="${r.id}">빼기</button>`
+      ${gone ? '' : mine ? `<button class="btn sm ghost" data-leave="${r.id}">빼기</button>`
              : left>0 ? `<button class="btn sm mint" data-join="${r.id}">${kind==='ride'?'탈래요':'같이 쓸래요'}</button>`
                       : `<span class="tag full">자리 없음</span>`}
-      ${r.user_id===ME.id ? `<button class="btn sm coral" data-del="${r.id}">내리기</button>` : ''}
+      ${r.user_id===ME.id ? `<button class="btn sm coral" data-del="${r.id}">${gone?'지우기':'내리기'}</button>` : ''}
     </div>`;
 }
 function renderRides(){
   const box = $('rides');
   if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
   if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>위에서 첫 자리를 올려보세요.</div>`; return; }
-  box.innerHTML = state.rides.map(r=>`<div class="card">
-      <div class="hd"><span class="tag ${r.dir}">${r.dir==='go'?'↓ 양양 가는 차':'↑ 양양에서 나가는 차'}</span>
-        <b>${dLabel(r.date)} ${esc(r.depart_at)}</b></div>
+  if(state.rides.every(r=>isGone(r,'ride'))) box.insertAdjacentHTML?.('afterbegin','');
+  let head = false;
+  box.innerHTML = [...state.rides].sort(byWhen('ride')).map(r=>{ const gone = isGone(r,'ride');
+    const hd = gone && !head ? (head = true, `<div class="gone-hd">지난 차 — 기록으로 남겨둡니다</div>`) : '';
+    return hd + `<div class="card ${gone?'gone':''}">
+      <div class="hd"><span class="tag ${gone?'':r.dir}">${r.dir==='go'?'↓ 양양 가는 차':'↑ 양양에서 나가는 차'}</span>
+        <b>${dLabel(r.date)} ${esc(r.depart_at)}</b>${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
       <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b></div>
       <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span>${noteBtn(r)}</div>
       ${r.note ? `<div class="meta">${esc(r.note)}</div>` : ''}
       ${r.contact ? `<div class="meta">연락 · ${esc(r.contact)}</div>` : ''}
-      ${seatRow(r,'ride')}
-    </div>`).join('');
+      ${seatRow(r,'ride',gone)}
+    </div>`; }).join('');
   bindCards(box, 'ride'); bindNotes(box); paintAvatars(box, state.rides, 'riders');
 }
 /* 방향을 바꾸면 예시도 뒤집는다 — "어디서 출발"만 있으면 어느 쪽 이야기인지 헷갈린다 */
@@ -902,7 +970,7 @@ $('r-save').onclick = async ()=>{
 /* ── 숙소 ───────────────────────────────────────────────── */
 async function pullStays(){
   await pullReviews();
-  try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${today()}&select=*&order=date_from.asc&limit=200`); }
+  try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${daysAgo(30)}&select=*&order=date_from.asc&limit=200`); }
   catch(e){ state.stays = null; }
   renderStays(); renderMap();
 }
@@ -910,17 +978,20 @@ function renderStays(){
   const box = $('stays');
   if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
   if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.</div>`; return; }
-  box.innerHTML = state.stays.map(s=>`<div class="card">
-      <div class="hd"><b>${esc(s.place)}</b>${s.price?`<span class="tag">${esc(s.price)}</span>`:''}</div>
+  let shead = false;
+  box.innerHTML = [...state.stays].sort(byWhen('stay')).map(s=>{ const gone = isGone(s,'stay');
+    const hd = gone && !shead ? (shead = true, `<div class="gone-hd">지난 숙소 — 평가는 계속 남길 수 있어요</div>`) : '';
+    return hd + `<div class="card ${gone?'gone':''}">
+      <div class="hd"><b>${esc(s.place)}</b>${s.price?`<span class="tag">${esc(s.price)}</span>`:''}${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
       <div class="meta">${dLabel(s.date_from)} → ${dLabel(s.date_to)}${distLabel(s)}</div>
       <div class="owner"><canvas data-own="${esc(s.id)}"></canvas><span class="meta" style="margin:0">${esc(s.name)} 님이 올림</span>${noteBtn(s)}</div>
       ${(s.perks||[]).length ? `<div class="perks">${s.perks.map(p=>`<span class="perk on">${esc(p)}</span>`).join('')}</div>` : ''}
       ${s.note ? `<div class="meta">${esc(s.note)}</div>` : ''}
       ${s.contact ? `<div class="meta">연락 · ${esc(s.contact)}</div>` : ''}
       ${s.lat&&s.lon ? `<div class="meta"><a href="${mapLink(s.place,s.lat,s.lon)}" target="_blank" rel="noopener">길찾기 · 지도 앱에서 열기 ↗</a></div>` : ''}
-      ${seatRow(s,'stay')}
+      ${seatRow(s,'stay',gone)}
       ${reviewBlock(s)}
-    </div>`).join('');
+    </div>`; }).join('');
   bindCards(box, 'stay'); bindNotes(box); paintAvatars(box, state.stays, 'guests'); bindReviews(box);
   renderNear();                       // 새로 올라온 숙소가 곧바로 다음 사람의 버튼이 된다
 }
@@ -1071,7 +1142,7 @@ const mapLink = (place,lat,lon) => `https://map.kakao.com/link/to/${encodeURICom
 /* 지도 — 외부 지도 라이브러리를 쓰지 않는다. 바다 앞에서 신호가 약해도 떠야 하고,
    여기서 필요한 건 "낙산 기준 어느 쪽 얼마나 먼가" 하나뿐이다. */
 function renderMap(){
-  const list = (state.stays||[]).filter(s=>s.lat&&s.lon);
+  const list = (state.stays||[]).filter(s=>s.lat&&s.lon && !isGone(s,'stay'));   // 지난 숙소까지 찍으면 지도가 과거로 덮인다
   if(!list.length){ $('map').innerHTML = `<div class="empty">좌표가 있는 숙소가 없어요.<br>숙소를 올릴 때 위도·경도를 넣으면 여기 찍힙니다.</div>`; return; }
   const maxKm = Math.max(1.5, ...list.map(s=>distKm(s.lat,s.lon))) * 1.3;
   const W=320, H=320, C=W/2, R=C-30;
