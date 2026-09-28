@@ -246,12 +246,14 @@ body.onb-on .wrap{ padding-bottom:230px }
           <div><label for="s-price">비용 (선택)</label><input id="s-price" maxlength="20" placeholder="예) 1인 2만"></div>
           <div><label for="s-contact">연락 방법 (선택)</label><input id="s-contact" maxlength="80" placeholder="오픈채팅 링크 등"></div>
         </div>
+        <label>학교 근처 숙소 — 누르면 이름과 좌표가 채워져요</label>
+        <div class="perks" id="s-near"></div>
         <label>좌표 — 지도에 찍으려면 (선택)</label>
         <div class="grid2">
-          <input id="s-lat" inputmode="decimal" placeholder="위도 38.1210">
-          <input id="s-lon" inputmode="decimal" placeholder="경도 128.6320">
+          <input id="s-lat" inputmode="decimal" placeholder="위도 38.1085">
+          <input id="s-lon" inputmode="decimal" placeholder="경도 128.6405">
         </div>
-        <div class="note">지도 앱에서 숙소를 길게 눌러 나오는 <b>위도, 경도</b>를 붙여넣으면 아래 지도에 찍혀요.</div>
+        <div class="note">목록에 없으면, 지도 앱에서 숙소를 길게 눌러 나오는 <b>위도, 경도</b>를 붙여넣으세요.</div>
         <label>특장점</label><div class="perks" id="s-perks"></div>
         <label for="s-note">한마디 (선택)</label><input id="s-note" maxlength="60" placeholder="예) 해변까지 걸어서 3분">
         <div class="err" id="s-err"></div>
@@ -296,8 +298,24 @@ const SUPA = { url:(window.SURF_CONFIG?.supabaseUrl||'').replace(/\/$/,''), key:
 const H = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json',
                    Prefer:'resolution=merge-duplicates,return=minimal' });
 let ME = null, state = { rides:[], stays:[], reviews:[], tab:'ride' };
-/* 기준은 낙산 해변이 아니라 양양서핑학교다 — 숙소를 고를 때 재는 건 "학교까지" 거리다. */
-const SCHOOL = { lat:38.121, lon:128.632, ko:'양양서핑학교' };
+/* 기준은 낙산 해변이 아니라 양양서핑학교다 — 숙소를 고를 때 재는 건 "학교까지" 거리다.
+   좌표 정정(2026-09-28): 예전 값 38.121,128.632 는 낙산사 쪽이라 1.57km 어긋나 있었고,
+   지도에 찍히는 거리가 전부 그만큼 틀렸다. 학교 주소는 양양읍 일출로 159-12(조산리)이고
+   바로 옆 159-5 가 디그니티 호텔이다. OSM 의 디그니티 노드(38.10858,128.64053) 기준으로
+   잡았다 — 오차 100m 안쪽. 수업도 낙산해변 남쪽 조산리 구간에서 한다. */
+const SCHOOL = { lat:38.1085, lon:128.6405, ko:'양양서핑학교' };
+
+/* 학교에서 걸어갈 만한 숙소들. 좌표는 OpenStreetMap 에서 확인한 값이다.
+   좌표를 직접 찍게 두면 아무도 안 찍는다 — 찍어야 지도에 뜨는데, 그게 제일 귀찮은 칸이다. */
+const NEAR = [
+  ['디그니티 호텔',   38.10858, 128.64053],
+  ['양양비치콘도',   38.10852, 128.64130],
+  ['송림마을펜션',   38.11077, 128.63852],
+  ['프레야 낙산콘도', 38.11156, 128.63755],
+  ['참새방앗간 민박', 38.10953, 128.63587],
+  ['연어의 고향',    38.10919, 128.63504],
+  ['낙산느티나무민박', 38.10965, 128.63342],
+];
 const NAKSAN = SCHOOL;
 const PERKS = ['해변 도보','주차','보드 보관','온수 샤워','취사','세탁기','수건 제공','조식'];
 let toastT;
@@ -950,6 +968,12 @@ function start(){
   $('r-date').value = nextWeekend(); $('s-from').value = nextWeekend();
   $('s-to').value = nextWeekend(1);
   if(!ME.profile || !Object.keys(ME.profile).length) ME.profile = freshProfile(ME.name);
+  $('s-near').innerHTML = NEAR.map(([n],i)=>`<button type="button" class="perk" data-near="${i}" style="min-height:32px">${n} · ${distKm(NEAR[i][1],NEAR[i][2]).toFixed(1)}km</button>`).join('');
+  $('s-near').querySelectorAll('[data-near]').forEach(b=>b.onclick = ()=>{
+    const [n,la,lo] = NEAR[+b.dataset.near];
+    $('s-place').value = n; $('s-lat').value = la; $('s-lon').value = lo;
+    $('s-near').querySelectorAll('[data-near]').forEach(x=>x.classList.toggle('on', x===b));
+    toast(`${n} · 학교에서 ${distKm(la,lo).toFixed(1)}km`); });
   $('s-perks').innerHTML = PERKS.map(p=>`<button type="button" class="perk" aria-pressed="false">${p}</button>`).join('');
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';
