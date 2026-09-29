@@ -115,6 +115,14 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .tag.go{ background:var(--mint) } .tag.back{ background:#8FD3FF } .tag.local{ background:var(--grape); color:#fff }
 .tag.full{ background:var(--coral) }
 .meta{ font-size:12.5px; color:var(--ink2); margin-top:3px; line-height:1.55 }
+/* 어디서 어디로 가는지가 차 글의 전부다. 그런데 작은 회색 글씨로 적혀 있어서
+   날짜·이름보다 뒤로 밀려 있었다. 제일 크게, 제일 진하게. */
+.route{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:6px;
+        background:#fff; border:3px solid var(--ink); padding:7px 9px }
+.route span{ font-size:15px; font-weight:800; line-height:1.3; color:var(--ink); word-break:keep-all }
+.route i{ font-style:normal; font-size:13px; color:#fff; background:var(--sea); border:2px solid var(--ink);
+          padding:1px 5px; line-height:1.25; flex:0 0 auto }
+.card.gone .route{ background:#F3F1EA }
 .seats{ display:flex; gap:4px; flex-wrap:wrap; margin-top:7px }
 .seat{ border:3px solid var(--ink); background:#fff; padding:3px 8px 3px 4px; font-size:12px; font-weight:700; min-height:34px; display:inline-flex; align-items:center; gap:4px }
 .seat canvas{ width:22px; height:22px; image-rendering:pixelated; flex:0 0 auto }
@@ -162,9 +170,7 @@ body.has-nav .wrap{ padding-bottom:86px }
           background:#CFEDFF; padding:10px 8px 14px; min-height:210px }
 #vbg{ position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; z-index:0 }
 .vgrid{ z-index:1 }
-.vzone{ position:absolute; inset:0; z-index:1; pointer-events:none }
-.vzone span{ position:absolute; left:6px; font-size:10px; font-weight:800; color:rgba(27,27,47,.42);
-             background:rgba(255,255,255,.55); padding:0 4px; letter-spacing:.02em }
+
 /* 줄 세워 놓으니 단체사진이 됐다. 바다엔 타는 사람, 모래엔 쉬는 사람을 따로 세운다 —
    그러려면 flex 로는 안 되고 각자 자리를 잡아줘야 한다. */
 .vgrid{ position:relative; height:100%; min-height:190px }
@@ -444,8 +450,7 @@ body.onb-on .wrap{ padding-bottom:230px }
     <!-- 마을 -->
     <div id="pane-town" hidden>
       <div class="grp"><span class="t" id="vill-t">6기 마을</span>
-        <div class="village" id="village"><canvas id="vbg"></canvas><div class="vgrid" id="vgrid"></div>
-          <div class="vzone" id="vzone"></div></div>
+        <div class="village" id="village"><canvas id="vbg"></canvas><div class="vgrid" id="vgrid"></div></div>
         <div class="note" id="vill-sub" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)"></div>
         <div class="moodrow">
           <input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!">
@@ -1112,11 +1117,14 @@ const setSea = v => { try{ localStorage.setItem('lineup.share.sea', v); }catch(e
 /* ── 마을 · 채팅 ──────────────────────────────────────────
    라인업에서 마을 그리드·말풍선·반응·채팅만 가져왔다. 레벨·출석·펫 성장·코치 인증은
    학교의 것이라 두고 왔다 — 여기 사람들이 서로에게 묻는 건 "누가 있나, 오늘 어땠나"다. */
-/* QA 하네스가 남긴 계정들이 마을에 서 있었다. 서버에서 지우는 게 먼저지만
-   (surfers 에 delete 정책이 없어 SQL 이 필요하다), 화면에서도 걸러 둔다 —
-   나중에 또 테스트하다 흘리면 같은 일이 반복된다. */
-const HIDE_IDS = ['owen','qa_owen','zz_test'];
-const isTest = id => typeof id === 'string' && (HIDE_IDS.includes(id) || /^zz(_|$)/.test(id));
+/* QA 하네스가 남긴 계정을 화면에서 거른다(서버에서 지우는 게 먼저지만 surfers 에
+   delete 정책이 없어 SQL 이 필요하다).
+
+   처음엔 /^zz(_|$)/ 로 걸렀다가 **진짜 회원 하나를 지워버렸다** — zz_signup 이
+   실제 6기 분의 아이디였다. 패턴으로 사람을 숨기면 언젠가 이런 일이 난다.
+   아는 이름만 적는다. 새 테스트 계정을 만들면 여기에 손으로 추가할 것. */
+const HIDE_IDS = ['t','owen','qa_owen','zz_test','zz_qc','zz_guide','zz_pw','zz_o1','zz_q5'];
+const isTest = id => typeof id === 'string' && HIDE_IDS.includes(id);
 
 const REACT_EMO = ['👏','🔥','🌊','💪'];
 const QS = ['오늘 가장 잘 된 동작은?','이번 주 목표 한 줄?','오늘 파도 한 단어로?','다음 주 타고 싶은 해변은?',
@@ -1213,36 +1221,46 @@ function layoutTown(){
   if(!cells.length) return;
   const pick = z => cells.filter(c=>c.dataset.where===z);
   const sea = pick('sea'), beach = pick('beach'), cls = pick('class');
-  const per = Math.max(2, Math.floor(W / 64));
-  const put = (list, top, rowH)=>{
+  /* 줄 맞춰 세우면 단체사진이 된다. 칸은 나누되 각자 제 칸 안에서 흔들리게 두고,
+     아래에 선 사람이 앞으로 오게 쌓는다 — 그래야 '모여 있는 무리'로 읽힌다. */
+  /* 아이디가 한 글자만 다른 사람들(u0·u1·…)은 h*137 로는 하위 비트만 달라서
+     >>9 하면 값이 같아진다 — 실제로 아홉 명이 전부 같은 줄에 섰다. 제대로 섞는다(FNV-1a). */
+  const hsh2 = id => { let h = 2166136261;
+    for(const c of String(id)){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+    return h >>> 0; };
+  const per = Math.max(2, Math.floor(W / 72));
+  const ROW = 78;
+  const put = (list, top)=>{
     list.forEach((el,i)=>{
+      const h = hsh2(el.dataset.id);
       const row = Math.floor(i/per), col = i%per;
-      const n = Math.min(per, list.length - row*per), gap = W/(n+1);
-      el.style.left = Math.round(gap*(col+1) - 28) + 'px';
-      el.style.top  = Math.round(top + row*rowH) + 'px';
+      const n = Math.min(per, list.length - row*per), cell = W/n;
+      const jx = ((h % 1000)/1000 - 0.5) * cell * 0.52;         // 칸 안에서 좌우로
+      const jy = ((Math.floor(h/1000) % 1000)/1000 - 0.5) * 34;  // 앞뒤로
+      const x = Math.round(cell*(col + 0.5) - 28 + jx);
+      const y = Math.round(top + row*ROW + jy);
+      el.style.left = Math.max(2, Math.min(W - 58, x)) + 'px';
+      el.style.top  = y + 'px';
+      el.style.zIndex = 10 + Math.round(y/2);                // 아래쪽이 앞
     });
     return Math.max(list.length ? 1 : 0, Math.ceil(list.length/per));
   };
-  const ROW = 86, SKY = 34;
-  const seaRows   = put(sea,   SKY, ROW);
-  const beachTop  = SKY + seaRows*ROW + 14;
-  const beachRows = put(beach, beachTop, ROW);
-  const clsTop    = beachTop + beachRows*ROW + 18;
-  const clsRows   = put(cls,   clsTop, ROW);
+  const SKY = 30;
+  const seaRows   = put(sea,   SKY);
+  const beachTop  = SKY + seaRows*ROW + 20;
+  const beachRows = put(beach, beachTop);
+  const clsTop    = beachTop + beachRows*ROW + 16;
+  const clsRows   = put(cls,   clsTop);
   /* 높이는 vgrid 에 준다. village 에 min-height 를 주면 box-sizing:border-box 탓에
      패딩(위 10 + 아래 14)이 안쪽을 먹어 마지막 줄 이름표가 잘렸다. */
-  const H = clsTop + clsRows*ROW + 6;
+  const H = clsTop + clsRows*ROW + 22;   // 흔들린 만큼 아래를 더 준다
   g.style.height = H + 'px';
   /* 배경이 쓸 경계 — 사람 발끝을 기준으로 물가와 학교 앞마당을 긋는다.
      사람만 내려가고 그림이 안 따라오면 모래 위에서 서핑하게 된다. */
   VB = { W, H, pad:10,
-         shore: beachTop - 16,                    // 바다가 끝나는 선
-         yard:  clsTop - 20,                      // 학교 앞마당이 시작되는 선
+         shore: beachTop - 8,                     // 바다가 끝나는 선
+         yard:  clsTop - 6,                       // 학교 앞마당이 시작되는 선
          hasSea: sea.length > 0 };
-  $('vzone').innerHTML =
-    `<span style="top:${(SKY-12)}px">🌊 바다</span>` +
-    (beach.length ? `<span style="top:${(beachTop-12)}px">🏖 해변</span>` : '') +
-    (cls.length ? `<span style="top:${(clsTop-12)}px">🏫 학교 앞</span>` : '');
   drawVillage(performance.now());
 }
 
@@ -1607,7 +1625,7 @@ function renderRides(){
     return hd + `<div class="card ${gone?'gone':''}">
       <div class="hd"><span class="tag ${gone?'':r.dir}">${(DIRS[r.dir]||DIRS.go).ko}</span>
         <b>${dLabel(r.date)} ${esc(r.depart_at)}</b>${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
-      <div class="meta"><b>${esc(r.from_place)}</b> → <b>${esc(r.to_place)}</b></div>
+      <div class="route"><span>${esc(r.from_place)}</span><i>▶</i><span>${esc(r.to_place)}</span></div>
       <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span>${noteBtn(r)}</div>
       ${r.note ? `<div class="meta">${esc(r.note)}</div>` : ''}
       ${r.contact ? `<div class="meta">연락 · ${esc(r.contact)}</div>` : ''}
