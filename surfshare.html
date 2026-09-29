@@ -161,8 +161,11 @@ body.has-nav .wrap{ padding-bottom:86px }
 .village{ position:relative; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); overflow:hidden;
           background:linear-gradient(to bottom,#CFEDFF 0 34%, #4FA8EE 34% 58%, var(--sand) 58% 100%);
           padding:10px 8px 14px; min-height:210px }
-.vgrid{ position:relative; display:flex; flex-wrap:wrap; gap:6px 4px; justify-content:center; align-items:flex-end; margin-top:46px }
-.vp{ min-width:64px; max-width:110px; display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer; position:relative }
+/* 줄 세워 놓으니 단체사진이 됐다. 바다엔 타는 사람, 모래엔 쉬는 사람을 따로 세운다 —
+   그러려면 flex 로는 안 되고 각자 자리를 잡아줘야 한다. */
+.vgrid{ position:relative; height:100%; min-height:190px }
+.vp{ position:absolute; width:56px; display:flex; flex-direction:column; align-items:center; gap:2px;
+     cursor:pointer; will-change:transform }
 .vp canvas{ width:56px; height:64px; image-rendering:pixelated }
 .vp[data-pet] .nm{ transform:translateX(17.2px) }
 .vp .nm{ font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink);
@@ -201,7 +204,11 @@ body.has-nav .wrap{ padding-bottom:86px }
 .msg.me{ flex-direction:row-reverse } .msg.me .b{ background:var(--sun) }
 .chat-in{ display:flex; gap:6px; margin-top:8px }
 .chat-in input{ flex:1 }
-.now{ background:#0E2A4A; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:12px; color:#EAF6FF }
+/* 카드가 서로 붙어 있으면 한 덩어리로 읽혀서 각각이 기능이라는 게 안 보인다.
+   탭 내용은 위 카드들과 확실히 띄운다. */
+#pane-ride, #pane-stay, #pane-cam, #pane-town, #pane-me{ margin-top:20px }
+#school{ margin-top:20px !important }
+.now{ margin-bottom:4px; background:#0E2A4A; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:12px; color:#EAF6FF }
 .now .t{ font-size:15px; color:#fff }
 .now-avs{ display:flex; gap:5px; flex-wrap:wrap; margin-top:9px }
 .now-avs span{ display:inline-flex; align-items:center; gap:4px; background:#143B66; border:2px solid #2E6BFF;
@@ -210,6 +217,10 @@ body.has-nav .wrap{ padding-bottom:86px }
 .now-row{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap }
 .now-row select{ flex:1 1 130px; border-color:#2E6BFF }
 .now-else{ font-size:12px; color:#9FC4E4; margin-top:7px; line-height:1.6 }
+.cond{ display:flex; gap:5px; flex-wrap:wrap; margin-top:9px }
+.cond span{ background:#143B66; border:2px solid #2E6BFF; padding:3px 8px; font-size:12px; color:#EAF6FF }
+.cond span b{ font-size:13px; color:#fff }
+.cond .src{ background:none; border:0; padding:2px 0; color:#7FA8CC; font-size:11px; width:100% }
 .fav{ border:0; background:none; font-size:20px; line-height:1; padding:0 4px 0 0; cursor:pointer;
       color:#C9CDDC; font-family:sans-serif; min-height:30px }
 .fav.on{ color:#F5A623 }
@@ -342,9 +353,10 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
     <!-- 지금 바다에 누구 있나 — 라인업에서 이것만 가져왔다 -->
     <div class="now" id="now" style="margin-top:10px">
-      <div class="t" id="now-t">지금 바다에…</div>
+      <div class="t" id="now-t">지금 바다에 누가 있나…</div>
       <div class="now-avs" id="now-avs"></div>
       <div class="now-else" id="now-else"></div>
+      <div class="cond" id="cond"></div>
       <div class="now-row">
         <select id="now-beach" aria-label="해변"></select>
         <button class="btn blue" id="now-btn" style="flex:0 0 auto">📍 체크인</button>
@@ -371,7 +383,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="err" id="r-err"></div>
         <button class="btn mint" id="r-save" style="width:100%;margin-top:6px">올리기</button>
       </details>
-      <div class="grp"><span class="t">다가오는 차량</span><div class="px" id="rides"></div></div>
+      <div class="grp"><span class="t">올라온 차량 쉐어</span><div class="px" id="rides"></div></div>
     </div>
 
     <!-- 숙소 -->
@@ -388,7 +400,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <label>학교 근처 숙소 — 누르면 이름과 지도 링크가 채워져요</label>
         <div class="perks" id="s-near"></div>
         <label for="s-url">네이버지도 링크 (선택)</label>
-        <input id="s-url" inputmode="url" placeholder="네이버지도에서 숙소 → 공유 → 링크 복사">
+        <input id="s-url" inputmode="url" placeholder="네이버지도에서 숙소 → 공유하기 → 링크 복사">
         <div class="note" id="s-url-note">링크를 붙이면 <b>길찾기</b>가 열리고, 주소에 좌표가 들어 있으면 아래 지도에도 핀이 찍혀요.</div>
         <label>특장점</label><div class="perks" id="s-perks"></div>
         <label for="s-note">한마디 (선택)</label><input id="s-note" maxlength="60" placeholder="예) 해변까지 걸어서 3분">
@@ -396,17 +408,17 @@ body.onb-on .wrap{ padding-bottom:230px }
         <button class="btn mint" id="s-save" style="width:100%;margin-top:6px">올리기</button>
       </details>
       <div class="grp"><span class="t">학교 기준 지도</span><div class="px white" id="map"></div></div>
-      <div class="grp"><span class="t">낙산 숙소 정보판</span>
+      <div class="grp"><span class="t">숙소 정보판</span>
         <div class="px" id="places"></div>
         <div class="note" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
           누구나 고칠 수 있어요. 대신 <b>누가 무엇을 고쳤는지 다 보입니다.</b></div>
       </div>
-      <div class="grp"><span class="t">숙소</span><div class="px" id="stays"></div></div>
+      <div class="grp"><span class="t">올라온 숙소 쉐어</span><div class="px" id="stays"></div></div>
     </div>
 
     <!-- 라이브캠 -->
     <div id="pane-cam" hidden>
-      <div class="grp"><span class="t">지금 바다</span>
+      <div class="grp"><span class="t">라이브캠</span>
         <div class="camwrap">
           <video id="cam-v" playsinline muted controls preload="none"></video>
           <div class="cover" id="cam-cover"></div>
@@ -464,8 +476,8 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <div class="px sand" id="school" style="margin-top:10px">
       <span class="tag">COMING SOON</span>
-      <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 마을을 만들고 있어요</div>
-      <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 수업 기록 · 자세 분석 · 마을 채팅.<br>
+      <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 <b>서핑학교</b>를 만들고 있어요</div>
+      <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 물때 · 수업 기록 · 자세 분석.<br>
         준비되면 여기에서 바로 들어가실 수 있게 할게요.</div>
       <a href="/school" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--ink2)">초대 코드를 받으셨다면 → 학교 문 열기</a>
     </div>
@@ -946,15 +958,15 @@ document.addEventListener('visibilitychange', ()=>{ if(document.hidden && sceneR
    4시간이 지나면 저절로 사라진다 — 물에서 나올 때 체크아웃을 누르는 사람은 없다. */
 /* 해변 · 캠 아이디 · HLS 주소. 캠이 없는 곳은 빈칸이고, 그 해변에선 캠 대신 안내가 뜬다. */
 const SEAS = [
-  ['낙산', 'YNS1',  'https://wsb.live.smilecdn.com/naksan1/naksan1.stream/playlist.m3u8'],
-  ['물치', 'MUL',   'https://wsb.live.smilecdn.com/mulchi1/mulchi1.stream/playlist.m3u8'],
-  ['동호', 'YDH1',  'https://wsb.live.smilecdn.com/dongho1/dongho1.stream/playlist.m3u8'],
-  ['기사문', 'GSM1', 'https://wsb.live.smilecdn.com/gisamun3/gisamun3.stream/playlist.m3u8'],
-  ['서피비치·하조대', 'YHJD1', 'https://wsb.live.smilecdn.com/hajodae1/hajodae1.stream/playlist.m3u8'],
-  ['죽도', 'JD1',   'https://wsb.live.smilecdn.com/jukdo1/jukdo1.stream/playlist.m3u8'],
-  ['인구', 'IJ1',   'https://wsb.live.smilecdn.com/ingu1/ingu1.stream/playlist.m3u8'],
-  ['남애', 'NA1',   'https://wsb.live.smilecdn.com/484600865/main/playlist_sfm4s.m3u8'],
-  ['설악', '', ''], ['정암', '', ''],
+  ['낙산', 'YNS1',  'https://wsb.live.smilecdn.com/naksan1/naksan1.stream/playlist.m3u8', 38.121, 128.632],
+  ['물치', 'MUL',   'https://wsb.live.smilecdn.com/mulchi1/mulchi1.stream/playlist.m3u8', 38.190, 128.600],
+  ['동호', 'YDH1',  'https://wsb.live.smilecdn.com/dongho1/dongho1.stream/playlist.m3u8', 38.070, 128.700],
+  ['기사문', 'GSM1', 'https://wsb.live.smilecdn.com/gisamun3/gisamun3.stream/playlist.m3u8', 38.019, 128.727],
+  ['서피비치·하조대', 'YHJD1', 'https://wsb.live.smilecdn.com/hajodae1/hajodae1.stream/playlist.m3u8', 38.038, 128.720],
+  ['죽도', 'JD1',   'https://wsb.live.smilecdn.com/jukdo1/jukdo1.stream/playlist.m3u8', 37.972, 128.765],
+  ['인구', 'IJ1',   'https://wsb.live.smilecdn.com/ingu1/ingu1.stream/playlist.m3u8', 37.965, 128.766],
+  ['남애', 'NA1',   'https://wsb.live.smilecdn.com/484600865/main/playlist_sfm4s.m3u8', 37.945, 128.787],
+  ['설악', '', '', 38.152, 128.615], ['정암', '', '', 38.099, 128.645],
 ];
 const seaOf = n => SEAS.find(x=>x[0]===n) || SEAS[0];
 const CAM_URL = c => `https://www.wsbfarm.com/wavecam/WaveCamPlay?cam=${c}`;
@@ -963,14 +975,14 @@ const myNow = () => (nowRows||[]).find(c=>c.user_id===ME.id);
 
 async function pullNow(){
   const since = new Date(Date.now() - 4*3600e3).toISOString();
-  try{ nowRows = await api(`checkins?select=*&active=eq.true&at=gte.${since}&order=at.desc&limit=100`); }
+  try{ nowRows = (await api(`checkins?select=*&active=eq.true&at=gte.${since}&order=at.desc&limit=100`)).filter(c=>!isTest(c.user_id)); }
   catch(e){ nowRows = null; }
   renderNow();
 }
 function renderNow(){
   const sel = $('now-beach');
   if(!sel.options.length){ sel.innerHTML = SEAS.map(([n])=>`<option value="${n}">${n}</option>`).join('');
-    sel.onchange = ()=>{ setSea(sel.value); renderNow(); }; }
+    sel.onchange = ()=>{ setSea(sel.value); renderNow(); pullCond(); }; }
   sel.value = mySea(); if(!sel.value){ sel.value = '낙산'; setSea('낙산'); }
   if(nowRows === null){ $('now-t').textContent = '체크인 표가 아직 없어요';
     $('now-else').textContent = '코치가 supabase-social.sql 을 실행하면 켜집니다.';
@@ -994,6 +1006,40 @@ function renderNow(){
   $('now-btn').textContent = atHere ? '나왔어요' : mine ? `📍 ${beach}으로 옮기기` : '📍 체크인';
   $('now-btn').className = 'btn ' + (atHere ? 'ghost' : 'blue');
 }
+/* 지금 그 바다가 어떤지 — 나갈지 말지는 이 다섯 숫자로 거의 정해진다.
+   Open-Meteo 격자값이라 해변 앞바다 추정치다. 정확한 물때·특보는 기상청을 봐야 한다. */
+const WX = { 0:'맑음', 1:'대체로 맑음', 2:'구름 조금', 3:'흐림', 45:'안개', 48:'안개',
+  51:'이슬비', 53:'이슬비', 55:'이슬비', 61:'비', 63:'비', 65:'큰비', 71:'눈', 73:'눈', 75:'큰눈',
+  80:'소나기', 81:'소나기', 82:'강한 소나기', 95:'뇌우', 96:'뇌우', 99:'뇌우' };
+let condCache = {};
+async function pullCond(){
+  const box = $('cond'); if(!box) return;
+  const [n,,, lat, lon] = seaOf(mySea());
+  const key = `${lat},${lon}`, hit = condCache[key];
+  if(hit && Date.now() - hit.at < 15*60e3) return paintCond(hit.v);
+  box.innerHTML = '<span class="src">오늘 바다 상태를 읽는 중…</span>';
+  try{
+    const [f, m] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FSeoul`).then(r=>r.json()),
+      fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_period,sea_surface_temperature&timezone=Asia%2FSeoul`).then(r=>r.json()),
+    ]);
+    const v = { temp:f.current?.temperature_2m, wx:f.current?.weather_code,
+                sst:m.current?.sea_surface_temperature, h:m.current?.wave_height, p:m.current?.wave_period };
+    condCache[key] = { at:Date.now(), v }; paintCond(v);
+  }catch(e){ box.innerHTML = '<span class="src">바다 상태를 못 읽었어요 · 신호 확인</span>'; }
+}
+function paintCond(v){
+  const box = $('cond'); if(!box) return;
+  const num = (x, d=1) => (x==null || isNaN(x)) ? '–' : (+x).toFixed(d);
+  box.innerHTML =
+    `<span>기온 <b>${num(v.temp)}°</b></span>` +
+    `<span>${WX[v.wx] || '–'}</span>` +
+    `<span>수온 <b>${num(v.sst)}°</b></span>` +
+    `<span>파고 <b>${num(v.h)}m</b></span>` +
+    `<span>주기 <b>${num(v.p)}초</b></span>` +
+    `<span class="src">Open-Meteo 격자값 · 15분마다 갱신</span>`;
+}
+
 $('now-btn').onclick = async ()=>{
   const beach = $('now-beach').value, mine = myNow(), atHere = mine && mine.beach === beach;
   const row = { id:`${ME.id}|${today()}`, user_id:ME.id, name:ME.name, beach,
@@ -1047,6 +1093,9 @@ function renderCam(){
        <small>WSB FARM 웨이브캠 실시간 · 소리 없음</small>`
     : `<div style="font-weight:800">${esc(n)}은 캠이 없어요</div><small>가까운 해변 캠을 골라보세요.</small>`;
   if($('cam-play')) $('cam-play').onclick = ()=>camPlay(n);
+  /* 탭에 들어왔으면 눌러주길 기다리지 않는다 — 여기 온 이유가 그거다.
+     소리가 없어서 브라우저가 자동재생을 막지 않는다. 데이터는 탭을 벗어나면 끊긴다. */
+  if(url && state.tab === 'cam') setTimeout(()=>{ if(state.tab === 'cam' && camOn !== n) camPlay(n); }, 250);
 }
 $('cam-off').onclick = ()=>{ camStop(); renderCam(); };
 
@@ -1057,6 +1106,12 @@ const setSea = v => { try{ localStorage.setItem('lineup.share.sea', v); }catch(e
 /* ── 마을 · 채팅 ──────────────────────────────────────────
    라인업에서 마을 그리드·말풍선·반응·채팅만 가져왔다. 레벨·출석·펫 성장·코치 인증은
    학교의 것이라 두고 왔다 — 여기 사람들이 서로에게 묻는 건 "누가 있나, 오늘 어땠나"다. */
+/* QA 하네스가 남긴 계정들이 마을에 서 있었다. 서버에서 지우는 게 먼저지만
+   (surfers 에 delete 정책이 없어 SQL 이 필요하다), 화면에서도 걸러 둔다 —
+   나중에 또 테스트하다 흘리면 같은 일이 반복된다. */
+const HIDE_IDS = ['owen','qa_owen','zz_test'];
+const isTest = id => typeof id === 'string' && (HIDE_IDS.includes(id) || /^zz(_|$)/.test(id));
+
 const REACT_EMO = ['👏','🔥','🌊','💪'];
 const QS = ['오늘 가장 잘 된 동작은?','이번 주 목표 한 줄?','오늘 파도 한 단어로?','다음 주 타고 싶은 해변은?',
             '오늘 코치 피드백 중 기억나는 것?','서핑 시작한 이유는?','요즘 제일 어려운 건?','같이 타고 싶은 사람 지목!'];
@@ -1074,7 +1129,7 @@ async function pullTown(){
   /* 기수로 나누지 않는다. 라인업은 6기 마을과 오픈 마을을 갈라놨는데, 여기서 그러면
      내 cohort 가 'open' 으로 새는 순간 마을이 통째로 빈다(실제로 그랬다).
      쉐어는 스무 명 남짓 쓰는 곳이라 나누는 쪽이 손해다 — 가입한 사람은 다 선다. */
-  try{ state.town = await api('surfers?select=id,name,cohort,profile&limit=300'); }
+  try{ state.town = (await api('surfers?select=id,name,cohort,profile&limit=300')).filter(x=>!isTest(x.id)); }
   catch(e){ state.town = null; }
   /* 내 기수가 서버와 어긋나 있으면 맞춰 둔다 — 라벨과 글 필터가 이걸 본다 */
   const mine = (state.town||[]).find(x=>x.id===ME.id);
@@ -1094,13 +1149,19 @@ function renderTown(){
   const six = rows.filter(x=>x.cohort==='6기').length;
   $('vill-sub').textContent = `${rows.length}명${six && six!==rows.length ? ` (6기 ${six})` : ''} · 탭하면 카드`
     + (here.size ? ` · 지금 바다에 ${here.size}명` : '');
-  g.innerHTML = rows.map(x=>{
-    const mood = x.profile?.mood;
-    return `<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"${x.profile?.pet && x.profile.pet!=='none'?' data-pet':''}>
+  /* 누가 물에 있나 — 체크인한 사람은 진짜 바다에 있다. 그 사람이 없으면 마을이 죽은 것처럼
+     보이니, 아이디 해시로 몇 명을 물에 넣는다(사람마다 늘 같은 자리라 들쭉날쭉하지 않다). */
+  const hsh = id => { let h = 7; for(const c of String(id)) h = (h*131 + c.charCodeAt(0)) >>> 0; return h; };
+  const inSea = x => here.has(x.id) || (here.size === 0 && hsh(x.id) % 3 === 0);
+  g.innerHTML = rows.map((x,i)=>{
+    const mood = x.profile?.mood, sea = inSea(x);
+    return `<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"
+      data-where="${sea?'sea':'sand'}" data-ph="${(hsh(x.id)%628)/100}"${x.profile?.pet && x.profile.pet!=='none'?' data-pet':''}>
       ${mood?`<div class="bub">${esc(mood)}</div>`:''}
       ${mood && x.id!==ME.id && state.reactsOk!==false ? reactBar('mood:'+x.id, x.id) : ''}
       <canvas data-av="${esc(x.id)}" data-anim></canvas><span class="nm">${esc(x.name)}</span></div>`;
   }).join('') || '<div class="empty" style="background:rgba(255,249,230,.9)">아직 아무도 없어요</div>';
+  layoutTown();
   rows.forEach(x=>{ const cv = g.querySelector(`canvas[data-av="${CSS.escape(x.id)}"]`);
     if(cv && typeof drawSpr==='function'){ const q = withLook(x.profile, x.name); drawSpr(cv, avatarRows(q), avatarTintOf(q, 0)); } });
   g.querySelectorAll('.vp').forEach(el=>el.onclick = e=>{
@@ -1128,6 +1189,59 @@ function renderTown(){
   $('mood').placeholder = '오늘의 질문 · ' + QS[Math.floor(Date.now()/864e5) % QS.length];
   bindRx($('village'));
 }
+
+/* 자리 잡기 — 바다 밴드(34~58%)와 모래 밴드에 나눠 세운다.
+   사람이 늘면 줄이 늘고, 마을 높이도 같이 자란다. */
+function layoutTown(){
+  const g = $('vgrid'), v = $('village'); if(!g || !v) return;
+  const W = g.clientWidth; if(!W) return;
+  const cells = [...g.querySelectorAll('.vp')];
+  if(!cells.length) return;
+  const sea = cells.filter(c=>c.dataset.where==='sea'), sand = cells.filter(c=>c.dataset.where!=='sea');
+  const per = Math.max(2, Math.floor(W / 64));
+  const put = (list, top, rowH)=>{
+    list.forEach((el,i)=>{
+      const row = Math.floor(i/per), col = i%per;
+      const n = Math.min(per, list.length - row*per), gap = W/(n+1);
+      el.style.left = Math.round(gap*(col+1) - 28) + 'px';
+      el.style.top  = Math.round(top + row*rowH) + 'px';
+    });
+    return Math.max(list.length ? 1 : 0, Math.ceil(list.length/per));
+  };
+  const ROW = 86;
+  const seaRows  = put(sea, 30, ROW);
+  const sandTop  = 30 + Math.max(1, seaRows)*ROW + 12;         // 바다 줄과 모래 줄 사이를 띄운다
+  const sandRows = put(sand, sandTop, ROW);
+  /* 높이는 vgrid 에 준다. village 에 min-height 를 주면 box-sizing:border-box 탓에
+     패딩(위 10 + 아래 14)이 안쪽을 먹어 마지막 줄 이름표가 잘렸다. */
+  const H = sandTop + Math.max(1, sandRows)*ROW + 4;
+  g.style.height = H + 'px';
+  v.style.minHeight = '';
+  /* 바다가 어디까지인지 그림도 같이 옮긴다 — 사람만 내려가면 모래 위에서 서핑하게 된다.
+     기준은 모래 줄이 시작되기 조금 위(발이 닿는 선). */
+  const total = H + 24;                                        // 패딩 포함한 실제 박스 높이
+  const shore = Math.round((sandTop + 58) / total * 100);       // 캐릭터 발끝쯤
+  v.style.background = `linear-gradient(to bottom,#CFEDFF 0 ${Math.max(10, shore-34)}%, `
+    + `#4FA8EE ${Math.max(10, shore-34)}% ${shore}%, var(--sand) ${shore}% 100%)`;
+}
+addEventListener('resize', ()=>{ if(state.tab==='town') layoutTown(); });
+
+/* 가만히 서 있으니 단체사진 같았다. 바다 사람은 물결에 오르내리고 옆으로 흐르고,
+   모래 사람은 가끔 폴짝 뛴다. 주기를 사람마다 다르게 줘야 '무리'로 보인다. */
+let townRAF = 0;
+function townTick(t){
+  townRAF = requestAnimationFrame(townTick);
+  if(state.tab !== 'town' || document.hidden) return;
+  if(t - (townTick.last||0) < 60) return; townTick.last = t;
+  document.querySelectorAll('#vgrid .vp').forEach(el=>{
+    const ph = +el.dataset.ph || 0, sea = el.dataset.where === 'sea';
+    const y = sea ? Math.sin(t/620 + ph)*3.5 + Math.sin(t/310 + ph*2)*1.2
+                  : (Math.sin(t/1100 + ph) > 0.94 ? -4 : 0);
+    const x = sea ? Math.sin(t/1900 + ph*1.7)*6 : Math.sin(t/2600 + ph)*1.5;
+    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
+  });
+}
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches) townRAF = requestAnimationFrame(townTick);
 function bindRx(root){
   root.querySelectorAll('[data-rx]').forEach(b=>b.onclick = async ev=>{
     ev.stopPropagation();
@@ -1162,7 +1276,7 @@ $('mood').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault
 
 async function pullChat(){
   try{ const rows = await api('chat?select=*&order=created_at.desc&limit=80');
-    state.chat = rows.reverse(); state.chatOk = true; }
+    state.chat = rows.reverse().filter(m=>!isTest(m.user_id)); state.chatOk = true; }
   catch(e){ if(e.code==='notable') state.chatOk = false; }
   renderChat();
 }
@@ -1309,7 +1423,7 @@ const ONB = [
   { tab:'town', at:'t-town', t:'마을 — 오늘 어땠는지 한마디',
     d:'말풍선을 남기면 마을에 뜨고, 동기들이 👏🔥🌊💪로 답합니다.<br>바다에 체크인한 사람 머리 위엔 📍가 붙어요. 아래는 <b>마을 채팅</b>.' },
   { tab:'ride', at:'school', t:'학교는 곧 열려요',
-    d:'파도 예보 · 수업 기록 · 자세 분석 · 마을.<br>준비되면 여기 카드가 <b>문</b>으로 바뀝니다. 그때까지는 차와 숙소부터.' },
+    d:'파도 예보 · 물때 · 수업 기록 · 자세 분석.<br>준비되면 여기 카드가 <b>문</b>으로 바뀝니다. 마을과 채팅은 지금도 쓸 수 있어요.' },
 ];
 let onbI = -1, onbRing = null;
 const onbDone = () => { try{ return localStorage.getItem('lineup.share.onb') === '1'; }catch(e){ return false; } };
@@ -1365,10 +1479,10 @@ function seatRow(r, kind, gone){
   const open  = Array.from({length: Math.max(0,left)}).map(()=>`<span class="seat">빈자리</span>`).join('');
   return `<div class="seats">${chips}${open}</div>
     <div class="acts">
-      ${gone ? '' : mine ? `<button class="btn sm ghost" data-leave="${r.id}">빼기</button>`
+      ${gone ? '' : mine ? `<button class="btn sm ghost" data-leave="${r.id}">자리 빼기</button>`
              : left>0 ? `<button class="btn sm mint" data-join="${r.id}">${kind==='ride'?'탈래요':'같이 쓸래요'}</button>`
                       : `<span class="tag full">자리 없음</span>`}
-      ${r.user_id===ME.id ? `<button class="btn sm coral" data-del="${r.id}">${gone?'지우기':'내리기'}</button>` : ''}
+      ${r.user_id===ME.id ? `<button class="btn sm coral" data-del="${r.id}">글 지우기</button>` : ''}
     </div>`;
 }
 function renderRides(){
@@ -1969,7 +2083,7 @@ function start(){
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
   syncMe();
-  pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow();
+  pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow(); pullCond();
   clearInterval(nowPoll); nowPoll = setInterval(()=>{ if(!document.hidden) pullNow(); }, 60000);
   clearInterval(mailPoll); mailPoll = setInterval(()=>{ if(!document.hidden) pullMail(true); }, 25000);
   if(!onbDone() && $('onb').hidden) setTimeout(()=>onbStart(), 700);   // 처음 온 사람만. 한 번 끝내면 다시 안 뜬다
