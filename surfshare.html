@@ -761,7 +761,9 @@ function saveProfile(){
   try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
   clearTimeout(saveT);                       // 버튼을 연달아 누르면 요청이 그만큼 나간다
   saveT = setTimeout(async ()=>{
-    try{ await api(`surfers?id=eq.${encodeURIComponent(ME.id)}`, { method:'PATCH', body:JSON.stringify({ profile:ME.profile }) }); }
+    /* PATCH 가 아니라 upsert 다 — 행이 없으면 PATCH 는 0행을 고치고 조용히 성공한다 */
+    try{ await api('surfers', { method:'POST', body:JSON.stringify({
+      id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile }) }); }
     catch(e){}
   }, 700);
 }
@@ -1147,8 +1149,10 @@ async function saveMood(text){
   ME.profile = { ...(ME.profile||{}), mood:t || undefined };
   if(!t) delete ME.profile.mood;
   try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
-  try{ await api(`surfers?id=eq.${encodeURIComponent(ME.id)}`, { method:'PATCH', body:JSON.stringify({ profile:ME.profile }) });
-    const mine = state.town?.find(x=>x.id===ME.id); if(mine) mine.profile = ME.profile;
+  try{ await api('surfers', { method:'POST', body:JSON.stringify({
+      id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile }) });
+    const mine = state.town?.find(x=>x.id===ME.id);
+    if(mine) mine.profile = ME.profile; else await pullTown();
     renderTown(); toast(t ? '말풍선을 올렸어요' : '말풍선을 지웠어요');
   }catch(e){ toast('저장하지 못했어요 · 신호 확인'); }
 }
@@ -1940,6 +1944,16 @@ function bindCards(box, kind){
 }
 
 /* ── 시작 ───────────────────────────────────────────────── */
+/* SurfShare 가입은 accounts 에만 들어간다(rpc signup). 마을은 surfers 를 읽는다.
+   그래서 쉐어로만 가입한 사람은 마을에 아예 안 떴고, 꾸미기 저장도 조용히 실패했다 —
+   PATCH surfers?id=eq.X 가 없는 행을 고치려다 0행에 걸렸을 뿐이라 오류도 안 났다.
+   들어올 때 자리를 만들어 둔다. merge-duplicates 라 이미 있으면 이름·기수만 맞춘다. */
+async function syncMe(){
+  try{ await api('surfers', { method:'POST', body:JSON.stringify({
+    id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile || {} }) }); }
+  catch(e){}
+}
+
 function start(){
   $('login').hidden = true; $('main').hidden = false; $('foot').hidden = true; sceneOff();
   $('nav').hidden = false; document.body.classList.add('has-nav');
@@ -1954,6 +1968,7 @@ function start(){
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
+  syncMe();
   pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow();
   clearInterval(nowPoll); nowPoll = setInterval(()=>{ if(!document.hidden) pullNow(); }, 60000);
   clearInterval(mailPoll); mailPoll = setInterval(()=>{ if(!document.hidden) pullMail(true); }, 25000);
