@@ -122,6 +122,15 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .perks{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
 .perk{ border:2px solid var(--ink); background:#fff; padding:1px 6px; font-size:11px; font-weight:700 }
 .perk.on{ background:var(--mint) }
+.now{ background:#0E2A4A; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:12px; color:#EAF6FF }
+.now .t{ font-size:15px; color:#fff }
+.now-avs{ display:flex; gap:5px; flex-wrap:wrap; margin-top:9px }
+.now-avs span{ display:inline-flex; align-items:center; gap:4px; background:#143B66; border:2px solid #2E6BFF;
+               padding:2px 7px 2px 3px; font-size:12px; font-weight:700; color:#EAF6FF }
+.now-avs canvas{ width:24px; height:24px; image-rendering:pixelated; flex:0 0 auto }
+.now-row{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap }
+.now-row select{ flex:1 1 130px; border-color:#2E6BFF }
+.now-else{ font-size:12px; color:#9FC4E4; margin-top:7px; line-height:1.6 }
 .fav{ border:0; background:none; font-size:20px; line-height:1; padding:0 4px 0 0; cursor:pointer;
       color:#C9CDDC; font-family:sans-serif; min-height:30px }
 .fav.on{ color:#F5A623 }
@@ -252,6 +261,17 @@ body.onb-on .wrap{ padding-bottom:230px }
       <button class="btn sm ghost" id="help">❓ 사용법</button>
       <button class="btn sm ghost" id="out">나가기</button>
     </div>
+    <!-- 지금 바다에 누구 있나 — 라인업에서 이것만 가져왔다 -->
+    <div class="now" id="now" style="margin-top:10px">
+      <div class="t" id="now-t">지금 바다에…</div>
+      <div class="now-avs" id="now-avs"></div>
+      <div class="now-else" id="now-else"></div>
+      <div class="now-row">
+        <select id="now-beach" aria-label="해변"></select>
+        <button class="btn blue" id="now-btn" style="flex:0 0 auto">📍 체크인</button>
+      </div>
+    </div>
+
     <div class="px sand" id="school" style="margin-top:10px">
       <span class="tag">COMING SOON</span>
       <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 마을을 만들고 있어요</div>
@@ -786,6 +806,68 @@ function sceneOn(){ if($('scene-wrap').hidden){ $('scene-wrap').hidden = false; 
 function sceneOff(){ $('scene-wrap').hidden = true; if(sceneRAF){ cancelAnimationFrame(sceneRAF); sceneRAF = 0; } }
 document.addEventListener('visibilitychange', ()=>{ if(document.hidden && sceneRAF){ cancelAnimationFrame(sceneRAF); sceneRAF=0; }
   else if(!document.hidden && !$('scene-wrap').hidden) sceneOn(); });
+
+/* ── 지금 바다에 누구 있나 ────────────────────────────────
+   라인업(학교 앱)의 체크인에서 이 한 가지만 가져왔다. 버디 지목·보너스 점수·
+   마을 채팅 알림은 두고 왔다 — 여기서 답해야 할 질문은 하나뿐이다.
+   "지금 나가면 아는 얼굴이 있나."
+
+   표(checkins)는 라인업이 쓰던 걸 그대로 쓴다. 학교가 열리면 같은 줄을 같이 본다.
+   4시간이 지나면 저절로 사라진다 — 물에서 나올 때 체크아웃을 누르는 사람은 없다. */
+const SEAS = [
+  ['낙산', 38.121, 128.632], ['설악', 38.152, 128.615], ['물치', 38.190, 128.600],
+  ['정암', 38.099, 128.645], ['동호', 38.070, 128.700], ['기사문', 38.019, 128.727],
+  ['서피비치·하조대', 38.038, 128.720], ['죽도', 37.972, 128.765], ['인구', 37.965, 128.766],
+  ['남애', 37.945, 128.787],
+];
+let nowRows = [], nowPoll = 0;
+const myNow = () => (nowRows||[]).find(c=>c.user_id===ME.id);
+
+async function pullNow(){
+  const since = new Date(Date.now() - 4*3600e3).toISOString();
+  try{ nowRows = await api(`checkins?select=*&active=eq.true&at=gte.${since}&order=at.desc&limit=100`); }
+  catch(e){ nowRows = null; }
+  renderNow();
+}
+function renderNow(){
+  const sel = $('now-beach');
+  if(!sel.options.length){ sel.innerHTML = SEAS.map(([n])=>`<option value="${n}">${n}</option>`).join('');
+    try{ sel.value = localStorage.getItem('lineup.share.sea') || '낙산'; }catch(e){ sel.value = '낙산'; }
+    if(!sel.value) sel.value = '낙산';
+    sel.onchange = ()=>{ try{ localStorage.setItem('lineup.share.sea', sel.value); }catch(e){} renderNow(); }; }
+  if(nowRows === null){ $('now-t').textContent = '체크인 표가 아직 없어요';
+    $('now-else').textContent = '코치가 supabase-social.sql 을 실행하면 켜집니다.';
+    $('now-avs').innerHTML = ''; $('now-btn').disabled = true; return; }
+  const beach = sel.value, here = nowRows.filter(c=>c.beach===beach), mine = myNow();
+  $('now-t').innerHTML = here.length
+    ? `지금 <b>${esc(beach)}</b>에 <b>${here.length}명</b>`
+    : `지금 <b>${esc(beach)}</b>엔 아무도 없어요`;
+  $('now-avs').innerHTML = here.map(c=>`<span><canvas data-ci="${esc(c.user_id)}"></canvas>${esc(c.name)}</span>`).join('');
+  here.forEach(c=>{ const cv = $('now-avs').querySelector(`[data-ci="${CSS.escape(c.user_id)}"]`);
+    if(cv && typeof drawSpr === 'function'){ const q = withLook(c.profile||{}, c.name);
+      drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); } });
+  /* 다른 바다도 알려준다 — 낙산이 비어도 죽도가 터졌을 수 있다 */
+  const el = {}; nowRows.filter(c=>c.beach!==beach).forEach(c=>{ el[c.beach] = (el[c.beach]||0)+1; });
+  const ks = Object.keys(el);
+  $('now-else').innerHTML = ks.length
+    ? '다른 바다 · ' + ks.map(k=>`<b>${esc(k)}</b> ${el[k]}`).join(' · ')
+    : (here.length ? '' : '바다 도착하면 체크인하세요. 4시간 뒤 저절로 풀립니다.');
+  const atHere = mine && mine.beach === beach;
+  $('now-btn').disabled = false;
+  $('now-btn').textContent = atHere ? '나왔어요' : mine ? `📍 ${beach}으로 옮기기` : '📍 체크인';
+  $('now-btn').className = 'btn ' + (atHere ? 'ghost' : 'blue');
+}
+$('now-btn').onclick = async ()=>{
+  const beach = $('now-beach').value, mine = myNow(), atHere = mine && mine.beach === beach;
+  const row = { id:`${ME.id}|${today()}`, user_id:ME.id, name:ME.name, beach,
+    at:new Date().toISOString(), active:!atHere, profile:ME.profile||{}, updated_at:new Date().toISOString() };
+  $('now-btn').disabled = true;
+  try{ await api('checkins', { method:'POST', body:JSON.stringify(row) });
+    nowRows = (nowRows||[]).filter(c=>c.user_id!==ME.id).concat(row.active ? [row] : []);
+    renderNow(); toast(row.active ? `${beach} 체크인!` : '나왔어요');
+  }catch(e){ $('now-btn').disabled = false;
+    toast(e.code==='notable' ? '체크인 표가 아직 없어요' : '실패 · 신호 확인'); }
+};
 
 /* ── 쪽지 ─────────────────────────────────────────────────
    차·숙소 글은 전원이 본다. 그래서 "그 자리 아직 있나요"를 물으려면 지금까진
@@ -1527,7 +1609,8 @@ function start(){
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
-  pullRides(); pullStays(); pullPlaces(); pullMail(true);
+  pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow();
+  clearInterval(nowPoll); nowPoll = setInterval(()=>{ if(!document.hidden) pullNow(); }, 60000);
   clearInterval(mailPoll); mailPoll = setInterval(()=>{ if(!document.hidden) pullMail(true); }, 25000);
   if(!onbDone() && $('onb').hidden) setTimeout(()=>onbStart(), 700);   // 처음 온 사람만. 한 번 끝내면 다시 안 뜬다
 }
