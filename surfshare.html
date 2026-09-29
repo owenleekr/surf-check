@@ -65,7 +65,7 @@ h1{ color:var(--paper); text-shadow:3px 3px 0 var(--ink); font-size:26px; margin
 .px.sand{ background:var(--sand) } .px.white{ background:#fff }
 .btn{ border:4px solid var(--ink); background:var(--sun); color:var(--ink); padding:9px 14px; font-weight:700; font-size:14px;
       box-shadow:3px 3px 0 var(--ink); cursor:pointer; font-family:inherit; min-height:42px }
-.btn.sm{ padding:8px 11px; min-height:38px; font-size:12.5px; border-width:3px; box-shadow:2px 2px 0 var(--ink) }
+.btn.sm{ padding:8px 12px; min-height:42px; font-size:13px; border-width:3px; box-shadow:2px 2px 0 var(--ink) }
 .btn.blue{ background:var(--sea); color:#fff } .btn.mint{ background:var(--mint) } .btn.ghost{ background:#fff }
 .btn.coral{ background:var(--coral) } .btn.grape{ background:var(--grape); color:#fff }
 .btn:active{ transform:translate(3px,3px); box-shadow:0 0 0 }
@@ -86,12 +86,12 @@ input[type=checkbox]:focus-visible{ outline:3px solid var(--sun); outline-offset
         padding:9px; border:3px dashed var(--grid); cursor:pointer }
 .agree a{ color:var(--deep); padding:3px 0 }
 .btn.big{ min-height:52px; font-size:16px; padding:13px }
-.foot{ margin-top:14px; padding:12px 2px 4px; font-size:12.5px; line-height:1.9; color:var(--ink);
-       text-shadow:1px 1px 0 rgba(255,255,255,.7); text-align:center }
+.foot{ margin-top:14px; padding:12px 2px 4px; font-size:13px; line-height:1.9; color:var(--deep);
+       text-shadow:0 1px 0 rgba(255,255,255,.85); text-align:center }
 .foot a{ color:var(--deep) }
 .foot-row + .foot-row{ margin-top:2px }
 textarea{ min-height:54px; resize:vertical }
-label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
+label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; font-weight:600 }
 .err{ color:#C2303A; font-size:13px; min-height:1.3em; font-weight:700 }
 .tabs{ display:flex; gap:0; margin-bottom:10px }
 .tabs button{ flex:1; border:4px solid var(--ink); background:var(--paper); padding:10px; font-weight:800; font-size:14.5px; font-family:inherit; cursor:pointer; min-height:48px }
@@ -111,10 +111,10 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .card:first-child{ border-top:0; padding-top:2px }
 .hd{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap }
 .hd b{ font-size:16px }
-.tag{ display:inline-block; background:var(--sun); border:3px solid var(--ink); padding:1px 7px; font-size:11px; font-weight:800; font-family:"Galmuri11",sans-serif }
+.tag{ display:inline-block; background:var(--sun); border:3px solid var(--ink); padding:2px 8px; font-size:12px; font-weight:800; font-family:"Galmuri11",sans-serif }
 .tag.go{ background:var(--mint) } .tag.back{ background:#8FD3FF } .tag.local{ background:var(--grape); color:#fff }
 .tag.full{ background:var(--coral) }
-.meta{ font-size:12.5px; color:var(--ink2); margin-top:3px; line-height:1.55 }
+.meta{ font-size:13px; color:var(--ink2); margin-top:4px; line-height:1.6 }
 /* 어디서 어디로 가는지가 차 글의 전부다. 그런데 작은 회색 글씨로 적혀 있어서
    날짜·이름보다 뒤로 밀려 있었다. 제일 크게, 제일 진하게. */
 .bolt-t{ font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:16px; line-height:1.35; word-break:keep-all }
@@ -129,20 +129,25 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
           padding:1px 5px; line-height:1.25; flex:0 0 auto }
 .card.gone .route{ background:#F3F1EA }
 .seats{ display:flex; gap:4px; flex-wrap:wrap; margin-top:7px }
-.seat{ border:3px solid var(--ink); background:#fff; padding:3px 8px 3px 4px; font-size:12px; font-weight:700; min-height:34px; display:inline-flex; align-items:center; gap:4px }
+.seat{ border:3px solid var(--ink); background:#fff; padding:3px 9px 3px 4px; font-size:12.5px; font-weight:700; min-height:36px; display:inline-flex; align-items:center; gap:5px }
 .seat canvas{ width:22px; height:22px; image-rendering:pixelated; flex:0 0 auto }
 .me-av{ width:42px; height:42px; image-rendering:pixelated; border:3px solid var(--ink); background:#8FD3FF; flex:0 0 auto }
 .owner{ display:flex; align-items:center; gap:6px; margin-top:4px }
 .owner canvas{ width:30px; height:30px; image-rendering:pixelated; border:2px solid var(--ink); background:#8FD3FF; flex:0 0 auto }
 .seat.on{ background:var(--mint) } .seat.me{ background:var(--sun) }
 .acts{ display:flex; gap:6px; flex-wrap:wrap; margin-top:9px }
-.note{ font-size:12px; color:var(--ink2); margin-top:10px; line-height:1.6 }
-.empty{ font-size:13px; color:var(--ink2); padding:14px 0; text-align:center }
+.note{ font-size:12.5px; color:var(--ink2); margin-top:10px; line-height:1.7 }
+/* 파란 페이지 배경 위에 크림색 12px 을 얹으면 대비가 2:1 대로 떨어진다.
+   어두운 글씨에 흰 그림자를 깔아 뒤집는다 — 같은 자리에서 훨씬 잘 읽힌다. */
+.note.onsea{ color:var(--deep); font-size:13px; text-shadow:0 1px 0 rgba(255,255,255,.85) }
+.empty{ font-size:13.5px; color:var(--ink2); padding:18px 6px; text-align:center; line-height:1.7 }
 .toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:var(--ink); color:var(--sun);
         border:3px solid var(--sun); padding:9px 16px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50 }
 .toast.show{ opacity:1 }
 .perks{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
-.perk{ border:2px solid var(--ink); background:#fff; padding:1px 6px; font-size:11px; font-weight:700 }
+/* 19px 짜리 칩을 손가락으로 누르라고 둘 순 없다. 글자도 11px 은 작다. */
+.perk{ border:2px solid var(--ink); background:#fff; padding:6px 10px; font-size:12.5px; font-weight:700;
+       min-height:36px; display:inline-flex; align-items:center; cursor:pointer }
 .perk.on{ background:var(--mint) }
 /* ── 하단 탭 ──
    탭이 다섯이 되면서 위에 두면 제목과 붙어 뭉친다. 엄지가 닿는 아래로 내린다. */
@@ -171,22 +176,25 @@ body.has-nav .wrap{ padding-bottom:86px }
              box-shadow:2px 2px 0 var(--ink); color:var(--ink) }
 
 /* ── 마을 ── */
+/* 마을만 좌우로 넓게 쓴다. 화면 여백을 되찾으면 한 명이 더 들어가고,
+   "작은 상자에 갇힌 그림"이 아니라 장면으로 보인다. */
 .village{ position:relative; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); overflow:hidden;
-          background:#CFEDFF; padding:10px 8px 14px; min-height:210px }
+          background:#CFEDFF; padding:10px 6px 16px; min-height:230px;
+          margin-inline:-10px; width:calc(100% + 20px) }
 #vbg{ position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; z-index:0 }
 .vgrid{ z-index:1 }
 
 /* 줄 세워 놓으니 단체사진이 됐다. 바다엔 타는 사람, 모래엔 쉬는 사람을 따로 세운다 —
    그러려면 flex 로는 안 되고 각자 자리를 잡아줘야 한다. */
 .vgrid{ position:relative; height:100%; min-height:190px }
-.vp{ position:absolute; width:56px; display:flex; flex-direction:column; align-items:center; gap:2px;
+.vp{ position:absolute; width:66px; display:flex; flex-direction:column; align-items:center; gap:3px;
      cursor:pointer; will-change:transform }
-.vp canvas{ width:56px; height:64px; image-rendering:pixelated }
-.vp[data-pet] .nm{ transform:translateX(17.2px) }
-.vp .nm{ font-size:10.5px; font-weight:800; background:rgba(255,249,230,.85); border:2px solid var(--ink);
-         padding:0 4px; max-width:106px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.vp .bub{ position:absolute; bottom:70px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink);
-          padding:3px 6px; font-size:10px; line-height:1.25; width:max-content; max-width:150px; white-space:normal;
+.vp canvas{ width:66px; height:74px; image-rendering:pixelated }
+.vp[data-pet] .nm{ transform:translateX(20.3px) }
+.vp .nm{ font-size:11.5px; font-weight:800; background:rgba(255,249,230,.92); border:2px solid var(--ink);
+         padding:1px 5px; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.vp .bub{ position:absolute; bottom:84px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink);
+          padding:4px 7px; font-size:11px; line-height:1.35; width:max-content; max-width:158px; white-space:normal;
           word-break:keep-all; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2 }
 .vp .bub::after{ content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%);
                  border:4px solid transparent; border-top-color:var(--ink) }
@@ -200,7 +208,7 @@ body.has-nav .wrap{ padding-bottom:86px }
 
 /* ── 반응 · 채팅 ── */
 .rxbar{ display:flex; gap:4px; flex-wrap:wrap; margin-top:5px }
-.rx{ border:2px solid var(--ink); background:#fff; padding:2px 7px; min-height:30px; font-size:13px; font-family:sans-serif;
+.rx{ border:2px solid var(--ink); background:#fff; padding:2px 8px; min-height:34px; font-size:13.5px; font-family:sans-serif;
      line-height:1; display:inline-flex; align-items:center; gap:3px; cursor:pointer; opacity:.55 }
 .rx b{ font-family:inherit; font-size:11.5px; font-weight:800; color:var(--ink) }
 .rx.on{ background:var(--sun); opacity:1; box-shadow:1px 1px 0 var(--ink) }
@@ -213,9 +221,9 @@ body.has-nav .wrap{ padding-bottom:86px }
 .chat{ display:flex; flex-direction:column; gap:6px; max-height:330px; overflow:auto; padding:4px 2px }
 .msg{ display:flex; gap:8px; align-items:flex-start }
 .msg canvas{ width:34px; height:34px; image-rendering:pixelated; flex:0 0 auto }
-.msg .b{ background:#fff; border:3px solid var(--ink); padding:6px 9px; font-size:13px; line-height:1.4;
+.msg .b{ background:#fff; border:3px solid var(--ink); padding:7px 10px; font-size:13.5px; line-height:1.5;
          max-width:80%; box-shadow:2px 2px 0 var(--ink) }
-.msg .b small{ display:block; color:var(--ink2); font-size:10px; margin-top:2px }
+.msg .b small{ display:block; color:var(--ink2); font-size:11px; margin-top:3px }
 .msg.me{ flex-direction:row-reverse } .msg.me .b{ background:var(--sun) }
 .chat-in{ display:flex; gap:6px; margin-top:8px }
 .chat-in input{ flex:1 }
@@ -226,16 +234,16 @@ body.has-nav .wrap{ padding-bottom:86px }
 .now{ margin-bottom:4px; background:#0E2A4A; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:12px; color:#EAF6FF }
 .now .t{ font-size:15px; color:#fff }
 .now-avs{ display:flex; gap:5px; flex-wrap:wrap; margin-top:9px }
-.now-avs span{ display:inline-flex; align-items:center; gap:4px; background:#143B66; border:2px solid #2E6BFF;
-               padding:2px 7px 2px 3px; font-size:12px; font-weight:700; color:#EAF6FF }
+.now-avs span{ display:inline-flex; align-items:center; gap:5px; background:#143B66; border:2px solid #2E6BFF;
+               padding:3px 9px 3px 4px; font-size:12.5px; font-weight:700; color:#EAF6FF }
 .now-avs canvas{ width:24px; height:24px; image-rendering:pixelated; flex:0 0 auto }
 .now-row{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap }
 .now-row select{ flex:1 1 130px; border-color:#2E6BFF }
-.now-else{ font-size:12px; color:#9FC4E4; margin-top:7px; line-height:1.6 }
+.now-else{ font-size:12.5px; color:#A8CBE8; margin-top:7px; line-height:1.65 }
 .cond{ display:flex; gap:5px; flex-wrap:wrap; margin-top:9px }
-.cond span{ background:#143B66; border:2px solid #2E6BFF; padding:3px 8px; font-size:12px; color:#EAF6FF }
-.cond span b{ font-size:13px; color:#fff }
-.cond .src{ background:none; border:0; padding:2px 0; color:#7FA8CC; font-size:11px; width:100% }
+.cond span{ background:#143B66; border:2px solid #2E6BFF; padding:4px 9px; font-size:13px; color:#EAF6FF }
+.cond span b{ font-size:14px; color:#fff }
+.cond .src{ background:none; border:0; padding:3px 0 0; color:#94B8D8; font-size:12px; width:100% }
 .fav{ border:0; background:none; font-size:20px; line-height:1; padding:0 4px 0 0; cursor:pointer;
       color:#C9CDDC; font-family:sans-serif; min-height:30px }
 .fav.on{ color:#F5A623 }
@@ -416,7 +424,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="perks" id="s-near"></div>
         <label for="s-url">네이버지도 링크 (선택)</label>
         <input id="s-url" inputmode="url" placeholder="네이버지도에서 숙소 → 공유하기 → 링크 복사">
-        <div class="note" id="s-url-note">링크를 붙이면 <b>길찾기</b>가 열리고, 주소에 좌표가 들어 있으면 아래 지도에도 핀이 찍혀요.</div>
+        <div class="note" id="s-url-note">링크를 붙이면 <b>네이버지도의 그 숙소 화면</b>이 열리고, 주소에 좌표가 들어 있으면 아래 지도에도 핀이 찍혀요.</div>
         <label>특장점</label><div class="perks" id="s-perks"></div>
         <label for="s-note">한마디 (선택)</label><input id="s-note" maxlength="60" placeholder="예) 해변까지 걸어서 3분">
         <div class="err" id="s-err"></div>
@@ -425,7 +433,7 @@ body.onb-on .wrap{ padding-bottom:230px }
       <div class="grp"><span class="t">학교 기준 지도</span><div class="px white" id="map"></div></div>
       <div class="grp"><span class="t">숙소 정보판</span>
         <div class="px" id="places"></div>
-        <div class="note" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
+        <div class="note onsea">
           누구나 고칠 수 있어요. 대신 <b>누가 무엇을 고쳤는지 다 보입니다.</b></div>
       </div>
       <div class="grp"><span class="t">올라온 숙소 쉐어</span><div class="px" id="stays"></div></div>
@@ -474,7 +482,7 @@ body.onb-on .wrap{ padding-bottom:230px }
     <div id="pane-town" hidden>
       <div class="grp"><span class="t" id="vill-t">6기 마을</span>
         <div class="village" id="village"><canvas id="vbg"></canvas><div class="vgrid" id="vgrid"></div></div>
-        <div class="note" id="vill-sub" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)"></div>
+        <div class="note onsea" id="vill-sub"></div>
         <div class="moodrow">
           <input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!">
           <button class="btn sm blue" type="button" id="mood-save" style="flex:0 0 auto">말풍선</button>
@@ -503,7 +511,7 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
 
     <!-- 이 안내는 차·숙소 글에만 해당한다. 캠·마을·꾸미기에서는 뜻 없는 말이 된다 -->
-    <div class="note" id="trust" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
+    <div class="note onsea" id="trust">
       올린 사람만 지울 수 있어요. 자리는 아무나 넣고 뺄 수 있습니다 — 서로 믿고 쓰는 곳이에요.
     </div>
 
@@ -512,14 +520,14 @@ body.onb-on .wrap{ padding-bottom:230px }
       <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 <b>서핑학교</b>를 만들고 있어요</div>
       <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 물때 · 수업 기록 · 자세 분석.<br>
         준비되면 여기에서 바로 들어가실 수 있게 할게요.</div>
-      <a href="/school" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--ink2)">초대 코드를 받으셨다면 → 학교 문 열기</a>
+      <a href="/school" style="display:inline-block;margin-top:10px;padding:9px 0;font-size:12.5px;color:var(--deep);font-weight:600">초대 코드를 받으셨다면 → 학교 문 열기</a>
     </div>
   </div>
 </div>
 
 <nav class="nav" id="nav" hidden>
-  <button type="button" id="t-ride" aria-pressed="true"><i>🚗</i>차량</button>
-  <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소</button>
+  <button type="button" id="t-ride" aria-pressed="true"><i>🚗</i>차량<span class="dot" id="ride-dot" hidden>0</span></button>
+  <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
   <button type="button" id="t-bolt" aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
   <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>캠</button>
   <button type="button" id="t-town" aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
@@ -782,7 +790,7 @@ function renderBuilder(){
   const cur = { ...pr, hair: (typeof hairOf==='function' ? hairOf(pr) : pr.hair) };
   const sw = map => (v,t)=>`<i style="display:inline-block;width:10px;height:10px;border:2px solid var(--ink);background:${map[v]};vertical-align:-1px;margin-right:3px"></i>${t}`;
   const opt = (label, key, items, render) => `<div style="margin-top:10px"><div class="note" style="margin:0 0 4px">${label}</div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>`<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}" style="min-height:34px">${render?render(v,t):t}</button>`).join('')}</div></div>`;
+    <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>`<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
   const keys = o => Object.keys(o);
   const G = {
     face: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k]]))
@@ -1172,8 +1180,7 @@ function renderBolts(){
   if(!sel.options.length){ sel.innerHTML = SEAS.map(([n])=>`<option value="${n}">${n}</option>`).join(''); sel.value = mySea(); }
   if(!$('b-date').value) $('b-date').value = nextWeekend();
   if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-social.sql</b>을 실행하면 켜집니다.</div>`; return; }
-  const up = bolts.filter(b=>!boltGone(b));
-  const d = $('bolt-dot'); d.textContent = up.length; d.hidden = !up.length;
+  refreshDots();
   if(!bolts.length){ box.innerHTML = `<div class="empty">아직 잡힌 번개가 없어요.<br>위에서 시간과 바다를 정해보세요.</div>`; return; }
   let head = false;
   box.innerHTML = [...bolts].sort((a,b)=>{
@@ -1189,7 +1196,7 @@ function renderBolts(){
     const md = b.date.slice(5).split('-');
     return hd + `<div class="card ${gone?'gone':''}">
       <div class="bolt-t">⚡ ${esc(b.note || '같이 들어가요')}
-        ${gone?'<span class="tag" style="background:#D8DCE8;font-size:10px">지남</span>':''}</div>
+        ${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
       <div class="bolt-when"><b>${+md[0]}월 ${+md[1]}일</b> ${DOW[new Date(b.date+'T00:00').getDay()]}요일
         · <b>${esc(b.beach)}</b> · <b>${hLabel(b.time)}</b></div>
       <div class="owner"><canvas data-own="${esc(b.id)}"></canvas>
@@ -1284,6 +1291,18 @@ async function pullTown(){
      쉐어는 스무 명 남짓 쓰는 곳이라 나누는 쪽이 손해다 — 가입한 사람은 다 선다. */
   try{ state.town = (await api('surfers?select=id,name,cohort,profile&limit=300')).filter(x=>!isTest(x.id)); }
   catch(e){ state.town = null; }
+  /* 마을은 surfers 를 읽는데, 체크인·채팅은 그 행이 없어도 남는다. 실제로 정선아 님이
+     오늘 낙산에 체크인했는데 마을엔 없었다 — 계정을 지웠다가 그 폰에 로그인 흔적만
+     남은 경우다. 어디서든 보인 사람은 마을에도 세운다. 아무도 유령이 되지 않게. */
+  if(state.town){
+    const has = new Set(state.town.map(x=>x.id));
+    const ghosts = [];
+    const add = (id, name, profile)=>{ if(!id || has.has(id) || isTest(id)) return;
+      has.add(id); ghosts.push({ id, name: name || id, cohort:'open', profile: profile || {}, ghost:true }); };
+    (nowRows || []).forEach(c=>add(c.user_id, c.name, c.profile));
+    (state.chat || []).slice(-30).forEach(m=>add(m.user_id, m.name, m.profile));
+    state.town = state.town.concat(ghosts);
+  }
   /* 내 기수가 서버와 어긋나 있으면 맞춰 둔다 — 라벨과 글 필터가 이걸 본다 */
   const mine = (state.town||[]).find(x=>x.id===ME.id);
   if(mine && mine.cohort && mine.cohort !== ME.cohort){ ME.cohort = mine.cohort;
@@ -1367,32 +1386,37 @@ function layoutTown(){
   const hsh2 = id => { let h = 2166136261;
     for(const c of String(id)){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
     return h >>> 0; };
-  const per = Math.max(2, Math.floor(W / 72));
-  const ROW = 78;
-  const put = (list, top)=>{
+  /* floor(370/76)=4 라 다섯 명이 두 줄로 갈라져 한 줄이 통째로 낭비됐다.
+     반올림으로 한 명 더 태운다 — 흔들림이 있어서 조금 붙어도 줄로 안 보인다. */
+  const per = Math.max(3, Math.round(W / 74));
+  const ROW = 82;
+  /* width 를 따로 받는다 — 학교 앞 줄은 건물을 피해 왼쪽만 쓴다 */
+  const put = (list, top, useW)=>{
+    const WW = useW || W;
     list.forEach((el,i)=>{
       const h = hsh2(el.dataset.id);
       const row = Math.floor(i/per), col = i%per;
-      const n = Math.min(per, list.length - row*per), cell = W/n;
-      const jx = ((h % 1000)/1000 - 0.5) * cell * 0.52;         // 칸 안에서 좌우로
-      const jy = ((Math.floor(h/1000) % 1000)/1000 - 0.5) * 34;  // 앞뒤로
-      const x = Math.round(cell*(col + 0.5) - 28 + jx);
+      const n = Math.min(per, list.length - row*per), cell = WW/n;
+      /* 흔들림이 크면 이름표끼리 겹쳐서 누군지 못 읽는다. 자연스러움과 가독성 사이. */
+      const jx = ((h % 1000)/1000 - 0.5) * cell * 0.30;
+      const jy = ((Math.floor(h/1000) % 1000)/1000 - 0.5) * 18;
+      const x = Math.round(cell*(col + 0.5) - 33 + jx);
       const y = Math.round(top + row*ROW + jy);
-      el.style.left = Math.max(2, Math.min(W - 58, x)) + 'px';
+      el.style.left = Math.max(2, Math.min(W - 68, x)) + 'px';
       el.style.top  = y + 'px';
       el.style.zIndex = 10 + Math.round(y/2);                // 아래쪽이 앞
     });
     return Math.max(list.length ? 1 : 0, Math.ceil(list.length/per));
   };
-  const SKY = 30;
+  const SKY = 26;
   const seaRows   = put(sea,   SKY);
-  const beachTop  = SKY + seaRows*ROW + 20;
+  const beachTop  = SKY + seaRows*ROW + 16;
   const beachRows = put(beach, beachTop);
-  const clsTop    = beachTop + beachRows*ROW + 16;
-  const clsRows   = put(cls,   clsTop);
+  const clsTop    = beachTop + beachRows*ROW + 14;
+  const clsRows   = put(cls,   clsTop, W * 0.62);           // 오른쪽은 학교 자리
   /* 높이는 vgrid 에 준다. village 에 min-height 를 주면 box-sizing:border-box 탓에
      패딩(위 10 + 아래 14)이 안쪽을 먹어 마지막 줄 이름표가 잘렸다. */
-  const H = clsTop + clsRows*ROW + 22;   // 흔들린 만큼 아래를 더 준다
+  const H = clsTop + clsRows*ROW + 16;   // 흔들린 만큼 아래를 더 준다
   g.style.height = H + 'px';
   /* 배경이 쓸 경계 — 사람 발끝을 기준으로 물가와 학교 앞마당을 긋는다.
      사람만 내려가고 그림이 안 따라오면 모래 위에서 서핑하게 된다. */
@@ -1469,7 +1493,8 @@ function drawVillage(t){
 
   /* 학교 — 사람 뒤에 선다. 지붕을 위로 올리면 해변 줄의 이름표를 덮으니
      앞마당 안에서만 그린다. 간판은 지붕이 아니라 벽에 붙인다. */
-  const bw = Math.min(206, W*0.58), bx = W - bw - 8, by = yard + 3, bh = H - by - 5;
+  /* 사람은 왼쪽 62%에 세웠으니 건물은 오른쪽에 붙인다. 겹치면 간판이 안 읽힌다. */
+  const bw = Math.min(150, W*0.40), bx = W - bw - 6, by = yard + 4, bh = Math.min(76, H - by - 4);
   if(bh > 26){
     for(let i=0;i<8;i++) R(bx + 8 - i, by + i, bw - 16 + i*2, 1, i===0 ? '#1B1B2F' : '#E05555');
     R(bx, by+8, bw, bh-8, '#FFF6DE');
@@ -1582,7 +1607,7 @@ async function sendChat(text){
 $('chat-send').onclick = ()=>sendChat();
 $('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
 $('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏']
-  .map(e=>`<button type="button" class="btn sm ghost" style="padding:5px 0;min-height:38px;font-family:sans-serif">${e}</button>`).join('');
+  .map(e=>`<button type="button" class="btn sm ghost" style="padding:5px 0;font-family:sans-serif">${e}</button>`).join('');
 $('chat-emo').querySelectorAll('button').forEach(b=>b.onclick = ()=>{ const i = $('chat-in'); i.value += b.textContent; i.focus(); });
 
 function startTownPoll(){ clearInterval(townPoll);
@@ -1667,7 +1692,7 @@ $('mail-send').onclick = async ()=>{
 };
 /* 글 올린 사람에게 바로 — 여기서 물어볼 수 있어야 단톡방으로 안 나간다 */
 const noteBtn = r => r.user_id === ME.id ? '' :
-  `<button class="btn sm ghost" data-note="${esc(r.user_id)}|${esc(r.name)}" style="margin-left:auto;min-height:30px;padding:2px 8px">✉️</button>`;
+  `<button class="btn sm ghost" data-note="${esc(r.user_id)}|${esc(r.name)}" style="margin-left:auto;padding:4px 10px">✉️</button>`;
 function bindNotes(box){ box.querySelectorAll('[data-note]').forEach(b=>b.onclick = ()=>{
   if(!canMail()) return toast('쪽지를 쓰려면 한 번 다시 로그인해 주세요');
   const [id,nm] = b.dataset.note.split('|'); mailOpen(id, nm); }); }
@@ -1719,6 +1744,35 @@ $('onb-skip').onclick = ()=>{ onbI === 0 ? onbEnd() : onbShow(onbI - 1); };
 $('help').onclick = ()=>{ if($('onb').hidden) onbStart(); else onbEnd(); };
 
 /* ── 탭 ─────────────────────────────────────────────────── */
+/* ── 새 글 표시 ───────────────────────────────────────────
+   차·숙소·번개에 새 글이 올라와도 그 탭에 들어가 봐야 알 수 있었다.
+   마지막으로 그 탭을 본 시각 이후에 올라온 것만 센다 — 보고 나오면 사라진다.
+
+   처음 쓰는 사람에게는 0 으로 시작하지 않는다. 그러면 이미 있던 글이 전부
+   '새 글'로 잡혀 세 탭이 다 빨갛게 된다. 기록이 없으면 지금부터 센다. */
+const seenKey = t => 'lineup.share.seen.' + t;
+function seenAt(t){
+  try{ const v = localStorage.getItem(seenKey(t));
+    if(v) return +v;
+    localStorage.setItem(seenKey(t), Date.now()); return Date.now();
+  }catch(e){ return Date.now(); }
+}
+const markSeen = t => { try{ localStorage.setItem(seenKey(t), Date.now()); }catch(e){} };
+function setDot(tab, rows, gone){
+  const d = $(tab + '-dot'); if(!d) return;
+  const since = seenAt(tab);
+  const n = (rows || []).filter(r =>
+    r.user_id !== ME.id &&                                  // 내가 올린 건 나에게 새 글이 아니다
+    !gone(r) &&
+    new Date(r.created_at || 0).getTime() > since).length;
+  d.textContent = n > 99 ? '99+' : n; d.hidden = !n;
+}
+function refreshDots(){
+  setDot('ride', state.rides, r=>isGone(r,'ride'));
+  setDot('stay', state.stays, r=>isGone(r,'stay'));
+  setDot('bolt', bolts, boltGone);
+}
+
 const TABS = ['ride','stay','bolt','cam','town','me'];
 const setTab = t => { state.tab = t;
   TABS.forEach(k=>{
@@ -1729,6 +1783,7 @@ const setTab = t => { state.tab = t;
   else camStop();                       /* 다른 탭으로 가면 끈다 — 데이터가 계속 나간다 */
   if(t==='town'){ pullTown(); startTownPoll(); } else stopTownPoll();
   if(t==='bolt') pullBolts();
+  if(t==='ride' || t==='stay' || t==='bolt'){ markSeen(t); const d = $(t+'-dot'); if(d) d.hidden = true; }
   $('trust').hidden = !(t==='ride' || t==='stay');
   window.scrollTo({ top:0, behavior:'instant' });
 };
@@ -1739,7 +1794,7 @@ async function pullRides(){
   /* 지난 것도 한 달치는 들고 온다. 쿼리에서 빼버리면 올린 사람도 자기 글을 못 지운다. */
   try{ state.rides = await api(`rides?cohort=eq.${encodeURIComponent(ME.cohort)}&date=gte.${daysAgo(30)}&select=*&order=date.asc,depart_at.asc&limit=200`); }
   catch(e){ state.rides = null; }
-  renderRides();
+  renderRides(); refreshDots();
 }
 function seatRow(r, kind, gone){
   const list = (kind==='ride' ? r.riders : r.guests) || [];
@@ -1806,7 +1861,7 @@ async function pullStays(){
   await pullReviews();
   try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${daysAgo(30)}&select=*&order=date_from.asc&limit=200`); }
   catch(e){ state.stays = null; }
-  renderStays(); renderMap();
+  renderStays(); renderMap(); refreshDots();
 }
 function renderStays(){
   const box = $('stays');
@@ -1822,7 +1877,7 @@ function renderStays(){
       ${(s.perks||[]).length ? `<div class="perks">${s.perks.map(p=>`<span class="perk on">${esc(p)}</span>`).join('')}</div>` : ''}
       ${s.note ? `<div class="meta">${esc(s.note)}</div>` : ''}
       ${s.contact ? `<div class="meta">연락 · ${esc(s.contact)}</div>` : ''}
-      ${(s.url || (s.lat&&s.lon)) ? `<div class="meta"><a href="${mapLink(s.place,s.lat,s.lon,s.url)}" target="_blank" rel="noopener">네이버지도에서 길찾기 ↗</a></div>` : ''}
+      ${(s.url || (s.lat&&s.lon)) ? `<div class="meta"><a href="${mapLink(s.place,s.lat,s.lon,s.url)}" target="_blank" rel="noopener">네이버지도에서 보기 ↗</a></div>` : ''}
       ${seatRow(s,'stay',gone)}
       ${reviewBlock(s)}
     </div>`; }).join('');
@@ -1843,8 +1898,8 @@ function renderNear(){
   const box = $('s-near'); if(!box) return;
   const all = nearAll();
   box.innerHTML = all.map(([n,la,lo,seed],i)=>
-      `<button type="button" class="perk" data-near="${i}" style="min-height:32px">${esc(n)} · ${distKm(la,lo).toFixed(1)}km${seed?'':' ✚'}</button>`).join('')
-    + `<button type="button" class="perk" data-near="new" style="min-height:32px">+ 여기 없어요</button>`;
+      `<button type="button" class="perk" data-near="${i}">${esc(n)} · ${distKm(la,lo).toFixed(1)}km${seed?'':' ✚'}</button>`).join('')
+    + `<button type="button" class="perk" data-near="new">+ 여기 없어요</button>`;
   box.querySelectorAll('[data-near]').forEach(b=>b.onclick = ()=>{
     box.querySelectorAll('[data-near]').forEach(x=>x.classList.toggle('on', x===b));
     if(b.dataset.near === 'new'){
@@ -1905,12 +1960,12 @@ function renderPlaces(){
       <div class="meta">${withXY(p)
         ? `학교에서 <b>${distKm(p.lat,p.lon).toFixed(1)}km</b> · ${travel(distKm(p.lat,p.lon))}`
         : `<span style="color:#C2303A;font-weight:700">지도에 핀이 없어요</span> — 네이버지도 링크를 넣어주세요`}
-        ${(p.url || withXY(p)) ? ` · <a href="${mapLink(p.name,p.lat,p.lon,p.url)}" target="_blank" rel="noopener">네이버지도에서 길찾기 ↗</a>` : ''}</div>
+        ${(p.url || withXY(p)) ? ` · <a href="${mapLink(p.name,p.lat,p.lon,p.url)}" target="_blank" rel="noopener">네이버지도에서 보기 ↗</a>` : ''}</div>
       ${p.addr ? `<div class="meta">${esc(p.addr)}</div>` : ''}
       ${p.phone ? `<div class="meta">연락처 · ${esc(p.phone)}</div>` : ''}
       ${p.note ? `<div class="meta">${esc(p.note)}</div>` : ''}
       ${(p.perks||[]).length ? `<div class="perks">${p.perks.map(x=>`<span class="perk on">${esc(x)}</span>`).join('')}</div>` : ''}
-      <div class="meta" style="font-size:11.5px">마지막 수정 · ${esc(p.updated_name||'씨앗')}${p.updated_at?` · ${ago(p.updated_at)}`:''}</div>
+      <div class="meta" style="font-size:12px">마지막 수정 · ${esc(p.updated_name||'씨앗')}${p.updated_at?` · ${ago(p.updated_at)}`:''}</div>
       <div class="acts"><button class="btn sm ghost" data-pedit="${esc(p.id)}">✎ 고치기</button>
         ${ed.length ? `<button class="btn sm ghost" data-plog="${esc(p.id)}">기록 ${ed.length}</button>` : ''}</div>
       <div data-pform="${esc(p.id)}" hidden style="border-top:2px dashed var(--grid);margin-top:8px;padding-top:8px">
@@ -2108,10 +2163,12 @@ const travel = km => { const w = Math.max(1, Math.round(km/4.5*60)), d = Math.ma
   return km <= 1.2 ? `걸어서 ${w}분` : `차로 ${d}분 · 걸어서 ${w}분`; };
 const distLabel = s => (s.lat&&s.lon)
   ? ` · 학교에서 <b>${distKm(s.lat,s.lon).toFixed(1)}km</b> <span style="color:var(--ink2)">${travel(distKm(s.lat,s.lon))}</span>` : '';
-/* 길찾기는 네이버지도로 통일한다. 붙여 둔 링크가 있으면 그걸 그대로 열고(그게 제일 정확하다),
-   없으면 좌표로 길찾기를 연다. */
+/* 숙소는 길찾기보다 '그 집이 어떤 곳인지'가 먼저다 — 사진·전화·영업정보·리뷰가 거기 있고,
+   길찾기는 그 화면에서 한 번 더 누르면 된다. 그래서 장소 화면으로 연다.
+   붙여 둔 링크가 있으면 그걸 그대로 쓴다(대개 그 집 장소 링크다). */
 const mapLink = (place, lat, lon, url) => url ? url
-  : `https://map.naver.com/p/directions/-/${lon},${lat},${encodeURIComponent(place)}/-/car`;
+  : `https://map.naver.com/p/search/${encodeURIComponent(place)}`
+    + (lat && lon ? `?c=${lon},${lat},16,0,0,0,dh` : '');
 
 /* 네이버지도 링크에서 좌표를 캐낸다. 형식이 여러 번 바뀌어서 파라미터 이름을 믿지 않고,
    소수점 숫자 중 '한국 경위도 범위에 들어맞는 이웃한 한 쌍'을 찾는다.
@@ -2248,7 +2305,7 @@ function renderMap(){
           stroke="#F7F3E4" stroke-width="2.6" paint-order="stroke">${barKm < 1 ? barKm*1000+'m' : barKm+'km'}</text>
       </g>
     </svg>
-    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px;font-size:11.5px;color:var(--ink2)">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12.5px;color:var(--ink2)">
       <span><i style="display:inline-block;width:10px;height:10px;background:var(--mint);border:2px solid var(--ink);vertical-align:-1px"></i> 올라온 숙소</span>
       <span><i style="display:inline-block;width:10px;height:10px;background:var(--sun);border:2px solid var(--ink);vertical-align:-1px"></i> 정보판</span>
       <span><i style="display:inline-block;width:10px;height:10px;background:#F5A623;border:2px solid var(--ink);vertical-align:-1px"></i> 내 즐겨찾기</span>
@@ -2256,13 +2313,13 @@ function renderMap(){
     <div style="margin-top:7px;font-size:12.5px;line-height:1.6">${list.map((s,i)=>{
       const rv = reviewOf(s.name), km = distKm(s.lat,s.lon);
       return `<div style="padding:4px 0;border-top:1px dashed var(--grid)"><b>${s.fav?'★':i+1}</b> ${esc(s.name)}
-        ${s.kind==='up' ? '<span class="tag go" style="font-size:10px">올라옴</span>' : ''}
+        ${s.kind==='up' ? '<span class="tag go">올라옴</span>' : ''}
         ${rv.n ? `<span style="color:#B45309;font-weight:700"> ★${rv.avg}</span><span style="color:var(--ink2)">(${rv.n})</span>` : ''}
         ${paidLabel(rv)}
         <div style="color:var(--ink2);margin-left:14px">학교에서 ${km.toFixed(1)}km · ${travel(km)}
-          · <a href="${mapLink(s.name,s.lat,s.lon,s.url)}" target="_blank" rel="noopener">길찾기 ↗</a></div></div>`; }).join('')}</div>
+          · <a href="${mapLink(s.name,s.lat,s.lon,s.url)}" target="_blank" rel="noopener">지도에서 보기 ↗</a></div></div>`; }).join('')}</div>
     <div class="note">해안선과 남대천은 OpenStreetMap 자료예요. 점선은 학교에서 숙소까지 직선이라
-      실제로 걷는 길은 조금 더 깁니다. <b>길찾기</b>를 누르면 네이버지도가 열려요.</div>`;
+      실제로 걷는 길은 조금 더 깁니다. <b>지도에서 보기</b>를 누르면 네이버지도에서 그 숙소가 열려요.</div>`;
 }
 $('s-save').onclick = async ()=>{
   const e = $('s-err'); e.textContent = '';
@@ -2274,7 +2331,7 @@ $('s-save').onclick = async ()=>{
   if(url && !isNaN(+url)) return e.textContent = '좌표 말고 네이버지도 링크를 붙여주세요';
   if(url && !/^https?:\/\//i.test(url)) return e.textContent = '링크는 http 로 시작해야 해요';
   /* 링크에 좌표가 들어 있으면 캐내고, 없으면 칩으로 고른 좌표를 쓴다.
-     둘 다 없으면 핀은 못 찍지만 링크만으로도 길찾기는 된다 — 글은 올라가게 둔다. */
+     둘 다 없으면 핀은 못 찍지만 링크만으로도 지도는 열린다 — 글은 올라가게 둔다. */
   const xy = naverXY(url) || (()=>{ const d = ($('s-near').dataset.xy||'').split(',');
     return d.length===2 ? { lat:+d[0], lon:+d[1] } : null; })();
   const lat = xy?.lat, lon = xy?.lon, hasXY = !!xy;
