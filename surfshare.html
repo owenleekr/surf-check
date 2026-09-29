@@ -117,6 +117,11 @@ label{ display:block; font-size:12px; color:var(--ink2); margin:8px 0 3px }
 .meta{ font-size:12.5px; color:var(--ink2); margin-top:3px; line-height:1.55 }
 /* 어디서 어디로 가는지가 차 글의 전부다. 그런데 작은 회색 글씨로 적혀 있어서
    날짜·이름보다 뒤로 밀려 있었다. 제일 크게, 제일 진하게. */
+.bolt-t{ font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700; font-size:16px; line-height:1.35; word-break:keep-all }
+.bolt-when{ background:#fff; border:3px solid var(--ink); padding:7px 9px; margin-top:6px;
+            font-size:14px; line-height:1.4; word-break:keep-all }
+.bolt-when b{ font-size:15px }
+.card.gone .bolt-when{ background:#F3F1EA }
 .route{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:6px;
         background:#fff; border:3px solid var(--ink); padding:7px 9px }
 .route span{ font-size:15px; font-weight:800; line-height:1.3; color:var(--ink); word-break:keep-all }
@@ -426,6 +431,24 @@ body.onb-on .wrap{ padding-bottom:230px }
       <div class="grp"><span class="t">올라온 숙소 쉐어</span><div class="px" id="stays"></div></div>
     </div>
 
+    <!-- 서핑번개 -->
+    <div id="pane-bolt" hidden>
+      <details class="px sand fold"><summary>⚡ 서핑번개 열기</summary>
+        <div class="grid2" style="margin-top:8px">
+          <div><label for="b-date">날짜</label><input id="b-date" type="date"></div>
+          <div><label for="b-time">몇 시에</label><input id="b-time" type="time" value="06:00"></div>
+        </div>
+        <label for="b-beach">어느 바다</label><select id="b-beach"></select>
+        <label for="b-note">한마디 (선택)</label>
+        <input id="b-note" maxlength="60" placeholder="예) 선셋 서핑해요 · 초보 환영">
+        <div class="err" id="b-err"></div>
+        <button class="btn mint" id="b-save" style="width:100%;margin-top:6px">번개 올리기</button>
+        <div class="note">이렇게 올라갑니다 — <b>⚡ 선셋 서핑해요 / 9월 29일 월요일 · 인구 · 오후 5시</b><br>
+          몇 명이 모이는지는 사람들이 눌러서 채워요.</div>
+      </details>
+      <div class="grp"><span class="t">다가오는 번개</span><div class="px" id="bolts"></div></div>
+    </div>
+
     <!-- 라이브캠 -->
     <div id="pane-cam" hidden>
       <div class="grp"><span class="t">라이브캠</span>
@@ -497,7 +520,8 @@ body.onb-on .wrap{ padding-bottom:230px }
 <nav class="nav" id="nav" hidden>
   <button type="button" id="t-ride" aria-pressed="true"><i>🚗</i>차량</button>
   <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소</button>
-  <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>라이브캠</button>
+  <button type="button" id="t-bolt" aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
+  <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>캠</button>
   <button type="button" id="t-town" aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
   <button type="button" id="t-me"   aria-pressed="false"><i>🙂</i>꾸미기</button>
 </nav>
@@ -590,6 +614,11 @@ const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&g
 const today = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const DOW = ['일','월','화','수','목','금','토'];
 const dLabel = d => { const x=new Date(d+'T00:00'); return `${d.slice(5).replace('-','.')} (${DOW[x.getDay()]})`; };
+/* 06:00 보다 '오전 6시'가 먼저 읽힌다. 번개는 시간이 전부라 읽기 쉬운 쪽을 쓴다. */
+const hLabel = t => { const [h,m] = String(t||'').split(':').map(Number);
+  if(isNaN(h)) return '';
+  const ap = h < 12 ? '오전' : '오후', hh = h % 12 || 12;
+  return `${ap} ${hh}시${m ? ` ${m}분` : ''}`; };
 const daysAgo = n => new Date(Date.now()-n*864e5-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const nowHM = () => new Date().toTimeString().slice(0,5);
 /* 차는 떠나면 끝이다 — 오늘 06:00 차를 저녁에 보여주며 '탈래요'를 열어두면 안 된다.
@@ -1114,6 +1143,102 @@ $('cam-off').onclick = ()=>{ camStop(); renderCam(); };
 const mySea = () => { try{ return localStorage.getItem('lineup.share.sea') || '낙산'; }catch(e){ return '낙산'; } };
 const setSea = v => { try{ localStorage.setItem('lineup.share.sea', v); }catch(e){} };
 
+/* ── 서핑번개 ─────────────────────────────────────────────
+   "언제 같이 들어가요"가 단톡방에서 매번 새로 시작됐다. 시간과 바다만 정해 두면
+   몇 명이 모이는지는 눌러서 채워진다. 정원은 두지 않는다 — 바다는 자리가 없지 않다.
+
+   표(parties)는 라인업이 쓰던 것을 그대로 쓴다. 새 SQL 이 필요 없다. */
+let bolts = [];
+const boltGone = b => {
+  const t = new Date(`${b.date}T${(b.time||'23:59')}:00`);
+  return t.getTime() + 3*3600e3 < Date.now();          // 시작하고 3시간 지나면 지난 것으로
+};
+async function pullBolts(){
+  try{ bolts = await api(`parties?date=gte.${daysAgo(7)}&select=*&order=date.asc,time.asc&limit=100`); }
+  catch(e){ bolts = null; }
+  renderBolts();
+}
+function renderBolts(){
+  const box = $('bolts'); if(!box) return;
+  const sel = $('b-beach');
+  if(!sel.options.length){ sel.innerHTML = SEAS.map(([n])=>`<option value="${n}">${n}</option>`).join(''); sel.value = mySea(); }
+  if(!$('b-date').value) $('b-date').value = nextWeekend();
+  if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-social.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  const up = bolts.filter(b=>!boltGone(b));
+  const d = $('bolt-dot'); d.textContent = up.length; d.hidden = !up.length;
+  if(!bolts.length){ box.innerHTML = `<div class="empty">아직 잡힌 번개가 없어요.<br>위에서 시간과 바다를 정해보세요.</div>`; return; }
+  let head = false;
+  box.innerHTML = [...bolts].sort((a,b)=>{
+      const ga = boltGone(a), gb = boltGone(b);
+      if(ga !== gb) return ga ? 1 : -1;
+      const ka = a.date+(a.time||''), kb = b.date+(b.time||'');
+      return ga ? (kb < ka ? -1 : 1) : (ka < kb ? -1 : 1);
+    }).map(b=>{
+    const gone = boltGone(b), list = b.joins || [], mine = list.some(x=>x.id===ME.id);
+    const hd = gone && !head ? (head = true, `<div class="gone-hd">지난 번개 — 기록으로 남겨둡니다</div>`) : '';
+    /* "9월 29일 인구 오후 5시 선셋 서핑해요" 처럼 한 줄로 읽히게 쓴다.
+       한마디가 제목이 되고, 언제·어디는 그 밑에. 태그로 쪼개면 문장이 안 된다. */
+    const md = b.date.slice(5).split('-');
+    return hd + `<div class="card ${gone?'gone':''}">
+      <div class="bolt-t">⚡ ${esc(b.note || '같이 들어가요')}
+        ${gone?'<span class="tag" style="background:#D8DCE8;font-size:10px">지남</span>':''}</div>
+      <div class="bolt-when"><b>${+md[0]}월 ${+md[1]}일</b> ${DOW[new Date(b.date+'T00:00').getDay()]}요일
+        · <b>${esc(b.beach)}</b> · <b>${hLabel(b.time)}</b></div>
+      <div class="owner"><canvas data-own="${esc(b.id)}"></canvas>
+        <span class="meta" style="margin:0">${esc(b.name)} 님이 열었어요</span>${noteBtn(b)}</div>
+      <div class="seats">${list.map(x=>`<span class="seat ${x.id===ME.id?'me':'on'}">
+        <canvas data-av="${esc(b.id)}|${esc(x.id)}"></canvas>${esc(x.name)}</span>`).join('')
+        || '<span class="seat">아직 아무도 없어요</span>'}</div>
+      <div class="meta"><b>${list.length}명</b> 모였어요</div>
+      <div class="acts">
+        ${gone ? '' : mine ? `<button class="btn sm ghost" data-bout="${esc(b.id)}">안 갈래요</button>`
+                          : `<button class="btn sm mint" data-bin="${esc(b.id)}">나도 갈래요</button>`}
+        ${b.user_id===ME.id ? `<button class="btn sm coral" data-bdel="${esc(b.id)}">글 지우기</button>` : ''}
+      </div></div>`; }).join('');
+  /* 캐릭터 — 누가 모였는지는 이름보다 얼굴로 먼저 들어온다 */
+  bolts.forEach(b=>{
+    const own = box.querySelector(`canvas[data-own="${CSS.escape(b.id)}"]`);
+    if(own && typeof drawSpr==='function'){ const q = withLook(b.profile || {}, b.name); drawSpr(own, avatarRows(q, false), avatarTintOf(q, 0)); }
+    (b.joins||[]).forEach(x=>{ const cv = box.querySelector(`canvas[data-av="${CSS.escape(b.id+'|'+x.id)}"]`);
+      if(cv && typeof drawSpr==='function'){ const q = withLook(x.profile || {}, x.name); drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); } });
+  });
+  bindNotes(box);
+  const patch = async (id, next)=>{
+    const b = bolts.find(x=>x.id===id); if(!b) return;
+    const before = b.joins;
+    b.joins = next; renderBolts();                       // 화면부터 — 서버를 기다리면 눌렀는지 모른다
+    try{ await api(`parties?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', body:JSON.stringify({ joins:next }) }); }
+    catch(e){ b.joins = before; renderBolts(); toast('실패 · 신호 확인'); }
+  };
+  box.querySelectorAll('[data-bin]').forEach(el=>el.onclick = ()=>{
+    const b = bolts.find(x=>x.id===el.dataset.bin);
+    patch(b.id, [...(b.joins||[]), { id:ME.id, name:ME.name, profile:ME.profile||{} }]); });
+  box.querySelectorAll('[data-bout]').forEach(el=>el.onclick = ()=>{
+    const b = bolts.find(x=>x.id===el.dataset.bout);
+    patch(b.id, (b.joins||[]).filter(x=>x.id!==ME.id)); });
+  box.querySelectorAll('[data-bdel]').forEach(el=>el.onclick = async ()=>{
+    if(!confirm('이 번개를 지울까요?')) return; el.disabled = true;
+    try{ await api(`parties?id=eq.${encodeURIComponent(el.dataset.bdel)}`, { method:'DELETE' });
+      await pullBolts(); toast('지웠어요');
+    }catch(e){ el.disabled = false; toast('지우지 못했어요 — parties 에 삭제 권한이 없어요'); } });
+}
+$('b-save').onclick = async ()=>{
+  const e = $('b-err'); e.textContent = '';
+  const date = $('b-date').value, time = $('b-time').value, beach = $('b-beach').value;
+  if(!date) return e.textContent = '날짜를 골라주세요';
+  if(!time) return e.textContent = '몇 시에 만날지 정해주세요';
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, profile:ME.profile||{},
+    date, beach, time, note:$('b-note').value.trim().slice(0,60) || null,
+    joins:[{ id:ME.id, name:ME.name, profile:ME.profile||{} }],   // 연 사람은 당연히 간다
+    created_at:new Date().toISOString() };
+  $('b-save').disabled = true;
+  try{ await api('parties', { method:'POST', body:JSON.stringify(row) });
+    $('b-note').value = ''; document.querySelector('#pane-bolt details').open = false;
+    await pullBolts(); toast('번개를 올렸어요');
+  }catch(err){ e.textContent = err.code==='notable' ? '번개 표가 아직 없어요 (supabase-social.sql)' : '올리지 못했어요 · 신호 확인'; }
+  finally{ $('b-save').disabled = false; }
+};
+
 /* ── 마을 · 채팅 ──────────────────────────────────────────
    라인업에서 마을 그리드·말풍선·반응·채팅만 가져왔다. 레벨·출석·펫 성장·코치 인증은
    학교의 것이라 두고 왔다 — 여기 사람들이 서로에게 묻는 건 "누가 있나, 오늘 어땠나"다. */
@@ -1547,6 +1672,8 @@ const ONB = [
     d:'남는 자리가 있는 숙소에 들어가거나, 내가 잡은 방을 올려 사람을 채웁니다.<br>지도는 <b>양양서핑학교</b>가 한가운데예요 — 거리는 학교까지 잰 값입니다.' },
   { tab:'stay', at:'stays',  t:'다녀왔으면 별점을',
     d:'숙소는 자보기 전엔 알 수가 없어요. 별점과 한마디를 남기면<br>다음 사람이 그걸 보고 고릅니다. 한 숙소에 한 번, 언제든 고칠 수 있어요.' },
+  { tab:'bolt', at:'t-bolt', t:'서핑번개 — 언제 같이 들어갈지',
+    d:'시간과 바다만 정해서 올리면, 갈 사람이 <b>[나도 갈래요]</b>를 눌러 채웁니다.<br>정원은 없어요 — 바다는 자리가 모자라지 않으니까요.' },
   { tab:'cam',  at:'t-cam',  t:'라이브캠 — 나가기 전에 한 번',
     d:'WSB FARM 웨이브캠을 그대로 가져왔어요. 지금 그 해변이 어떤지 <b>눈으로</b> 보고 나갑니다.<br>소리는 없고 데이터를 꽤 쓰니, 다른 탭으로 가면 알아서 꺼져요.' },
   { tab:'town', at:'t-town', t:'마을 — 오늘 어땠는지 한마디',
@@ -1578,7 +1705,7 @@ $('onb-skip').onclick = ()=>{ onbI === 0 ? onbEnd() : onbShow(onbI - 1); };
 $('help').onclick = ()=>{ if($('onb').hidden) onbStart(); else onbEnd(); };
 
 /* ── 탭 ─────────────────────────────────────────────────── */
-const TABS = ['ride','stay','cam','town','me'];
+const TABS = ['ride','stay','bolt','cam','town','me'];
 const setTab = t => { state.tab = t;
   TABS.forEach(k=>{
     $('t-'+k).setAttribute('aria-pressed', String(t===k));
@@ -1587,6 +1714,7 @@ const setTab = t => { state.tab = t;
   if(t==='cam') renderCam();
   else camStop();                       /* 다른 탭으로 가면 끈다 — 데이터가 계속 나간다 */
   if(t==='town'){ pullTown(); startTownPoll(); } else stopTownPoll();
+  if(t==='bolt') pullBolts();
   $('trust').hidden = !(t==='ride' || t==='stay');
   window.scrollTo({ top:0, behavior:'instant' });
 };
@@ -2212,7 +2340,7 @@ function start(){
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
   syncMe();
-  pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow(); pullCond();
+  pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow(); pullCond(); pullBolts();
   clearInterval(nowPoll); nowPoll = setInterval(()=>{ if(!document.hidden) pullNow(); }, 60000);
   clearInterval(mailPoll); mailPoll = setInterval(()=>{ if(!document.hidden) pullMail(true); }, 25000);
   if(!onbDone() && $('onb').hidden) setTimeout(()=>onbStart(), 700);   // 처음 온 사람만. 한 번 끝내면 다시 안 뜬다
