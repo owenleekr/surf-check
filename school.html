@@ -3511,7 +3511,10 @@ function showTab(t){
 }
 $('nav').querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>showTab(b.dataset.tab)));
 /* 학교에 들어올 수 있는 사람 — 초대 코드를 쓴 적 있거나, 이미 6기·코치이거나 */
-const appInvited = () => { try{ return localStorage.getItem('lineup.app.invited') === '1'; }catch(e){ return false; } };
+/* 코드를 새로 정해도 이미 들어온 사람은 기기에 '통과했음' 표시가 남아 그대로 들어온다.
+   그래서 표시에 세대를 붙인다 — 코드를 갈아엎을 때 이 숫자를 올리면 전원이 다시 받는다. */
+const GATE_GEN = '2';
+const appInvited = () => { try{ return localStorage.getItem('lineup.app.invited') === GATE_GEN; }catch(e){ return false; } };
 function appAllowed(){ return appInvited(); }   /* 예외 없음 — 예외를 두면 문이 아니다 */
 function showGate(){
   $('login-form').hidden = true; $('gate').hidden = false;
@@ -3524,7 +3527,7 @@ $('gate-ok').onclick = async ()=>{
   try{
     const ok = await rpc('verify_cohort', { p_cohort:'app', p_code:code });
     if(ok !== true){ e.textContent = '비밀번호가 달라요'; return; }
-    try{ localStorage.setItem('lineup.app.invited', '1'); }catch(err){}
+    try{ localStorage.setItem('lineup.app.invited', GATE_GEN); }catch(err){}
     toast('환영합니다'); $('gate').hidden = true; $('login-form').hidden = false;
     const sid = LS.get('surf.session', null), u = sid && auth.users()[sid];
     if(u) enter({ id:sid, name:u.name });
