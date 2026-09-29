@@ -351,14 +351,6 @@ body.onb-on .wrap{ padding-bottom:230px }
       </div>
     </div>
 
-    <div class="px sand" id="school" style="margin-top:10px">
-      <span class="tag">COMING SOON</span>
-      <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 마을을 만들고 있어요</div>
-      <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 수업 기록 · 자세 분석 · 마을 채팅.<br>
-        준비되면 여기에서 바로 들어가실 수 있게 할게요.</div>
-      <a href="/school" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--ink2)">초대 코드를 받으셨다면 → 학교 문 열기</a>
-    </div>
-
     <!-- 차량 -->
     <div id="pane-ride">
       <details class="px sand fold"><summary>🚗 차량 쉐어 올리기</summary>
@@ -465,8 +457,17 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     </div>
 
-    <div class="note" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
+    <!-- 이 안내는 차·숙소 글에만 해당한다. 캠·마을·꾸미기에서는 뜻 없는 말이 된다 -->
+    <div class="note" id="trust" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)">
       올린 사람만 지울 수 있어요. 자리는 아무나 넣고 뺄 수 있습니다 — 서로 믿고 쓰는 곳이에요.
+    </div>
+
+    <div class="px sand" id="school" style="margin-top:10px">
+      <span class="tag">COMING SOON</span>
+      <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 마을을 만들고 있어요</div>
+      <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 수업 기록 · 자세 분석 · 마을 채팅.<br>
+        준비되면 여기에서 바로 들어가실 수 있게 할게요.</div>
+      <a href="/school" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--ink2)">초대 코드를 받으셨다면 → 학교 문 열기</a>
     </div>
   </div>
 </div>
@@ -1068,9 +1069,15 @@ const reactBar = (target, toUser) => `<div class="rxbar">${REACT_EMO.map(e=>{
 }).join('')}</div>`;
 
 async function pullTown(){
-  const cohort = ME.cohort || 'open';
-  try{ state.town = await api(`surfers?cohort=eq.${encodeURIComponent(cohort)}&select=id,name,cohort,profile&limit=200`); }
+  /* 기수로 나누지 않는다. 라인업은 6기 마을과 오픈 마을을 갈라놨는데, 여기서 그러면
+     내 cohort 가 'open' 으로 새는 순간 마을이 통째로 빈다(실제로 그랬다).
+     쉐어는 스무 명 남짓 쓰는 곳이라 나누는 쪽이 손해다 — 가입한 사람은 다 선다. */
+  try{ state.town = await api('surfers?select=id,name,cohort,profile&limit=300'); }
   catch(e){ state.town = null; }
+  /* 내 기수가 서버와 어긋나 있으면 맞춰 둔다 — 라벨과 글 필터가 이걸 본다 */
+  const mine = (state.town||[]).find(x=>x.id===ME.id);
+  if(mine && mine.cohort && mine.cohort !== ME.cohort){ ME.cohort = mine.cohort;
+    try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){} }
   try{ state.reacts = await api('reacts?select=*&order=created_at.desc&limit=500'); state.reactsOk = true; }
   catch(e){ if(e.code==='notable') state.reactsOk = false; }
   await pullChat();
@@ -1081,8 +1088,10 @@ function renderTown(){
   if(state.town === null){ g.innerHTML = '<div class="empty" style="background:rgba(255,249,230,.9)">마을을 불러오지 못했어요</div>'; return; }
   const here = new Map((nowRows||[]).map(c=>[c.user_id, c.beach]));
   const rows = [...state.town].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
-  $('vill-t').textContent = ME.cohort === '6기' ? '6기 마을' : '서퍼 마을';
-  $('vill-sub').textContent = `${rows.length}명 · 탭하면 카드${here.size?` · 지금 바다에 ${here.size}명`:''}`;
+  $('vill-t').textContent = '마을';
+  const six = rows.filter(x=>x.cohort==='6기').length;
+  $('vill-sub').textContent = `${rows.length}명${six && six!==rows.length ? ` (6기 ${six})` : ''} · 탭하면 카드`
+    + (here.size ? ` · 지금 바다에 ${here.size}명` : '');
   g.innerHTML = rows.map(x=>{
     const mood = x.profile?.mood;
     return `<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"${x.profile?.pet && x.profile.pet!=='none'?' data-pet':''}>
@@ -1160,12 +1169,19 @@ function renderChat(){
   box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}">
       <canvas data-cav="${esc(m.id)}"></canvas>
       <div class="b"><b>${esc(m.name)}</b>${m.profile?.role==='coach'?' <span class="tag" style="font-size:10px">코치</span>':''}
-        ${esc(m.text)}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small>
+        ${esc(m.text)}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
+          ${m.user_id===ME.id ? `· <a href="#" data-cdel="${esc(m.id)}" style="color:#C2303A">지우기</a>` : ''}</small>
         ${state.reactsOk!==false ? reactBar('chat:'+m.id, m.user_id) : ''}</div></div>`).join('')
     || `<div class="empty">${state.chatOk===false?'채팅 표가 아직 없어요':'첫 메시지를 남겨봐요'}</div>`;
   state.chat.forEach(m=>{ const cv = box.querySelector(`canvas[data-cav="${CSS.escape(m.id)}"]`);
     if(cv && typeof drawSpr==='function'){ const q = withLook(m.profile, m.name); drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); } });
   if(atBottom || chatLast !== state.chat.length){ box.scrollTop = box.scrollHeight; chatLast = state.chat.length; }
+  /* 잘못 보낸 건 내가 지울 수 있어야 한다. 서버에서도 내 것만 지워진다(정책) */
+  box.querySelectorAll('[data-cdel]').forEach(a=>a.onclick = async e=>{ e.preventDefault();
+    const id = a.dataset.cdel;
+    try{ await api(`chat?id=eq.${encodeURIComponent(id)}`, { method:'DELETE' });
+      state.chat = state.chat.filter(m=>m.id!==id); renderChat(); toast('지웠어요');
+    }catch(err){ toast('지우지 못했어요 — supabase-chatdel.sql 을 돌려야 해요'); } });
   bindRx(box);
 }
 async function sendChat(text){
@@ -1324,6 +1340,7 @@ const setTab = t => { state.tab = t;
   if(t==='cam') renderCam();
   else camStop();                       /* 다른 탭으로 가면 끈다 — 데이터가 계속 나간다 */
   if(t==='town'){ pullTown(); startTownPoll(); } else stopTownPoll();
+  $('trust').hidden = !(t==='ride' || t==='stay');
   window.scrollTo({ top:0, behavior:'instant' });
 };
 TABS.forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
