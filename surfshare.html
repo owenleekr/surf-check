@@ -637,7 +637,14 @@ const byWhen = (kind) => (a,b) => {
 async function api(path, opt){
   const r = await fetch(`${SUPA.url}/rest/v1/${path}`, { headers:H(), ...opt });
   if(r.status === 404) throw Object.assign(new Error('notable'), { code:'notable' });
-  if(!r.ok) throw new Error('HTTP '+r.status);
+  if(!r.ok){
+    /* 'HTTP 400' 만 던지면 화면엔 "신호 확인"만 뜬다. 실제로 번개가 그래서 통째로
+       막혔는데(없는 칸을 보내고 있었다) 원인을 찾는 데 한참 걸렸다.
+       서버가 이유를 말해주면 그대로 들고 온다. */
+    let msg = 'HTTP ' + r.status;
+    try{ const b = await r.json(); if(b && b.message) msg = b.message; }catch(e){}
+    throw Object.assign(new Error(msg), { code:'http', status:r.status });
+  }
   return r.status === 204 ? null : r.json().catch(()=>null);
 }
 async function rpc(fn, args){
@@ -1154,7 +1161,8 @@ const boltGone = b => {
   return t.getTime() + 3*3600e3 < Date.now();          // 시작하고 3시간 지나면 지난 것으로
 };
 async function pullBolts(){
-  try{ bolts = await api(`parties?date=gte.${daysAgo(7)}&select=*&order=date.asc,time.asc&limit=100`); }
+  try{ bolts = (await api(`parties?date=gte.${daysAgo(7)}&select=*&order=date.asc,time.asc&limit=100`))
+    .filter(b=>!isTest(b.user_id)); }
   catch(e){ bolts = null; }
   renderBolts();
 }
@@ -1198,7 +1206,8 @@ function renderBolts(){
   /* 캐릭터 — 누가 모였는지는 이름보다 얼굴로 먼저 들어온다 */
   bolts.forEach(b=>{
     const own = box.querySelector(`canvas[data-own="${CSS.escape(b.id)}"]`);
-    if(own && typeof drawSpr==='function'){ const q = withLook(b.profile || {}, b.name); drawSpr(own, avatarRows(q, false), avatarTintOf(q, 0)); }
+    const ownPf = (b.joins||[]).find(x=>x.id===b.user_id)?.profile || {};
+    if(own && typeof drawSpr==='function'){ const q = withLook(ownPf, b.name); drawSpr(own, avatarRows(q, false), avatarTintOf(q, 0)); }
     (b.joins||[]).forEach(x=>{ const cv = box.querySelector(`canvas[data-av="${CSS.escape(b.id+'|'+x.id)}"]`);
       if(cv && typeof drawSpr==='function'){ const q = withLook(x.profile || {}, x.name); drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); } });
   });
@@ -1227,7 +1236,10 @@ $('b-save').onclick = async ()=>{
   const date = $('b-date').value, time = $('b-time').value, beach = $('b-beach').value;
   if(!date) return e.textContent = '날짜를 골라주세요';
   if(!time) return e.textContent = '몇 시에 만날지 정해주세요';
-  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, profile:ME.profile||{},
+  /* parties 에는 profile 칸이 없다(라인업이 만든 표다). 모르고 같이 보냈다가
+     PGRST204 로 전부 튕겼다 — 화면엔 "신호 확인"만 떠서 원인이 안 보였다.
+     연 사람 캐릭터는 joins 안에 이미 들어 있으니 거기서 꺼내 쓴다. */
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name,
     date, beach, time, note:$('b-note').value.trim().slice(0,60) || null,
     joins:[{ id:ME.id, name:ME.name, profile:ME.profile||{} }],   // 연 사람은 당연히 간다
     created_at:new Date().toISOString() };
@@ -1235,7 +1247,9 @@ $('b-save').onclick = async ()=>{
   try{ await api('parties', { method:'POST', body:JSON.stringify(row) });
     $('b-note').value = ''; document.querySelector('#pane-bolt details').open = false;
     await pullBolts(); toast('번개를 올렸어요');
-  }catch(err){ e.textContent = err.code==='notable' ? '번개 표가 아직 없어요 (supabase-social.sql)' : '올리지 못했어요 · 신호 확인'; }
+  }catch(err){ e.textContent = err.code==='notable' ? '번개 표가 아직 없어요 (supabase-social.sql)'
+      : err.message && err.message !== 'Failed to fetch' ? `올리지 못했어요 — ${String(err.message).slice(0,70)}`
+      : '올리지 못했어요 · 신호 확인'; }
   finally{ $('b-save').disabled = false; }
 };
 
@@ -1248,7 +1262,7 @@ $('b-save').onclick = async ()=>{
    처음엔 /^zz(_|$)/ 로 걸렀다가 **진짜 회원 하나를 지워버렸다** — zz_signup 이
    실제 6기 분의 아이디였다. 패턴으로 사람을 숨기면 언젠가 이런 일이 난다.
    아는 이름만 적는다. 새 테스트 계정을 만들면 여기에 손으로 추가할 것. */
-const HIDE_IDS = ['t','owen','qa_owen','zz_test','zz_qc','zz_guide','zz_pw','zz_o1','zz_q5'];
+const HIDE_IDS = ['t','owen','qa_owen','zz_test','zz_qc','zz_guide','zz_pw','zz_o1','zz_q5','_probe_'];
 const isTest = id => typeof id === 'string' && HIDE_IDS.includes(id);
 
 const REACT_EMO = ['👏','🔥','🌊','💪'];
