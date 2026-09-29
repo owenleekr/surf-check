@@ -159,8 +159,12 @@ body.has-nav .wrap{ padding-bottom:86px }
 
 /* ── 마을 ── */
 .village{ position:relative; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); overflow:hidden;
-          background:linear-gradient(to bottom,#CFEDFF 0 34%, #4FA8EE 34% 58%, var(--sand) 58% 100%);
-          padding:10px 8px 14px; min-height:210px }
+          background:#CFEDFF; padding:10px 8px 14px; min-height:210px }
+#vbg{ position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; z-index:0 }
+.vgrid{ z-index:1 }
+.vzone{ position:absolute; inset:0; z-index:1; pointer-events:none }
+.vzone span{ position:absolute; left:6px; font-size:10px; font-weight:800; color:rgba(27,27,47,.42);
+             background:rgba(255,255,255,.55); padding:0 4px; letter-spacing:.02em }
 /* 줄 세워 놓으니 단체사진이 됐다. 바다엔 타는 사람, 모래엔 쉬는 사람을 따로 세운다 —
    그러려면 flex 로는 안 되고 각자 자리를 잡아줘야 한다. */
 .vgrid{ position:relative; height:100%; min-height:190px }
@@ -440,7 +444,8 @@ body.onb-on .wrap{ padding-bottom:230px }
     <!-- 마을 -->
     <div id="pane-town" hidden>
       <div class="grp"><span class="t" id="vill-t">6기 마을</span>
-        <div class="village" id="village"><div class="vgrid" id="vgrid"></div></div>
+        <div class="village" id="village"><canvas id="vbg"></canvas><div class="vgrid" id="vgrid"></div>
+          <div class="vzone" id="vzone"></div></div>
         <div class="note" id="vill-sub" style="color:var(--paper);text-shadow:1px 1px 0 var(--ink)"></div>
         <div class="moodrow">
           <input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!">
@@ -1016,7 +1021,7 @@ async function pullCond(){
   const box = $('cond'); if(!box) return;
   const [n,,, lat, lon] = seaOf(mySea());
   const key = `${lat},${lon}`, hit = condCache[key];
-  if(hit && Date.now() - hit.at < 15*60e3) return paintCond(hit.v);
+  if(hit && Date.now() - hit.at < 15*60e3){ state.cond = hit.v; return paintCond(hit.v); }
   box.innerHTML = '<span class="src">오늘 바다 상태를 읽는 중…</span>';
   try{
     const [f, m] = await Promise.all([
@@ -1025,7 +1030,8 @@ async function pullCond(){
     ]);
     const v = { temp:f.current?.temperature_2m, wx:f.current?.weather_code,
                 sst:m.current?.sea_surface_temperature, h:m.current?.wave_height, p:m.current?.wave_period };
-    condCache[key] = { at:Date.now(), v }; paintCond(v);
+    condCache[key] = { at:Date.now(), v }; state.cond = v; paintCond(v);
+    if(state.tab === 'town') layoutTown();
   }catch(e){ box.innerHTML = '<span class="src">바다 상태를 못 읽었어요 · 신호 확인</span>'; }
 }
 function paintCond(v){
@@ -1152,11 +1158,18 @@ function renderTown(){
   /* 누가 물에 있나 — 체크인한 사람은 진짜 바다에 있다. 그 사람이 없으면 마을이 죽은 것처럼
      보이니, 아이디 해시로 몇 명을 물에 넣는다(사람마다 늘 같은 자리라 들쭉날쭉하지 않다). */
   const hsh = id => { let h = 7; for(const c of String(id)) h = (h*131 + c.charCodeAt(0)) >>> 0; return h; };
-  const inSea = x => here.has(x.id) || (here.size === 0 && hsh(x.id) % 3 === 0);
+  /* 세 곳으로 나눈다 — 바다(타는 중) · 해변(노는 중) · 학교 앞(이론 수업).
+     바다는 2~3명이면 충분하다. 다 몰아넣으면 라인업이 터진 것처럼 보인다. */
+  const seaCap = Math.min(3, Math.max(2, Math.round(rows.length/4)));
+  const checked = rows.filter(x=>here.has(x.id));
+  const pool = rows.filter(x=>!here.has(x.id)).sort((a,b)=>hsh(a.id)-hsh(b.id));
+  const seaSet = new Set(checked.slice(0, seaCap).map(x=>x.id));
+  for(const x of pool){ if(seaSet.size >= seaCap) break; seaSet.add(x.id); }
+  const zoneOf = x => seaSet.has(x.id) ? 'sea' : (hsh(x.id) % 5 < 2 ? 'class' : 'beach');
   g.innerHTML = rows.map((x,i)=>{
-    const mood = x.profile?.mood, sea = inSea(x);
+    const mood = x.profile?.mood, z = zoneOf(x);
     return `<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"
-      data-where="${sea?'sea':'sand'}" data-ph="${(hsh(x.id)%628)/100}"${x.profile?.pet && x.profile.pet!=='none'?' data-pet':''}>
+      data-where="${z}" data-ph="${(hsh(x.id)%628)/100}"${x.profile?.pet && x.profile.pet!=='none'?' data-pet':''}>
       ${mood?`<div class="bub">${esc(mood)}</div>`:''}
       ${mood && x.id!==ME.id && state.reactsOk!==false ? reactBar('mood:'+x.id, x.id) : ''}
       <canvas data-av="${esc(x.id)}" data-anim></canvas><span class="nm">${esc(x.name)}</span></div>`;
@@ -1192,12 +1205,14 @@ function renderTown(){
 
 /* 자리 잡기 — 바다 밴드(34~58%)와 모래 밴드에 나눠 세운다.
    사람이 늘면 줄이 늘고, 마을 높이도 같이 자란다. */
+let VB = null;                                    // 배경이 쓸 구역 경계(px)
 function layoutTown(){
   const g = $('vgrid'), v = $('village'); if(!g || !v) return;
   const W = g.clientWidth; if(!W) return;
   const cells = [...g.querySelectorAll('.vp')];
   if(!cells.length) return;
-  const sea = cells.filter(c=>c.dataset.where==='sea'), sand = cells.filter(c=>c.dataset.where!=='sea');
+  const pick = z => cells.filter(c=>c.dataset.where===z);
+  const sea = pick('sea'), beach = pick('beach'), cls = pick('class');
   const per = Math.max(2, Math.floor(W / 64));
   const put = (list, top, rowH)=>{
     list.forEach((el,i)=>{
@@ -1208,21 +1223,108 @@ function layoutTown(){
     });
     return Math.max(list.length ? 1 : 0, Math.ceil(list.length/per));
   };
-  const ROW = 86;
-  const seaRows  = put(sea, 30, ROW);
-  const sandTop  = 30 + Math.max(1, seaRows)*ROW + 12;         // 바다 줄과 모래 줄 사이를 띄운다
-  const sandRows = put(sand, sandTop, ROW);
+  const ROW = 86, SKY = 34;
+  const seaRows   = put(sea,   SKY, ROW);
+  const beachTop  = SKY + seaRows*ROW + 14;
+  const beachRows = put(beach, beachTop, ROW);
+  const clsTop    = beachTop + beachRows*ROW + 18;
+  const clsRows   = put(cls,   clsTop, ROW);
   /* 높이는 vgrid 에 준다. village 에 min-height 를 주면 box-sizing:border-box 탓에
      패딩(위 10 + 아래 14)이 안쪽을 먹어 마지막 줄 이름표가 잘렸다. */
-  const H = sandTop + Math.max(1, sandRows)*ROW + 4;
+  const H = clsTop + clsRows*ROW + 6;
   g.style.height = H + 'px';
-  v.style.minHeight = '';
-  /* 바다가 어디까지인지 그림도 같이 옮긴다 — 사람만 내려가면 모래 위에서 서핑하게 된다.
-     기준은 모래 줄이 시작되기 조금 위(발이 닿는 선). */
-  const total = H + 24;                                        // 패딩 포함한 실제 박스 높이
-  const shore = Math.round((sandTop + 58) / total * 100);       // 캐릭터 발끝쯤
-  v.style.background = `linear-gradient(to bottom,#CFEDFF 0 ${Math.max(10, shore-34)}%, `
-    + `#4FA8EE ${Math.max(10, shore-34)}% ${shore}%, var(--sand) ${shore}% 100%)`;
+  /* 배경이 쓸 경계 — 사람 발끝을 기준으로 물가와 학교 앞마당을 긋는다.
+     사람만 내려가고 그림이 안 따라오면 모래 위에서 서핑하게 된다. */
+  VB = { W, H, pad:10,
+         shore: beachTop - 16,                    // 바다가 끝나는 선
+         yard:  clsTop - 20,                      // 학교 앞마당이 시작되는 선
+         hasSea: sea.length > 0 };
+  $('vzone').innerHTML =
+    `<span style="top:${(SKY-12)}px">🌊 바다</span>` +
+    (beach.length ? `<span style="top:${(beachTop-12)}px">🏖 해변</span>` : '') +
+    (cls.length ? `<span style="top:${(clsTop-12)}px">🏫 학교 앞</span>` : '');
+  drawVillage(performance.now());
+}
+
+/* ── 마을 풍경 ────────────────────────────────────────────
+   하늘·바다·모래를 CSS 그라데이션으로만 칠하니 어느 날이나 같은 그림이었다.
+   오늘 날씨와 파고를 그대로 쓴다 — 맑으면 해가 뜨고, 비면 빗줄기가 내리고,
+   파고가 크면 파도가 커진다. 위에서 읽어온 그 숫자다(다시 부르지 않는다). */
+function drawVillage(t){
+  const cv = $('vbg'), v = $('village'); if(!cv || !v || !VB) return;
+  const W = Math.round(v.clientWidth), H = Math.round(v.clientHeight);
+  if(!W || !H) return;
+  const S = Math.min(2, window.devicePixelRatio || 1);
+  if(cv.width !== W*S){ cv.width = W*S; cv.height = H*S; }
+  const g = cv.getContext('2d'); g.setTransform(S,0,0,S,0,0); g.clearRect(0,0,W,H);
+  const R = (x,y,w,h,c)=>{ g.fillStyle=c; g.fillRect(Math.round(x),Math.round(y),Math.max(1,Math.round(w)),Math.max(1,Math.round(h))); };
+
+  const c = state.cond || {}, wx = c.wx ?? 1;
+  const rain = (wx>=51 && wx<=67) || (wx>=80 && wx<=82) || wx>=95;
+  const snow = wx>=71 && wx<=77;
+  const cloudy = wx===2 || wx===3 || wx===45 || wx===48 || rain || snow;
+  const dark = wx>=95;
+
+  const shore = VB.shore + VB.pad, yard = VB.yard + VB.pad;
+  /* 하늘 — 흐리면 회색기가 돈다 */
+  R(0, 0, W, shore, dark ? '#7E8CA0' : cloudy ? '#BFD4E4' : '#CFEDFF');
+  /* 해 · 구름 */
+  if(!cloudy && typeof SPR !== 'undefined'){
+    const sx = W-46, sy = 12;
+    SPR.sun.forEach((row,yy)=>[...row].forEach((ch,xx)=>{ if(ch!=='.') R(sx+xx*3, sy+yy*3, 3, 3, '#FFD23F'); }));
+  } else {
+    for(let k=0;k<3;k++){
+      const cx = ((t/(9000+k*3400) * W) % (W+90)) - 45, cy = 10 + k*13;
+      const col = dark ? '#5E6B7D' : '#FFFFFF';
+      R(cx, cy, 34, 8, col); R(cx+7, cy-5, 20, 6, col); R(cx+16, cy-9, 12, 5, col);
+    }
+  }
+  if(rain) for(let k=0;k<46;k++){
+    const x = (k*37 + Math.floor(t/26)) % W, y = ((k*53 + Math.floor(t/3.2)) % shore);
+    R(x, y, 1, 6, 'rgba(180,215,240,.7)');
+  }
+  if(snow) for(let k=0;k<34;k++){
+    const x = (k*41 + Math.sin(t/900+k)*9) % W, y = ((k*61 + Math.floor(t/11)) % shore);
+    R(x, y, 2, 2, 'rgba(255,255,255,.9)');
+  }
+
+  /* 바다 — 파고가 크면 물결도 크게 */
+  R(0, shore-1, W, 2, dark ? '#2B4A6B' : '#3E8FD0');
+  const amp = Math.min(5, 1.4 + (c.h || 0.8) * 2.2);
+  const seaTop = 0;
+  R(0, VB.pad, W, shore-VB.pad, dark ? '#2E5E86' : '#4FA8EE');
+  R(0, VB.pad, W, 10, dark ? '#27527A' : '#3E96E0');                       // 먼바다는 조금 어둡게
+  for(let k=0;k<4;k++){
+    const y0 = VB.pad + 16 + k*Math.max(14, (shore-VB.pad-20)/4);
+    if(y0 > shore-6) break;
+    for(let x=0;x<W;x++){
+      const y = y0 + Math.sin(x/17 + t/(900+k*220) + k)*amp;
+      R(x, y, 1, 2, 'rgba(255,255,255,.4)');
+    }
+  }
+  /* 물가 거품 */
+  for(let x=0;x<W;x++) R(x, shore - 4 + Math.sin(x/13 - t/700)*2.2, 1, 3, 'rgba(255,255,255,.75)');
+
+  /* 모래 · 학교 앞마당 */
+  R(0, shore, W, H-shore, '#F2E3B8');
+  R(0, yard, W, H-yard, '#EAD9A6');
+  R(0, yard, W, 1, 'rgba(27,27,47,.12)');
+
+  /* 학교 — 사람 뒤에 선다. 지붕을 위로 올리면 해변 줄의 이름표를 덮으니
+     앞마당 안에서만 그린다. 간판은 지붕이 아니라 벽에 붙인다. */
+  const bw = Math.min(206, W*0.58), bx = W - bw - 8, by = yard + 3, bh = H - by - 5;
+  if(bh > 26){
+    for(let i=0;i<8;i++) R(bx + 8 - i, by + i, bw - 16 + i*2, 1, i===0 ? '#1B1B2F' : '#E05555');
+    R(bx, by+8, bw, bh-8, '#FFF6DE');
+    R(bx, by+8, bw, 1, '#1B1B2F'); R(bx, by+bh-1, bw, 1, '#1B1B2F');
+    R(bx, by+8, 1, bh-8, '#1B1B2F'); R(bx+bw-1, by+8, 1, bh-8, '#1B1B2F');
+    R(bx+6, by+12, bw-12, 11, '#1B1B2F'); R(bx+7, by+13, bw-14, 9, '#FFD23F');   // 간판
+    g.fillStyle = '#1B1B2F'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `700 9px "Galmuri11",sans-serif`;
+    g.fillText('양양서핑학교', bx + bw/2, by + 18);
+    for(let k=0;k<2;k++){ const wx2 = bx + 12 + k*(bw-34);
+      R(wx2, by+28, 13, 11, '#1B1B2F'); R(wx2+1, by+29, 11, 9, '#9FD8FF'); }
+  }
 }
 addEventListener('resize', ()=>{ if(state.tab==='town') layoutTown(); });
 
@@ -1233,11 +1335,20 @@ function townTick(t){
   townRAF = requestAnimationFrame(townTick);
   if(state.tab !== 'town' || document.hidden) return;
   if(t - (townTick.last||0) < 60) return; townTick.last = t;
+  drawVillage(t);
   document.querySelectorAll('#vgrid .vp').forEach(el=>{
-    const ph = +el.dataset.ph || 0, sea = el.dataset.where === 'sea';
-    const y = sea ? Math.sin(t/620 + ph)*3.5 + Math.sin(t/310 + ph*2)*1.2
-                  : (Math.sin(t/1100 + ph) > 0.94 ? -4 : 0);
-    const x = sea ? Math.sin(t/1900 + ph*1.7)*6 : Math.sin(t/2600 + ph)*1.5;
+    const ph = +el.dataset.ph || 0, z = el.dataset.where;
+    let x = 0, y = 0;
+    if(z === 'sea'){                       // 물결에 오르내리며 옆으로 흐른다
+      y = Math.sin(t/620 + ph)*3.5 + Math.sin(t/310 + ph*2)*1.2;
+      x = Math.sin(t/1900 + ph*1.7)*6;
+    } else if(z === 'class'){              // 수업 중 — 거의 안 움직이고 가끔 고개만
+      y = Math.sin(t/2400 + ph) > 0.97 ? -2 : 0;
+      x = Math.sin(t/3400 + ph)*0.8;
+    } else {                               // 해변 — 가끔 폴짝
+      y = Math.sin(t/1100 + ph) > 0.94 ? -4 : 0;
+      x = Math.sin(t/2600 + ph)*1.5;
+    }
     el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
   });
 }
