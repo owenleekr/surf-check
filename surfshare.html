@@ -175,6 +175,33 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .voice .vt{ display:block; font-size:14.5px; line-height:1.75; margin-top:7px; word-break:keep-all }
 .voice .vw{ display:block; font-size:12.5px; color:#9FC4E4; margin-top:7px; font-weight:700 }
 
+/* ── 테이크오프 훈련 ── */
+.drill{ margin-top:12px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:13px 14px }
+.drill h3{ margin:0; font-family:"Galmuri11",sans-serif; font-size:15px }
+.drill .dsub{ font-size:12.5px; color:#6B5A1E; margin-top:3px; font-weight:700; line-height:1.5 }
+.drill .dbtn{ width:100%; margin-top:10px; min-height:52px; font-size:16px; font-weight:800; font-family:inherit;
+  border:4px solid var(--ink); background:var(--sun); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
+.drill .dbtn.done{ background:var(--mint) }
+.drill .dbtn:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink) }
+.dtabs{ display:flex; gap:6px; margin-top:14px }
+.dtabs button{ flex:1; min-height:38px; font-family:inherit; font-size:13px; font-weight:800; border:3px solid var(--ink);
+  background:#fff; cursor:pointer }
+.dtabs button[aria-pressed="true"]{ background:var(--ink); color:#fff }
+.dhead, .drow{ display:grid; grid-template-columns:26px minmax(0,1fr) auto 84px; gap:8px; align-items:center }
+.dhead{ margin-top:10px; font-size:10.5px; font-weight:800; color:#6B5A1E }
+.dhead .dd{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center; letter-spacing:-.04em }
+.drow{ padding:8px 0; border-top:2px dashed var(--grid); font-size:14px; font-weight:800 }
+.drow.me{ background:rgba(255,213,74,.35); margin:0 -6px; padding:8px 6px }
+.drow .rk{ text-align:center; font-family:sans-serif; font-size:16px }
+.drow .nm2{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.drow .nm2 small{ display:block; font-size:11.5px; color:#6B5A1E; font-weight:700 }
+.drow .big{ font-family:"Galmuri11",sans-serif; font-size:15px; white-space:nowrap }
+.drow .dd{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px }
+.drow .dd i{ height:14px; border:2px solid var(--ink); background:#fff }
+.drow .dd i.on{ background:var(--sun) }
+.drill .dempty{ font-size:13px; color:#6B5A1E; padding:12px 0 2px; font-weight:700 }
+@media (max-width:359px){ .dhead, .drow{ grid-template-columns:22px minmax(0,1fr) auto 74px; gap:5px } }
+
 /* ── 홈 요약 ── */
 .hrow{ display:grid; grid-template-columns:auto 1fr auto; gap:4px 9px; align-items:center;
        padding:11px 0; border-top:2px dashed var(--grid); cursor:pointer }
@@ -463,6 +490,17 @@ body.onb-on .wrap{ padding-bottom:230px }
         <span class="vt" id="voice-t"></span>
         <span class="vw" id="voice-w"></span>
       </button>
+      <section class="drill" id="drill" aria-label="테이크오프 훈련" hidden>
+        <h3>🏄 테이크오프 훈련</h3>
+        <div class="dsub" id="drill-sub"></div>
+        <button class="dbtn" type="button" id="drill-btn"></button>
+        <div class="dtabs" role="group" aria-label="순위 기준">
+          <button type="button" id="dt-streak" aria-pressed="true">🔥 연속</button>
+          <button type="button" id="dt-week" aria-pressed="false">📅 이번 주</button>
+        </div>
+        <div class="dhead"><span></span><span>이름</span><span></span><span class="dd" id="dd-head"></span></div>
+        <div id="drill-list"></div>
+      </section>
       <div class="grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
       <details class="px sand fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
         <div id="bld-home" style="margin-top:8px"></div>
@@ -1972,7 +2010,7 @@ const setTab = t => { state.tab = t;
   ['home','ride','stay','bolt','town','cam','me'].forEach(k=>{
     const btn = $('t-'+k); if(btn) btn.setAttribute('aria-pressed', String(t===k));
     $('pane-'+k).hidden = t!==k; });
-  if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); }
+  if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); }
   layoutHead();
   if(t==='me') renderBuilder();
   if(t==='cam') renderCam();
@@ -2063,6 +2101,8 @@ function renderTodo(){
        한 번이라도 손댔는지를 따로 남긴다. */
     [!dressed(), '🙂', '캐릭터부터 꾸며보세요', '차·숙소 글 옆에 이 모습으로 서요',
       ()=>{ const d = document.querySelector('#pane-home details'); d.open = true; d.scrollIntoView({block:'start',behavior:'smooth'}); }],
+    [drillOk && !(dSet[ME.id]||new Set()).has(dayOf(0)), '🏄', '오늘 테이크오프 훈련 체크', '하루 한 번 — 동기들과 연속일수를 겨뤄요',
+      ()=>{ $('drill').scrollIntoView({block:'center',behavior:'smooth'}); }],
     [!mine, '📍', '바다에 나오셨다면 체크인', '누가 있는지 서로 보이게 — 4시간 뒤 저절로 풀려요',
       ()=>{ $('now').scrollIntoView({ block:'center', behavior:'smooth' }); $('now-btn').focus({preventScroll:true}); }],
     [!upBolt, '⚡', '서핑번개를 열어보세요', '시간과 바다만 정하면 사람이 모입니다', ()=>setTab('bolt')],
@@ -2075,8 +2115,88 @@ function renderTodo(){
   el.onclick = hit[4];
 }
 
+/* ── 테이크오프 훈련 체크 ─────────────────────────────────────
+   하루 한 번 누르면 한 줄. 연속일수는 '오늘 안 눌렀어도 어제까지 이어졌으면' 살아 있다 —
+   하루가 끝나기 전에 0 으로 떨어지면 저녁에 보는 사람은 늘 꼴찌로 시작한다. */
+const dSet = {};                               // user_id → Set(day)
+let drillRows = [], drillOk = true, drillView = 'streak';
+const dayOf = n => daysAgo(n);
+function drillIndex(){
+  Object.keys(dSet).forEach(k=>delete dSet[k]);
+  drillRows.forEach(r=>{ if(isTest(r.user_id)) return; (dSet[r.user_id] ||= new Set()).add(r.day); });
+}
+function drillStat(id){
+  const S = dSet[id] || new Set();
+  let n = S.has(dayOf(0)) ? 0 : 1, streak = 0;
+  if(!S.has(dayOf(n))) return { streak:0, week:[...Array(7)].map((_,i)=>S.has(dayOf(6-i))).filter(Boolean).length, total:S.size, S };
+  while(S.has(dayOf(n))){ streak++; n++; }
+  return { streak, week:[...Array(7)].map((_,i)=>S.has(dayOf(6-i))).filter(Boolean).length, total:S.size, S };
+}
+async function pullDrills(){
+  try{ drillRows = await api(`drills?select=user_id,name,day&day=gte.${dayOf(120)}&order=day.desc&limit=5000`); drillOk = true; }
+  catch(e){ if(e.code==='notable') drillOk = false; }
+  renderDrill();
+}
+function renderDrill(){
+  const box = $('drill'); if(!box) return;
+  if(!drillOk){ box.hidden = true; return; }        // 표가 없으면 카드째 숨긴다 — 눌러도 안 되는 버튼을 두지 않는다
+  box.hidden = false;
+  drillIndex();
+  const me = drillStat(ME.id), did = (dSet[ME.id]||new Set()).has(dayOf(0));
+  const btn = $('drill-btn');
+  btn.className = 'dbtn' + (did ? ' done' : '');
+  btn.textContent = did ? '✅ 오늘 했어요 (누르면 취소)' : '오늘 테이크오프 했어요';
+  btn.setAttribute('aria-pressed', String(did));
+  $('drill-sub').textContent = me.streak
+    ? `🔥 ${me.streak}일 연속 · 이번 주 ${me.week}/7${did ? '' : ' — 오늘 하면 이어져요'}`
+    : (me.total ? '연속이 끊겼어요 — 오늘 다시 시작해요' : '땅에서 10번, 오늘부터 시작해요');
+  const DAYS = [...Array(7)].map((_,i)=>dayOf(6-i));
+  $('dd-head').innerHTML = DAYS.map(d=>`<span>${DOW[new Date(d+'T00:00').getDay()]}</span>`).join('');
+  $('dt-streak').setAttribute('aria-pressed', String(drillView==='streak'));
+  $('dt-week').setAttribute('aria-pressed', String(drillView==='week'));
+  const name = id => (state.town||[]).find(x=>x.id===id)?.name || drillRows.find(r=>r.user_id===id)?.name || id;
+  const ids = Object.keys(dSet).map(id=>({ id, ...drillStat(id) })).filter(x=>x.total);
+  ids.sort((a,b)=> drillView==='week'
+    ? (b.week-a.week) || (b.streak-a.streak) || (b.total-a.total)
+    : (b.streak-a.streak) || (b.week-a.week) || (b.total-a.total));
+  const list = $('drill-list');
+  if(!ids.length){ list.innerHTML = '<div class="dempty">아직 아무도 없어요 — 첫 번째가 되어보세요</div>'; return; }
+  let rank = 0, prev = null;
+  ids.forEach((x,i)=>{ const key = drillView==='week' ? x.week : x.streak; if(key !== prev){ rank = i+1; prev = key; } x.rank = rank; });
+  const TOP = 8, shown = ids.slice(0,TOP);
+  const mineRow = ids.find(x=>x.id===ME.id);
+  if(mineRow && !shown.includes(mineRow)) shown.push(mineRow);
+  /* 동률이 여럿이면 메달을 나눠 주지 않는다 — 연속 1일이 여섯이면 동메달 여섯 개가 된다. */
+  const keyOf = x => drillView==='week' ? x.week : x.streak;
+  const medal = x => x.rank<=3 && keyOf(x)>=2 && ids.filter(y=>y.rank===x.rank).length===1 ? ['🥇','🥈','🥉'][x.rank-1] : x.rank;
+  list.innerHTML = shown.map(x=>`<div class="drow ${x.id===ME.id?'me':''}">
+      <span class="rk">${medal(x)}</span>
+      <span class="nm2">${esc(name(x.id))}<small>${drillView==='week' ? `연속 ${x.streak}일` : `이번 주 ${x.week}/7`} · 누적 ${x.total}일</small></span>
+      <span class="big">${drillView==='week' ? `${x.week}/7` : `🔥${x.streak}`}</span>
+      <span class="dd" aria-hidden="true">${DAYS.map(d=>`<i class="${x.S.has(d)?'on':''}"></i>`).join('')}</span></div>`).join('')
+    + (ids.length > TOP ? `<div class="dempty">${ids.length}명 중 위 ${TOP}명${mineRow && !ids.slice(0,TOP).includes(mineRow) ? ' + 나' : ''}</div>` : '');
+}
+$('drill-btn').onclick = async ()=>{
+  const day = dayOf(0), id = `${ME.id}|${day}`, did = (dSet[ME.id]||new Set()).has(day);
+  const back = drillRows;
+  drillRows = did ? drillRows.filter(r=>!(r.user_id===ME.id && r.day===day))
+                  : [{ user_id:ME.id, name:ME.name, day }, ...drillRows];
+  renderDrill(); renderTodo();
+  try{
+    if(did) await api(`drills?id=eq.${encodeURIComponent(id)}`, { method:'DELETE' });
+    else { await api('drills', { method:'POST', body:JSON.stringify({ id, user_id:ME.id, name:ME.name, day }) });
+      navigator.vibrate?.(20); const s = drillStat(ME.id).streak; toast(s > 1 ? `🔥 ${s}일 연속!` : '오늘 훈련 완료'); }
+  }catch(e){
+    if(!did && e.status === 409) return;            // 다른 폰에서 이미 눌렀다 — 그대로 둔다
+    drillRows = back; renderDrill(); renderTodo();
+    toast(e.code==='notable' ? '훈련 표가 아직 없어요 (supabase-drills.sql)' : '저장하지 못했어요 · 신호 확인');
+  }
+};
+$('dt-streak').onclick = ()=>{ drillView = 'streak'; renderDrill(); };
+$('dt-week').onclick   = ()=>{ drillView = 'week';   renderDrill(); };
+
 function renderHome(){
-  renderTodo(); renderVoice(); startVoice();
+  renderTodo(); renderVoice(); startVoice(); renderDrill();
   const box = $('home-sum'); if(!box) return;
   const up = a => (a||[]).filter(x=>x.created_at || true);
   const rides = (state.rides||[]).filter(r=>!isGone(r,'ride')).slice(0,2);
