@@ -1129,7 +1129,8 @@ function renderNow(){
   { const c = state.cond || {}, n1 = v => (v==null||isNaN(v)) ? '–' : (+v).toFixed(1);
     $('nowbar-t').innerHTML = `📍 <b>${esc(beach)}</b> · ${here.length ? `<b>${here.length}명</b>` : '아무도 없어요'}`
       + (c.temp!=null ? ` · ${n1(c.temp)}° ${WX[c.wx]||''}` : '')
-      + (c.h!=null ? ` · 파고 ${n1(c.h)}m` : ''); }
+      + (c.h!=null ? ` · 파고 ${n1(c.h)}m` : '')
+      + (c.tide ? ` · 물 ${c.tide.dir}` : ''); }
   $('now-t').innerHTML = here.length
     ? `지금 <b>${esc(beach)}</b>에 <b>${here.length}명</b>`
     : `지금 <b>${esc(beach)}</b>엔 아무도 없어요`;
@@ -1156,6 +1157,26 @@ const WX = { 0:'맑음', 1:'대체로 맑음', 2:'구름 조금', 3:'흐림', 45
   51:'이슬비', 53:'이슬비', 55:'이슬비', 61:'비', 63:'비', 65:'큰비', 71:'눈', 73:'눈', 75:'큰눈',
   80:'소나기', 81:'소나기', 82:'강한 소나기', 95:'뇌우', 96:'뇌우', 99:'뇌우' };
 let condCache = {};
+/* ── 물때 ──
+   Open-Meteo 의 시간별 해면 높이에서 극값을 찾아 만조·간조를 뽑는다.
+   국립해양조사원 공식값과 10~30분·수 cm 차이가 날 수 있다 — 동해는 조차가 작아서
+   (오늘 낙산 기준 28cm 안팎) 높이보다 '지금 차는지 빠지는지'가 실제로 쓰인다. */
+function tideOf(h){
+  if(!h || !h.time || !h.sea_level_height_msl) return null;
+  const t = h.time, v = h.sea_level_height_msl, ev = [];
+  for(let i=1;i<v.length-1;i++){
+    if(v[i]==null || v[i-1]==null || v[i+1]==null) continue;
+    if(v[i] > v[i-1] && v[i] >= v[i+1]) ev.push({ type:'만조', t:t[i], h:v[i] });
+    if(v[i] < v[i-1] && v[i] <= v[i+1]) ev.push({ type:'간조', t:t[i], h:v[i] });
+  }
+  const now = Date.now();
+  const next = ev.find(e=>new Date(e.t).getTime() > now);
+  /* 지금 방향 — 다음 극값이 만조면 차는 중, 간조면 빠지는 중 */
+  const dir = next ? (next.type === '만조' ? '차는 중' : '빠지는 중') : '';
+  return next ? { dir, type:next.type, at:next.t.slice(11,16), h:next.h } : null;
+}
+const tideLine = tp => !tp ? ''
+  : `물 ${tp.dir} · ${tp.type} ${hLabel(tp.at)}`;
 async function pullCond(){
   const box = $('cond'); if(!box) return;
   const [n,,, lat, lon] = seaOf(mySea());
@@ -1165,10 +1186,13 @@ async function pullCond(){
   try{
     const [f, m] = await Promise.all([
       fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&timezone=Asia%2FSeoul`).then(r=>r.json()),
-      fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&current=wave_height,wave_period,sea_surface_temperature&timezone=Asia%2FSeoul`).then(r=>r.json()),
+      fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}`
+        + `&current=wave_height,wave_period,sea_surface_temperature`
+        + `&hourly=sea_level_height_msl&forecast_days=2&timezone=Asia%2FSeoul`).then(r=>r.json()),
     ]);
     const v = { temp:f.current?.temperature_2m, wx:f.current?.weather_code,
-                sst:m.current?.sea_surface_temperature, h:m.current?.wave_height, p:m.current?.wave_period };
+                sst:m.current?.sea_surface_temperature, h:m.current?.wave_height, p:m.current?.wave_period,
+                tide: tideOf(m.hourly) };
     condCache[key] = { at:Date.now(), v }; state.cond = v; paintCond(v);
     renderNow();                                  // 한 줄 바가 날씨를 늦게 받는다 — 오면 바로 반영
     if(state.tab === 'town') layoutTown();
@@ -1177,14 +1201,16 @@ async function pullCond(){
 function paintCond(v){
   const num = (x, d=1) => (x==null || isNaN(x)) ? '–' : (+x).toFixed(d);
   const body = `<b>${num(v.temp)}°</b> ${WX[v.wx] || ''} · 수온 <b>${num(v.sst)}°</b>`
-    + ` · 파도 <b>${num(v.h)}m</b> / <b>${num(v.p)}초</b>`;
-  const src = `<span class="src">Open-Meteo 격자값 · 15분마다 갱신</span>`;
+    + ` · 파도 <b>${num(v.h)}m</b> / <b>${num(v.p)}초</b>`
+    + (v.tide ? `<br>🌙 물 <b>${v.tide.dir}</b> · 다음 <b>${v.tide.type} ${hLabel(v.tide.at)}</b>` : '');
+  const src = `<span class="src">Open-Meteo 격자값 · 15분마다 갱신 · 물때는 조위 모델이라 공식값과 10~30분 차이 가능</span>`;
   if($('cond')) $('cond').innerHTML = body + src;
   /* 캠에서는 어느 바다 값인지가 헷갈리기 쉽다 — 해변 이름을 같이 적는다 */
   if($('cam-cond')) $('cam-cond').innerHTML =
     `<span class="bn">🌊 지금 ${esc(mySea())}</span>`
     + `기온 <b>${num(v.temp)}°</b> · ${WX[v.wx] || '–'} · 수온 <b>${num(v.sst)}°</b><br>`
-    + `파고 <b>${num(v.h)}m</b> · 파도 간격 <b>${num(v.p)}초</b>` + src;
+    + `파고 <b>${num(v.h)}m</b> · 파도 간격 <b>${num(v.p)}초</b>`
+    + (v.tide ? `<br>물때 <b>${v.tide.dir}</b> · 다음 <b>${v.tide.type}</b> ${hLabel(v.tide.at)}` : '') + src;
 }
 
 $('now-btn').onclick = async ()=>{
