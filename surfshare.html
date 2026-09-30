@@ -165,6 +165,16 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .todo span{ flex:1; line-height:1.4 } .todo span small{ display:block; font-size:12px; font-weight:600; color:#6B5A1E; margin-top:2px }
 .todo b{ font-size:16px; font-family:sans-serif }
 
+/* ── 코치님들의 목소리 ──
+   단톡방에 흩어져 있던 수업 이야기를 한 줄씩 돌린다. 스크롤을 한참 올려야
+   나오던 말들이라, 대부분 다시 안 읽힌다. */
+.voice{ display:block; width:100%; text-align:left; margin-top:12px; cursor:pointer;
+        background:#14304F; color:#EAF6FF; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink);
+        padding:13px 14px; font-family:inherit }
+.voice .vh{ display:block; font-family:"Galmuri11",sans-serif; font-size:12px; font-weight:800; color:#8FC6EC; letter-spacing:.02em }
+.voice .vt{ display:block; font-size:14.5px; line-height:1.75; margin-top:7px; word-break:keep-all }
+.voice .vw{ display:block; font-size:12.5px; color:#9FC4E4; margin-top:7px; font-weight:700 }
+
 /* ── 홈 요약 ── */
 .hrow{ display:grid; grid-template-columns:auto 1fr auto; gap:4px 9px; align-items:center;
        padding:11px 0; border-top:2px dashed var(--grid); cursor:pointer }
@@ -447,6 +457,11 @@ body.onb-on .wrap{ padding-bottom:230px }
         <button class="btn sm ghost" id="out" title="나가기" aria-label="나가기">↩</button>
       </div>
       <button type="button" class="todo" id="todo" hidden></button>
+      <button type="button" class="voice" id="voice" hidden>
+        <span class="vh">🎙 코치님들의 목소리</span>
+        <span class="vt" id="voice-t"></span>
+        <span class="vw" id="voice-w"></span>
+      </button>
       <div class="grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
       <details class="px sand fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
         <div id="bld-home" style="margin-top:8px"></div>
@@ -1938,6 +1953,57 @@ TABS.forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
 /* ── 홈 ───────────────────────────────────────────────────
    탭을 여섯으로 나눴더니 "오늘 뭐가 있나"를 보려면 네 번 눌러야 했다.
    홈은 그걸 한 화면에 모은다 — 요약만, 자세한 건 그 탭에서. */
+/* ── 코치님들의 목소리 ────────────────────────────────────
+   2026 가을학기 6기 단톡방(8/31~9/30)에서 이승대 코치·Rio 코치가 남긴 수업 이야기를
+   추려 한 줄씩 돌린다. 개인별 교정(누구는 앞발이 어떻고)은 일반화하거나 뺐다 —
+   남의 자세 지적이 마을 화면에 돌아다닐 이유가 없다. */
+const VOICES = [
+  ['파도를 볼 때는 원운동을 뚫고 중력을 이겨내며 솟구쳐 오르는 힘 — 바텀 파워존을 볼 수 있어야 해요. 그 에너지가 파도를 고르는 요령입니다.','이승대 코치'],
+  ['피리어드(파주기)가 길면 그만큼 파도가 커집니다. 6초와 8초는 수심 아래 원운동이 다섯 배쯤 차이 나요.','이승대 코치'],
+  ['동해안은 파주기 7~9초가 좋고, 13초가 넘어가면 백워시가 심해집니다.','이승대 코치'],
+  ['모든 것은 적당한 것이 좋습니다. 파주기가 길다고 다 좋은 것만은 아니에요.','이승대 코치'],
+  ['새벽이 좋은 건 대지와 바다 온도가 비슷해 바람 없이 파도의 에너지만 느낄 수 있기 때문이에요.','이승대 코치'],
+  ['차트에서는 새벽과 해 질 때가 평균적으로 서핑하기 좋은 컨디션이 찾아옵니다.','이승대 코치'],
+  ['저번 주 수업 내용 중 푸시업의 중요성! 잊지 마세요.','이승대 코치'],
+  ['앞발이 앞쪽을 향해 있다면 지상 연습으로 지금 잡아야 합니다. 물에서는 수정이 오래 걸려요.','이승대 코치'],
+  ['글라이딩할 때 트림 — 보드 앞뒤로 움직이며 중심을 잡는 것도 중요합니다.','이승대 코치'],
+  ['패들링할 때 몸이, 특히 다리가 흔들리지 않게. 테일까지 힘이 전달돼야 해요.','이승대 코치'],
+  ['테이크오프 이후에는 상체를 세우려고 노력해 보세요.','이승대 코치'],
+  ['본인의 뉴트럴 스탠스를 먼저 찾고, 그다음 앞발 중심으로 스탠드업 합니다.','이승대 코치'],
+  ['턴이 안 걸리면 풋 포지션을 테일 쪽으로. 레일 전체를 물이 감싸면 턴이 안 됩니다.','이승대 코치'],
+  ['서핑의 룰은 파도를 캐치한 사람이 우선입니다. 탄 사람이 피해가겠지, 라는 생각은 버려야 해요.','이승대 코치'],
+  ['운전에 방어운전이 있듯 길을 예측하는 눈을 길러야 합니다. 실수했으면 먼저 사과하는 문화도 중요하고요.','이승대 코치'],
+  ['사고는 한순간에 찾아옵니다. 다들 안전 서핑!','이승대 코치'],
+  ['서프스케이트는 시간 날 때마다 할 예정이니 바닥이 평평한 신발은 늘 챙겨오세요.','이승대 코치'],
+  ['파도의 추력과 패들링의 방향이 중요합니다. 서핑에서는 트림, 유체역학에서는 동압력이라고 불러요.','이승대 코치'],
+  ['테이크오프에서 신경 쓸 것 — 시선, 푸시할 때 팔 위치, 앞뒤 발의 위치와 각도, 무릎 방향, 중심 이동, BBP, 리드암.','Rio 코치'],
+  ['앞발 45도, 뒷발 45~90도 사이. 뒷발이 90도를 넘어가면 중심이 뒤로 빠집니다.','Rio 코치'],
+  ['무릎을 굽힐 때 두 무릎이 모두 전방을 향하게. 뒷발이 너무 틀어지면 쩍벌이 됩니다.','Rio 코치'],
+  ['시선 → 상체 회전 → 체중 이동 → 보드의 진행 방향. 이게 하나로 이어집니다.','Rio 코치'],
+  ['BBP — 몸의 중심이 보드에서 벗어나지 않게. 엉덩이와 머리가 보드 밖으로 나가지 않도록.','Rio 코치'],
+  ['테이크오프 연습은 5번이나 10번씩 세트로, 운동하듯 연속해서 하세요.','Rio 코치'],
+  ['스탠드업 뒤 낮은 자세로 1~2초 유지하고, 천천히 일어나면서 앞발 뒷발로 체중을 옮겨보세요.','Rio 코치'],
+  ['앞중심은 상체가 아니라 하체로 — 골반과 앞발 허벅지로 중심을 잡습니다.','Rio 코치'],
+  ['낮은 자세에서 천천히 일어나며 앞쪽 허벅지에 힘이 들어가게 하면 됩니다.','Rio 코치'],
+  ['파도 길이가 길다고 무조건 좋지는 않아요. 전체가 한 번에 부서지면(덤프) 탈 경사면이 사라집니다.','Rio 코치'],
+  ['피리어드가 길수록 같은 크기라도 에너지가 좋고, 라인업 나갈 때도 좋습니다.','Rio 코치'],
+  ['테이크오프 연습은 신발 벗고 하세요.','Rio 코치'],
+  ['파도 좋을 때 일출 서핑 멤버 모아서 같이 타세요.','Rio 코치'],
+];
+let vIdx = Math.floor(Date.now()/864e5) % VOICES.length, vTimer = 0;
+function renderVoice(step){
+  const el = $('voice'); if(!el) return;
+  if(step) vIdx = (vIdx + 1) % VOICES.length;
+  const [txt, who] = VOICES[vIdx];
+  el.hidden = false;
+  $('voice-t').textContent = txt;
+  $('voice-w').textContent = `— ${who}  ·  ${vIdx+1}/${VOICES.length}`;
+}
+$('voice').onclick = ()=>{ renderVoice(true); clearInterval(vTimer); startVoice(); };
+function startVoice(){ clearInterval(vTimer);
+  /* 읽는 중에 넘어가면 짜증난다. 12초는 한 줄을 두 번 읽을 만한 시간이다. */
+  vTimer = setInterval(()=>{ if(!document.hidden && state.tab === 'home') renderVoice(true); }, 12000); }
+
 /* 다음에 할 일 하나 — 가장 앞선 것만 보여준다. 목록으로 주면 아무것도 안 한다. */
 const dressed = () => { try{ return localStorage.getItem('lineup.share.dressed') === '1'; }catch(e){ return true; } };
 function renderTodo(){
@@ -1963,7 +2029,7 @@ function renderTodo(){
 }
 
 function renderHome(){
-  renderTodo();
+  renderTodo(); renderVoice(); startVoice();
   const box = $('home-sum'); if(!box) return;
   const up = a => (a||[]).filter(x=>x.created_at || true);
   const rides = (state.rides||[]).filter(r=>!isGone(r,'ride')).slice(0,2);
