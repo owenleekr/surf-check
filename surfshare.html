@@ -216,6 +216,12 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .camwrap .cover small{ font-size:11.5px; color:var(--sand); line-height:1.55 }
 .camwrap .live{ position:absolute; left:9px; top:9px; background:#C2303A; color:#fff; font-size:11px; font-weight:800;
                 padding:2px 7px; border:2px solid var(--ink) }
+/* 캠에서 해변을 바꾸면 그 바다 값도 같이 바뀌어야 한다. 영상만 보고는
+   파고가 몇 미터인지, 수온이 몇 도인지 알 수 없다. */
+.camcond{ font-size:13.5px; line-height:1.75; color:var(--ink) }
+.camcond b{ font-size:15px }
+.camcond .bn{ display:block; font-family:"Galmuri11",sans-serif; font-weight:800; font-size:14px; margin-bottom:3px }
+.camcond .src{ display:block; font-size:11.5px; color:var(--ink2); margin-top:4px }
 .cam-more{ display:flex; gap:6px; flex-wrap:wrap; font-size:12px; margin-top:9px }
 .cam-more a{ border:3px solid var(--ink); padding:5px 9px; text-decoration:none; background:var(--paper);
              box-shadow:2px 2px 0 var(--ink); color:var(--ink) }
@@ -529,6 +535,9 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap">
           <select id="cam-beach" aria-label="캠 해변" style="flex:1 1 140px"></select>
           <button class="btn sm ghost" type="button" id="cam-off" style="flex:0 0 auto">끄기</button>
+        </div>
+        <div class="px" id="cam-cond-box" style="margin-top:9px">
+          <div class="camcond" id="cam-cond"></div>
         </div>
         <div class="cam-more">
           <a id="cam-link" href="#" target="_blank" rel="noopener">↗ WSB FARM에서 크게</a>
@@ -1136,7 +1145,9 @@ function renderNow(){
     : (here.length ? '' : '바다 도착하면 체크인하세요. 4시간 뒤 저절로 풀립니다.');
   const atHere = mine && mine.beach === beach;
   $('now-btn').disabled = false;
-  $('now-btn').textContent = atHere ? '나왔어요' : mine ? `📍 ${beach}으로 옮기기` : '📍 체크인';
+  /* 캠에서 다른 바다를 보다 오면 고른 해변이 바뀌어 있다(둘이 같은 값을 쓴다).
+     버튼에 해변 이름을 박아 둬야 엉뚱한 바다에 체크인하지 않는다. */
+  $('now-btn').textContent = atHere ? '나왔어요' : mine ? `📍 ${beach}으로 옮기기` : `📍 ${beach} 체크인`;
   $('now-btn').className = 'btn ' + (atHere ? 'ghost' : 'blue');
 }
 /* 지금 그 바다가 어떤지 — 나갈지 말지는 이 다섯 숫자로 거의 정해진다.
@@ -1164,11 +1175,16 @@ async function pullCond(){
   }catch(e){ box.innerHTML = '<span class="src">바다 상태를 못 읽었어요 · 신호 확인</span>'; }
 }
 function paintCond(v){
-  const box = $('cond'); if(!box) return;
   const num = (x, d=1) => (x==null || isNaN(x)) ? '–' : (+x).toFixed(d);
-  box.innerHTML = `<b>${num(v.temp)}°</b> ${WX[v.wx] || ''} · 수온 <b>${num(v.sst)}°</b>`
-    + ` · 파도 <b>${num(v.h)}m</b> / <b>${num(v.p)}초</b>`
-    + `<span class="src">Open-Meteo 격자값 · 15분마다 갱신</span>`;
+  const body = `<b>${num(v.temp)}°</b> ${WX[v.wx] || ''} · 수온 <b>${num(v.sst)}°</b>`
+    + ` · 파도 <b>${num(v.h)}m</b> / <b>${num(v.p)}초</b>`;
+  const src = `<span class="src">Open-Meteo 격자값 · 15분마다 갱신</span>`;
+  if($('cond')) $('cond').innerHTML = body + src;
+  /* 캠에서는 어느 바다 값인지가 헷갈리기 쉽다 — 해변 이름을 같이 적는다 */
+  if($('cam-cond')) $('cam-cond').innerHTML =
+    `<span class="bn">🌊 지금 ${esc(mySea())}</span>`
+    + `기온 <b>${num(v.temp)}°</b> · ${WX[v.wx] || '–'} · 수온 <b>${num(v.sst)}°</b><br>`
+    + `파고 <b>${num(v.h)}m</b> · 파도 간격 <b>${num(v.p)}초</b>` + src;
 }
 
 $('now-btn').onclick = async ()=>{
@@ -1211,9 +1227,11 @@ function camPlay(name){
   } else fail('이 브라우저가 실시간 영상을 못 열어요.');
 }
 function renderCam(){
+  pullCond();                       // 탭에 들어오면 그 바다 값을 채운다(15분 캐시라 대개 즉시)
   const sel = $('cam-beach');
   if(!sel.options.length){ sel.innerHTML = SEAS.map(([n,c])=>`<option value="${n}">${n}${c?'':' (캠 없음)'}</option>`).join('');
-    sel.value = mySea(); sel.onchange = ()=>{ setSea(sel.value); camStop(); renderCam(); }; }
+    sel.value = mySea();
+    sel.onchange = ()=>{ setSea(sel.value); camStop(); renderCam(); pullCond(); renderNow(); }; }
   else sel.value = mySea();
   const [n, cam, url] = seaOf(mySea());
   $('cam-link').href = CAM_URL(cam || 'YNS1');
