@@ -183,6 +183,34 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
   border:4px solid var(--ink); background:var(--sun); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
 .drill .dbtn.done{ background:var(--mint) }
 .drill .dbtn:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink) }
+/* 내 기록 — 최근 7일을 날짜가 적힌 칸으로. 점 일곱 개로는 어느 날 했는지 알 수 없었다. */
+.dstrip{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin-top:26px }
+.dcell{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:62px;
+  border:3px solid var(--ink); background:#fff; font-weight:800; position:relative }
+.dcell small{ font-size:11px; color:#6B5A1E; line-height:1 }
+.dcell b{ font-family:"Galmuri11",sans-serif; font-size:15px; line-height:1.2 }
+.dcell i{ font-style:normal; font-family:sans-serif; font-size:15px; line-height:1; height:17px }
+.dcell.sun small{ color:#C0392B } .dcell.sat small{ color:#2B6CB0 }
+.dcell.on{ background:var(--sun) } .dcell.on i{ color:var(--ink) }
+.dcell:not(.on) i{ color:#C9BE97 }
+.dcell.today{ box-shadow:0 0 0 3px #FFF9E6, 0 0 0 6px var(--ink); z-index:1 }
+.dcell.today::before{ content:"오늘"; position:absolute; top:-21px; left:50%; transform:translateX(-50%);
+  background:var(--ink); color:#fff; font-size:10px; padding:1px 5px; white-space:nowrap }
+.dcell.stamp i{ animation:stamp .45s cubic-bezier(.2,1.6,.4,1) }
+@keyframes stamp{ 0%{ transform:scale(2.6) rotate(-14deg); opacity:0 } 100%{ transform:scale(1) rotate(0); opacity:1 } }
+.dlegend{ display:flex; justify-content:space-between; font-size:11.5px; color:#6B5A1E; margin-top:7px; font-weight:700 }
+.dmonth{ margin-top:10px; border-top:2px dashed var(--grid); padding-top:8px }
+.dmonth summary{ cursor:pointer; font-size:13.5px; font-weight:800; min-height:36px; display:flex; align-items:center }
+.dmgrid{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; margin-top:8px }
+.dmgrid .h{ text-align:center; font-size:11px; font-weight:800; color:#6B5A1E; padding-bottom:2px }
+.dmgrid .h.sun{ color:#C0392B } .dmgrid .h.sat{ color:#2B6CB0 }
+.dmgrid .d{ aspect-ratio:1; min-height:34px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  border:2px solid var(--grid); font-size:12px; font-weight:800; background:#fff; line-height:1.1 }
+.dmgrid .d em{ font-style:normal; font-family:sans-serif; font-size:11px; height:12px }
+.dmgrid .d.on{ background:var(--sun); border-color:var(--ink) }
+.dmgrid .d.fut{ opacity:.35 }
+.dmgrid .d.today{ border:3px solid var(--ink) }
+.dmgrid .d.blank{ border:0; background:none }
 .dtabs{ display:flex; gap:6px; margin-top:14px }
 .dtabs button{ flex:1; min-height:38px; font-family:inherit; font-size:13px; font-weight:800; border:3px solid var(--ink);
   background:#fff; cursor:pointer }
@@ -199,6 +227,8 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .drow .dd{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px }
 .drow .dd i{ height:14px; border:2px solid var(--ink); background:#fff }
 .drow .dd i.on{ background:var(--sun) }
+.drow .dd i:last-child{ outline:2px solid var(--ink); outline-offset:1px }   /* 맨 오른쪽 칸이 오늘 */
+.dhead .dd span:last-child{ color:var(--ink); font-weight:800; text-decoration:underline; text-underline-offset:2px }
 .drill .dempty{ font-size:13px; color:#6B5A1E; padding:12px 0 2px; font-weight:700 }
 @media (max-width:359px){ .dhead, .drow{ grid-template-columns:22px minmax(0,1fr) auto 74px; gap:5px } }
 
@@ -494,9 +524,12 @@ body.onb-on .wrap{ padding-bottom:230px }
         <h3>🏄 테이크오프 훈련</h3>
         <div class="dsub" id="drill-sub"></div>
         <button class="dbtn" type="button" id="drill-btn"></button>
+        <div class="dstrip" id="dstrip" role="img" aria-label="최근 7일 훈련 기록"></div>
+        <div class="dlegend"><span>🟨 한 날</span><span>최근 7일 · 오늘까지</span></div>
+        <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력 보기</summary><div class="dmgrid" id="dmgrid"></div></details>
         <div class="dtabs" role="group" aria-label="순위 기준">
           <button type="button" id="dt-streak" aria-pressed="true">🔥 연속</button>
-          <button type="button" id="dt-week" aria-pressed="false">📅 이번 주</button>
+          <button type="button" id="dt-week" aria-pressed="false">📅 최근 7일</button>
         </div>
         <div class="dhead"><span></span><span>이름</span><span></span><span class="dd" id="dd-head"></span></div>
         <div id="drill-list"></div>
@@ -2119,7 +2152,7 @@ function renderTodo(){
    하루 한 번 누르면 한 줄. 연속일수는 '오늘 안 눌렀어도 어제까지 이어졌으면' 살아 있다 —
    하루가 끝나기 전에 0 으로 떨어지면 저녁에 보는 사람은 늘 꼴찌로 시작한다. */
 const dSet = {};                               // user_id → Set(day)
-let drillRows = [], drillOk = true, drillView = 'streak';
+let drillRows = [], drillOk = true, drillView = 'streak', drillStampDay = '';
 const dayOf = n => daysAgo(n);
 function drillIndex(){
   Object.keys(dSet).forEach(k=>delete dSet[k]);
@@ -2148,10 +2181,25 @@ function renderDrill(){
   btn.textContent = did ? '✅ 오늘 했어요 (누르면 취소)' : '오늘 테이크오프 했어요';
   btn.setAttribute('aria-pressed', String(did));
   $('drill-sub').textContent = me.streak
-    ? `🔥 ${me.streak}일 연속 · 이번 주 ${me.week}/7${did ? '' : ' — 오늘 하면 이어져요'}`
+    ? `🔥 ${me.streak}일 연속 · 최근 7일 ${me.week}/7${did ? '' : ' — 오늘 하면 이어져요'}`
     : (me.total ? '연속이 끊겼어요 — 오늘 다시 시작해요' : '땅에서 10번, 오늘부터 시작해요');
   const DAYS = [...Array(7)].map((_,i)=>dayOf(6-i));
-  $('dd-head').innerHTML = DAYS.map(d=>`<span>${DOW[new Date(d+'T00:00').getDay()]}</span>`).join('');
+  const dow = d => new Date(d+'T00:00').getDay();
+  /* 내 기록 — 날짜를 그대로 적는다. 방금 누른 오늘 칸에만 도장이 찍힌다. */
+  const stampNow = drillStampDay === dayOf(0);
+  $('dstrip').innerHTML = DAYS.map(d=>{ const on = me.S.has(d), w = dow(d);
+    return `<div class="dcell${on?' on':''}${d===dayOf(0)?' today':''}${w===0?' sun':w===6?' sat':''}${stampNow&&on&&d===dayOf(0)?' stamp':''}">
+      <small>${DOW[w]}</small><b>${+d.slice(8)}</b><i>${on?'✔':'·'}</i></div>`; }).join('');
+  drillStampDay = '';
+  { const t = new Date(dayOf(0)+'T00:00'), y = t.getFullYear(), m = t.getMonth(), last = new Date(y, m+1, 0).getDate();
+    const first = new Date(y, m, 1).getDay(), mm = String(m+1).padStart(2,'0');
+    let cnt = 0, html = DOW.map((x,i)=>`<div class="h${i===0?' sun':i===6?' sat':''}">${x}</div>`).join('') + '<div class="d blank"></div>'.repeat(first);
+    for(let d = 1; d <= last; d++){ const key = `${y}-${mm}-${String(d).padStart(2,'0')}`, on = me.S.has(key), fut = key > dayOf(0);
+      if(on) cnt++;
+      html += `<div class="d${on?' on':''}${key===dayOf(0)?' today':''}${fut?' fut':''}"><span>${d}</span><em>${on?'✔':''}</em></div>`; }
+    $('dmgrid').innerHTML = html;
+    $('dmonth-sum').textContent = `📅 ${m+1}월 달력 · ${cnt}일 했어요`; }
+  $('dd-head').innerHTML = DAYS.map(d=>`<span>${DOW[dow(d)]}</span>`).join('');
   $('dt-streak').setAttribute('aria-pressed', String(drillView==='streak'));
   $('dt-week').setAttribute('aria-pressed', String(drillView==='week'));
   const name = id => (state.town||[]).find(x=>x.id===id)?.name || drillRows.find(r=>r.user_id===id)?.name || id;
@@ -2171,7 +2219,7 @@ function renderDrill(){
   const medal = x => x.rank<=3 && keyOf(x)>=2 && ids.filter(y=>y.rank===x.rank).length===1 ? ['🥇','🥈','🥉'][x.rank-1] : x.rank;
   list.innerHTML = shown.map(x=>`<div class="drow ${x.id===ME.id?'me':''}">
       <span class="rk">${medal(x)}</span>
-      <span class="nm2">${esc(name(x.id))}<small>${drillView==='week' ? `연속 ${x.streak}일` : `이번 주 ${x.week}/7`} · 누적 ${x.total}일</small></span>
+      <span class="nm2">${esc(name(x.id))}<small>${drillView==='week' ? `연속 ${x.streak}일` : `최근 7일 ${x.week}/7`} · 누적 ${x.total}일</small></span>
       <span class="big">${drillView==='week' ? `${x.week}/7` : `🔥${x.streak}`}</span>
       <span class="dd" aria-hidden="true">${DAYS.map(d=>`<i class="${x.S.has(d)?'on':''}"></i>`).join('')}</span></div>`).join('')
     + (ids.length > TOP ? `<div class="dempty">${ids.length}명 중 위 ${TOP}명${mineRow && !ids.slice(0,TOP).includes(mineRow) ? ' + 나' : ''}</div>` : '');
@@ -2181,6 +2229,7 @@ $('drill-btn').onclick = async ()=>{
   const back = drillRows;
   drillRows = did ? drillRows.filter(r=>!(r.user_id===ME.id && r.day===day))
                   : [{ user_id:ME.id, name:ME.name, day }, ...drillRows];
+  if(!did) drillStampDay = day;
   renderDrill(); renderTodo();
   try{
     if(did) await api(`drills?id=eq.${encodeURIComponent(id)}`, { method:'DELETE' });
