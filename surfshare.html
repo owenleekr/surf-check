@@ -251,11 +251,12 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .vp{ position:absolute; width:66px; display:flex; flex-direction:column; align-items:center; gap:3px;
      cursor:pointer; will-change:transform }
 .vp canvas{ width:66px; height:74px; image-rendering:pixelated }
-.vp[data-pet] .nm{ transform:translateX(20.3px) }
 .vp .nm{ font-size:11.5px; font-weight:800; background:rgba(255,249,230,.92); border:2px solid var(--ink);
          padding:1px 5px; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-.vp .bub{ position:absolute; bottom:84px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink);
-          padding:4px 7px; font-size:11px; line-height:1.35; width:max-content; max-width:158px; white-space:normal;
+/* 84px — 여기서 조금만 더 올리면 윗줄 이름표를 먹고, 내리면 자기 머리를 가린다.
+   재서 찾은 자리다. */
+.vp .bub{ position:absolute; bottom:86px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink);
+          padding:4px 7px; font-size:11px; line-height:1.35; width:max-content; max-width:118px; white-space:normal;
           word-break:keep-all; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2 }
 .vp .bub::after{ content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%);
                  border:4px solid transparent; border-top-color:var(--ink) }
@@ -1482,14 +1483,18 @@ function renderTown(){
   g.innerHTML = rows.map((x,i)=>{
     const mood = x.profile?.mood, z = zoneOf(x);
     return `<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"
-      data-where="${z}" data-ph="${(hsh(x.id)%628)/100}"${x.profile?.pet && x.profile.pet!=='none'?' data-pet':''}>
-      ${mood?`<div class="bub">${esc(mood)}</div>`:''}
+      data-where="${z}" data-ph="${(hsh(x.id)%628)/100}"${mood?' data-bub':''}>
+      ${mood?`<div class="bub">${esc(mood.length > 16 ? mood.slice(0,16) + '…' : mood)}</div>`:''}
       ${mood && x.id!==ME.id && state.reactsOk!==false ? reactBar('mood:'+x.id, x.id) : ''}
       <canvas data-av="${esc(x.id)}" data-anim></canvas><span class="nm">${esc(x.name)}</span></div>`;
   }).join('') || '<div class="empty" style="background:rgba(255,249,230,.9)">아직 아무도 없어요</div>';
   layoutTown();
+  /* 펫을 같이 그리면 스프라이트가 24칸 → 38칸이라 그림이 두 배 가까이 넓어진다.
+     옆 사람과 겹치고, 펫이 또 한 사람처럼 보여 몇 명인지도 헷갈렸다.
+     마을에서는 사람만 세운다 — 펫은 꾸미기와 대문 장면에서 볼 수 있다. */
   rows.forEach(x=>{ const cv = g.querySelector(`canvas[data-av="${CSS.escape(x.id)}"]`);
-    if(cv && typeof drawSpr==='function'){ const q = withLook(x.profile, x.name); drawSpr(cv, avatarRows(q), avatarTintOf(q, 0)); } });
+    if(cv && typeof drawSpr==='function'){ const q = withLook(x.profile, x.name);
+      drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); } });
   g.querySelectorAll('.vp').forEach(el=>el.onclick = e=>{
     if(e.target.closest('.rx')) return;
     const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
@@ -1536,34 +1541,55 @@ function layoutTown(){
   /* floor(370/76)=4 라 다섯 명이 두 줄로 갈라져 한 줄이 통째로 낭비됐다.
      반올림으로 한 명 더 태운다 — 흔들림이 있어서 조금 붙어도 줄로 안 보인다. */
   const per = Math.max(3, Math.round(W / 74));
-  const ROW = 82;
+  /* 칸 실제 높이 = 캐릭터 74 + 틈 3 + 이름표 18 ≈ 95. ROW 가 그보다 작으면
+     줄끼리 조금씩 겹쳐서 아랫줄 말풍선이 윗줄 이름표를 먹는다. */
+  const ROW = 96;
   /* width 를 따로 받는다 — 학교 앞 줄은 건물을 피해 왼쪽만 쓴다 */
+  /* 줄을 고르게 나눈다 — 앞줄만 빽빽하고 마지막 줄에 한 명 남으면 보기에도 나쁘고
+     겹침도 거기서 난다. 흔들림은 남는 자리만큼만 준다. 칸을 넘어가면 옆 사람과
+     겹쳐서 누가 누군지 안 보인다 — 자연스러움보다 알아보는 게 먼저다. */
+  /* 말풍선은 머리 위로 나가는데 줄 사이에 틈이 없어서 늘 윗줄 사람을 덮었다.
+     말풍선이 있는 줄은 위에 자리를 비워 준다. 줄마다 높이가 달라지므로
+     이 함수는 줄 수가 아니라 실제로 쓴 픽셀을 돌려준다. */
+  const BUB_ROOM = 46;
   const put = (list, top, useW)=>{
     const WW = useW || W;
-    list.forEach((el,i)=>{
-      const h = hsh2(el.dataset.id);
-      const row = Math.floor(i/per), col = i%per;
-      const n = Math.min(per, list.length - row*per), cell = WW/n;
-      /* 흔들림이 크면 이름표끼리 겹쳐서 누군지 못 읽는다. 자연스러움과 가독성 사이. */
-      const jx = ((h % 1000)/1000 - 0.5) * cell * 0.30;
-      const jy = ((Math.floor(h/1000) % 1000)/1000 - 0.5) * 18;
-      const x = Math.round(cell*(col + 0.5) - 33 + jx);
-      const y = Math.round(top + row*ROW + jy);
-      el.style.left = Math.max(2, Math.min(W - 68, x)) + 'px';
-      el.style.top  = y + 'px';
-      el.style.zIndex = 10 + Math.round(y/2);                // 아래쪽이 앞
-    });
-    return Math.max(list.length ? 1 : 0, Math.ceil(list.length/per));
+    const n = list.length; if(!n) return 0;
+    /* 한 줄 인원은 그 구역이 실제로 쓰는 폭으로 센다. 학교 앞은 건물 때문에 62%만
+       쓰는데 전체 폭으로 세는 바람에 네 명이 229px 에 밀려 들어가 겹쳤다. */
+    const perZ = Math.max(2, Math.round(WW / 74));
+    const rowsN = Math.ceil(n / perZ), perRow = Math.ceil(n / rowsN);
+    let y = top;
+    for(let r = 0; r < rowsN; r++){
+      const row = list.slice(r*perRow, (r+1)*perRow);
+      const room = row.some(el=>el.hasAttribute('data-bub')) ? BUB_ROOM : 0;
+      const cell = WW / row.length;
+      row.forEach((el,col)=>{
+        const h = hsh2(el.dataset.id);
+        const slack = Math.max(0, cell - 72);
+        const jx = ((h % 1000)/1000 - 0.5) * Math.min(16, slack);
+        const jy = ((Math.floor(h/1000) % 1000)/1000 - 0.5) * 10;
+        const x  = Math.round(cell*(col + 0.5) - 33 + jx);
+        const yy = Math.round(y + room + jy);
+        el.style.left = Math.max(2, Math.min(W - 68, x)) + 'px';
+        el.style.top  = yy + 'px';
+        /* 말풍선 있는 사람은 칸째로 위로. .vp 가 z-index 를 가지면 그 안의 말풍선은
+           밖으로 못 나가서, 아래 줄 사람이 위 줄 말풍선을 덮어버린다. */
+        el.style.zIndex = (el.hasAttribute('data-bub') ? 300 : 10) + Math.round(yy/2);
+      });
+      y += room + ROW;
+    }
+    return y - top;
   };
   const SKY = 26;
-  const seaRows   = put(sea,   SKY);
-  const beachTop  = SKY + seaRows*ROW + 16;
-  const beachRows = put(beach, beachTop);
-  const clsTop    = beachTop + beachRows*ROW + 14;
-  const clsRows   = put(cls,   clsTop, W * 0.62);           // 오른쪽은 학교 자리
+  const seaH     = put(sea,   SKY);
+  const beachTop = SKY + seaH + 16;
+  const beachH   = put(beach, beachTop);
+  const clsTop   = beachTop + beachH + 24;          // 학교 지붕과 해변 줄이 붙지 않게
+  const clsH     = put(cls,   clsTop, W * 0.62);    // 오른쪽은 학교 자리
   /* 높이는 vgrid 에 준다. village 에 min-height 를 주면 box-sizing:border-box 탓에
      패딩(위 10 + 아래 14)이 안쪽을 먹어 마지막 줄 이름표가 잘렸다. */
-  const H = clsTop + clsRows*ROW + 16;   // 흔들린 만큼 아래를 더 준다
+  const H = clsTop + clsH + 18;
   g.style.height = H + 'px';
   /* 배경이 쓸 경계 — 사람 발끝을 기준으로 물가와 학교 앞마당을 긋는다.
      사람만 내려가고 그림이 안 따라오면 모래 위에서 서핑하게 된다. */
@@ -1571,6 +1597,17 @@ function layoutTown(){
          shore: beachTop - 8,                     // 바다가 끝나는 선
          yard:  clsTop - 6,                       // 학교 앞마당이 시작되는 선
          hasSea: sea.length > 0 };
+  /* 말풍선은 칸 가운데 기준이라, 양 끝 사람 것은 마을 밖으로 나가 잘린다.
+     overflow:hidden 이라 그냥 사라진다 — 재서 안쪽으로 민다. */
+  const vr = v.getBoundingClientRect();
+  g.querySelectorAll('.vp .bub').forEach(bb=>{
+    bb.style.transform = 'translateX(-50%)';
+    const r = bb.getBoundingClientRect();
+    let dx = 0;
+    if(r.left < vr.left + 6) dx = (vr.left + 6) - r.left;
+    else if(r.right > vr.right - 6) dx = (vr.right - 6) - r.right;
+    if(dx) bb.style.transform = `translateX(calc(-50% + ${Math.round(dx)}px))`;
+  });
   drawVillage(performance.now());
 }
 
@@ -1641,7 +1678,7 @@ function drawVillage(t){
   /* 학교 — 사람 뒤에 선다. 지붕을 위로 올리면 해변 줄의 이름표를 덮으니
      앞마당 안에서만 그린다. 간판은 지붕이 아니라 벽에 붙인다. */
   /* 사람은 왼쪽 62%에 세웠으니 건물은 오른쪽에 붙인다. 겹치면 간판이 안 읽힌다. */
-  const bw = Math.min(150, W*0.40), bx = W - bw - 6, by = yard + 4, bh = Math.min(76, H - by - 4);
+  const bw = Math.min(150, W*0.40), bx = W - bw - 6, by = yard + 20, bh = Math.min(70, H - by - 4);
   if(bh > 26){
     for(let i=0;i<8;i++) R(bx + 8 - i, by + i, bw - 16 + i*2, 1, i===0 ? '#1B1B2F' : '#E05555');
     R(bx, by+8, bw, bh-8, '#FFF6DE');
