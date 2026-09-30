@@ -211,6 +211,10 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .dmgrid .d.fut{ opacity:.35 }
 .dmgrid .d.today{ border:3px solid var(--ink) }
 .dmgrid .d.blank{ border:0; background:none }
+.dlink{ display:block; width:100%; margin-top:12px; min-height:44px; font-family:inherit; font-size:13.5px; font-weight:800;
+  border:3px solid var(--ink); background:#fff; cursor:pointer; padding:0 10px }
+.dnone{ margin-top:10px; padding-top:10px; border-top:2px dashed var(--grid); font-size:12.5px; line-height:1.7; color:#6B5A1E; font-weight:700 }
+.dnone b{ color:var(--ink) }
 .dtabs{ display:flex; gap:6px; margin-top:14px }
 .dtabs button{ flex:1; min-height:38px; font-family:inherit; font-size:13px; font-weight:800; border:3px solid var(--ink);
   background:#fff; cursor:pointer }
@@ -527,12 +531,19 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="dstrip" id="dstrip" role="img" aria-label="최근 7일 훈련 기록"></div>
         <div class="dlegend"><span>🟨 한 날</span><span>최근 7일 · 오늘까지</span></div>
         <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력 보기</summary><div class="dmgrid" id="dmgrid"></div></details>
+        <button class="dlink" type="button" id="to-board">🏆 동기들은 얼마나 했나 — 순위 보기 ↓</button>
+      </section>
+      <section class="drill" id="board" aria-label="훈련 순위" hidden>
+        <h3>🏆 누가 꾸준히 하나</h3>
+        <div class="dsub" id="board-sub"></div>
         <div class="dtabs" role="group" aria-label="순위 기준">
           <button type="button" id="dt-streak" aria-pressed="true">🔥 연속</button>
           <button type="button" id="dt-week" aria-pressed="false">📅 최근 7일</button>
         </div>
         <div class="dhead"><span></span><span>이름</span><span></span><span class="dd" id="dd-head"></span></div>
         <div id="drill-list"></div>
+        <button class="dlink" type="button" id="board-more" hidden></button>
+        <div class="dnone" id="board-none" hidden></div>
       </section>
       <div class="grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
       <details class="px sand fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
@@ -2152,7 +2163,7 @@ function renderTodo(){
    하루 한 번 누르면 한 줄. 연속일수는 '오늘 안 눌렀어도 어제까지 이어졌으면' 살아 있다 —
    하루가 끝나기 전에 0 으로 떨어지면 저녁에 보는 사람은 늘 꼴찌로 시작한다. */
 const dSet = {};                               // user_id → Set(day)
-let drillRows = [], drillOk = true, drillView = 'streak', drillStampDay = '';
+let drillRows = [], drillOk = true, drillView = 'streak', drillStampDay = '', boardAll = false;
 const dayOf = n => daysAgo(n);
 function drillIndex(){
   Object.keys(dSet).forEach(k=>delete dSet[k]);
@@ -2168,12 +2179,15 @@ function drillStat(id){
 async function pullDrills(){
   try{ drillRows = await api(`drills?select=user_id,name,day&day=gte.${dayOf(120)}&order=day.desc&limit=5000`); drillOk = true; }
   catch(e){ if(e.code==='notable') drillOk = false; }
+  /* 홈에서는 마을을 아직 안 불러왔다 — 누가 아직 안 했는지 보려면 명단이 있어야 한다 */
+  if(!(state.town||[]).length){
+    try{ state.town = (await api('surfers?select=id,name,cohort,profile&limit=300')).filter(x=>!isTest(x.id)); }catch(e){} }
   renderDrill();
 }
 function renderDrill(){
   const box = $('drill'); if(!box) return;
-  if(!drillOk){ box.hidden = true; return; }        // 표가 없으면 카드째 숨긴다 — 눌러도 안 되는 버튼을 두지 않는다
-  box.hidden = false;
+  if(!drillOk){ box.hidden = true; $('board').hidden = true; return; }   // 표가 없으면 카드째 숨긴다 — 눌러도 안 되는 버튼을 두지 않는다
+  box.hidden = false; $('board').hidden = false;
   drillIndex();
   const me = drillStat(ME.id), did = (dSet[ME.id]||new Set()).has(dayOf(0));
   const btn = $('drill-btn');
@@ -2208,10 +2222,19 @@ function renderDrill(){
     ? (b.week-a.week) || (b.streak-a.streak) || (b.total-a.total)
     : (b.streak-a.streak) || (b.week-a.week) || (b.total-a.total));
   const list = $('drill-list');
-  if(!ids.length){ list.innerHTML = '<div class="dempty">아직 아무도 없어요 — 첫 번째가 되어보세요</div>'; return; }
+  const roster = (state.town||[]).filter(x=>!isTest(x.id));
+  const active = ids.filter(x=>x.week > 0).length;
+  /* 명단에 없는데 기록만 있는 사람도 센다 — 안 그러면 '7명 중 13명'이 나온다 */
+  const everyone = new Set([...roster.map(x=>x.id), ...ids.map(x=>x.id)]).size;
+  $('board-sub').textContent = `${everyone}명 중 ${active}명이 최근 7일 안에 했어요`;
+  const none = roster.filter(x=>!dSet[x.id]).map(x=>x.name);
+  const noneBox = $('board-none');
+  noneBox.hidden = !none.length;
+  noneBox.innerHTML = none.length ? `⏳ <b>아직 기록 없음</b> ${none.length}명<br>${none.map(esc).join(' · ')}` : '';
+  if(!ids.length){ list.innerHTML = '<div class="dempty">아직 아무도 기록이 없어요 — 첫 번째가 되어보세요</div>'; $('board-more').hidden = true; return; }
   let rank = 0, prev = null;
   ids.forEach((x,i)=>{ const key = drillView==='week' ? x.week : x.streak; if(key !== prev){ rank = i+1; prev = key; } x.rank = rank; });
-  const TOP = 8, shown = ids.slice(0,TOP);
+  const TOP = 8, shown = boardAll ? ids : ids.slice(0,TOP);
   const mineRow = ids.find(x=>x.id===ME.id);
   if(mineRow && !shown.includes(mineRow)) shown.push(mineRow);
   /* 동률이 여럿이면 메달을 나눠 주지 않는다 — 연속 1일이 여섯이면 동메달 여섯 개가 된다. */
@@ -2221,8 +2244,10 @@ function renderDrill(){
       <span class="rk">${medal(x)}</span>
       <span class="nm2">${esc(name(x.id))}<small>${drillView==='week' ? `연속 ${x.streak}일` : `최근 7일 ${x.week}/7`} · 누적 ${x.total}일</small></span>
       <span class="big">${drillView==='week' ? `${x.week}/7` : `🔥${x.streak}`}</span>
-      <span class="dd" aria-hidden="true">${DAYS.map(d=>`<i class="${x.S.has(d)?'on':''}"></i>`).join('')}</span></div>`).join('')
-    + (ids.length > TOP ? `<div class="dempty">${ids.length}명 중 위 ${TOP}명${mineRow && !ids.slice(0,TOP).includes(mineRow) ? ' + 나' : ''}</div>` : '');
+      <span class="dd" aria-hidden="true">${DAYS.map(d=>`<i class="${x.S.has(d)?'on':''}"></i>`).join('')}</span></div>`).join('');
+  const more = $('board-more');
+  more.hidden = ids.length <= TOP;
+  more.textContent = boardAll ? '접기 ▲' : `전체 ${ids.length}명 보기 ▼`;
 }
 $('drill-btn').onclick = async ()=>{
   const day = dayOf(0), id = `${ME.id}|${day}`, did = (dSet[ME.id]||new Set()).has(day);
@@ -2241,6 +2266,8 @@ $('drill-btn').onclick = async ()=>{
     toast(e.code==='notable' ? '훈련 표가 아직 없어요 (supabase-drills.sql)' : '저장하지 못했어요 · 신호 확인');
   }
 };
+$('to-board').onclick = ()=>$('board').scrollIntoView({ block:'start', behavior:'smooth' });
+$('board-more').onclick = ()=>{ boardAll = !boardAll; renderDrill(); };
 $('dt-streak').onclick = ()=>{ drillView = 'streak'; renderDrill(); };
 $('dt-week').onclick   = ()=>{ drillView = 'week';   renderDrill(); };
 
