@@ -107,8 +107,15 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .card.gone:focus-within, .card.gone:hover{ opacity:.9; filter:none }   /* 들여다보면 다시 또렷해진다 */
 .gone-hd{ display:block; margin:14px 0 2px; font-size:12px; font-weight:800; color:var(--paper);
           text-shadow:1px 1px 0 var(--ink); border-top:3px dashed rgba(255,255,255,.55); padding-top:9px }
-.card{ border-top:3px dashed var(--grid); padding:11px 0 }
+/* 차·숙소·번개·정보판 카드가 전부 같은 모양이라 훑을 때 구분이 안 됐다.
+   왼쪽에 색띠 하나면 종류가 눈에 먼저 들어온다. */
+.card{ border-top:3px dashed var(--grid); padding:11px 0 11px 11px; border-left:5px solid transparent }
 .card:first-child{ border-top:0; padding-top:2px }
+.card.k-ride{ border-left-color:var(--mint) }
+.card.k-stay{ border-left-color:#8FD3FF }
+.card.k-bolt{ border-left-color:var(--sun) }
+.card.k-place{ border-left-color:var(--grape) }
+.card.gone{ border-left-color:#C9CDDC }
 .hd{ display:flex; gap:8px; align-items:baseline; flex-wrap:wrap }
 .hd b{ font-size:16px }
 .tag{ display:inline-block; background:var(--sun); border:3px solid var(--ink); padding:2px 8px; font-size:12px; font-weight:800; font-family:"Galmuri11",sans-serif }
@@ -149,6 +156,15 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .perk{ border:2px solid var(--ink); background:#fff; padding:6px 10px; font-size:12.5px; font-weight:700;
        min-height:36px; display:inline-flex; align-items:center; cursor:pointer }
 .perk.on{ background:var(--mint) }
+/* 온보딩은 한 번 보고 끝난다. 이건 남아서 '다음에 뭘 하면 되나'를 계속 알려준다.
+   할 게 없으면 사라진다 — 늘 떠 있으면 잔소리가 된다. */
+.todo{ display:flex; align-items:center; gap:10px; width:100%; margin-top:12px; text-align:left;
+       background:var(--sun); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink);
+       padding:12px 13px; font-family:inherit; font-size:14px; font-weight:800; cursor:pointer; min-height:52px }
+.todo i{ font-style:normal; font-size:20px; font-family:sans-serif; line-height:1 }
+.todo span{ flex:1; line-height:1.4 } .todo span small{ display:block; font-size:12px; font-weight:600; color:#6B5A1E; margin-top:2px }
+.todo b{ font-size:16px; font-family:sans-serif }
+
 /* ── 홈 요약 ── */
 .hrow{ display:grid; grid-template-columns:auto 1fr auto; gap:4px 9px; align-items:center;
        padding:11px 0; border-top:2px dashed var(--grid); cursor:pointer }
@@ -173,9 +189,9 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .now{ margin-top:10px }
 
 /* 쪽지는 어느 탭에서든 닿아야 한다. 하단 탭 위에 띄운다 */
-.mailfab{ position:fixed; right:12px; bottom:calc(68px + env(safe-area-inset-bottom)); z-index:56;
-          width:52px; height:52px; border:4px solid var(--ink); background:var(--sun); box-shadow:3px 3px 0 var(--ink);
-          font-size:21px; font-family:sans-serif; cursor:pointer; padding:0 }
+.mailfab{ position:fixed; right:10px; bottom:calc(64px + env(safe-area-inset-bottom)); z-index:56;
+          width:46px; height:46px; border:3px solid var(--ink); background:var(--sun); box-shadow:2px 2px 0 var(--ink);
+          font-size:19px; font-family:sans-serif; cursor:pointer; padding:0; opacity:.94 }
 .mailfab .dot{ position:absolute; top:-8px; right:-8px; margin:0 }
 
 /* ── 하단 탭 ──
@@ -269,10 +285,11 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .now-row{ display:flex; gap:6px; margin-top:10px; flex-wrap:wrap }
 .now-row select{ flex:1 1 130px; border-color:#2E6BFF }
 .now-else{ font-size:12.5px; color:#A8CBE8; margin-top:7px; line-height:1.65 }
-.cond{ display:flex; gap:5px; flex-wrap:wrap; margin-top:9px }
-.cond span{ background:#143B66; border:2px solid #2E6BFF; padding:4px 9px; font-size:13px; color:#EAF6FF }
-.cond span b{ font-size:14px; color:#fff }
-.cond .src{ background:none; border:0; padding:3px 0 0; color:#94B8D8; font-size:12px; width:100% }
+/* 칩 다섯 개가 두 줄로 접혀 카드가 80px 더 길어졌다. 한 줄로 합친다 —
+   숫자만 굵게 두면 칩 없이도 각각이 구분된다. */
+.cond{ margin-top:8px; font-size:13px; color:#C6DEF2; line-height:1.6 }
+.cond b{ color:#fff; font-size:13.5px }
+.cond .src{ display:block; color:#7FA8CC; font-size:11.5px; margin-top:2px }
 .fav{ border:0; background:none; font-size:20px; line-height:1; padding:0 4px 0 0; cursor:pointer;
       color:#C9CDDC; font-family:sans-serif; min-height:30px }
 .fav.on{ color:#F5A623 }
@@ -417,11 +434,13 @@ body.onb-on .wrap{ padding-bottom:230px }
     <!-- 홈 -->
     <div id="pane-home" hidden>
       <div class="px" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px">
-        <canvas class="me-av" id="me-av"></canvas><b id="who" style="flex:1"></b>
+        <canvas class="me-av" id="me-av"></canvas>
+        <b id="who" style="flex:1 1 60px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px"></b>
         <span class="tag" id="cohort-tag"></span>
         <button class="btn sm ghost" id="help" title="사용법" aria-label="사용법">❓</button>
-        <button class="btn sm ghost" id="out" title="나가기" aria-label="나가기">🚪</button>
+        <button class="btn sm ghost" id="out" title="나가기" aria-label="나가기">↩</button>
       </div>
+      <button type="button" class="todo" id="todo" hidden></button>
       <div class="grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
       <details class="px sand fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
         <div id="bld-home" style="margin-top:8px"></div>
@@ -664,7 +683,18 @@ const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'
 const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const today = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const DOW = ['일','월','화','수','목','금','토'];
-const dLabel = d => { const x=new Date(d+'T00:00'); return `${d.slice(5).replace('-','.')} (${DOW[x.getDay()]})`; };
+/* 10.02 (금) 보다 '내일'이 먼저 읽힌다. 사흘 안쪽은 말로, 그 밖은 날짜로.
+   같은 화면에 10.02 (금) · 9월 30일 화요일 · 10.01~10.03 이 섞여 있었다. */
+const dLabel = d => { const x=new Date(d+'T00:00');
+  const t=new Date(); t.setHours(0,0,0,0);
+  const gap = Math.round((x - t)/864e5);
+  if(gap === 0) return '오늘';
+  if(gap === 1) return '내일';
+  if(gap === 2) return '모레';
+  if(gap > 2 && gap < 7)  return `이번 주 ${DOW[x.getDay()]}`;
+  if(gap >= 7 && gap < 14) return `다음 주 ${DOW[x.getDay()]}`;
+  if(gap === -1) return '어제';
+  return `${d.slice(5).replace('-','.')} (${DOW[x.getDay()]})`; };
 /* 06:00 보다 '오전 6시'가 먼저 읽힌다. 번개는 시간이 전부라 읽기 쉬운 쪽을 쓴다. */
 const hLabel = t => { const [h,m] = String(t||'').split(':').map(Number);
   if(isNaN(h)) return '';
@@ -867,7 +897,8 @@ function renderBuilder(){
 }
 let saveT;
 function saveProfile(){
-  try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
+  try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME));
+       localStorage.setItem('lineup.share.dressed', '1'); }catch(e){}
   clearTimeout(saveT);                       // 버튼을 연달아 누르면 요청이 그만큼 나간다
   saveT = setTimeout(async ()=>{
     /* PATCH 가 아니라 upsert 다 — 행이 없으면 PATCH 는 0행을 고치고 조용히 성공한다 */
@@ -1135,13 +1166,9 @@ async function pullCond(){
 function paintCond(v){
   const box = $('cond'); if(!box) return;
   const num = (x, d=1) => (x==null || isNaN(x)) ? '–' : (+x).toFixed(d);
-  box.innerHTML =
-    `<span>기온 <b>${num(v.temp)}°</b></span>` +
-    `<span>${WX[v.wx] || '–'}</span>` +
-    `<span>수온 <b>${num(v.sst)}°</b></span>` +
-    `<span>파고 <b>${num(v.h)}m</b></span>` +
-    `<span>주기 <b>${num(v.p)}초</b></span>` +
-    `<span class="src">Open-Meteo 격자값 · 15분마다 갱신</span>`;
+  box.innerHTML = `<b>${num(v.temp)}°</b> ${WX[v.wx] || ''} · 수온 <b>${num(v.sst)}°</b>`
+    + ` · 파도 <b>${num(v.h)}m</b> / <b>${num(v.p)}초</b>`
+    + `<span class="src">Open-Meteo 격자값 · 15분마다 갱신</span>`;
 }
 
 $('now-btn').onclick = async ()=>{
@@ -1207,6 +1234,17 @@ $('cam-off').onclick = ()=>{ camStop(); renderCam(); };
 const mySea = () => { try{ return localStorage.getItem('lineup.share.sea') || '낙산'; }catch(e){ return '낙산'; } };
 const setSea = v => { try{ localStorage.setItem('lineup.share.sea', v); }catch(e){} };
 
+/* 빈 화면의 버튼 → 그 탭의 접이식 폼을 열고 첫 칸에 커서를 둔다 */
+function bindFirst(box){
+  box.querySelectorAll('[data-first]').forEach(b=>b.onclick = ()=>{
+    const pane = { ride:'#pane-ride', stay:'#pane-stay', bolt:'#pane-bolt' }[b.dataset.first];
+    const d = document.querySelector(pane + ' details'); if(!d) return;
+    d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' });
+    const first = { ride:'r-from', stay:'s-place', bolt:'b-note' }[b.dataset.first];
+    setTimeout(()=>$(first)?.focus({ preventScroll:true }), 400);
+  });
+}
+
 /* ── 서핑번개 ─────────────────────────────────────────────
    "언제 같이 들어가요"가 단톡방에서 매번 새로 시작됐다. 시간과 바다만 정해 두면
    몇 명이 모이는지는 눌러서 채워진다. 정원은 두지 않는다 — 바다는 자리가 없지 않다.
@@ -1230,7 +1268,10 @@ function renderBolts(){
   if(!$('b-date').value) $('b-date').value = nextWeekend();
   if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-social.sql</b>을 실행하면 켜집니다.</div>`; return; }
   refreshDots(); if(state.tab==='home') renderHome();
-  if(!bolts.length){ box.innerHTML = `<div class="empty">아직 잡힌 번개가 없어요.<br>위에서 시간과 바다를 정해보세요.</div>`; return; }
+  if(!bolts.length){ box.innerHTML = `<div class="empty">아직 잡힌 번개가 없어요.<br>
+    시간과 바다만 정하면 사람이 모입니다.<br>
+    <button class="btn sm mint" type="button" data-first="bolt" style="margin-top:9px">⚡ 번개 열기</button></div>`;
+    bindFirst(box); return; }
   let head = false;
   box.innerHTML = [...bolts].sort((a,b)=>{
       const ga = boltGone(a), gb = boltGone(b);
@@ -1240,14 +1281,12 @@ function renderBolts(){
     }).map(b=>{
     const gone = boltGone(b), list = b.joins || [], mine = list.some(x=>x.id===ME.id);
     const hd = gone && !head ? (head = true, `<div class="gone-hd">지난 번개 — 기록으로 남겨둡니다</div>`) : '';
-    /* "9월 29일 인구 오후 5시 선셋 서핑해요" 처럼 한 줄로 읽히게 쓴다.
+    /* "오늘 인구 오후 5시 선셋 서핑해요" 처럼 한 줄로 읽히게 쓴다.
        한마디가 제목이 되고, 언제·어디는 그 밑에. 태그로 쪼개면 문장이 안 된다. */
-    const md = b.date.slice(5).split('-');
-    return hd + `<div class="card ${gone?'gone':''}">
+    return hd + `<div class="card k-bolt ${gone?'gone':''}">
       <div class="bolt-t">⚡ ${esc(b.note || '같이 들어가요')}
         ${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
-      <div class="bolt-when"><b>${+md[0]}월 ${+md[1]}일</b> ${DOW[new Date(b.date+'T00:00').getDay()]}요일
-        · <b>${esc(b.beach)}</b> · <b>${hLabel(b.time)}</b></div>
+      <div class="bolt-when"><b>${dLabel(b.date)}</b> · <b>${esc(b.beach)}</b> · <b>${hLabel(b.time)}</b></div>
       <div class="owner"><canvas data-own="${esc(b.id)}"></canvas>
         <span class="meta" style="margin:0">${esc(b.name)} 님이 열었어요</span>${noteBtn(b)}</div>
       <div class="seats">${list.map(x=>`<span class="seat ${x.id===ME.id?'me':'on'}">
@@ -1855,7 +1894,32 @@ TABS.forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
 /* ── 홈 ───────────────────────────────────────────────────
    탭을 여섯으로 나눴더니 "오늘 뭐가 있나"를 보려면 네 번 눌러야 했다.
    홈은 그걸 한 화면에 모은다 — 요약만, 자세한 건 그 탭에서. */
+/* 다음에 할 일 하나 — 가장 앞선 것만 보여준다. 목록으로 주면 아무것도 안 한다. */
+const dressed = () => { try{ return localStorage.getItem('lineup.share.dressed') === '1'; }catch(e){ return true; } };
+function renderTodo(){
+  const el = $('todo'); if(!el) return;
+  const mine = (nowRows||[]).find(c=>c.user_id===ME.id);
+  const myMood = (state.town||[]).find(x=>x.id===ME.id)?.profile?.mood;
+  const upBolt = (bolts||[]).filter(b=>!boltGone(b)).length;
+  const steps = [
+    /* 가입할 때 기본 모습이 자동으로 붙으므로 '비어 있나'로는 판단이 안 된다.
+       한 번이라도 손댔는지를 따로 남긴다. */
+    [!dressed(), '🙂', '캐릭터부터 꾸며보세요', '차·숙소 글 옆에 이 모습으로 서요',
+      ()=>{ const d = document.querySelector('#pane-home details'); d.open = true; d.scrollIntoView({block:'start',behavior:'smooth'}); }],
+    [!mine, '📍', '바다에 나오셨다면 체크인', '누가 있는지 서로 보이게 — 4시간 뒤 저절로 풀려요',
+      ()=>{ $('now').scrollIntoView({ block:'center', behavior:'smooth' }); $('now-btn').focus({preventScroll:true}); }],
+    [!upBolt, '⚡', '서핑번개를 열어보세요', '시간과 바다만 정하면 사람이 모입니다', ()=>setTab('bolt')],
+    [!myMood, '💬', '마을에 한마디 남겨보세요', '오늘 어땠는지 — 동기들이 반응합니다', ()=>setTab('town')],
+  ];
+  const hit = steps.find(x=>x[0]);
+  if(!hit){ el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<i>${hit[1]}</i><span>${hit[2]}<small>${hit[3]}</small></span><b>›</b>`;
+  el.onclick = hit[4];
+}
+
 function renderHome(){
+  renderTodo();
   const box = $('home-sum'); if(!box) return;
   const up = a => (a||[]).filter(x=>x.created_at || true);
   const rides = (state.rides||[]).filter(r=>!isGone(r,'ride')).slice(0,2);
@@ -1866,12 +1930,13 @@ function renderHome(){
       <span class="hic">${ic}</span>
       <span class="hko">${ko}${n ? ` <b>${n}</b>` : ''}</span>
       <span class="hgo">보기 →</span>
-      ${rows.length ? `<div class="hsub">${rows.join('<br>')}</div>` : '<div class="hsub dim">아직 없어요</div>'}</div>`;
+      ${rows.length ? `<div class="hsub">${rows.join('<br>')}</div>`
+        : `<div class="hsub dim">아직 없어요 — 눌러서 첫 글을 올려보세요</div>`}</div>`;
   box.innerHTML =
     line('⚡','다가오는 번개', bs.length, 'bolt',
-      bs.map(b=>`${b.date.slice(5).replace('-','.')} ${hLabel(b.time)} · ${esc(b.beach)} · ${esc(b.note||'같이 들어가요')} (${(b.joins||[]).length}명)`)) +
+      bs.map(b=>`${dLabel(b.date)} ${hLabel(b.time)} · ${esc(b.beach)} · ${esc(b.note||'같이 들어가요')} (${(b.joins||[]).length}명)`)) +
     line('🚗','차량 쉐어', rides.length, 'ride',
-      rides.map(r=>`${dLabel(r.date)} ${esc(r.depart_at)} · ${esc(r.from_place)} → ${esc(r.to_place)} (빈자리 ${Math.max(0,(r.seats||0)-(r.riders||[]).length)})`)) +
+      rides.map(r=>`${dLabel(r.date)} ${hLabel(r.depart_at)} · ${esc(r.from_place)} → ${esc(r.to_place)} (빈자리 ${Math.max(0,(r.seats||0)-(r.riders||[]).length)})`)) +
     line('🏠','숙소 쉐어', stays.length, 'stay',
       stays.map(x=>`${dLabel(x.date_from)}~${dLabel(x.date_to)} · ${esc(x.place)} (${(x.guests||[]).length}/${x.capacity}명)`)) +
     line('🏘','마을', town, 'town',
@@ -1909,14 +1974,17 @@ function seatRow(r, kind, gone){
 function renderRides(){
   const box = $('rides');
   if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
-  if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>위에서 첫 자리를 올려보세요.</div>`; return; }
+  /* "아직 없어요" 한 줄로 끝내면 첫 사람이 아무것도 안 한다. 여기가 첫 행동 자리다. */
+  if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>
+    <button class="btn sm mint" type="button" data-first="ride" style="margin-top:9px">🚗 첫 차 올리기</button></div>`;
+    bindFirst(box); return; }
   if(state.rides.every(r=>isGone(r,'ride'))) box.insertAdjacentHTML?.('afterbegin','');
   let head = false;
   box.innerHTML = [...state.rides].sort(byWhen('ride')).map(r=>{ const gone = isGone(r,'ride');
     const hd = gone && !head ? (head = true, `<div class="gone-hd">지난 차 — 기록으로 남겨둡니다</div>`) : '';
-    return hd + `<div class="card ${gone?'gone':''}">
+    return hd + `<div class="card k-ride ${gone?'gone':''}">
       <div class="hd"><span class="tag ${gone?'':r.dir}">${(DIRS[r.dir]||DIRS.go).ko}</span>
-        <b>${dLabel(r.date)} ${esc(r.depart_at)}</b>${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
+        <b>${dLabel(r.date)} ${hLabel(r.depart_at)}</b>${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
       <div class="route"><span>${esc(r.from_place)}</span><i>▶</i><span>${esc(r.to_place)}</span></div>
       <div class="owner"><canvas data-own="${esc(r.id)}"></canvas><span class="meta" style="margin:0">${esc(r.name)} 님 차</span>${noteBtn(r)}</div>
       ${r.note ? `<div class="meta">${esc(r.note)}</div>` : ''}
@@ -1961,11 +2029,13 @@ async function pullStays(){
 function renderStays(){
   const box = $('stays');
   if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
-  if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.</div>`; return; }
+  if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.<br>
+    <button class="btn sm mint" type="button" data-first="stay" style="margin-top:9px">🏠 첫 숙소 올리기</button></div>`;
+    bindFirst(box); return; }
   let shead = false;
   box.innerHTML = [...state.stays].sort(byWhen('stay')).map(s=>{ const gone = isGone(s,'stay');
     const hd = gone && !shead ? (shead = true, `<div class="gone-hd">지난 숙소 — 평가는 계속 남길 수 있어요</div>`) : '';
-    return hd + `<div class="card ${gone?'gone':''}">
+    return hd + `<div class="card k-stay ${gone?'gone':''}">
       <div class="hd"><b>${esc(s.place)}</b>${s.price?`<span class="tag">${esc(s.price)}</span>`:''}${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
       <div class="meta">${dLabel(s.date_from)} → ${dLabel(s.date_to)}${distLabel(s)}</div>
       <div class="owner"><canvas data-own="${esc(s.id)}"></canvas><span class="meta" style="margin:0">${esc(s.name)} 님이 올림</span>${noteBtn(s)}</div>
@@ -2047,7 +2117,7 @@ function renderPlaces(){
       return distKm(a.lat,a.lon) - distKm(b.lat,b.lon);
     }).map(p=>{
     const rv = reviewOf(p.name), ed = editsOf(p.id);
-    return `<div class="card">
+    return `<div class="card k-place">
       <div class="hd"><button class="fav ${isFav(p.id)?'on':''}" data-fav="${esc(p.id)}"
           aria-label="즐겨찾기" title="즐겨찾기">${isFav(p.id)?'★':'☆'}</button>
         <b>${esc(p.name)}</b>${p.kind?`<span class="tag">${esc(p.kind)}</span>`:''}
