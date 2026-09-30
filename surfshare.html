@@ -2026,14 +2026,25 @@ const VOICES = [
   ['테이크오프 연습은 신발 벗고 하세요.','Rio 코치'],
   ['파도 좋을 때 일출 서핑 멤버 모아서 같이 타세요.','Rio 코치'],
 ];
-let vIdx = Math.floor(Date.now()/864e5) % VOICES.length, vTimer = 0;
+/* 섞은 카드 한 벌을 다 넘긴 뒤에 다시 섞는다 — 순수 랜덤은 같은 말이 연달아 나오고,
+   어떤 말은 오래 안 나온다. 다시 섞을 때 방금 본 말이 맨 앞에 오지 않게 한다. */
+let vDeck = [], vIdx = 0, vTimer = 0;
+function vDraw(){
+  if(!vDeck.length){
+    vDeck = VOICES.map((_,i)=>i);
+    for(let i = vDeck.length - 1; i > 0; i--){ const j = Math.floor(Math.random()*(i+1)); [vDeck[i], vDeck[j]] = [vDeck[j], vDeck[i]]; }
+    if(vDeck.length > 1 && vDeck[vDeck.length-1] === vIdx) vDeck.unshift(vDeck.pop());   // pop() 으로 뽑으니 맨 뒤가 다음 차례
+  }
+  return vDeck.pop();
+}
 function renderVoice(step){
   const el = $('voice'); if(!el) return;
-  if(step) vIdx = (vIdx + 1) % VOICES.length;
+  if(step || !el.dataset.shown) vIdx = vDraw();
+  el.dataset.shown = '1';
   const [txt, who] = VOICES[vIdx];
   el.hidden = false;
   $('voice-t').textContent = txt;
-  $('voice-w').textContent = `— ${who}  ·  ${vIdx+1}/${VOICES.length}`;
+  $('voice-w').textContent = `— ${who}`;
 }
 $('voice').onclick = ()=>{ renderVoice(true); clearInterval(vTimer); startVoice(); };
 function startVoice(){ clearInterval(vTimer);
