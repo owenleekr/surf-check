@@ -253,9 +253,11 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .vp canvas{ width:66px; height:74px; image-rendering:pixelated }
 .vp .nm{ font-size:11.5px; font-weight:800; background:rgba(255,249,230,.92); border:2px solid var(--ink);
          padding:1px 5px; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-/* 84px — 여기서 조금만 더 올리면 윗줄 이름표를 먹고, 내리면 자기 머리를 가린다.
-   재서 찾은 자리다. */
-.vp .bub{ position:absolute; bottom:86px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink);
+/* 머리 위로 온전히 띄운다. 칸 높이가 95px 이라 그보다 위여야 캐릭터를 안 가린다.
+   그만큼 줄 사이를 비워야 윗줄 이름표를 안 먹는다(BUB_ROOM). */
+.vp.hop canvas{ animation:vhop .5s ease-out }
+@keyframes vhop{ 0%{transform:translateY(0)} 35%{transform:translateY(-14px)} 65%{transform:translateY(0)} 80%{transform:translateY(-5px)} 100%{transform:translateY(0)} }
+.vp .bub{ position:absolute; bottom:102px; left:50%; transform:translateX(-50%); background:#fff; border:3px solid var(--ink);
           padding:4px 7px; font-size:11px; line-height:1.35; width:max-content; max-width:118px; white-space:normal;
           word-break:keep-all; text-align:center; box-shadow:2px 2px 0 var(--ink); z-index:2 }
 .vp .bub::after{ content:""; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%);
@@ -265,8 +267,6 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .vcard{ position:absolute; left:8px; right:8px; bottom:8px; background:#fff; border:4px solid var(--ink);
         box-shadow:4px 4px 0 var(--ink); padding:10px; font-size:12.5px; line-height:1.5; z-index:5 }
 .vcard b{ font-size:14px }
-.moodrow{ display:flex; gap:6px; margin-top:8px }
-.moodrow input{ flex:1 }
 
 /* ── 반응 · 채팅 ── */
 .rxbar{ display:flex; gap:4px; flex-wrap:wrap; margin-top:5px }
@@ -566,21 +566,16 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 마을 -->
     <div id="pane-town" hidden>
-      <div class="grp"><span class="t" id="vill-t">6기 마을</span>
+      <div class="grp"><span class="t" id="vill-t">마을</span>
         <div class="village" id="village"><canvas id="vbg"></canvas><div class="vgrid" id="vgrid"></div></div>
         <div class="note onsea" id="vill-sub"></div>
-        <div class="moodrow">
-          <input id="mood" maxlength="40" placeholder="한마디 — 예) 오늘 팝업 3번 성공!">
-          <button class="btn sm blue" type="button" id="mood-save" style="flex:0 0 auto">말풍선</button>
-          <button class="btn sm ghost" type="button" id="mood-clear" style="flex:0 0 auto" title="지우기">✕</button>
-        </div>
-      </div>
-      <div class="grp"><span class="t">마을 채팅</span>
-        <div class="px">
+        <div class="px" style="margin-top:10px">
           <div class="chat" id="chat"></div>
           <div id="chat-emo" style="margin-top:8px;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px"></div>
-          <div class="chat-in"><input id="chat-in" maxlength="200" placeholder="메시지" autocomplete="off">
-            <button class="btn sm blue" type="button" id="chat-send" style="flex:0 0 auto">보내기</button></div>
+          <div class="chat-in">
+            <input id="chat-in" maxlength="200" placeholder="한마디 — 머리 위 말풍선으로 떠요" autocomplete="off">
+            <button class="btn blue" type="button" id="chat-send" style="flex:0 0 auto">보내기</button>
+          </div>
           <div class="note" id="chat-sub"></div>
         </div>
       </div>
@@ -1421,6 +1416,8 @@ const HIDE_IDS = ['t','owen','qa_owen','zz_test','zz_qc','zz_guide','zz_pw','zz_
 const isTest = id => typeof id === 'string' && HIDE_IDS.includes(id);
 
 const REACT_EMO = ['👏','🔥','🌊','💪'];
+const moodOf = x=>{ const m = x.profile?.mood, at = x.profile?.mood_at;
+  return m && (!at || Date.now() - at < 6*36e5) ? m : ''; };   /* 6시간 지나면 내려간다 */
 const QS = ['오늘 가장 잘 된 동작은?','이번 주 목표 한 줄?','오늘 파도 한 단어로?','다음 주 타고 싶은 해변은?',
             '오늘 코치 피드백 중 기억나는 것?','서핑 시작한 이유는?','요즘 제일 어려운 건?','같이 타고 싶은 사람 지목!'];
 let townPoll = 0, chatLast = 0;
@@ -1481,11 +1478,10 @@ function renderTown(){
   for(const x of pool){ if(seaSet.size >= seaCap) break; seaSet.add(x.id); }
   const zoneOf = x => seaSet.has(x.id) ? 'sea' : (hsh(x.id) % 5 < 2 ? 'class' : 'beach');
   g.innerHTML = rows.map((x,i)=>{
-    const mood = x.profile?.mood, z = zoneOf(x);
+    const mood = moodOf(x), z = zoneOf(x);
     return `<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"
       data-where="${z}" data-ph="${(hsh(x.id)%628)/100}"${mood?' data-bub':''}>
       ${mood?`<div class="bub">${esc(mood.length > 16 ? mood.slice(0,16) + '…' : mood)}</div>`:''}
-      ${mood && x.id!==ME.id && state.reactsOk!==false ? reactBar('mood:'+x.id, x.id) : ''}
       <canvas data-av="${esc(x.id)}" data-anim></canvas><span class="nm">${esc(x.name)}</span></div>`;
   }).join('') || '<div class="empty" style="background:rgba(255,249,230,.9)">아직 아무도 없어요</div>';
   layoutTown();
@@ -1500,24 +1496,29 @@ function renderTown(){
     const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
     const c = document.createElement('div'); c.className = 'vcard';
     c.innerHTML = `<b>${esc(x.name)}</b>${x.profile?.role==='coach'?' · 코치':''}
-      ${x.profile?.mood?`<br>💬 ${esc(x.profile.mood)}`:''}
+      ${moodOf(x)?`<br>💬 ${esc(moodOf(x))}`:''}
       ${here.has(x.id)?`<br>📍 지금 ${esc(here.get(x.id))}`:''}
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
         ${x.id!==ME.id?`<button class="btn sm mint" type="button" data-wave>👋 인사</button>
         <button class="btn sm ghost" type="button" data-vnote>✉️ 쪽지</button>`:''}
-        <button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
-    $('village').appendChild(c);
+        ${x.id===ME.id&&moodOf(x)?`<button class="btn sm ghost" type="button" data-unbub>💬 말풍선 내리기</button>`:''}
+        <button class="btn sm ghost" type="button" data-close>닫기</button></div>
+      ${x.id!==ME.id?`<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px">
+        ${[['👏','수고했어요'],['🔥','오늘 불탔다'],['🌊','같이 들어가요'],['💪','파이팅']].map(([e,t])=>
+          `<button class="btn sm ghost" type="button" data-cheer="${e}|${t}" style="padding:8px 0;font-family:sans-serif">${e}</button>`).join('')}</div>`:''}`;
+    $('village').appendChild(c); bindRx(c);
     c.querySelector('[data-close]').onclick = ()=>c.remove();
+    c.querySelector('[data-unbub]')?.addEventListener('click', ()=>{ c.remove(); saveMood(''); });
+    c.querySelectorAll('[data-cheer]').forEach(b=>b.addEventListener('click', async ()=>{
+      const [e,t] = b.dataset.cheer.split('|'); c.remove();
+      el.classList.remove('hop'); void el.offsetWidth; el.classList.add('hop');
+      await sendChat(`${e} ${x.name}님 ${t}!`, true); }));
     c.querySelector('[data-vnote]')?.addEventListener('click', ()=>{ c.remove();
       canMail() ? mailOpen(x.id, x.name) : toast('쪽지를 쓰려면 한 번 다시 로그인해 주세요'); });
-    c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ c.remove(); await sendChat(`👋 ${x.name}님 안녕!`); });
+    c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ c.remove(); await sendChat(`👋 ${x.name}님 안녕!`, true); });
   });
-  /* 반응 폴링 때문에 마을이 5초마다 다시 그려진다. 쓰고 있는 사람 입력칸은 건드리지 않는다 —
-     안 그러면 말풍선을 치는 도중에 글자가 사라진다(라인업에서 겪은 그 버그다). */
-  { const el = $('mood'), saved = (state.town.find(x=>x.id===ME.id)?.profile?.mood) || '';
-    const typing = document.activeElement === el || (el.value && el.value !== el.dataset.synced);
-    if(!typing){ el.value = saved; el.dataset.synced = saved; } }
-  $('mood').placeholder = '오늘의 질문 · ' + QS[Math.floor(Date.now()/864e5) % QS.length];
+  /* 마을이 5초마다 다시 그려져도 채팅 입력칸은 건드리지 않는다 — 치는 도중 글자가 사라지면 안 된다. */
+  if(document.activeElement !== $('chat-in')) $('chat-in').placeholder = '한마디 · ' + QS[Math.floor(Date.now()/864e5) % QS.length];
   bindRx($('village'));
 }
 
@@ -1551,7 +1552,7 @@ function layoutTown(){
   /* 말풍선은 머리 위로 나가는데 줄 사이에 틈이 없어서 늘 윗줄 사람을 덮었다.
      말풍선이 있는 줄은 위에 자리를 비워 준다. 줄마다 높이가 달라지므로
      이 함수는 줄 수가 아니라 실제로 쓴 픽셀을 돌려준다. */
-  const BUB_ROOM = 46;
+  const BUB_ROOM = 64;   /* 말풍선이 머리 위로 온전히 올라가려면 그만큼 비워야 한다 */
   const put = (list, top, useW)=>{
     const WW = useW || W;
     const n = list.length; if(!n) return 0;
@@ -1735,21 +1736,18 @@ function bindRx(root){
     }catch(e){ toast('반응을 보내지 못했어요'); }
   });
 }
-async function saveMood(text){
+async function saveMood(text, quiet){
   const t = (text||'').trim().slice(0,40);
-  ME.profile = { ...(ME.profile||{}), mood:t || undefined };
-  if(!t) delete ME.profile.mood;
+  ME.profile = { ...(ME.profile||{}), mood:t || undefined, mood_at:t ? Date.now() : undefined };
+  if(!t){ delete ME.profile.mood; delete ME.profile.mood_at; }
   try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
   try{ await api('surfers', { method:'POST', body:JSON.stringify({
       id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile }) });
     const mine = state.town?.find(x=>x.id===ME.id);
     if(mine) mine.profile = ME.profile; else await pullTown();
-    renderTown(); toast(t ? '말풍선을 올렸어요' : '말풍선을 지웠어요');
-  }catch(e){ toast('저장하지 못했어요 · 신호 확인'); }
+    renderTown(); if(!quiet) toast(t ? '말풍선을 올렸어요' : '말풍선을 내렸어요');
+  }catch(e){ if(!quiet) toast('저장하지 못했어요 · 신호 확인'); }
 }
-$('mood-save').onclick = ()=>saveMood($('mood').value);
-$('mood-clear').onclick = ()=>{ $('mood').value = ''; saveMood(''); };
-$('mood').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); saveMood($('mood').value); } });
 
 async function pullChat(){
   try{ const rows = await api('chat?select=*&order=created_at.desc&limit=80');
@@ -1779,13 +1777,14 @@ function renderChat(){
     }catch(err){ toast('지우지 못했어요 — supabase-chatdel.sql 을 돌려야 해요'); } });
   bindRx(box);
 }
-async function sendChat(text){
+async function sendChat(text, noBubble){
   const t = (text ?? $('chat-in').value).trim(); if(!t) return;
   const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200),
                 profile:ME.profile||{}, created_at:new Date().toISOString() };
   try{ await api('chat', { method:'POST', body:JSON.stringify(row) });
     if(text == null) $('chat-in').value = '';
     state.chat.push(row); renderChat();
+    if(text == null && !noBubble) saveMood(t, true);   /* 마을과 채팅은 한 곳 — 친 말이 머리 위로 뜬다 */
   }catch(e){ toast(state.chatOk===false ? '채팅 표가 아직 없어요' : '보내지 못했어요 · 신호 확인'); }
 }
 $('chat-send').onclick = ()=>sendChat();
