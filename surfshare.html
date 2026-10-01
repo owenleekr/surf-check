@@ -200,7 +200,8 @@ button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 
   background:var(--ink); color:#fff; font-size:10px; padding:1px 5px; white-space:nowrap }
 .dcell.stamp i{ animation:stamp .45s cubic-bezier(.2,1.6,.4,1) }
 @keyframes stamp{ 0%{ transform:scale(2.6) rotate(-14deg); opacity:0 } 100%{ transform:scale(1) rotate(0); opacity:1 } }
-.dlegend{ display:flex; justify-content:space-between; font-size:11.5px; color:#6B5A1E; margin-top:7px; font-weight:700 }
+.dlegend{ display:none }
+.dlegend_old{ display:flex; justify-content:space-between; font-size:11.5px; color:#6B5A1E; margin-top:7px; font-weight:700 }
 .dmonth{ margin-top:10px; border-top:2px dashed var(--grid); padding-top:8px }
 .dmonth summary{ cursor:pointer; font-size:13.5px; font-weight:800; min-height:36px; display:flex; align-items:center }
 .dmgrid{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:3px; margin-top:8px }
@@ -256,8 +257,10 @@ button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 
 @media (max-width:359px){ .dhead, .drow{ grid-template-columns:22px minmax(0,1fr) auto 74px; gap:5px } }
 
 /* ── 홈 요약 ── */
-.hrow{ display:grid; grid-template-columns:auto 1fr auto; gap:4px 9px; align-items:center;
-       padding:11px 0; border-top:2px dashed var(--grid); cursor:pointer }
+.hrow{ display:grid; grid-template-columns:auto 1fr auto; gap:4px 10px; align-items:center; width:100%; text-align:left;
+       padding:10px 0; min-height:52px; border:0; border-top:2px dashed var(--grid); background:none; font-family:inherit; cursor:pointer }
+.hrow .hko small{ display:block; font-size:12.5px; font-weight:700; color:#5B6275; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.hq{ display:flex; gap:6px; flex-wrap:wrap }
 .hrow:first-child{ border-top:0; padding-top:2px }
 .hic{ font-size:19px; font-family:sans-serif; line-height:1 }
 .hko{ font-size:14.5px; font-weight:800 } .hko b{ color:var(--sea) }
@@ -547,29 +550,26 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="dsub" id="drill-sub"></div>
         <button class="dbtn" type="button" id="drill-btn"></button>
         <div class="dstrip" id="dstrip" role="img" aria-label="최근 7일 훈련 기록"></div>
-        <div class="dlegend"><span>🟨 한 날</span><span>최근 7일 · 오늘까지</span></div>
-        <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력 보기</summary><div class="dmgrid" id="dmgrid"></div></details>
-        <button class="dlink" type="button" id="to-board">🏆 동기들은 얼마나 했나 — 순위 보기 ↓</button>
+        <details class="dmonth" id="board" hidden>
+          <summary id="board-sub">🏆 동기들 순위</summary>
+          <div class="dtabs" role="group" aria-label="순위 기준">
+            <button type="button" id="dt-streak" aria-pressed="true">🔥 연속</button>
+            <button type="button" id="dt-week" aria-pressed="false">📅 최근 7일</button>
+          </div>
+          <div class="dhead"><span></span><span>이름</span><span></span><span class="dd" id="dd-head"></span></div>
+          <div id="drill-list"></div>
+          <button class="dlink" type="button" id="board-more" hidden></button>
+          <div class="dnone" id="board-none" hidden></div>
+        </details>
+        <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력</summary><div class="dmgrid" id="dmgrid"></div></details>
       </section>
-      <div class="grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
-      <section class="drill" id="board" aria-label="훈련 순위" hidden>
-        <h3>🏆 누가 꾸준히 하나</h3>
-        <div class="dsub" id="board-sub"></div>
-        <div class="dtabs" role="group" aria-label="순위 기준">
-          <button type="button" id="dt-streak" aria-pressed="true">🔥 연속</button>
-          <button type="button" id="dt-week" aria-pressed="false">📅 최근 7일</button>
-        </div>
-        <div class="dhead"><span></span><span>이름</span><span></span><span class="dd" id="dd-head"></span></div>
-        <div id="drill-list"></div>
-        <button class="dlink" type="button" id="board-more" hidden></button>
-        <div class="dnone" id="board-none" hidden></div>
-      </section>
+      <div class="grp" id="here-grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
       <button type="button" class="voice" id="voice" hidden>
         <span class="vh">🎙 코치님들의 목소리</span>
         <span class="vt" id="voice-t"></span>
         <span class="vw" id="voice-w"></span>
       </button>
-      <details class="px sand fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
+      <details class="px sand fold" id="bld-fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
         <div id="bld-home" style="margin-top:8px"></div>
       </details>
     </div>
@@ -2175,16 +2175,15 @@ function renderTodo(){
     /* 가입할 때 기본 모습이 자동으로 붙으므로 '비어 있나'로는 판단이 안 된다.
        한 번이라도 손댔는지를 따로 남긴다. */
     [!dressed(), '🙂', '캐릭터부터 꾸며보세요', '차·숙소 글 옆에 이 모습으로 서요',
-      ()=>{ const d = document.querySelector('#pane-home details'); d.open = true; d.scrollIntoView({block:'start',behavior:'smooth'}); }],
-    [drillOk && !(dSet[ME.id]||new Set()).has(dayOf(0)), '🏄', '오늘 테이크오프 훈련 체크', '하루 한 번 — 동기들과 연속일수를 겨뤄요',
-      ()=>{ $('drill').scrollIntoView({block:'center',behavior:'smooth'}); }],
+      ()=>{ const d = $('bld-fold'); d.open = true; d.scrollIntoView({block:'start',behavior:'smooth'}); }],
     [!mine, '📍', '바다에 나오셨다면 체크인', '누가 있는지 서로 보이게 — 4시간 뒤 저절로 풀려요',
       ()=>{ $('now').scrollIntoView({ block:'center', behavior:'smooth' }); $('now-btn').focus({preventScroll:true}); }],
     [!upBolt, '⚡', '서핑번개를 열어보세요', '시간과 바다만 정하면 사람이 모입니다', ()=>setTab('bolt')],
     [!myMood, '💬', '마을에 한마디 남겨보세요', '오늘 어땠는지 — 동기들이 반응합니다', ()=>setTab('town')],
   ];
   const hit = steps.find(x=>x[0]);
-  if(!hit){ el.hidden = true; return; }
+  /* 내 일정이 이미 떠 있으면 노란 띠를 하나 더 얹지 않는다 — 홈이 안내판이 된다 */
+  if(!hit || (!$('mine').hidden && dressed())){ el.hidden = true; return; }
   el.hidden = false;
   el.innerHTML = `<i>${hit[1]}</i><span>${hit[2]}<small>${hit[3]}</small></span><b>›</b>`;
   el.onclick = hit[4];
@@ -2260,7 +2259,8 @@ function renderDrill(){
   const active = ids.filter(x=>x.week > 0).length;
   /* 명단에 없는데 기록만 있는 사람도 센다 — 안 그러면 '7명 중 13명'이 나온다 */
   const everyone = new Set([...roster.map(x=>x.id), ...ids.map(x=>x.id)]).size;
-  $('board-sub').textContent = `${everyone}명 중 ${active}명이 최근 7일 안에 했어요`;
+  const lead = [...ids].sort((a,b)=>(b.streak-a.streak)||(b.week-a.week))[0];
+  $('board-sub').textContent = `🏆 동기들 순위 · ${everyone}명 중 ${active}명 했어요` + (lead && lead.streak > 1 ? ` · 1위 ${name(lead.id)} 🔥${lead.streak}` : '');
   const none = roster.filter(x=>!dSet[x.id]).map(x=>x.name);
   const noneBox = $('board-none');
   noneBox.hidden = !none.length;
@@ -2317,7 +2317,6 @@ $('drill-btn').onclick = async ()=>{
     toast(e.code==='notable' ? '훈련 표가 아직 없어요 (supabase-drills.sql)' : '저장하지 못했어요 · 신호 확인');
   }
 };
-$('to-board').onclick = ()=>$('board').scrollIntoView({ block:'start', behavior:'smooth' });
 $('board-more').onclick = ()=>{ boardAll = !boardAll; renderDrill(); };
 $('dt-streak').onclick = ()=>{ drillView = 'streak'; renderDrill(); };
 $('dt-week').onclick   = ()=>{ drillView = 'week';   renderDrill(); };
@@ -2363,33 +2362,31 @@ function renderMine(){
 setInterval(()=>{ if(!document.hidden && state.tab==='home') renderMine(); }, 60000);   // '2시간 뒤'가 낡지 않게
 
 function renderHome(){
-  renderTodo(); renderMine(); renderVoice(); startVoice(); renderDrill();
+  renderMine(); renderTodo(); renderVoice(); startVoice(); renderDrill();
   const box = $('home-sum'); if(!box) return;
-  const up = a => (a||[]).filter(x=>x.created_at || true);
-  const rides = (state.rides||[]).filter(r=>!isGone(r,'ride')).slice(0,2);
-  const stays = (state.stays||[]).filter(r=>!isGone(r,'stay')).slice(0,2);
-  const bs    = (bolts||[]).filter(b=>!boltGone(b)).slice(0,2);
-  const town  = (state.town||[]).length, here = (nowRows||[]).length;
-  const line = (ic, ko, n, tab, rows) => `<div class="hrow" data-go="${tab}">
+  /* 내가 올렸거나 든 것은 위 '내 일정'에 있다 — 같은 걸 두 번 보여주지 않는다.
+     비어 있는 줄은 감춘다(아직 없어요 ×3 은 정보가 아니라 소음이다). 줄마다 가장 가까운 한 건만. */
+  const mineIn = l => (l||[]).some(x=>x.id===ME.id);
+  const rides = (state.rides||[]).filter(r=>!isGone(r,'ride') && r.user_id!==ME.id && !mineIn(r.riders));
+  const stays = (state.stays||[]).filter(r=>!isGone(r,'stay') && r.user_id!==ME.id && !mineIn(r.guests));
+  const bs    = (bolts||[]).filter(b=>!boltGone(b) && !mineIn(b.joins));
+  const line = (ic, ko, n, tab, text) => `<button type="button" class="hrow" data-go="${tab}">
       <span class="hic">${ic}</span>
-      <span class="hko">${ko}${n ? ` <b>${n}</b>` : ''}</span>
-      <span class="hgo">보기 →</span>
-      ${rows.length ? `<div class="hsub">${rows.join('<br>')}</div>`
-        : `<div class="hsub dim">아직 없어요 — 눌러서 첫 글을 올려보세요</div>`}</div>`;
-  box.innerHTML =
-    line('⚡','다가오는 번개', bs.length, 'bolt',
-      bs.map(b=>`${dDate(b.date)} ${hLabel(b.time)} · ${esc(b.beach)} · ${esc(b.note||'같이 들어가요')} (${(b.joins||[]).length}명)`)) +
-    line('🚗','차량 쉐어', rides.length, 'ride',
-      rides.map(r=>`${dDate(r.date)} ${hLabel(r.depart_at)} · ${esc(r.from_place)} → ${esc(r.to_place)} (빈자리 ${Math.max(0,(r.seats||0)-(r.riders||[]).length)})`)) +
-    line('🏠','숙소 쉐어', stays.length, 'stay',
-      stays.map(x=>`${dShort(x.date_from)} ~ ${dShort(x.date_to)} · ${esc(x.place)} (${(x.guests||[]).length}/${x.capacity}명)`)) +
-    line('🏘','마을', town, 'town',
-      here ? [`지금 바다에 ${here}명`] : (town ? ['오늘은 아직 조용해요'] : []));
+      <span class="hko">${ko}${n > 1 ? ` <b>+${n-1}</b>` : ''}<small>${text}</small></span>
+      <span class="hgo">›</span></button>`;
+  const rows = [];
+  if(bs.length)    rows.push(line('⚡','번개', bs.length, 'bolt', `${dShort(bs[0].date)} ${hLabel(bs[0].time)} · ${esc(bs[0].beach)} · ${(bs[0].joins||[]).length}명`));
+  if(rides.length) rows.push(line('🚗','차량', rides.length, 'ride', `${dShort(rides[0].date)} ${hLabel(rides[0].depart_at)} · ${esc(rides[0].from_place)} → ${esc(rides[0].to_place)} · 빈자리 ${Math.max(0,(rides[0].seats||0)-(rides[0].riders||[]).length)}`));
+  if(stays.length) rows.push(line('🏠','숙소', stays.length, 'stay', `${dShort(stays[0].date_from)} ~ ${dShort(stays[0].date_to)} · ${esc(stays[0].place)} · ${(stays[0].guests||[]).length}/${stays[0].capacity}명`));
+  box.innerHTML = rows.join('') || `<div class="hsub dim" style="padding:2px 0 8px">아직 올라온 글이 없어요. 먼저 열어볼까요?</div>
+      <div class="hq"><button type="button" class="btn sm mint" data-go="bolt">⚡ 번개</button>
+      <button type="button" class="btn sm mint" data-go="ride">🚗 차량</button>
+      <button type="button" class="btn sm mint" data-go="stay">🏠 숙소</button></div>`;
   box.querySelectorAll('[data-go]').forEach(el=>el.onclick = ()=>setTab(el.dataset.go));
 }
 
 /* 홈 안에서 여는 꾸미기 — 탭을 하나 줄이려고 pane-me 를 통째로 옮겨 넣는다 */
-document.querySelector('#pane-home details')?.addEventListener('toggle', function(){
+$('bld-fold')?.addEventListener('toggle', function(){
   if(this.open && !$('bld-home').firstChild){ $('bld-home').appendChild($('pane-me')); $('pane-me').hidden = false; renderBuilder(); }
 });
 
