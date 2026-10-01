@@ -1028,6 +1028,7 @@ function renderBuilder(){
 }
 let saveT;
 function saveProfile(){
+  (ME.profile ||= {}).dressed = 1;
   try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME));
        localStorage.setItem('lineup.share.dressed', '1'); }catch(e){}
   clearTimeout(saveT);                       // 버튼을 연달아 누르면 요청이 그만큼 나간다
@@ -2165,7 +2166,12 @@ function startVoice(){ clearInterval(vTimer);
   vTimer = setInterval(()=>{ if(!document.hidden && state.tab === 'home') renderVoice(true); }, 12000); }
 
 /* 다음에 할 일 하나 — 가장 앞선 것만 보여준다. 목록으로 주면 아무것도 안 한다. */
-const dressed = () => { try{ return localStorage.getItem('lineup.share.dressed') === '1'; }catch(e){ return true; } };
+/* '꾸몄나'를 이 기기 localStorage 하나로만 보면, 가입 화면에서 캐릭터를 고른 사람이나 다른 폰에서
+   꾸민 사람에게 계속 "꾸며보세요"가 뜬다(실제로 그랬다). 서버에 저장되는 프로필을 먼저 본다.
+   가입 화면에 캐릭터 고르기가 있으므로 생년월일(가입 때만 쓰는 값)이 있으면 이미 고른 사람이다. */
+const dressed = () => { try{
+  if(ME?.profile?.dressed || ME?.profile?.birth) return true;
+  return localStorage.getItem('lineup.share.dressed') === '1'; }catch(e){ return true; } };
 function renderTodo(){
   const el = $('todo'); if(!el) return;
   const mine = (nowRows||[]).find(c=>c.user_id===ME.id);
@@ -2387,6 +2393,7 @@ function renderHome(){
 
 /* 홈 안에서 여는 꾸미기 — 탭을 하나 줄이려고 pane-me 를 통째로 옮겨 넣는다 */
 $('bld-fold')?.addEventListener('toggle', function(){
+  if(this.open){ try{ localStorage.setItem('lineup.share.dressed','1'); }catch(e){} renderTodo(); }
   if(this.open && !$('bld-home').firstChild){ $('bld-home').appendChild($('pane-me')); $('pane-me').hidden = false; renderBuilder(); }
 });
 
