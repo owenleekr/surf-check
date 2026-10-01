@@ -153,9 +153,11 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .toast.show{ opacity:1 }
 .perks{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
 /* 19px 짜리 칩을 손가락으로 누르라고 둘 순 없다. 글자도 11px 은 작다. */
-.perk{ border:2px solid var(--ink); background:#fff; padding:6px 10px; font-size:12.5px; font-weight:700;
+.perk{ border:2px solid var(--ink); background:#fff; min-height:40px; padding:6px 10px; font-size:12.5px; font-weight:700;
        min-height:36px; display:inline-flex; align-items:center; cursor:pointer }
+#pane-stay a[target], #s-near-card a[target]{ display:inline-flex; align-items:center; min-height:44px }   /* 지도 링크도 눌러야 하는 것 */
 .perk.on{ background:var(--mint) }
+button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 크기, 보여주기만 하는 칩(span)은 작게 */
 /* 온보딩은 한 번 보고 끝난다. 이건 남아서 '다음에 뭘 하면 되나'를 계속 알려준다.
    할 게 없으면 사라진다 — 늘 떠 있으면 잔소리가 된다. */
 .todo{ display:flex; align-items:center; gap:10px; width:100%; margin-top:12px; text-align:left;
@@ -187,7 +189,7 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .dstrip{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin-top:26px }
 .dcell{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:62px;
   border:3px solid var(--ink); background:#fff; font-weight:800; position:relative }
-.dcell small{ font-size:11px; color:#6B5A1E; line-height:1 }
+.dcell small{ font-size:12px; color:#6B5A1E; line-height:1 }
 .dcell b{ font-family:"Galmuri11",sans-serif; font-size:15px; line-height:1.2 }
 .dcell i{ font-style:normal; font-family:sans-serif; font-size:15px; line-height:1; height:17px }
 .dcell.sun small{ color:#C0392B } .dcell.sat small{ color:#2B6CB0 }
@@ -215,12 +217,16 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
   border:3px solid var(--ink); background:#fff; cursor:pointer; padding:0 10px }
 .dnone{ margin-top:10px; padding-top:10px; border-top:2px dashed var(--grid); font-size:12.5px; line-height:1.7; color:#6B5A1E; font-weight:700 }
 .dnone b{ color:var(--ink) }
+.burst{ position:fixed; z-index:900; font-size:20px; font-family:sans-serif; pointer-events:none; opacity:0;
+  animation:burst .95s cubic-bezier(.2,.8,.3,1) forwards }
+@keyframes burst{ 0%{ opacity:1; transform:translate(0,0) scale(.6) rotate(0) } 70%{ opacity:1 }
+  100%{ opacity:0; transform:translate(var(--dx),var(--dy)) scale(1.25) rotate(var(--rot)) } }
 .dtabs{ display:flex; gap:6px; margin-top:14px }
-.dtabs button{ flex:1; min-height:38px; font-family:inherit; font-size:13px; font-weight:800; border:3px solid var(--ink);
+.dtabs button{ flex:1; min-height:44px; font-family:inherit; font-size:13px; font-weight:800; border:3px solid var(--ink);
   background:#fff; cursor:pointer }
 .dtabs button[aria-pressed="true"]{ background:var(--ink); color:#fff }
 .dhead, .drow{ display:grid; grid-template-columns:26px minmax(0,1fr) auto 84px; gap:8px; align-items:center }
-.dhead{ margin-top:10px; font-size:10.5px; font-weight:800; color:#6B5A1E }
+.dhead{ margin-top:10px; font-size:11.5px; font-weight:800; color:#6B5A1E }
 .dhead .dd{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center; letter-spacing:-.04em }
 .drow{ padding:8px 0; border-top:2px dashed var(--grid); font-size:14px; font-weight:800 }
 .drow.me{ background:rgba(255,213,74,.35); margin:0 -6px; padding:8px 6px }
@@ -331,7 +337,7 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 
 /* ── 반응 · 채팅 ── */
 .rxbar{ display:flex; gap:4px; flex-wrap:wrap; margin-top:5px }
-.rx{ border:2px solid var(--ink); background:#fff; padding:2px 8px; min-height:34px; font-size:13.5px; font-family:sans-serif;
+.rx{ border:2px solid var(--ink); background:#fff; padding:2px 8px; min-height:40px; font-size:13.5px; font-family:sans-serif;
      line-height:1; display:inline-flex; align-items:center; gap:3px; cursor:pointer; opacity:.55 }
 .rx b{ font-family:inherit; font-size:11.5px; font-weight:800; color:var(--ink) }
 .rx.on{ background:var(--sun); opacity:1; box-shadow:1px 1px 0 var(--ink) }
@@ -369,9 +375,9 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .cond b{ color:#fff; font-size:13.5px }
 .cond .src{ display:block; color:#7FA8CC; font-size:11.5px; margin-top:2px }
 .fav{ border:0; background:none; font-size:20px; line-height:1; padding:0 4px 0 0; cursor:pointer;
-      color:#C9CDDC; font-family:sans-serif; min-height:30px }
+      color:#C9CDDC; font-family:sans-serif; min-height:44px; min-width:40px }
 .fav.on{ color:#F5A623 }
-.star{ background:none; border:0; font-size:22px; line-height:1; padding:0 1px; cursor:pointer; color:#B45309; font-family:inherit; min-height:34px }
+.star{ background:none; border:0; font-size:22px; line-height:1; padding:0 1px; cursor:pointer; color:#B45309; font-family:inherit; min-height:44px; min-width:44px }
 .star.ro{ cursor:default; font-size:14px }
 .rv-av{ width:20px; height:20px; image-rendering:pixelated; flex:0 0 auto }
 .starrow{ display:flex; align-items:center; flex-wrap:wrap }
@@ -511,7 +517,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 홈 -->
     <div id="pane-home" hidden>
-      <div class="px" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px">
+      <div class="px" style="display:flex;gap:8px;align-items:center;margin-top:14px">
         <canvas class="me-av" id="me-av"></canvas>
         <b id="who" style="flex:1 1 60px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px"></b>
         <span class="tag" id="cohort-tag"></span>
@@ -519,11 +525,6 @@ body.onb-on .wrap{ padding-bottom:230px }
         <button class="btn sm ghost" id="out" title="나가기" aria-label="나가기">↩</button>
       </div>
       <button type="button" class="todo" id="todo" hidden></button>
-      <button type="button" class="voice" id="voice" hidden>
-        <span class="vh">🎙 코치님들의 목소리</span>
-        <span class="vt" id="voice-t"></span>
-        <span class="vw" id="voice-w"></span>
-      </button>
       <section class="drill" id="drill" aria-label="테이크오프 훈련" hidden>
         <h3>🏄 테이크오프 훈련</h3>
         <div class="dsub" id="drill-sub"></div>
@@ -533,6 +534,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력 보기</summary><div class="dmgrid" id="dmgrid"></div></details>
         <button class="dlink" type="button" id="to-board">🏆 동기들은 얼마나 했나 — 순위 보기 ↓</button>
       </section>
+      <div class="grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
       <section class="drill" id="board" aria-label="훈련 순위" hidden>
         <h3>🏆 누가 꾸준히 하나</h3>
         <div class="dsub" id="board-sub"></div>
@@ -545,7 +547,11 @@ body.onb-on .wrap{ padding-bottom:230px }
         <button class="dlink" type="button" id="board-more" hidden></button>
         <div class="dnone" id="board-none" hidden></div>
       </section>
-      <div class="grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
+      <button type="button" class="voice" id="voice" hidden>
+        <span class="vh">🎙 코치님들의 목소리</span>
+        <span class="vt" id="voice-t"></span>
+        <span class="vw" id="voice-w"></span>
+      </button>
       <details class="px sand fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
         <div id="bld-home" style="margin-top:8px"></div>
       </details>
@@ -683,13 +689,13 @@ body.onb-on .wrap{ padding-bottom:230px }
       <div class="t" style="font-size:16px;margin-top:6px">6기를 위한 <b>서핑학교</b>를 만들고 있어요</div>
       <div class="note" style="margin-top:4px;line-height:1.6">파도 예보 · 물때 · 수업 기록 · 자세 분석.<br>
         준비되면 여기에서 바로 들어가실 수 있게 할게요.</div>
-      <a href="/school" style="display:inline-block;margin-top:10px;padding:9px 0;font-size:12.5px;color:var(--deep);font-weight:600">초대 코드를 받으셨다면 → 학교 문 열기</a>
+      <a href="/school" style="display:inline-flex;align-items:center;min-height:44px;margin-top:6px;font-size:13px;color:var(--deep);font-weight:600">초대 코드를 받으셨다면 → 학교 문 열기</a>
     </div>
   </div>
 </div>
 
 <nav class="nav" id="nav" hidden>
-  <button type="button" id="t-home" aria-pressed="true"><i>🏄</i>홈</button>
+  <button type="button" id="t-home" aria-pressed="true"><i>🏄</i>홈<span class="dot" id="home-dot" hidden>!</span></button>
   <button type="button" id="t-ride" aria-pressed="false"><i>🚗</i>차량<span class="dot" id="ride-dot" hidden>0</span></button>
   <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
   <button type="button" id="t-bolt" aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
@@ -799,6 +805,7 @@ const dLabel = d => { const x=new Date(d+'T00:00');
   return `${d.slice(5).replace('-','.')} (${DOW[x.getDay()]})`; };
 /* 차는 '이번 주 화'로는 몇 일인지 알 수 없어서 약속을 못 잡는다 — 날짜와 요일을 같이 적는다.
    오늘·내일만 뒤에 붙여 준다(10.06 (화) · 내일). */
+const dShort = d => `${d.slice(5).replace('-','.')} (${DOW[new Date(d+'T00:00').getDay()]})`;   // 범위용 — 오늘/내일 꼬리 없이
 const dDate = d => { const x = new Date(d+'T00:00'), t = new Date(); t.setHours(0,0,0,0);
   const gap = Math.round((x - t)/864e5), tag = gap===0 ? ' · 오늘' : gap===1 ? ' · 내일' : '';
   return `${d.slice(5).replace('-','.')} (${DOW[x.getDay()]})${tag}`; };
@@ -1428,7 +1435,7 @@ function renderBolts(){
     return hd + `<div class="card k-bolt ${gone?'gone':''}">
       <div class="bolt-t">⚡ ${esc(b.note || '같이 들어가요')}
         ${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
-      <div class="bolt-when"><b>${dLabel(b.date)}</b> · <b>${esc(b.beach)}</b> · <b>${hLabel(b.time)}</b></div>
+      <div class="bolt-when"><b>${dDate(b.date)}</b> · <b>${esc(b.beach)}</b> · <b>${hLabel(b.time)}</b></div>
       <div class="owner"><canvas data-own="${esc(b.id)}"></canvas>
         <span class="meta" style="margin:0">${esc(b.name)} 님이 열었어요</span>${noteBtn(b)}</div>
       <div class="seats">${list.map(x=>`<span class="seat ${x.id===ME.id?'me':'on'}">
@@ -2059,8 +2066,8 @@ const setTab = t => { state.tab = t;
   ['home','ride','stay','bolt','town','cam','me'].forEach(k=>{
     const btn = $('t-'+k); if(btn) btn.setAttribute('aria-pressed', String(t===k));
     $('pane-'+k).hidden = t!==k; });
-  if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); }
-  layoutHead();
+  if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); homeDot(); }
+  layoutHead(); homeDot();
   if(t==='me') renderBuilder();
   if(t==='cam') renderCam();
   else camStop();                       /* 다른 탭으로 가면 끈다 — 데이터가 계속 나간다 */
@@ -2072,6 +2079,8 @@ const setTab = t => { state.tab = t;
   window.scrollTo({ top:0, behavior:'instant' });
 };
 TABS.forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
+/* 버튼마다 손끝에 짧게 닿는 느낌 — 지원하는 기기에서만(iOS Safari 는 진동을 막는다) */
+document.addEventListener('click', e=>{ if(e.target.closest('.btn, .nav button, .dbtn, .dlink, .dtabs button')) navigator.vibrate?.(8); }, true);
 
 /* ── 홈 ───────────────────────────────────────────────────
    탭을 여섯으로 나눴더니 "오늘 뭐가 있나"를 보려면 네 번 눌러야 했다.
@@ -2168,7 +2177,7 @@ function renderTodo(){
    하루 한 번 누르면 한 줄. 연속일수는 '오늘 안 눌렀어도 어제까지 이어졌으면' 살아 있다 —
    하루가 끝나기 전에 0 으로 떨어지면 저녁에 보는 사람은 늘 꼴찌로 시작한다. */
 const dSet = {};                               // user_id → Set(day)
-let drillRows = [], drillOk = true, drillView = 'streak', drillStampDay = '', boardAll = false;
+let drillLoaded = false, drillRows = [], drillOk = true, drillView = 'streak', drillStampDay = '', boardAll = false;
 const dayOf = n => daysAgo(n);
 function drillIndex(){
   Object.keys(dSet).forEach(k=>delete dSet[k]);
@@ -2182,7 +2191,7 @@ function drillStat(id){
   return { streak, week:[...Array(7)].map((_,i)=>S.has(dayOf(6-i))).filter(Boolean).length, total:S.size, S };
 }
 async function pullDrills(){
-  try{ drillRows = await api(`drills?select=user_id,name,day&day=gte.${dayOf(120)}&order=day.desc&limit=5000`); drillOk = true; }
+  try{ drillRows = await api(`drills?select=user_id,name,day&day=gte.${dayOf(120)}&order=day.desc&limit=5000`); drillOk = true; drillLoaded = true; }
   catch(e){ if(e.code==='notable') drillOk = false; }
   /* 홈에서는 마을을 아직 안 불러왔다 — 누가 아직 안 했는지 보려면 명단이 있어야 한다 */
   if(!(state.town||[]).length){
@@ -2199,8 +2208,11 @@ function renderDrill(){
   btn.className = 'dbtn' + (did ? ' done' : '');
   btn.textContent = did ? '✅ 오늘 했어요 (누르면 취소)' : '오늘 테이크오프 했어요';
   btn.setAttribute('aria-pressed', String(did));
+  homeDot();
+  const upper = Object.keys(dSet).filter(id=>id!==ME.id && drillStat(id).streak > me.streak).length;   // 나보다 연속이 긴 사람 수
+  const many = Object.keys(dSet).length > 1;
   $('drill-sub').textContent = me.streak
-    ? `🔥 ${me.streak}일 연속 · 최근 7일 ${me.week}/7${did ? '' : ' — 오늘 하면 이어져요'}`
+    ? `🔥 ${me.streak}일 연속${many ? ` · 동기 중 ${upper+1}위` : ''} · 최근 7일 ${me.week}/7${did ? '' : ' — 오늘 하면 이어져요'}`
     : (me.total ? '연속이 끊겼어요 — 오늘 다시 시작해요' : '땅에서 10번, 오늘부터 시작해요');
   const DAYS = [...Array(7)].map((_,i)=>dayOf(6-i));
   const dow = d => new Date(d+'T00:00').getDay();
@@ -2254,6 +2266,20 @@ function renderDrill(){
   more.hidden = ids.length <= TOP;
   more.textContent = boardAll ? '접기 ▲' : `전체 ${ids.length}명 보기 ▼`;
 }
+/* 오늘 아직이면 다른 탭에서 홈에 점이 뜬다. 불러오기 전이나 표가 없을 땐 띄우지 않는다(거짓 알림이 된다). */
+function homeDot(){ const hd = $('home-dot'); if(!hd) return;
+  hd.hidden = !(drillOk && drillLoaded) || state.tab === 'home' || (dSet[ME.id]||new Set()).has(dayOf(0)); }
+/* 눌렀을 때 손맛 — 버튼에서 이모지가 튀어 오른다. 움직임을 줄이는 설정이면 건너뛴다. */
+function burst(from, n){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches || !from) return;
+  const r = from.getBoundingClientRect(), E = ['🔥','🌊','🏄','✨','💪'];
+  for(let i = 0; i < n; i++){
+    const e = document.createElement('span'); e.className = 'burst'; e.textContent = E[i % E.length];
+    const ang = (-90 + (Math.random()-0.5)*150) * Math.PI/180, dist = 70 + Math.random()*90;
+    e.style.cssText = `left:${r.left + r.width*(0.2+Math.random()*0.6)}px;top:${r.top + r.height/2}px;--dx:${Math.cos(ang)*dist}px;--dy:${Math.sin(ang)*dist}px;--rot:${(Math.random()-0.5)*80}deg;animation-delay:${i*18}ms`;
+    document.body.appendChild(e); setTimeout(()=>e.remove(), 1100);
+  }
+}
 $('drill-btn').onclick = async ()=>{
   const day = dayOf(0), id = `${ME.id}|${day}`, did = (dSet[ME.id]||new Set()).has(day);
   const back = drillRows;
@@ -2264,7 +2290,10 @@ $('drill-btn').onclick = async ()=>{
   try{
     if(did) await api(`drills?id=eq.${encodeURIComponent(id)}`, { method:'DELETE' });
     else { await api('drills', { method:'POST', body:JSON.stringify({ id, user_id:ME.id, name:ME.name, day }) });
-      navigator.vibrate?.(20); const s = drillStat(ME.id).streak; toast(s > 1 ? `🔥 ${s}일 연속!` : '오늘 훈련 완료'); }
+      navigator.vibrate?.([18,40,18]); const s = drillStat(ME.id).streak;
+      const MS = { 3:'3일 연속 — 습관의 시작이에요', 7:'7일 연속 — 한 주 완성!', 14:'14일 연속 — 2주 개근', 30:'30일 연속 — 한 달 개근!' };
+      toast(MS[s] ? `🔥 ${MS[s]}` : s > 1 ? `🔥 ${s}일 연속!` : '오늘 훈련 완료');
+      burst($('drill-btn'), MS[s] ? 18 : 9); }
   }catch(e){
     if(!did && e.status === 409) return;            // 다른 폰에서 이미 눌렀다 — 그대로 둔다
     drillRows = back; renderDrill(); renderTodo();
@@ -2292,11 +2321,11 @@ function renderHome(){
         : `<div class="hsub dim">아직 없어요 — 눌러서 첫 글을 올려보세요</div>`}</div>`;
   box.innerHTML =
     line('⚡','다가오는 번개', bs.length, 'bolt',
-      bs.map(b=>`${dLabel(b.date)} ${hLabel(b.time)} · ${esc(b.beach)} · ${esc(b.note||'같이 들어가요')} (${(b.joins||[]).length}명)`)) +
+      bs.map(b=>`${dDate(b.date)} ${hLabel(b.time)} · ${esc(b.beach)} · ${esc(b.note||'같이 들어가요')} (${(b.joins||[]).length}명)`)) +
     line('🚗','차량 쉐어', rides.length, 'ride',
       rides.map(r=>`${dDate(r.date)} ${hLabel(r.depart_at)} · ${esc(r.from_place)} → ${esc(r.to_place)} (빈자리 ${Math.max(0,(r.seats||0)-(r.riders||[]).length)})`)) +
     line('🏠','숙소 쉐어', stays.length, 'stay',
-      stays.map(x=>`${dLabel(x.date_from)}~${dLabel(x.date_to)} · ${esc(x.place)} (${(x.guests||[]).length}/${x.capacity}명)`)) +
+      stays.map(x=>`${dShort(x.date_from)} ~ ${dShort(x.date_to)} · ${esc(x.place)} (${(x.guests||[]).length}/${x.capacity}명)`)) +
     line('🏘','마을', town, 'town',
       here ? [`지금 바다에 ${here}명`] : (town ? ['오늘은 아직 조용해요'] : []));
   box.querySelectorAll('[data-go]').forEach(el=>el.onclick = ()=>setTab(el.dataset.go));
@@ -2395,7 +2424,7 @@ function renderStays(){
     const hd = gone && !shead ? (shead = true, `<div class="gone-hd">지난 숙소 — 평가는 계속 남길 수 있어요</div>`) : '';
     return hd + `<div class="card k-stay ${gone?'gone':''}">
       <div class="hd"><b>${esc(s.place)}</b>${s.price?`<span class="tag">${esc(s.price)}</span>`:''}${gone?'<span class="tag" style="background:#D8DCE8">지남</span>':''}</div>
-      <div class="meta">${dLabel(s.date_from)} → ${dLabel(s.date_to)}${distLabel(s)}</div>
+      <div class="meta">${dShort(s.date_from)} → ${dShort(s.date_to)}${distLabel(s)}</div>
       <div class="owner"><canvas data-own="${esc(s.id)}"></canvas><span class="meta" style="margin:0">${esc(s.name)} 님이 올림</span>${noteBtn(s)}</div>
       ${(s.perks||[]).length ? `<div class="perks">${s.perks.map(p=>`<span class="perk on">${esc(p)}</span>`).join('')}</div>` : ''}
       ${s.note ? `<div class="meta">${esc(s.note)}</div>` : ''}
@@ -2924,7 +2953,7 @@ function start(){
   $('nav').hidden = false; document.body.classList.add('has-nav');
   $('who').textContent = ME.name;
   if(typeof drawSpr === 'function'){ const pr = withLook(ME.profile||{}, ME.name); drawSpr($('me-av'), avatarRows(pr, false), avatarTintOf(pr, 0)); }
-  $('cohort-tag').textContent = ME.cohort === '6기' ? '양양서핑학교 6기' : '서퍼';
+  $('cohort-tag').textContent = ME.cohort === '6기' ? '6기' : '서퍼';
   $('r-date').value = nextWeekend(); $('s-from').value = nextWeekend();
   $('s-to').value = nextWeekend(1);
   if(!ME.profile || !Object.keys(ME.profile).length) ME.profile = freshProfile(ME.name);
