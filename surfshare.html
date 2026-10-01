@@ -1325,7 +1325,7 @@ function paintCond(v){
   const body = `<b>${num(v.temp)}°</b> ${WX[v.wx] || ''} · 수온 <b>${num(v.sst)}°</b>`
     + ` · 파도 <b>${num(v.h)}m</b> / <b>${num(v.p)}초</b>`
     + (v.tide ? `<br>🌙 물 <b>${v.tide.dir}</b> · 다음 <b>${v.tide.type} ${hLabel(v.tide.at)}</b>` : '');
-  const src = `<span class="src">Open-Meteo 격자값 · 15분마다 갱신 · 물때는 조위 모델이라 공식값과 10~30분 차이 가능</span>`;
+  const src = `<span class="src">추정값(Open-Meteo) · 물때 오차 10~30분</span>`;
   if($('cond')) $('cond').innerHTML = body + src;
   /* 캠에서는 어느 바다 값인지가 헷갈리기 쉽다 — 해변 이름을 같이 적는다 */
   if($('cam-cond')) $('cam-cond').innerHTML =
