@@ -74,6 +74,7 @@ const BADGES = [
   { id:'drill10', ic:'💪', n:'열 번째 훈련',   d:'훈련을 누적 10일 했어요',           t:s=>s.drillDays >= 10 },
   { id:'drill30', ic:'🦵', n:'서른 번째 훈련', d:'훈련을 누적 30일 했어요',           t:s=>s.drillDays >= 30, xp:50 },
   { id:'bolt1',   ic:'⚡', n:'번개 소집',      d:'서핑번개를 처음 열었어요',           t:s=>s.boltsMade >= 1 },
+  { id:'boltgo',   ic:'🔥', n:'번개 대장',        d:'내가 연 번개에 세 명이 모였어요',       t:s=>s.boltsGo >= 1, xp:30 },
   { id:'bolt2',   ic:'🤝', n:'번개 합류',      d:'남이 연 번개에 들어갔어요',         t:s=>s.boltsJoined >= 1 },
   { id:'ride1',   ic:'🚗', n:'카풀 시작',      d:'차량 쉐어를 올리거나 탔어요',       t:s=>s.ridesMade + s.ridesJoined >= 1 },
   { id:'stay1',   ic:'🏠', n:'한 지붕 아래',   d:'숙소 쉐어를 올리거나 함께했어요',   t:s=>s.staysMade + s.staysJoined >= 1 },
@@ -107,14 +108,14 @@ function playStats(){
   const inL = l => (l||[]).some(x=>x.id === id);
   const B = (typeof bolts !== 'undefined' && bolts) || [], R = state.rides || [], T = state.stays || [];
   return { drillDays:S.size, bestStreak:Math.max(best, typeof drillStat === 'function' ? drillStat(id).streak : 0),
-    boltsMade:B.filter(b=>b.user_id === id).length, boltsJoined:B.filter(b=>b.user_id !== id && inL(b.joins)).length,
+    boltsMade:B.filter(b=>b.user_id === id).length, boltsGo:B.filter(b=>b.user_id === id && (b.joins||[]).length >= 3).length, boltsJoined:B.filter(b=>b.user_id !== id && inL(b.joins)).length,
     ridesMade:R.filter(r=>r.user_id === id).length, ridesJoined:R.filter(r=>r.user_id !== id && inL(r.riders)).length,
     staysMade:T.filter(x=>x.user_id === id).length, staysJoined:T.filter(x=>x.user_id !== id && inL(x.guests)).length,
     mvp:(typeof weeklyTop === 'function' ? Object.values(weeklyTop()).filter(a=>a.some(x=>x.id === id)).length : 0),
     chat:(state.chat||[]).filter(m=>m.user_id === id).length, reacts:(state.reacts||[]).filter(r=>r.user_id === id).length };
 }
 /* 한 번에 쏟아부을 수 있는 건 상한을 둔다 — 수다·반응 도배로 레벨을 사지 못하게 */
-const rawXp = s => s.drillDays*10 + s.boltsMade*15 + s.boltsJoined*5 + s.ridesMade*15 + s.ridesJoined*5
+const rawXp = s => s.drillDays*10 + s.boltsMade*15 + s.boltsGo*10 + s.boltsJoined*5 + s.ridesMade*15 + s.ridesJoined*5
                  + s.staysMade*15 + s.staysJoined*5 + Math.min(s.chat, 30) + Math.min(s.reacts, 30);
 
 /* 오늘의 퀘스트 — 하루 세 개, 전부 오늘 한 일에서 계산한다 */
