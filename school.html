@@ -3585,7 +3585,10 @@ $('wipe').onclick = ()=>{ if(confirm('이 폰에 저장된 계정·진도를 전
 $('reset-open').onclick = ()=>{ $('reset-box').hidden = !$('reset-box').hidden; $('r-id').value = $('uid').value.trim(); };
 $('r-go').onclick = async ()=>{ const id = $('r-id').value.trim().toLowerCase(), birth = $('r-birth').value.replace(/\D/g,''), pw = $('r-new').value; $('r-err').textContent = '';
   try{ if(!/^\d{6}$/.test(birth)) throw new Error('생년월일 6자리'); if(pw.length<4) throw new Error('새 비밀번호는 4자 이상');
-    if(supaOn()){ try{ await rpc('reset_pw', { p_id:id, p_birth:birth, p_new:pw }); }catch(e){ if(e.code==='norpc') throw new Error('재설정 기능이 아직 서버에 없어요 (코치가 SQL 실행 필요)'); throw new Error({ nouser:'없는 아이디예요', nobirth:'이 계정은 생년월일이 등록돼 있지 않아요', wrongbirth:'생년월일이 달라요', badpw:'새 비밀번호는 4자 이상' }[e.code] || e.message); } }
+    if(supaOn()){ try{ const res = await rpc('reset_pw', { p_id:id, p_birth:birth, p_new:pw });
+        /* 서버가 잠금을 걸면서 예외 대신 글자로 답한다(예외는 시도 기록까지 되돌려서 잠금이 안 걸린다). 예전 서버는 true */
+        if(res !== true && res !== 'ok') throw Object.assign(new Error(String(res)), { code:String(res) });
+      }catch(e){ if(e.code==='norpc') throw new Error('재설정 기능이 아직 서버에 없어요 (코치가 SQL 실행 필요)'); throw new Error({ nouser:'없는 아이디예요', nobirth:'이 계정은 생년월일이 등록돼 있지 않아요', wrongbirth:'생년월일이 달라요', badpw:'새 비밀번호는 4자 이상', locked:'시도가 너무 많아요. 30분 뒤에 다시 해주세요' }[e.code] || e.message); } }
     else { const u = auth.users()[id]; if(!u) throw new Error('없는 아이디예요'); if((u.profile?.birth||'')!==birth) throw new Error(u.profile?.birth ? '생년월일이 달라요' : '이 계정은 생년월일이 없어요'); u.hash = await hash(u.salt+pw); auth.remember(id, u); }
     toast('비밀번호를 바꿨어요'); $('reset-box').hidden = true; setMode('in'); $('uid').value = id; $('upw').value = pw; $('login-form').requestSubmit();
   }catch(e){ $('r-err').textContent = e.message; } };
