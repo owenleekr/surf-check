@@ -19,7 +19,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
 <!-- 아이폰은 HLS 를 그냥 재생하지만 안드로이드 크롬은 못 한다. 못 받아도 앱은 굴러가게
      캠 화면에서만 확인하고, 없으면 WSB FARM 링크로 보낸다. -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js" defer></script>
 <script src="config.js"></script>
 <script>
 /* 도트(sprite.js)·명단(roster.js)을 따로 뺀 뒤로, 그 파일 하나만 못 받아도
@@ -1512,7 +1511,13 @@ $('now-btn').onclick = async ()=>{
    라인업에서 그대로 가져왔다. 아이폰은 HLS 를 그냥 재생하지만 안드로이드 크롬은
    hls.js 가 있어야 한다. 그 파일을 못 받아도 앱이 죽으면 안 되니, 여기서만 확인하고
    없으면 WSB FARM 링크로 보낸다. */
-let hls = null, camOn = null;
+let hls = null, camOn = null, hlsP = null;
+function loadHls(){
+  if(window.Hls) return Promise.resolve();
+  return hlsP ||= new Promise((res, rej)=>{ const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.15/hls.min.js'; sc.onload = res;
+    sc.onerror = ()=>{ hlsP = null; sc.remove(); rej(new Error('hls')); }; document.head.appendChild(sc); });   // 실패하면 다음에 다시 시도할 수 있게 비운다
+}
 function camStop(){
   const v = $('cam-v'); if(!v) return;
   if(hls){ try{ hls.destroy(); }catch(e){} hls = null; }
@@ -1526,14 +1531,21 @@ function camPlay(name){
     `<div style="font-weight:800">캠이 지금 안 잡혀요</div><small>${why}</small>
      <a class="btn sm ghost" href="${CAM_URL(cam)}" target="_blank" rel="noopener">WSB FARM에서 보기 ↗</a>`; };
   $('cam-cover').hidden = true; $('cam-live').hidden = false; camOn = n;
-  if(window.Hls && Hls.isSupported()){
-    hls = new Hls({ liveSyncDurationCount:3 });
-    hls.loadSource(url); hls.attachMedia(v);
-    hls.on(Hls.Events.MANIFEST_PARSED, ()=>v.play().catch(()=>{}));
-    hls.on(Hls.Events.ERROR, (_,d)=>{ if(d.fatal) fail('점검 중이거나 주소가 바뀌었을 수 있어요.'); });
-  } else if(v.canPlayType('application/vnd.apple.mpegurl')){
+  const playHls = ()=>{
+    if(window.Hls && Hls.isSupported()){
+      hls = new Hls({ liveSyncDurationCount:3 });
+      hls.loadSource(url); hls.attachMedia(v);
+      hls.on(Hls.Events.MANIFEST_PARSED, ()=>v.play().catch(()=>{}));
+      hls.on(Hls.Events.ERROR, (_,d)=>{ if(d.fatal) fail('점검 중이거나 주소가 바뀌었을 수 있어요.'); });
+    } else fail('이 브라우저가 실시간 영상을 못 열어요.');
+  };
+  /* 아이폰은 HLS 를 그냥 재생한다 — 그 사람들에겐 hls.js 를 받게 하지 않는다.
+     나머지도 캠을 실제로 켤 때 받는다. 예전엔 앱을 열 때마다 받았다(약 110KB, 바다 앞 데이터로). */
+  if(v.canPlayType('application/vnd.apple.mpegurl')){
     v.src = url; v.onerror = ()=>fail('점검 중이거나 주소가 바뀌었을 수 있어요.'); v.play().catch(()=>{});
-  } else fail('이 브라우저가 실시간 영상을 못 열어요.');
+  } else{
+    loadHls().then(()=>{ if(camOn === n) playHls(); }).catch(()=>{ if(camOn === n) fail('영상 도구를 받지 못했어요. 신호를 확인하고 이 탭에 다시 들어오면 한 번 더 시도해요.'); });
+  }
 }
 function renderCam(){
   pullCond();                       // 탭에 들어오면 그 바다 값을 채운다(15분 캐시라 대개 즉시)
