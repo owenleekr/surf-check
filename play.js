@@ -342,7 +342,7 @@ function renderPlayBits(){
 }
 
 /* ── 도감 시트 ── */
-let _rkView = 'xp';
+let _rkView = 'xp', _plTab = 'today';
 async function openPlay(){
   $('play-sheet').hidden = false;
   renderPlay();
@@ -372,6 +372,8 @@ function renderPlay(){
     <div class="xpbar big" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
     ${(()=>{ const nu = UNLOCKS.find(u=>u.lv > lv); return nu ? `<div class="note" style="margin-top:8px">🔓 Lv.${nu.lv+1} ${PLV[nu.lv][1]}에서 <b>${nu.ic} ${nu.n}</b>이 열려요</div>` : `<div class="note" style="margin-top:8px">🎉 꾸미기 아이템을 모두 열었어요</div>`; })()}
 
+    <div class="pltabs" role="tablist" aria-label="도감 구역"><button type="button" role="tab" data-plt="today" aria-selected="${_plTab==='today'}">🎯 오늘</button><button type="button" role="tab" data-plt="collect" aria-selected="${_plTab==='collect'}">🎒 수집</button><button type="button" role="tab" data-plt="rank" aria-selected="${_plTab==='rank'}">🏆 순위</button></div>
+    <div class="plpane" data-pane="today">
     <div class="pt">오늘의 퀘스트 <small>${qs.filter(q=>q.done).length}/${qs.length} · 모두 하면 +20 XP</small></div>
     ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-q="${i}">
         <i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
@@ -385,16 +387,18 @@ function renderPlay(){
       ${f.voice ? `<div class="fv">“${esc(f.voice[0])}”<small>— ${esc(f.voice[1])}</small></div>` : ''}</div>`; })()
       : `<button type="button" class="btn mint" id="pg-fort" style="width:100%;min-height:48px">🔮 오늘의 운세 열어보기 (+3 XP)</button>`}
 
-    <div class="pt">📍 해변 스탬프 <small>${Object.keys(p.stamps||{}).length}/${SEAS.length} · 체크인하면 찍혀요</small></div>
-    <div class="stmps">${SEAS.map(s=>`<span class="stmp${p.stamps?.[s[0]] ? ' on' : ''}"${p.stamps?.[s[0]] ? ` title="${esc(p.stamps[s[0]])}"` : ''}>${p.stamps?.[s[0]] ? '📍' : '·'} ${esc(s[0])}</span>`).join('')}</div>
-
     <div class="pt">🧠 코치 퀴즈 <small>누적 정답 ${p.qz || 0}개</small></div>
     <button type="button" class="btn mint" id="pg-quiz" style="width:100%;min-height:48px">누가 한 말일까요? — 한 판에 5문제</button>
+    </div>
+    <div class="plpane" data-pane="collect">
+    <div class="pt">📍 해변 스탬프 <small>${Object.keys(p.stamps||{}).length}/${SEAS.length} · 체크인하면 찍혀요</small></div>
+    <div class="stmps">${SEAS.map(s=>`<span class="stmp${p.stamps?.[s[0]] ? ' on' : ''}"${p.stamps?.[s[0]] ? ` title="${esc(p.stamps[s[0]])}"` : ''}>${p.stamps?.[s[0]] ? '📍' : '·'} ${esc(s[0])}</span>`).join('')}</div>
 
     <div class="pt">배지 <small>${got}/${BADGES.length}</small></div>
     <div class="bgrid">${BADGES.map(b=>`<button type="button" class="bd${p.badges[b.id]?' on':''}" data-bd="${b.id}" aria-label="${b.n}${p.badges[b.id]?'':' (잠김)'}">
         <i>${p.badges[b.id] ? b.ic : '🔒'}</i><span>${b.n}</span></button>`).join('')}</div>
-
+    </div>
+    <div class="plpane" data-pane="rank">
     <div class="pt">동기 순위 <small>
       <button type="button" class="prk-tab${_rkView==='xp'?' on':''}" data-rk="xp">레벨</button>
       <button type="button" class="prk-tab${_rkView==='best'?' on':''}" data-rk="best">점프</button>
@@ -403,7 +407,11 @@ function renderPlay(){
       return `<div class="prk${r.id===ME.id?' me':''}"><span class="n">${medal(i)}</span><span class="nm2">${esc(r.name)}</span>
         <span class="v">${_rkView==='xp' ? `Lv.${l+1} · ${r.xp}` : `${r[key]}점`}</span></div>`; }).join('')
       : `<div class="note">${_rkView==='xp' ? '아직 기록이 없어요.' : _rkView==='daily' ? '오늘의 챌린지는 아직 아무도 안 뛰었어요 — 첫 번째가 되어보세요' : '아직 아무도 안 뛰었어요 — 첫 번째가 되어보세요'}</div>`}
-    <div class="note" style="margin-top:10px">점수는 훈련·번개·차량·숙소·마을 활동에서 쌓여요. 순위는 재미로만 봐주세요 — 서버가 누가 했는지 증명하진 못해요.</div>`;
+    <div class="note" style="margin-top:10px">점수는 훈련·번개·차량·숙소·마을 활동에서 쌓여요. 순위는 재미로만 봐주세요 — 서버가 누가 했는지 증명하진 못해요.</div>
+    </div>`;
+  $('play-body').dataset.tab = _plTab;
+  $('play-body').querySelectorAll('[data-plt]').forEach(b=>b.onclick = ()=>{ _plTab = b.dataset.plt; $('play-body').dataset.tab = _plTab;
+    $('play-body').querySelectorAll('[data-plt]').forEach(x=>x.setAttribute('aria-selected', String(x === b))); });
   $('play-body').querySelectorAll('[data-q]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.q]; if(!q.done) q.go(); });
   $('play-body').querySelectorAll('[data-bd]').forEach(b=>b.onclick = ()=>{ const bd = BADGES.find(x=>x.id === b.dataset.bd);
     toast(p.badges[bd.id] ? `${bd.ic} ${bd.n} — ${bd.d}` : `🔒 ${bd.n} — ${bd.d}`); });

@@ -349,6 +349,12 @@ body.game-on{ overflow:hidden }
 .fort{ padding:12px 14px; background:#FFF3C4; border:3px solid var(--ink); font-size:14px; line-height:1.9; font-weight:700 }
 .fort .fs{ font-size:15px; margin-bottom:2px } .fort .fs b{ color:#B45309; letter-spacing:.1em }
 .fort .fv{ margin-top:8px; padding-top:8px; border-top:2px dashed #C9BE97; font-size:13px; line-height:1.7; word-break:keep-all } .fort .fv small{ display:block; color:#5B6275 }
+.pltabs{ display:flex; gap:6px; margin:14px 0 0 }
+.pltabs button{ flex:1; min-height:44px; font-family:inherit; font-size:14px; font-weight:800; border:3px solid var(--ink); background:#fff; cursor:pointer }
+.pltabs button[aria-selected="true"]{ background:var(--ink); color:#fff }
+#play-body[data-tab="today"] .plpane:not([data-pane="today"]),
+#play-body[data-tab="collect"] .plpane:not([data-pane="collect"]),
+#play-body[data-tab="rank"] .plpane:not([data-pane="rank"]){ display:none }
 .burst{ position:fixed; z-index:900; font-size:20px; font-family:sans-serif; pointer-events:none; opacity:0;
   animation:burst .95s cubic-bezier(.2,.8,.3,1) forwards }
 @keyframes burst{ 0%{ opacity:1; transform:translate(0,0) scale(.6) rotate(0) } 70%{ opacity:1 }
