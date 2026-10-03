@@ -155,6 +155,11 @@ function playTick(){
   Object.keys(p.qd).sort().slice(0, -14).forEach(d=>delete p.qd[d]);      // 2주 지난 기록은 버린다(qall 이 누적을 들고 있다)
   const xp = playXp(p), lv = lvOf(xp);
   if(p.xp !== xp || p.lv !== lv){ p.xp = xp; p.lv = lv; ch = true; }
+  /* 이미 쓰던 사람에게 한 번만 알린다. 방금 시작한 사람은 환영 카드가 있으니 건너뛰고 본 걸로 친다. */
+  const NEWS = 'play1';
+  let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
+  if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
+    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'레벨 · 오늘의 퀘스트 · 배지 도감, 그리고 쉬는 시간용 파도 점프 게임!\n홈의 내 이름 줄을 눌러 보세요.', go:openPlay, btn:'도감 열기' }); }
   if(first){ p.lvSeen = lv; _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{
     if(allNow) _popQ.push({ ic:'🎉', t:'오늘의 퀘스트 완료!', d:'세 가지를 모두 해냈어요  +20 XP' });
@@ -189,10 +194,13 @@ function popNext(){
   if(window._gameRun || ($('game') && !$('game').hidden)) return;
   const c = _popQ.shift(); _popBusy = true;
   $('pop-ic').textContent = c.ic; $('pop-t').textContent = c.t; $('pop-d').textContent = c.d;
+  const go = $('pop-go'); go.hidden = !c.go; _popGo = c.go || null; if(c.go) go.textContent = c.btn || '보러가기';
   $('pop').hidden = false; $('pop-ok').focus({ preventScroll:true });
   vib(c.up ? [30,50,30,50,60] : [20,40,20]);
   if(typeof burst === 'function') burst($('pop-ic'), c.up ? 22 : 12);
 }
+let _popGo = null;
+function popGo(){ const f = _popGo; popClose(); if(f) setTimeout(f, 260); }
 function popClose(){ $('pop').hidden = true; _popBusy = false; setTimeout(popNext, 220); }
 
 /* ── 화면 조각 ── 홈 프로필 줄의 레벨 막대, 퀘스트 띠 */
@@ -272,7 +280,7 @@ function renderPlay(){
 /* ── 배선 ── */
 function playWire(){
   if(playWire.done) return; playWire.done = true;
-  $('pop-ok').onclick = popClose;
+  $('pop-ok').onclick = popClose; $('pop-go').onclick = popGo;
   $('pop').addEventListener('click', e=>{ if(e.target === $('pop')) popClose(); });
   document.querySelectorAll('[data-playclose]').forEach(b=>b.onclick = closePlay);
   ['prof-lv','quest-strip'].forEach(id=>{ const el = $(id); if(el) el.onclick = openPlay; });

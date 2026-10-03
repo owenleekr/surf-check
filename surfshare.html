@@ -292,7 +292,7 @@ button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 
 @keyframes popin{ 0%{ transform:scale(.6); opacity:0 } 100%{ transform:scale(1); opacity:1 } }
 .pop-ic{ font-size:60px; line-height:1.1; font-family:sans-serif }
 .pop-t{ font-family:"Galmuri11",sans-serif; font-size:18px; font-weight:800; margin-top:8px; word-break:keep-all }
-.pop-d{ font-size:14px; line-height:1.6; color:#5B6275; font-weight:700; margin:6px 0 16px; word-break:keep-all }
+.pop-d{ white-space:pre-line; font-size:14px; line-height:1.6; color:#5B6275; font-weight:700; margin:6px 0 16px; word-break:keep-all }
 .game{ position:fixed; inset:0; z-index:940; background:#0B2540; display:flex; align-items:center; justify-content:center }
 .game[hidden]{ display:none }
 body.game-on{ overflow:hidden }
@@ -841,7 +841,10 @@ body.onb-on .wrap{ padding-bottom:230px }
     <div class="pop-ic" id="pop-ic"></div>
     <div class="pop-t" id="pop-t"></div>
     <div class="pop-d" id="pop-d"></div>
-    <button class="btn blue" id="pop-ok" type="button" style="min-width:140px;min-height:48px">좋아요</button>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+      <button class="btn blue" id="pop-go" type="button" style="min-width:120px;min-height:48px" hidden></button>
+      <button class="btn" id="pop-ok" type="button" style="min-width:120px;min-height:48px">좋아요</button>
+    </div>
   </div>
 </div>
 
@@ -2155,10 +2158,14 @@ function bindNotes(box){ box.querySelectorAll('[data-note]').forEach(b=>b.onclic
    덮개(dim)를 쓰지 않는다. 앱에서 덮개의 pointer-events 가 탭을 삼켜
    "누를 수 없는 안내"가 됐던 적이 있다. 여기선 아래 카드 + 테두리만 쓴다. */
 const ONB = [
-  { tab:'me',   at:'t-me',   t:'먼저 내 캐릭터부터',
-    d:'얼굴 · 옷 · 보드 · 같이 타는 친구를 고를 수 있어요.<br>고르는 즉시 저장되고, 아래 차·숙소 글에 <b>이 모습으로</b> 나옵니다.' },
+  { tab:'home', at:'prof-lv', t:'내 레벨 — 눌러서 도감',
+    d:'훈련 · 번개 · 차량 · 숙소 · 한마디로 <b>XP</b>가 쌓여요.<br>눌러서 오늘의 퀘스트, 배지, 동기 순위, <b>🎮 파도 점프</b> 게임을 봅니다.' },
+  { tab:'home', at:'drill-btn', t:'하루 한 번 테이크오프 체크',
+    d:'오늘 했으면 눌러요. 연속일수가 쌓이고, 동기들과 <b>이번 주 목표</b>를 같이 채웁니다.<br>아래 순위에서 누가 꾸준한지도 볼 수 있어요.' },
+  { tab:'home', at:'bld-fold', t:'내 캐릭터 꾸미기',
+    d:'얼굴 · 옷 · 보드 · 같이 타는 친구를 고릅니다. 고르는 즉시 저장돼요.<br>레벨이 오르면 <b>보드 색과 모자</b>가 새로 열립니다.' },
   { tab:'ride', at:'t-ride', t:'차 — 같이 타기',
-    d:'빈자리에 <b>[타기]</b>를 누르면 내 자리가 잡혀요. 마음이 바뀌면 [내리기].<br>내가 운전하면 <b>[🚗 차량 쉐어 올리기]</b>로 날짜·출발 시각·태울 인원을 적습니다.' },
+    d:'빈자리에 <b>[탈래요]</b>를 누르면 내 자리가 잡혀요. 마음이 바뀌면 [자리 빼기].<br>내가 운전하면 <b>[🚗 차량 쉐어 올리기]</b>로 날짜·출발 시각·태울 인원을 적습니다.' },
   { tab:'ride', at:'r-dir',  t:'가는 차 · 나가는 차',
     d:'<b>양양 가는 차</b>는 집 → 양양, <b>나가는 차</b>는 양양 → 집이에요.<br>방향을 고르면 타는 곳·내리는 곳 예시도 같이 바뀝니다.', open:'ride' },
   { tab:'stay', at:'t-stay', t:'숙소 — 같이 쓰기',
@@ -2169,9 +2176,9 @@ const ONB = [
     d:'시간과 바다만 정해서 올리면, 갈 사람이 <b>[나도 갈래요]</b>를 눌러 채웁니다.<br>정원은 없어요 — 바다는 자리가 모자라지 않으니까요.' },
   { tab:'cam',  at:'t-cam',  t:'라이브캠 — 나가기 전에 한 번',
     d:'WSB FARM 웨이브캠을 그대로 가져왔어요. 지금 그 해변이 어떤지 <b>눈으로</b> 보고 나갑니다.<br>소리는 없고 데이터를 꽤 쓰니, 다른 탭으로 가면 알아서 꺼져요.' },
-  { tab:'town', at:'t-town', t:'마을 — 오늘 어땠는지 한마디',
-    d:'말풍선을 남기면 마을에 뜨고, 동기들이 👏🔥🌊💪로 답합니다.<br>바다에 체크인한 사람 머리 위엔 📍가 붙어요. 아래는 <b>마을 채팅</b>.' },
-  { tab:'ride', at:'school', t:'학교는 곧 열려요',
+  { tab:'town', at:'t-town', t:'마을 — 한마디가 머리 위로',
+    d:'채팅에 친 말이 내 머리 위 <b>말풍선</b>으로 떠요. 동기를 누르면 👏🔥🌊💪 응원을 보낼 수 있어요.<br>바다에 체크인한 사람 머리 위엔 📍, 오늘 훈련한 사람은 ✔가 붙습니다.' },
+  { tab:'home', at:'school', t:'학교는 곧 열려요',
     d:'파도 예보 · 물때 · 수업 기록 · 자세 분석.<br>준비되면 여기 카드가 <b>문</b>으로 바뀝니다. 마을과 채팅은 지금도 쓸 수 있어요.' },
 ];
 let onbI = -1, onbRing = null;
