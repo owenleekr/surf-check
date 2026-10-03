@@ -1141,6 +1141,9 @@ function applyCohortGate(){
   const box = $('cohort-cta');
   if(box) box.hidden = ok;
 }
+/* 공개 표(surfers·chat·checkins)에 올리는 프로필에서 생년월일(비밀번호 재설정 인증값)을 뺀다.
+   내 계정 화면은 myProfile() 을 그대로 쓰고, 서버로 나가는 것만 이걸 거친다. */
+function pubPf(p){ const o = { ...(p||{}) }; delete o.birth; delete o.token; delete o.pw; return o; }
 function myProfile(){ return withLook(auth.users()[ME.id]?.profile || { gender:'f', board:'long' }, ME?.name); }
 function setProfile(pr){ const u = auth.users(); if(!u[ME.id]) return; u[ME.id].profile = { ...myProfile(), ...pr }; LS.set('surf.users', u); refreshMe(); renderLevel(); syncUp(); saveUp(); }
 function dataKey(){ return `surf.data.${ME.id}`; }
@@ -3302,9 +3305,9 @@ function renderCheckin(){
   const bd = $('buddy'); bd.style.display = me && me.beach===b.name ? 'flex' : 'none';
   if(bd.style.display==='flex'){ const cands = here.filter(c=>c.user_id!==ME.id).map(c=>c.name);
     bd.innerHTML = `<span style="flex:1;line-height:1.4">${myBuddy?`오늘 버디 <b>${myBuddy}</b>${mutual?' 🤝 서로 지목':' · 상대도 지목하면 🤝'}`:'<b>버디</b> — 옆에서 같이 타는 동기를 지목해요 (서로 보고, 안전하게)'}${pickedMe.length?`<br><small>${pickedMe.join(', ')}가 나를 버디로 지목했어요</small>`:''}</span><select id="buddy-sel" style="border:3px solid var(--ink);padding:4px;font-family:inherit;font-size:12px"><option value="">${cands.length?'버디 고르기':'아직 여기 아무도 없어요'}</option>${cands.map(n=>`<option value="${n}" ${n===myBuddy?'selected':''}>${n}</option>`).join('')}${pickedMe.filter(n=>!cands.includes(n)).map(n=>`<option value="${n}">${n}</option>`).join('')}</select>`;
-    $('buddy-sel').onchange = async ()=>{ const name = $('buddy-sel').value; const row = { ...me, profile:{ ...(me.profile||{}), buddy:name }, updated_at:new Date().toISOString() }; try{ await sbUpsert('checkins', row); me.profile = row.profile; if(name){ addBonus(3, 'buddy|'+today()); toast(`오늘 버디: ${name}`); chatSys(`🤝 오늘 ${name}과 버디!`); } renderCheckin(); }catch(e){ toast('실패 · 신호 확인'); } }; }
+    $('buddy-sel').onchange = async ()=>{ const name = $('buddy-sel').value; const row = { ...me, profile:{ ...pubPf(me.profile), buddy:name }, updated_at:new Date().toISOString() }; try{ await sbUpsert('checkins', row); me.profile = row.profile; if(name){ addBonus(3, 'buddy|'+today()); toast(`오늘 버디: ${name}`); chatSys(`🤝 오늘 ${name}과 버디!`); } renderCheckin(); }catch(e){ toast('실패 · 신호 확인'); } }; }
   const meHere = me && me.beach===b.name; $('ci-btn').textContent = meHere ? '나왔어요' : (me ? `📍 ${b.name}으로 옮기기` : '📍 체크인'); $('ci-btn').className = 'btn sm ' + (meHere?'ghost':'pink');
-  $('ci-btn').onclick = async ()=>{ const row = { id:`${ME.id}|${today()}`, user_id:ME.id, name:ME.name, beach:b.name, at:new Date().toISOString(), active:!meHere, profile:myProfile(), updated_at:new Date().toISOString() };
+  $('ci-btn').onclick = async ()=>{ const row = { id:`${ME.id}|${today()}`, user_id:ME.id, name:ME.name, beach:b.name, at:new Date().toISOString(), active:!meHere, profile:pubPf(myProfile()), updated_at:new Date().toISOString() };
     try{ await sbUpsert('checkins', row); state.social.checkins = state.social.checkins.filter(c=>c.user_id!==ME.id).concat(row.active?[row]:[]); if(row.active) addBonus(5, 'ci|'+today()); toast(row.active?`${b.name} 체크인! 동기들이 볼 수 있어요`:'체크아웃'); if(row.active) chatSys(`📍 ${b.name} 도착! 같이 타실 분~`); renderCheckin(); }catch(e){ toast(state.social.ok===false?notReady:'실패 · 신호 확인'); } };
 }
 /* 파티 */
@@ -3416,7 +3419,7 @@ function onbShow(){
 function onbNext(){
   const st = ONB[onbI];
   if(st.build && onbPr){ setProfile(onbPr); }
-  if(st.mood){ const t = ($('onb-mood')?.value||'').trim().slice(0,40); if(t){ setProfile({ mood:t }); addBonus(5, 'onbmood'); if(supaOn() && state.chatOk!==false){ sbUpsert('chat', { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 입장! ${t}`, profile:myProfile(), created_at:new Date().toISOString() }).catch(()=>{}); } } }
+  if(st.mood){ const t = ($('onb-mood')?.value||'').trim().slice(0,40); if(t){ setProfile({ mood:t }); addBonus(5, 'onbmood'); if(supaOn() && state.chatOk!==false){ sbUpsert('chat', { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 입장! ${t}`, profile:pubPf(myProfile()), created_at:new Date().toISOString() }).catch(()=>{}); } } }
   if(st.done12){ const d = getData(); [1,2].forEach(w=>{ WEEKS[w-1].skills.forEach((_,i)=>d.skills[`${w}-${i}`]=true); d.missions[w]=true; }); setData(d); gain(2*XP.mission + (WEEKS[0].skills.length+WEEKS[1].skills.length)*XP.skill); toast('1·2주차 완료 처리'); refreshMe(); }
   if(st.last){ onbEnd(); return; }
   onbI++; onbShow();
@@ -3643,7 +3646,7 @@ const supaOn = () => !!(SUPA.url && SUPA.key);
 const supaH = () => ({ apikey:SUPA.key, Authorization:'Bearer '+SUPA.key, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=minimal' });
 function snapshot(id){
   const u = auth.users()[id]; if(!u) return null; const d = LS.get(`surf.data.${id}`, {attend:{},skills:{},missions:{},notes:{},sessions:{}}), xp = calcXP(d);
-  return { id, cohort:u.cohort||'6기', name:u.name, profile:{ ...(u.profile||{gender:'f',board:'long'}), slevel: slvStat(d).label }, xp, level:slvStat(d).cur, attend:attN(d), rides:totalRides(d), missions:Object.values(d.missions).filter(Boolean).length, updated_at:new Date().toISOString() };
+  return { id, cohort:u.cohort||'6기', name:u.name, profile:{ ...pubPf(u.profile||{gender:'f',board:'long'}), slevel: slvStat(d).label }, xp, level:slvStat(d).cur, attend:attN(d), rides:totalRides(d), missions:Object.values(d.missions).filter(Boolean).length, updated_at:new Date().toISOString() };
 }
 let syncT; function syncUp(){
   if(!supaOn()||!ME) return; clearTimeout(syncT);
@@ -3740,7 +3743,7 @@ async function renderVillage(){
     const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.pet && x.profile.pet!=='none' ? `<br>${{rabbit:'🐰',cat:'🐱',dog:'🐶',seal:'🦭',penguin:'🐧'}[x.profile.pet]||'🐾'} ${x.profile.petName||PET_KO[x.profile.pet]} · ${PET_STAGE[x.profile.petLv||0].ko}` : ''}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
     $('village').appendChild(c); c.querySelector('[data-close]').onclick=()=>c.remove(); c.querySelector('[data-clap]')?.addEventListener('click', ()=>{ openCard(x.name); c.remove(); });
     c.querySelector('[data-cert]')?.addEventListener('change', e=>{ if(e.target.value){ certify(x.name, +e.target.value); c.remove(); } });
-    c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 ${x.name}님 안녕!`, profile:myProfile(), created_at:new Date().toISOString() }; try{ await sbUpsert('chat', row); state.chat.push(row); renderChat(); toast(`${x.name}에게 손 흔들었어요`); }catch(e){ toast('채팅 서버 준비 중'); } c.remove(); }); });
+    c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 ${x.name}님 안녕!`, profile:pubPf(myProfile()), created_at:new Date().toISOString() }; try{ await sbUpsert('chat', row); state.chat.push(row); renderChat(); toast(`${x.name}에게 손 흔들었어요`); }catch(e){ toast('채팅 서버 준비 중'); } c.remove(); }); });
   /* 명단은 6기 것이다 — 일반 마을에서 "아직 안 온 동기"를 세면 말이 안 된다 */
   if(isCohort()){
     const joined = new Set(rows.map(x=>x.name)), missing = ROSTER.map(r=>r[0]).filter(n=>!joined.has(n));
@@ -3817,7 +3820,7 @@ function reactBar(target, toUser){
   }).join('');
   return `<div class="rxbar">${chips}</div>`;
 }
-function chatSys(text){ if(!supaOn() || state.chatOk===false || !ME) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text, profile:myProfile(), created_at:new Date().toISOString() }; sbUpsert('chat', row).then(()=>{ state.chat.push(row); if(state.tab==='rank') renderChat(); }).catch(()=>{}); }
+function chatSys(text){ if(!supaOn() || state.chatOk===false || !ME) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text, profile:pubPf(myProfile()), created_at:new Date().toISOString() }; sbUpsert('chat', row).then(()=>{ state.chat.push(row); if(state.tab==='rank') renderChat(); }).catch(()=>{}); }
 async function sendChat(){ const t = $('chat-in').value.trim(); if(!t) return; const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200), profile:{ gender:myProfile().gender, hat:myProfile().hat, top:myProfile().top, bottom:myProfile().bottom, board:myProfile().board, boardc:myProfile().boardc, role:myProfile().role, badge:myProfile().badge }, created_at:new Date().toISOString() };
   try{ await sbUpsert('chat', row); $('chat-in').value=''; state.chat.push(row); renderChat(); }catch(e){ toast(state.chatOk===false?'서버 준비 중':'전송 실패 · 신호 확인'); } }
 $('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏'].map(e=>`<button type="button" style="padding:6px 0;min-height:38px;font-family:sans-serif">${e}</button>`).join('');

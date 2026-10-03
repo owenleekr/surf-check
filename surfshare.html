@@ -189,6 +189,12 @@ button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 
 .drill .dbtn.done{ background:var(--mint) }
 .drill .dbtn:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink) }
 /* 내 기록 — 최근 7일을 날짜가 적힌 칸으로. 점 일곱 개로는 어느 날 했는지 알 수 없었다. */
+.dgoal{ margin-top:12px; font-size:12.5px; font-weight:800; color:#5B6275 }
+.dgoal .gl{ display:flex; justify-content:space-between; gap:8px; margin-bottom:4px } .dgoal .gl b{ color:var(--ink) }
+.dgoal .gb{ height:12px; border:2px solid var(--ink); background:#fff; position:relative; overflow:hidden }
+.dgoal .gb i{ position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#4DE1A5,#2ED3E6); transition:width .8s cubic-bezier(.2,.9,.3,1) }
+.dgoal.done .gb i{ background:linear-gradient(90deg,#FFD54A,#FF9F43) }
+.drill .risk{ color:#C0392B }
 .dstrip{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin-top:26px }
 .dcell{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:62px;
   border:3px solid var(--ink); background:#fff; font-weight:800; position:relative }
@@ -637,6 +643,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="dsub" id="drill-sub"></div>
         <button class="dbtn" type="button" id="drill-btn"></button>
         <div class="dstrip" id="dstrip" role="img" aria-label="최근 7일 훈련 기록"></div>
+        <div class="dgoal" id="dgoal" aria-live="polite"></div>
         <details class="dmonth" id="board" hidden>
           <summary id="board-sub">🏆 동기들 순위</summary>
           <div class="dtabs" role="group" aria-label="순위 기준">
@@ -924,6 +931,14 @@ const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'
 const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const today = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 const DOW = ['일','월','화','수','목','금','토'];
+/* 공개 표(surfers·chat·checkins·rides…)에 프로필을 쓸 때는 반드시 이 둘을 거친다.
+   ME.profile 에는 가입 때 적은 생년월일(birth)이 들어 있는데, 그건 비밀번호 재설정(reset_pw)의 인증값이다.
+   그대로 복사해 올리면 anon 키를 가진 누구나 읽어 다른 사람 비밀번호를 바꿀 수 있다 — 실제로 그랬다.
+   pubSelf: 내 행(surfers)용 — 도감(play)은 남이 순위로 봐야 하니 남긴다.
+   pubRow : 글·채팅·참여자 행용 — 매번 복사되니 도감 데이터도 뺀다. */
+const _drop = (p, ks) => { const o = { ...(p || {}) }; ks.forEach(k=>delete o[k]); return o; };
+const pubSelf = () => _drop(ME.profile, ['birth','token','pw']);
+const pubRow  = () => _drop(ME.profile, ['birth','token','pw','play','dressed']);
 /* 10.02 (금) 보다 '내일'이 먼저 읽힌다. 사흘 안쪽은 말로, 그 밖은 날짜로.
    같은 화면에 10.02 (금) · 9월 30일 화요일 · 10.01~10.03 이 섞여 있었다. */
 const dLabel = d => { const x=new Date(d+'T00:00');
@@ -1155,7 +1170,7 @@ function saveProfile(){
   saveT = setTimeout(async ()=>{
     /* PATCH 가 아니라 upsert 다 — 행이 없으면 PATCH 는 0행을 고치고 조용히 성공한다 */
     try{ await api('surfers', { method:'POST', body:JSON.stringify({
-      id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile }) }); }
+      id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) }); }
     catch(e){}
   }, 700);
 }
@@ -1459,7 +1474,7 @@ function paintCond(v){
 $('now-btn').onclick = async ()=>{
   const beach = $('now-beach').value, mine = myNow(), atHere = mine && mine.beach === beach;
   const row = { id:`${ME.id}|${today()}`, user_id:ME.id, name:ME.name, beach,
-    at:new Date().toISOString(), active:!atHere, profile:ME.profile||{}, updated_at:new Date().toISOString() };
+    at:new Date().toISOString(), active:!atHere, profile:pubRow(), updated_at:new Date().toISOString() };
   $('now-btn').disabled = true;
   try{ await api('checkins', { method:'POST', body:JSON.stringify(row) });
     nowRows = (nowRows||[]).filter(c=>c.user_id!==ME.id).concat(row.active ? [row] : []);
@@ -1604,7 +1619,7 @@ function renderBolts(){
   };
   box.querySelectorAll('[data-bin]').forEach(el=>el.onclick = ()=>{
     const b = bolts.find(x=>x.id===el.dataset.bin);
-    patch(b.id, [...(b.joins||[]), { id:ME.id, name:ME.name, profile:ME.profile||{} }]); });
+    patch(b.id, [...(b.joins||[]), { id:ME.id, name:ME.name, profile:pubRow() }]); });
   box.querySelectorAll('[data-bout]').forEach(el=>el.onclick = ()=>{
     const b = bolts.find(x=>x.id===el.dataset.bout);
     patch(b.id, (b.joins||[]).filter(x=>x.id!==ME.id)); });
@@ -1624,7 +1639,7 @@ $('b-save').onclick = async ()=>{
      연 사람 캐릭터는 joins 안에 이미 들어 있으니 거기서 꺼내 쓴다. */
   const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name,
     date, beach, time, note:$('b-note').value.trim().slice(0,60) || null,
-    joins:[{ id:ME.id, name:ME.name, profile:ME.profile||{} }],   // 연 사람은 당연히 간다
+    joins:[{ id:ME.id, name:ME.name, profile:pubRow() }],   // 연 사람은 당연히 간다
     created_at:new Date().toISOString() };
   $('b-save').disabled = true;
   try{ await api('parties', { method:'POST', body:JSON.stringify(row) });
@@ -1986,7 +2001,7 @@ async function saveMood(text, quiet){
   if(!t){ delete ME.profile.mood; delete ME.profile.mood_at; }
   try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
   try{ await api('surfers', { method:'POST', body:JSON.stringify({
-      id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile }) });
+      id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) });
     const mine = state.town?.find(x=>x.id===ME.id);
     if(mine) mine.profile = ME.profile; else await pullTown();
     renderTown(); if(!quiet) toast(t ? '말풍선을 올렸어요' : '말풍선을 내렸어요');
@@ -2024,7 +2039,7 @@ function renderChat(){
 async function sendChat(text, noBubble){
   const t = (text ?? $('chat-in').value).trim(); if(!t) return;
   const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200),
-                profile:ME.profile||{}, created_at:new Date().toISOString() };
+                profile:pubRow(), created_at:new Date().toISOString() };
   try{ await api('chat', { method:'POST', body:JSON.stringify(row) });
     if(text == null) $('chat-in').value = '';
     state.chat.push(row); renderChat();
@@ -2220,7 +2235,7 @@ const setTab = t => { state.tab = t;
   if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); homeDot(); }
   layoutHead(); homeDot();
   if(t==='me') renderBuilder();
-  if(t==='cam') renderCam();
+  if(t==='cam'){ renderCam(); if(typeof playVisit === 'function') playVisit('cam'); }
   else camStop();                       /* 다른 탭으로 가면 끈다 — 데이터가 계속 나간다 */
   if(t==='town'){ pullTown(); startTownPoll(); } else stopTownPoll();
   if(t==='bolt') pullBolts();
@@ -2334,6 +2349,7 @@ function renderTodo(){
 const dSet = {};                               // user_id → Set(day)
 let drillLoaded = false, drillRows = [], drillOk = true, drillView = 'streak', drillStampDay = '', boardAll = false;
 const dayOf = n => daysAgo(n);
+const DAYS_7 = () => [...Array(7)].map((_,i)=>dayOf(6-i));
 function drillIndex(){
   Object.keys(dSet).forEach(k=>delete dSet[k]);
   drillRows.forEach(r=>{ if(isTest(r.user_id)) return; (dSet[r.user_id] ||= new Set()).add(r.day); });
@@ -2362,13 +2378,24 @@ function renderDrill(){
   const me = drillStat(ME.id), did = (dSet[ME.id]||new Set()).has(dayOf(0));
   const btn = $('drill-btn');
   btn.className = 'dbtn' + (did ? ' done' : '');
+  $('drill-sub').classList.toggle('risk', me.streak >= 3 && !did && new Date().getHours() >= 18);
   btn.textContent = did ? '✅ 오늘 했어요 (누르면 취소)' : '오늘 테이크오프 했어요';
   btn.setAttribute('aria-pressed', String(did));
   homeDot();
   const upper = Object.keys(dSet).filter(id=>id!==ME.id && drillStat(id).streak > me.streak).length;   // 나보다 연속이 긴 사람 수
+  /* 협동 목표 — 순위는 앞선 사람만 신나게 한다. 다 같이 채우는 막대가 하나 있어야 뒤처진 사람도 한 칸을 보탠다.
+     목표는 명단 × 주 3회. 명단이 비어 있어도 최소치가 있어 0 으로 나누지 않는다. */
+  { const wk = new Set(DAYS_7().map(d=>d)); const seen = new Set(); let sum = 0, todayN = 0;
+    drillRows.forEach(r=>{ if(isTest(r.user_id) || !wk.has(r.day)) return; const k = r.user_id + '|' + r.day; if(seen.has(k)) return; seen.add(k); sum++; if(r.day === dayOf(0)) todayN++; });
+    const ppl = Math.max((state.town||[]).filter(x=>!isTest(x.id)).length, new Set(drillRows.map(r=>r.user_id)).size, 5);
+    const goal = ppl * 3, pc = Math.min(100, Math.round(sum / goal * 100));
+    const g = $('dgoal'); g.classList.toggle('done', sum >= goal);
+    g.innerHTML = `<div class="gl"><span>${sum >= goal ? '🎉 이번 주 목표 달성!' : '👥 6기 이번 주 목표'}</span><span><b>${sum}</b> / ${goal}회${todayN ? ` · 오늘 ${todayN}명` : ''}</span></div><div class="gb" role="progressbar" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.max(3, pc)}%"></i></div>`; }
+  /* 오후 6시가 지났는데 아직이면 연속이 끊긴다 — 잃는 쪽이 더 크게 느껴진다 */
+  const risk = me.streak >= 3 && !did && new Date().getHours() >= 18;
   const many = Object.keys(dSet).length > 1;
   $('drill-sub').textContent = me.streak
-    ? `🔥 ${me.streak}일 연속${many ? ` · 동기 중 ${upper+1}위` : ''} · 최근 7일 ${me.week}/7${did ? '' : ' — 오늘 하면 이어져요'}`
+    ? (risk ? `⚠️ ${me.streak}일 연속이 오늘 끊겨요 — 지금 체크하면 지켜요` : `🔥 ${me.streak}일 연속${many ? ` · 동기 중 ${upper+1}위` : ''} · 최근 7일 ${me.week}/7${did ? '' : ' — 오늘 하면 이어져요'}`)
     : (me.total ? '연속이 끊겼어요 — 오늘 다시 시작해요' : '땅에서 10번, 오늘부터 시작해요');
   const DAYS = [...Array(7)].map((_,i)=>dayOf(6-i));
   const dow = d => new Date(d+'T00:00').getDay();
@@ -2592,7 +2619,7 @@ $('r-save').onclick = async ()=>{
   if(!date) return e.textContent = '날짜를 골라주세요';
   if(!time) return e.textContent = '출발 시각을 적어주세요';
   if(!from || !to) return e.textContent = '타는 곳과 내리는 곳을 적어주세요';
-  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:ME.profile||{},
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:pubRow(),
     date, dir:$('r-dir').value, depart_at:time, from_place:from.slice(0,20), to_place:to.slice(0,20),
     seats:Math.max(1, Math.min(8, +$('r-seats').value||3)), riders:[],
     note:$('r-note').value.trim().slice(0,60)||null, contact:$('r-contact').value.trim().slice(0,80)||null };
@@ -2870,7 +2897,7 @@ function bindReviews(box){
     b.disabled = true;
     try{ await api('stay_reviews', { method:'POST', body:JSON.stringify({
         id:`${stay?.id||place}|${ME.id}`, stay_id:stay?.id||'', place, user_id:ME.id, name:ME.name,
-        profile:ME.profile||{}, stars:v, good, text, paid }) });
+        profile:pubRow(), stars:v, good, text, paid }) });
       toast('고마워요'); await pullReviews(); renderStays(); renderMap(); }
     catch(e){ b.disabled = false; toast(e.code==='notable' ? '평가 표가 아직 없어요 (supabase-reviews.sql)' : '실패 · 신호 확인'); }
   });
@@ -3084,7 +3111,7 @@ $('s-save').onclick = async ()=>{
   const xy = naverXY(url) || (()=>{ const d = ($('s-near').dataset.xy||'').split(',');
     return d.length===2 ? { lat:+d[0], lon:+d[1] } : null; })();
   const lat = xy?.lat, lon = xy?.lon, hasXY = !!xy;
-  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:ME.profile||{},
+  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:pubRow(),
     place:place.slice(0,20), date_from:from, date_to:to,
     capacity:Math.max(1, Math.min(20, +$('s-cap').value||4)), guests:[], url,
     price:$('s-price').value.trim().slice(0,20)||null, lat:hasXY?lat:null, lon:hasXY?lon:null,
@@ -3114,7 +3141,7 @@ function bindCards(box, kind){
     const cap = kind==='ride' ? r.seats : r.capacity;
     if(list.length >= cap) return toast('자리가 찼어요');
     b.disabled = true;
-    try{ await patch(r.id, [...list, { id:ME.id, name:ME.name, profile:ME.profile||{} }]); toast(kind==='ride'?'탔어요':'같이 써요'); }
+    try{ await patch(r.id, [...list, { id:ME.id, name:ME.name, profile:pubRow() }]); toast(kind==='ride'?'탔어요':'같이 써요'); }
     catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
   });
   box.querySelectorAll('[data-leave]').forEach(b=>b.onclick = async ()=>{
@@ -3141,7 +3168,7 @@ function bindCards(box, kind){
    들어올 때 자리를 만들어 둔다. merge-duplicates 라 이미 있으면 이름·기수만 맞춘다. */
 async function syncMe(){
   try{ await api('surfers', { method:'POST', body:JSON.stringify({
-    id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile || {} }) }); }
+    id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) }); }
   catch(e){}
 }
 

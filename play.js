@@ -87,9 +87,22 @@ function playQuests(p){
       go:()=>{ closePlay(); setTab('home'); setTimeout(()=>$('drill')?.scrollIntoView({ block:'center', behavior:'smooth' }), 80); } },
     { id:'talk',  ic:'💬', t:'마을에 한마디 · 응원',   hint:'채팅을 남기거나 동기에게 반응', done:talked,
       go:()=>{ closePlay(); setTab('town'); } },
-    { id:'game',  ic:'🎮', t:'파도 점프 한 판',        hint:'쉬는 시간에 가볍게', done:(p.gn?.[day] || 0) > 0,
-      go:()=>{ closePlay(); gameOpen(); } },
+    /* 세 번째는 격일로 바뀐다 — 매일 같은 숙제면 둘째 주부터 안 본다 */
+    (Math.floor(Date.now() / 864e5) % 2 === 0
+      ? { id:'game', ic:'🎮', t:'파도 점프 한 판',   hint:'쉬는 시간에 가볍게', done:(p.gn?.[day] || 0) > 0,
+          go:()=>{ closePlay(); gameOpen(); } }
+      : { id:'cam',  ic:'📹', t:'낙산 캠으로 바다 확인', hint:'오늘 파도 어떤지 보기', done:!!p.vis?.[day]?.cam,
+          go:()=>{ closePlay(); setTab('cam'); } }),
   ];
+}
+
+/* 탭 방문을 퀘스트로 쓴다 — 오늘 처음 열었을 때만 기록하고 저장은 하루 한 번 */
+function playVisit(k){
+  if(!ME?.profile?.play) return;
+  const p = playP(), day = today(); const v = (p.vis ||= {});
+  if(v[day]?.[k]) return;
+  (v[day] ||= {})[k] = 1; Object.keys(v).sort().slice(0, -3).forEach(d=>delete v[d]);
+  playPush(); playTick();
 }
 
 /* ── 저장 ── 프로필 upsert 는 saveProfile 과 같은 길. 연달아 불려도 요청은 한 번 */
@@ -98,7 +111,7 @@ function playPush(){
   try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
   clearTimeout(_pt);
   _pt = setTimeout(async ()=>{ try{ await api('surfers', { method:'POST', body:JSON.stringify({
-    id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:ME.profile }) }); }catch(e){} }, 1200);
+    id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) }); }catch(e){} }, 1200);
 }
 
 /* 다른 기기에서 쌓은 것을 덮어쓰지 않는다 — 숫자는 큰 쪽, 배지는 합집합 */
@@ -110,6 +123,7 @@ function playMerge(remote){
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
     else Object.keys(remote.qd[d]).forEach(q=>{ if(!p.qd[d][q]){ p.qd[d][q] = 1; ch = true; } }); });
   Object.keys(remote.gn||{}).forEach(d=>{ if((remote.gn[d]||0) > (p.gn[d]||0)){ p.gn[d] = remote.gn[d]; ch = true; } });
+  Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
   if(remote.gday === p.gday && (remote.gxp||0) > (p.gxp||0)){ p.gxp = remote.gxp; ch = true; }
   if(ch){ p.lvSeen = Math.max(p.lvSeen||0, lvOf(playXp(p))); playPush(); renderPlayBits(); }
 }
