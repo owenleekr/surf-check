@@ -201,7 +201,9 @@ const PETC_KO = { p:'핑크', y:'크림', w:'화이트', n:'브라운', g:'민�
 const TOPS = { r:'#FF6B6B', b:'#2E6BFF', g:'#4DE1A5', p:'#9B6BFF', y:'#FFD23F', k:'#1B1B2F', w:'#FFFFFF', o:'#FF9F1C' };
 const TOP_KO = { r:'코랄', b:'블루', g:'민트', p:'퍼플', y:'옐로', k:'블랙', w:'화이트', o:'오렌지' };
 const COACH_BADGES = ['교장','헤드코치','코치','강사','매니저','라이프가드','촬영','조교'];
-const roleTag = pr => pr?.role==='coach' ? `<span class="tagc">${pr.badge||'코치'}</span>` : pr?.cls==='inter' ? '<span class="tagc" style="background:var(--sea)">중급</span>' : pr?.cls ? '<span class="tagc" style="background:var(--mint);color:var(--ink)">비기너</span>' : '';
+/* badge 는 프로필에 적힌 글자 — 남의 것이 그대로 HTML 에 들어오므로 이스케이프한다 */
+const _escTag = t => String(t == null ? '' : t).replace(/[<>&"']/g, c=>({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&#39;' }[c]));
+const roleTag = pr => pr?.role==='coach' ? `<span class="tagc">${_escTag(pr.badge||'코치')}</span>` : pr?.cls==='inter' ? '<span class="tagc" style="background:var(--sea)">중급</span>' : pr?.cls ? '<span class="tagc" style="background:var(--mint);color:var(--ink)">비기너</span>' : '';
 function overlay(rows, ov, y0){ rows = rows.slice(); ov.forEach((r,i)=>{ const y=y0+i; if(!rows[y]) return; rows[y] = [...rows[y]].map((c,x)=> r[x] && r[x]!=='.' ? r[x] : c).join(''); }); return rows; }
 /* 예전 계정엔 gender만 있다 → 남자 짧은머리 / 여자 단발로 이어받는다 */
 const hairOf = pr => HAIR[pr.hair] ? pr.hair : (pr.gender==='m' ? 'short' : 'bob');

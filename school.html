@@ -1143,6 +1143,10 @@ function applyCohortGate(){
 }
 /* 공개 표(surfers·chat·checkins)에 올리는 프로필에서 생년월일(비밀번호 재설정 인증값)을 뺀다.
    내 계정 화면은 myProfile() 을 그대로 쓰고, 서버로 나가는 것만 이걸 거친다. */
+/* 남이 쓸 수 있는 값(이름·한마디·메모·주소·반응)을 화면에 넣을 땐 반드시 esc 를 거친다.
+   서버 표 쓰기가 anon 에 열려 있어서, 값에 <img onerror>·" onmouseover= 를 넣으면 보는 사람 화면에서 실행된다. */
+const esc = t => String(t == null ? '' : t).replace(/[<>&"']/g, c=>({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&#39;' }[c]));
+const safeHttp = u => { try{ const x = new URL(String(u||'').trim()); return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : ''; }catch(e){ return ''; } };
 function pubPf(p){ const o = { ...(p||{}) }; delete o.birth; delete o.token; delete o.pw; return o; }
 function myProfile(){ return withLook(auth.users()[ME.id]?.profile || { gender:'f', board:'long' }, ME?.name); }
 function setProfile(pr){ const u = auth.users(); if(!u[ME.id]) return; u[ME.id].profile = { ...myProfile(), ...pr }; LS.set('surf.users', u); refreshMe(); renderLevel(); syncUp(); saveUp(); }
@@ -2792,8 +2796,8 @@ function renderPose(){
   const byStage = st => mine.filter(x=>x.stage===st);
   const cmp = Object.entries(STAGES).map(([st,ko])=>{ const list = byStage(st); if(!list.length) return ''; const first = list[0], last = list[list.length-1];
     return `<div style="margin-top:10px"><div class="lab-sm" style="margin-bottom:4px">${ko} · ${list.length}장</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
-      <figure style="margin:0"><img src="${first.url}" alt="처음 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${first.url}"><figcaption class="lab-sm" style="margin:2px 0 0">처음 ${String(first.date).slice(5).replace('-','.')}</figcaption></figure>
-      <figure style="margin:0"><img src="${last.url}" alt="최근 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${last.url}"><figcaption class="lab-sm" style="margin:2px 0 0">최근 ${String(last.date).slice(5).replace('-','.')}${last.week?` · ${last.week}주차`:''}</figcaption></figure></div>
+      <figure style="margin:0"><img src="${esc(safeHttp(first.url))}" alt="처음 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${esc(safeHttp(first.url))}"><figcaption class="lab-sm" style="margin:2px 0 0">처음 ${String(first.date).slice(5).replace('-','.')}</figcaption></figure>
+      <figure style="margin:0"><img src="${esc(safeHttp(last.url))}" alt="최근 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${esc(safeHttp(last.url))}"><figcaption class="lab-sm" style="margin:2px 0 0">최근 ${String(last.date).slice(5).replace('-','.')}${last.week?` · ${last.week}주차`:''}</figcaption></figure></div>
       ${noteText(last)?`<div class="lab-sm" style="margin-top:4px">메모: ${noteText(last)}</div>`:''}
       ${last.coach_note?`<div class="lab-sm" style="margin-top:2px">💬 ${last.coach_name||'코치'}: ${last.coach_note}</div>`:''}</div>`; }).join('');
   const trend = (key) => { const c = CRIT[key], good = c.band ? c.good : null;
@@ -2893,7 +2897,7 @@ function renderPose(){
           · <b>엉덩이는 보드 가운데 · 앞발 60 : 뒷발 40</b> — Rapture Surfcamps ("hips centred over the board, weight distributed roughly 60/40 between your front foot and back foot"),
           <a href="https://cornishwave.com/beginners-guide-to-surfing/the-importance-of-stance/" target="_blank" rel="noopener">Cornish Wave</a>도 같은 60:40
         </div></details>
-    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${x.url}" alt="${String(x.date)} ${STAGES[x.stage]||''} 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${x.url}"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${noteText(x)?` · ${noteText(x)}`:''}${metOf(x)?metLine(metOf(x)):''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
+    ${mine.length ? `<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">전체 타임라인 ${mine.length}장</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">${mine.slice().reverse().map(x=>`<div><img src="${esc(safeHttp(x.url))}" alt="${esc(String(x.date))} ${esc(STAGES[x.stage]||'')} 자세" style="width:100%;border:3px solid var(--ink);display:block;cursor:zoom-in" data-zoom="${esc(safeHttp(x.url))}"><div class="lab-sm" style="margin:2px 0 0">${String(x.date).slice(5).replace('-','.')} ${STAGES[x.stage]||''}${noteText(x)?` · ${noteText(x)}`:''}${metOf(x)?metLine(metOf(x)):''}${x.coach_note?`<br>💬 ${x.coach_name||'코치'}: ${x.coach_note}`:''}</div>${isCoach?`<button class="btn sm ghost" type="button" data-cnote="${x.id}" style="margin-top:4px">코치 피드백 남기기</button>`:''}</div>`).join('')}</div></details>` : ''}`;
   let stage = 'stand', blobUrl = null;
   const vEl = () => $('pose-video');
   $('pose-file').onchange = e=>{ const f = e.target.files[0]; if(!f) return; if(blobUrl) URL.revokeObjectURL(blobUrl); blobUrl = URL.createObjectURL(f);
@@ -3297,7 +3301,7 @@ function renderRate(){
 /* 체크인 */
 function renderCheckin(){
   if(!$('ci')) return; const b = BEACHES[state.beach], here = state.social.checkins.filter(c=>c.beach===b.name), me = state.social.checkins.find(c=>c.user_id===ME.id);
-  $('ci-avs').innerHTML = here.map(c=>`<canvas title="${c.name}"></canvas>`).join(''); here.forEach((c,i)=>{ const pf = withLook(c.profile, c.name); drawSpr($('ci-avs').children[i], avatarRows(pf, false), avatarTintOf(pf, 0)); });
+  $('ci-avs').innerHTML = here.map(c=>`<canvas title="${esc(c.name)}"></canvas>`).join(''); here.forEach((c,i)=>{ const pf = withLook(c.profile, c.name); drawSpr($('ci-avs').children[i], avatarRows(pf, false), avatarTintOf(pf, 0)); });
   const others = BEACHES.filter(x=>x.name!==b.name).map(x=>({ n:x.name, k:state.social.checkins.filter(c=>c.beach===x.name).length })).filter(x=>x.k);
   $('ci-t').innerHTML = state.social.ok===false ? `<b>체크인</b><small>${notReady}</small>` : `<b>지금 ${b.name}에 ${here.length?here.map(c=>c.name).join(', ')+' ('+here.length+')':'아무도 없어요'}</b><small>${others.length?'다른 해변: '+others.map(o=>`${o.n} ${o.k}`).join(' · '):'바다 도착하면 체크인 · 4시간 뒤 자동 해제'}</small>`;
   // 버디: 같은 바다에 있는 동기 중 한 명을 오늘의 버디로. 서로 지목하면 🤝
@@ -3315,7 +3319,7 @@ function renderParty(){
   if(!$('pbar')) return; const ps = state.social.parties;
   $('pbar-sub').textContent = state.social.ok===false ? '서버 준비 중' : ps.length ? `오늘 ${ps.length}건` : '"몇 시에 같이 가실 분?" 먼저 올려봐요'; $('pbar').style.padding = ps.length ? '8px 10px' : '4px 10px';
   $('pbar-list').innerHTML = ps.map(p=>{ const joins = Array.isArray(p.joins)?p.joins:[], inn = joins.includes(ME.name) || p.user_id===ME.id;
-    return `<div class="party"><div class="pt"><b class="num">${p.time}</b> ${p.beach} · ${p.name}<span>${p.note||''}${joins.length?` · 같이: ${joins.join(', ')}`:''}</span></div>${p.user_id===ME.id?'<span class="who">내 모집</span>':`<button class="btn sm ${inn?'ghost':'mint'}" type="button" data-join="${p.id}">${inn?'빠지기':'같이 가요'}</button>`}</div>`; }).join('');
+    return `<div class="party"><div class="pt"><b class="num">${esc(p.time)}</b> ${esc(p.beach)} · ${esc(p.name)}<span>${esc(p.note||'')}${joins.length?` · 같이: ${joins.map(esc).join(', ')}`:''}</span></div>${p.user_id===ME.id?'<span class="who">내 모집</span>':`<button class="btn sm ${inn?'ghost':'mint'}" type="button" data-join="${esc(p.id)}">${inn?'빠지기':'같이 가요'}</button>`}</div>`; }).join('');
   $('pbar-list').querySelectorAll('[data-join]').forEach(btn=>btn.onclick=async ()=>{ const p = ps.find(x=>x.id===btn.dataset.join); const joins = (Array.isArray(p.joins)?p.joins:[]); const next = joins.includes(ME.name) ? joins.filter(n=>n!==ME.name) : [...joins, ME.name];
     try{ const r = await fetch(`${SUPA.url}/rest/v1/parties?id=eq.${encodeURIComponent(p.id)}`, { method:'PATCH', headers:supaH(), body:JSON.stringify({ joins:next }) }); if(!r.ok) throw 0; p.joins = next; renderParty(); toast(next.includes(ME.name)?`${p.time} ${p.beach} 같이 가요!`:'빠졌어요'); if(next.includes(ME.name)) chatSys(`🏄 ${p.time} ${p.beach} 파티(${p.name}) 합류!`); }catch(e){ toast('실패 · 신호 확인'); } });
 }
@@ -3326,7 +3330,7 @@ $('party-form').addEventListener('submit', noDouble(document.querySelector('#par
 /* 피드 (6기 탭) */
 function renderFeed(){
   const rs = state.social.ratings.slice(0, 12); $('feed-sub').textContent = state.social.ok===false ? '서버 준비 중' : `${state.social.ratings.length}건`;
-  $('feed').innerHTML = rs.length ? rs.map(r=>`<div class="fi"><b>★${(+r.stars).toFixed(1)}</b> ${r.beach} · ${r.name} <small>${String(r.date).slice(5).replace('-','.')} ${pad2(r.hour??0)}시</small>${r.comment?`<div>${r.comment.replace(/</g,'&lt;')}</div>`:''}<small>차트 ${r.chart?.h}m·${r.chart?.p}초·${relKo[r.chart?.rel]||''} ${r.chart?.w}kts → 판정 "${r.chart?.verdict||''}"</small></div>`).join('') : `<div class="px" style="font-size:13px;color:var(--ink2)">${state.social.ok===false?notReady:'아직 평점이 없어요. 파도 탭 세션 카드에서 오늘 파도에 별점을!'}</div>`;
+  $('feed').innerHTML = rs.length ? rs.map(r=>`<div class="fi"><b>★${(+r.stars || 0).toFixed(1)}</b> ${esc(r.beach)} · ${esc(r.name)} <small>${esc(String(r.date).slice(5).replace('-','.'))} ${esc(pad2(r.hour??0))}시</small>${r.comment?`<div>${esc(r.comment)}</div>`:''}<small>차트 ${esc(r.chart?.h)}m·${esc(r.chart?.p)}초·${esc(relKo[r.chart?.rel]||'')} ${esc(r.chart?.w)}kts → 판정 "${esc(r.chart?.verdict||'')}"</small></div>`).join('') : `<div class="px" style="font-size:13px;color:var(--ink2)">${state.social.ok===false?notReady:'아직 평점이 없어요. 파도 탭 세션 카드에서 오늘 파도에 별점을!'}</div>`;
 }
 
 /* ═══════════ 온보딩 (첫 로그인) ═══════════ */
@@ -3470,7 +3474,7 @@ function renderLevel(){
   renderPetCard();
   const mine = allCards().filter(c=>c.to===ME.name && !['MVP','인증'].includes(c.tpl)).sort((a,b)=>b.date.localeCompare(a.date));
   $('cards-n').textContent = mine.length;
-  $('cards-in').innerHTML = mine.map(c=>`<div class="cardc"><div class="tpl">${c.tpl}</div>${c.text?`<div class="txt">${c.text.replace(/</g,'&lt;')}</div>`:''}<div class="meta">${c.fromName} · ${c.date.slice(0,10).replace(/-/g,'.')}</div></div>`).join('') || '<div class="px" style="font-size:13px;color:var(--ink2)">아직 없어요. 먼저 보내면 돌아와요.</div>';
+  $('cards-in').innerHTML = mine.map(c=>`<div class="cardc"><div class="tpl">${esc(c.tpl)}</div>${c.text?`<div class="txt">${esc(c.text)}</div>`:''}<div class="meta">${esc(c.fromName)} · ${esc(String(c.date).slice(0,10).replace(/-/g,'.'))}</div></div>`).join('') || '<div class="px" style="font-size:13px;color:var(--ink2)">아직 없어요. 먼저 보내면 돌아와요.</div>';
   renderSLV(); renderHome();
   const lv = d.lvl||{};
   $('levels').innerHTML = SLV.map((Lv,li)=>{ const eN = Lv.edu.filter((_,i)=>lv[slvKey(li,'e',i)]).length; return `<div class="${li===st.cur?'cur':''}" style="${li<st.cur?'opacity:.6':''}"><span>서핑 LV.${Lv.n} <small style="color:var(--ink2)">${Lv.g}</small></span><span class="num">${li<st.cur?'달성':`교육 ${eN}/${Lv.edu.length}`}</span></div>`; }).join('')
@@ -3740,10 +3744,10 @@ async function renderVillage(){
   raw.forEach(x=>{ const cur = byName.get(x.name); if(!cur || (x.xp||0) > (cur.xp||0)) byName.set(x.name, x); });
   const rows = [...byName.values()].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
   $('village-sub').textContent = `${rows.length}명 · 탭하면 카드`;
-  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${x.id}"${x.profile?.pet&&x.profile.pet!=='none'?' data-pet':''}>${x.profile?.mood?`<div class="bub">${x.profile.mood.replace(/</g,'&lt;')}</div>`:''}${x.profile?.mood&&x.id!==ME.id?reactBar('mood:'+x.id, x.id):''}<canvas data-av="${x.id}" data-anim></canvas><span class="nm">${x.name}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
+  $('vgrid').innerHTML = rows.map(x=>`<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"${x.profile?.pet&&x.profile.pet!=='none'?' data-pet':''}>${x.profile?.mood?`<div class="bub">${esc(x.profile.mood)}</div>`:''}${x.profile?.mood&&x.id!==ME.id?reactBar('mood:'+x.id, x.id):''}<canvas data-av="${esc(x.id)}" data-anim></canvas><span class="nm">${esc(x.name)}${certOf(x.name)?' ✅':''}</span></div>`).join('') || '<div class="lab-sm" style="background:rgba(255,249,230,.85);padding:6px">아직 아무도 없어요</div>';
   rows.forEach(x=>{ const pf = withLook(x.profile, x.name); drawSpr($('vgrid').querySelector(`canvas[data-av="${x.id}"]`), avatarRows(pf), avatarTintOf(pf, x.level)); });
   $('vgrid').querySelectorAll('.vp').forEach(el=>el.onclick=()=>{ const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
-    const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${x.name}</b> ${roleTag(x.profile)} · ${x.profile?.slevel||'서핑 LV.0'} · ${LEVELS[levelOf(x.xp)]?.[1]||''} · 출석 ${x.attend} · 성공 ${x.rides}<br>${gearLine(x.profile)||'장비 이름표 없음'}${x.profile?.pet && x.profile.pet!=='none' ? `<br>${{rabbit:'🐰',cat:'🐱',dog:'🐶',seal:'🦭',penguin:'🐧'}[x.profile.pet]||'🐾'} ${x.profile.petName||PET_KO[x.profile.pet]} · ${PET_STAGE[x.profile.petLv||0].ko}` : ''}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
+    const c = document.createElement('div'); c.className='vcard'; c.innerHTML = `<b>${esc(x.name)}</b> ${roleTag(x.profile)} · ${esc(x.profile?.slevel||'서핑 LV.0')} · ${esc(LEVELS[levelOf(x.xp)]?.[1]||'')} · 출석 ${esc(x.attend)} · 성공 ${esc(x.rides)}<br>${esc(gearLine(x.profile))||'장비 이름표 없음'}${x.profile?.pet && x.profile.pet!=='none' ? `<br>${{rabbit:'🐰',cat:'🐱',dog:'🐶',seal:'🦭',penguin:'🐧'}[x.profile.pet]||'🐾'} ${esc(x.profile.petName||PET_KO[x.profile.pet])} · ${PET_STAGE[Math.max(0, Math.min(PET_STAGE.length-1, Math.floor(+x.profile.petLv)||0))].ko}` : ''}${x.profile?.mood?`<br>💬 ${x.profile.mood.replace(/</g,'&lt;')}`:''}${here.has(x.id)?`<br>📍 지금 ${here.get(x.id)}${(state.social.checkins.find(c=>c.user_id===x.id)?.profile?.buddy)?` · 버디 ${state.social.checkins.find(c=>c.user_id===x.id).profile.buddy}`:''}`:''}${certOf(x.name)?`<br>✅ 코치 인증 서핑 LV.${certOf(x.name)}`:''}<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">${x.name!==ME.name?`<button class="btn sm pink" type="button" data-clap="${x.name}">👏 칭찬</button><button class="btn sm mint" type="button" data-wave="${x.name}">👋 인사</button>`:''}${myProfile().role==='coach' && x.profile?.role!=='coach'?`<select data-cert="${x.name}" style="border:3px solid var(--ink);font-family:inherit;font-size:12px;padding:4px"><option value="">레벨 인증…</option>${SLV.slice(0,5).map((L,i)=>`<option value="${i+1}">LV.${L.n} ${L.g}</option>`).join('')}</select>`:''}<button class="btn sm ghost" type="button" data-close>닫기</button></div>`;
     $('village').appendChild(c); c.querySelector('[data-close]').onclick=()=>c.remove(); c.querySelector('[data-clap]')?.addEventListener('click', ()=>{ openCard(x.name); c.remove(); });
     c.querySelector('[data-cert]')?.addEventListener('change', e=>{ if(e.target.value){ certify(x.name, +e.target.value); c.remove(); } });
     c.querySelector('[data-wave]')?.addEventListener('click', async ()=>{ const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:`👋 ${x.name}님 안녕!`, profile:pubPf(myProfile()), created_at:new Date().toISOString() }; try{ await sbUpsert('chat', row); state.chat.push(row); renderChat(); toast(`${x.name}에게 손 흔들었어요`); }catch(e){ toast('채팅 서버 준비 중'); } c.remove(); }); });
@@ -3777,7 +3781,7 @@ async function pullChat(force){
 function renderChat(){
   if(!$('chat')) return; const box = $('chat'), atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
   $('chat-sub').textContent = state.chatOk===false ? '서버 준비 중 (supabase-village.sql)' : `${state.chat.length}개 · 5초마다 갱신`;
-  box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}"><canvas data-av="${m.id}"></canvas><div class="b"><b>${m.name}</b>${m.profile?.role==='coach'?` <span class="tagc">${m.profile.badge||'코치'}</span>`:''} ${String(m.text).replace(/</g,'&lt;')}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small>${m.user_id!==ME.id?reactBar('chat:'+m.id, m.user_id):reactBar('chat:'+m.id, m.user_id)}</div></div>`).join('') || `<div class="lab-sm">${state.chatOk===false?'코치가 supabase-village.sql 실행하면 켜져요':'첫 메시지를 남겨봐요'}</div>`;
+  box.innerHTML = state.chat.map(m=>`<div class="msg ${m.user_id===ME.id?'me':''}"><canvas data-av="${esc(m.id)}"></canvas><div class="b"><b>${esc(m.name)}</b>${m.profile?.role==='coach'?` <span class="tagc">${esc(m.profile.badge||'코치')}</span>`:''} ${esc(m.text)}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}</small>${m.user_id!==ME.id?reactBar('chat:'+m.id, m.user_id):reactBar('chat:'+m.id, m.user_id)}</div></div>`).join('') || `<div class="lab-sm">${state.chatOk===false?'코치가 supabase-village.sql 실행하면 켜져요':'첫 메시지를 남겨봐요'}</div>`;
   state.chat.forEach(m=>{ const pf = withLook(m.profile, m.name); drawSpr(box.querySelector(`canvas[data-av="${m.id}"]`), avatarRows(pf, false), avatarTintOf(pf, 0)); });
   if(atBottom || chatLast!==state.chat.length){ box.scrollTop = box.scrollHeight; chatLast = state.chat.length; }
 }
@@ -3818,8 +3822,8 @@ function reactBar(target, toUser){
   const chips = REACT_EMO.map(e=>{
     const list = rs.filter(r=>r.emo===e), n = list.length, mine = myReact(target, e);
     if(!n && rs.length) return '';                                  // 이미 반응이 있으면 빈 칸은 접는다
-    return `<button type="button" class="rx${mine?' on':''}" data-rx="${target}" data-emo="${e}" data-to="${toUser||''}"
-      title="${n ? list.map(r=>r.name).join(', ') : '반응 남기기'}" aria-pressed="${mine}">${e}${n?`<b>${n}</b>`:''}</button>`;
+    return `<button type="button" class="rx${mine?' on':''}" data-rx="${esc(target)}" data-emo="${e}" data-to="${esc(toUser||'')}"
+      title="${n ? esc(list.map(r=>r.name).join(', ')) : '반응 남기기'}" aria-pressed="${mine}">${e}${n?`<b>${n}</b>`:''}</button>`;
   }).join('');
   return `<div class="rxbar">${chips}</div>`;
 }
