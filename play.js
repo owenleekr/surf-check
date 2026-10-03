@@ -288,3 +288,35 @@ function playWire(){
   ['prof-lv','quest-strip'].forEach(id=>{ const el = $(id); if(el) el.onclick = openPlay; });
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ if(!$('pop').hidden) popClose(); else if(!$('play-sheet').hidden) closePlay(); } });
 }
+
+/* ── 대화창 접근성 ─────────────────────────────────────────────
+   시트·팝업·게임은 모두 hidden 속성으로 여닫는다. 그 속성만 지켜보면 각 함수를 고치지 않고도
+   (1) 열릴 때 포커스를 창 안으로, (2) 닫히면 누르던 자리로 돌려놓고, (3) Tab 이 창 밖으로 새지 않게 막는다.
+   키보드·화면낭독 사용자가 뒤에 남은 화면을 헤매지 않게 하는 최소한이다. */
+(function dialogs(){
+  const LIST = [['mail-sheet','쪽지'], ['play-sheet','서퍼 도감'], ['game','파도 점프'], ['pop','알림']];   // 뒤에 있을수록 위에 뜬다
+  const opener = {};
+  const focusables = root => [...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
+    .filter(e=>!e.disabled && e.offsetParent !== null);
+  function arm(){
+    LIST.forEach(([id, label])=>{
+      const el = document.getElementById(id); if(!el || el._dlg) return; el._dlg = true;
+      el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); if(!el.getAttribute('aria-label')) el.setAttribute('aria-label', label);
+      new MutationObserver(()=>{
+        if(!el.hidden){ opener[id] = document.activeElement;
+          setTimeout(()=>{ const f = focusables(el); (el.querySelector('[data-autofocus]') || f[0])?.focus({ preventScroll:true }); }, 60); }
+        else{ const o = opener[id]; opener[id] = null; if(o && document.contains(o) && o.offsetParent !== null) o.focus({ preventScroll:true }); }
+      }).observe(el, { attributes:true, attributeFilter:['hidden'] });
+    });
+  }
+  document.addEventListener('keydown', e=>{
+    if(e.key !== 'Tab') return;
+    const top = LIST.map(([id])=>document.getElementById(id)).filter(el=>el && !el.hidden).pop(); if(!top) return;
+    const f = focusables(top); if(!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if(!top.contains(document.activeElement)){ e.preventDefault(); first.focus(); }
+    else if(e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+    else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arm); else arm();
+})();
