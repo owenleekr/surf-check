@@ -120,7 +120,7 @@ function finish(){
   if(mode !== 'run') return;
   mode = 'over'; window._gameRun = false;
   const sc = score();
-  const r = typeof playGameDone === 'function' ? playGameDone(sc, daily) : { gain:0, newBest:false, best:sc };
+  const r = typeof playGameDone === 'function' ? playGameDone(sc, daily, st.shells) : { gain:0, newBest:false, best:sc };
   showOver(sc, r);
   if(typeof popNext === 'function') setTimeout(popNext, 400);
 }
@@ -208,7 +208,7 @@ function showStart(){
   $g('g-ov').innerHTML = `<div class="go-card">
       <div class="go-t">🏄 파도 점프</div>
       <div class="go-d">탭하면 점프 · 길게 누르면 더 높이<br>바위·상어·해파리를 넘고 🐚을 모아요</div>
-      <div class="go-b">내 최고 <b>${p.best || 0}</b>점</div>
+      <div class="go-b">내 최고 <b>${p.best || 0}</b>점 · 🐚 보유 <b>${typeof shellBal === 'function' ? shellBal() : 0}</b></div>
       ${top.length ? `<div class="go-r">${top.map((r,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(r.name)} ${r.best}</span>`).join('')}</div>` : ''}
       <div class="go-b" style="margin:0 0 8px">📅 오늘의 챌린지 내 기록 <b>${(p.dbest && p.dbest.day === today()) ? p.dbest.score : '—'}</b></div>
       <button class="btn blue" id="g-go" type="button" style="width:100%;min-height:52px;font-size:16px">📅 오늘의 챌린지 <small style="font-weight:700">모두 같은 코스</small></button>
@@ -226,7 +226,7 @@ function showOver(sc, r){
   $g('g-ov').innerHTML = `<div class="go-card">
       <div class="go-t">${daily ? '📅 ' : ''}${r.newBest && sc > 0 ? '🎉 최고 기록!' : '🌊 와이프아웃'}</div>
       <div class="go-s">${sc}<small>점</small></div>
-      <div class="go-b">🐚 ${st.shells}개 · 최고 <b>${p.best || sc}</b>점${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
+      <div class="go-b">🐚 +${st.shells} (보유 ${r.bal ?? '–'}) · 최고 <b>${p.best || sc}</b>점${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
       ${daily ? (()=>{ const rk = dailyRows(); return rk.length ? `<div class="go-r" style="margin-bottom:10px"><span style="color:var(--ink)">오늘의 챌린지 순위</span>${rk.map((q,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(q.name)} ${q.best}</span>`).join('')}</div>` : ''; })() : ''}
       ${v ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
       <div style="display:flex;gap:8px"><button class="btn blue" id="g-again" type="button" style="flex:1;min-height:52px;font-size:16px">한 판 더</button>

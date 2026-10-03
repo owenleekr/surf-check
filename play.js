@@ -26,7 +26,12 @@ const _pad = (s, left) => ('.'.repeat(left) + s).padEnd(24, '.');
 HAT.band  = [ '.'.repeat(24), '.'.repeat(24), _pad('k' + 'o'.repeat(16) + 'k', 3), _pad('k'.repeat(18), 3) ];
 HAT.crown = [ _pad('k.....k.....k', 5), _pad('ko...kok...ok', 5), _pad(['k','ooo','k','ooo','k','ooo','k'].join(''), 5),
               _pad('kt' + 'o'.repeat(9) + 'tk', 5), _pad('k'.repeat(13), 5) ];
-HAT_KO.band = '서프 헤어밴드'; HAT_KO.crown = '왕관';
+/* 조개로 사는 것들 — 레벨이 아니라 게임에서 모은 조개(🐚)로 연다 */
+HAT.sprout = [ _pad('g..g...g', 8), _pad('ggggg.ggg', 7), _pad('kggkgkggk', 7).slice(0,24), _pad('kkkkkkkkkkkk', 6) ];
+HAT.wave   = [ '.'.repeat(24), _pad('..cc', 8), _pad('kcwwcckcwwk', 6), _pad('kbbbbbbbbbbk', 6), _pad('kkkkkkkkkkkk', 6) ];
+HAT_KO.band = '서프 헤어밴드'; HAT_KO.crown = '왕관'; HAT_KO.sprout = '새싹'; HAT_KO.wave = '파도 모자';
+BOARDC.sunset = '#FF7A59'; BOARDC_KO.sunset = '노을';
+BOARDC.violet = '#8E5BFF'; BOARDC_KO.violet = '바이올렛';
 BOARDC.gold = '#E8B923'; BOARDC_KO.gold = '골드';
 BOARDC.neon = '#3DFFE0'; BOARDC_KO.neon = '네온';
 /* lv 는 0부터(Lv.1 = 0). 아이콘은 해금 카드와 도감에 쓴다 */
@@ -36,6 +41,25 @@ const UNLOCKS = [
   { lv:4, key:'boardc', v:'neon',  n:'네온 보드',      ic:'🟢' },
   { lv:6, key:'hat',    v:'crown', n:'왕관',           ic:'👑' },
 ];
+/* 조개 상점 — 값은 조개(🐚). 번 만큼(shells) 쓴 만큼(spent)을 빼서 잔액을 센다. 산 것(own)은 영구. */
+const SHOP = [
+  { key:'boardc', v:'sunset', n:'노을 보드',     ic:'🟠', cost:20 },
+  { key:'boardc', v:'violet', n:'바이올렛 보드', ic:'🟣', cost:20 },
+  { key:'hat',    v:'sprout', n:'새싹',          ic:'🌱', cost:30 },
+  { key:'hat',    v:'wave',   n:'파도 모자',     ic:'🌊', cost:60 },
+];
+const shellBal = () => { const p = ME?.profile?.play; return p ? Math.max(0, (p.shells||0) - (p.spent||0)) : 0; };
+/* 아직 안 샀으면 상품을, 샀거나 상품이 아니면 null */
+const shopOf = (key, v) => { const it = SHOP.find(x=>x.key === key && x.v === v); return it && !ME?.profile?.play?.own?.[key + ':' + v] ? it : null; };
+function playBuy(key, v){
+  const it = SHOP.find(x=>x.key === key && x.v === v), p = ME?.profile?.play; if(!it || !p) return false;
+  if(p.own?.[key + ':' + v]) return true;
+  if(shellBal() < it.cost){ toast(`🐚 조개가 모자라요 — ${it.cost}개 필요 (보유 ${shellBal()})`); return false; }
+  (p.own ||= {})[key + ':' + v] = 1; p.spent = (p.spent || 0) + it.cost;
+  playPush(); vib([20, 40, 20]); if(typeof burst === 'function') setTimeout(()=>burst($('bld-av') || document.body, 12), 50);
+  toast(`${it.ic} ${it.n}을(를) 샀어요!`); return true;
+}
+
 const myLv = () => lvOf(playXp(ME?.profile?.play || { base:0, bonus:0 }));
 /* 잠겨 있으면 필요한 레벨(0부터)을, 열려 있으면 null */
 const lockOf = (key, v) => { const u = UNLOCKS.find(x=>x.key === key && x.v === v); return u && myLv() < u.lv ? u.lv : null; };
@@ -133,7 +157,8 @@ function playPush(){
 function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
-  ['base','bonus','best','qall','qz','goalN','dN'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  ['base','bonus','best','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  Object.keys(remote.own||{}).forEach(k=>{ const o = (p.own ||= {}); if(!o[k]){ o[k] = 1; ch = true; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
     else Object.keys(remote.qd[d]).forEach(q=>{ if(!p.qd[d][q]){ p.qd[d][q] = 1; ch = true; } }); });
@@ -194,11 +219,12 @@ function playTick(){
 }
 
 /* 게임이 끝났을 때 — 하루 XP 상한을 둔다(게임만 해서 레벨을 올리지 못하게). 상한은 저장값(gxp)으로 막는다 */
-function playGameDone(score, isDaily){
+function playGameDone(score, isDaily, shells){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today();
   p.gn[day] = (p.gn[day] || 0) + 1;
   const newBest = score > (p.best || 0); if(newBest) p.best = score;
+  p.shells = (p.shells || 0) + _num(shells, 500);                       // 이번 판에 모은 조개는 지갑에 쌓인다
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(score / 30), 15 - p.gxp));
   p.gxp += gain; p.bonus += gain;
@@ -210,7 +236,7 @@ function playGameDone(score, isDaily){
     if(p.dcday !== day){ p.dcday = day; p.dN = (p.dN || 0) + 1; p.bonus += 5; dGain = 5; }
   }
   playTick(); playPush();
-  return { gain:gain + dGain, newBest, best:p.best, daily:!!isDaily };
+  return { gain:gain + dGain, newBest, best:p.best, daily:!!isDaily, shells:_num(shells, 500), bal:shellBal() };
 }
 
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
@@ -294,7 +320,7 @@ function renderPlay(){
     ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-q="${i}">
         <i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
 
-    <div class="pt">🎮 파도 점프 <small>내 최고 ${p.best || 0}점</small></div>
+    <div class="pt">🎮 파도 점프 <small>내 최고 ${p.best || 0}점 · 🐚 ${shellBal()}</small></div>
     <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">📅 오늘의 챌린지 · 점프하러 가기</button>
 
     <div class="pt">🧠 코치 퀴즈 <small>누적 정답 ${p.qz || 0}개</small></div>
