@@ -159,6 +159,7 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
        min-height:36px; display:inline-flex; align-items:center; cursor:pointer }
 #pane-stay a[target], #s-near-card a[target]{ display:inline-flex; align-items:center; min-height:44px }   /* 지도 링크도 눌러야 하는 것 */
 .perk.on{ background:var(--mint) }
+.perk.lock{ background:#EDEAD9; border-color:#BDB89F; color:#8A8570 }
 button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 크기, 보여주기만 하는 칩(span)은 작게 */
 /* 온보딩은 한 번 보고 끝난다. 이건 남아서 '다음에 뭘 하면 되나'를 계속 알려준다.
    할 게 없으면 사라진다 — 늘 떠 있으면 잔소리가 된다. */
@@ -1109,7 +1110,9 @@ function renderBuilder(){
   const cur = { ...pr, hair: (typeof hairOf==='function' ? hairOf(pr) : pr.hair) };
   const sw = map => (v,t)=>`<i style="display:inline-block;width:10px;height:10px;border:2px solid var(--ink);background:${map[v]};vertical-align:-1px;margin-right:3px"></i>${t}`;
   const opt = (label, key, items, render) => `<div style="margin-top:10px"><div class="note" style="margin:0 0 4px">${label}</div>
-    <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>`<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}">${render?render(v,t):t}</button>`).join('')}</div></div>`;
+    <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>{ const lk = typeof lockOf === 'function' ? lockOf(key, v) : null;
+      return lk != null ? `<button type="button" class="perk lock" data-lock="${lk}" aria-label="${t} (Lv.${lk+1}에서 열려요)">🔒 ${t}</button>`
+        : `<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}">${render?render(v,t):t}</button>`; }).join('')}</div></div>`;
   const keys = o => Object.keys(o);
   const G = {
     face: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k]]))
@@ -1134,9 +1137,11 @@ function renderBuilder(){
       drawSpr($('bld-av'), avatarRows(q), avatarTintOf(q, 0)); if($('me-av')) drawSpr($('me-av'), avatarRows(q, false), avatarTintOf(q, 0)); } };
   paint();
   $('bld-opts').querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{ bldTab=b.dataset.bt; renderBuilder(); });
-  $('bld-rand').onclick = ()=>{ const pick = o => Object.keys(o)[Math.floor(Math.random()*Object.keys(o).length)];
+  $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(`🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
+  /* 랜덤이 잠긴 걸 뽑으면 레벨 보상이 의미가 없다 */
+  $('bld-rand').onclick = ()=>{ const pick = (o, key) => { const ks = Object.keys(o).filter(k=>key == null || lockOf(key, k) == null); return ks[Math.floor(Math.random()*ks.length)]; };
     Object.assign(ME.profile, { hair:pick(HAIR), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
-      wear:pick(WEAR), top:pick(TOPS), bottom:pick(BOTTOMS), hat:pick(HAT), boardc:pick(BOARDC), pet:pick(PET), petc:pick(PETC) });
+      wear:pick(WEAR), top:pick(TOPS), bottom:pick(BOTTOMS), hat:pick(HAT,'hat'), boardc:pick(BOARDC,'boardc'), pet:pick(PET), petc:pick(PETC) });
     renderBuilder(); saveProfile(); };
   $('bld-opts').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
     ME.profile[b.dataset.k] = b.dataset.v; renderBuilder(); saveProfile(); });

@@ -13,6 +13,27 @@ const PLV = [[0,'모래알','🐚'],[50,'물장구','💦'],[150,'패들러','�
              [800,'아웃사이드','🦈'],[1200,'튜브라이더','🌀'],[1800,'로컬','🌴'],[2600,'바다의 주인','👑']];
 const lvOf = xp => { let i = 0; PLV.forEach((l,k)=>{ if(xp >= l[0]) i = k; }); return i; };
 
+/* ── 레벨 보상 ── 새 꾸미기 아이템은 여기서만 정의한다.
+   sprite.js 는 라인업 앱도 쓰므로 건드리지 않고, 서프쉐어에서 이 파일이 로드될 때 목록에 얹는다.
+   (그래서 동기들 화면에서도 왕관을 쓴 사람이 그대로 그려진다.) */
+const _pad = (s, left) => ('.'.repeat(left) + s).padEnd(24, '.');
+HAT.band  = [ '.'.repeat(24), '.'.repeat(24), _pad('k' + 'o'.repeat(16) + 'k', 3), _pad('k'.repeat(18), 3) ];
+HAT.crown = [ _pad('k.....k.....k', 5), _pad('ko...kok...ok', 5), _pad(['k','ooo','k','ooo','k','ooo','k'].join(''), 5),
+              _pad('kt' + 'o'.repeat(9) + 'tk', 5), _pad('k'.repeat(13), 5) ];
+HAT_KO.band = '서프 헤어밴드'; HAT_KO.crown = '왕관';
+BOARDC.gold = '#E8B923'; BOARDC_KO.gold = '골드';
+BOARDC.neon = '#3DFFE0'; BOARDC_KO.neon = '네온';
+/* lv 는 0부터(Lv.1 = 0). 아이콘은 해금 카드와 도감에 쓴다 */
+const UNLOCKS = [
+  { lv:1, key:'boardc', v:'gold',  n:'골드 보드',      ic:'🟡' },
+  { lv:2, key:'hat',    v:'band',  n:'서프 헤어밴드',  ic:'🎽' },
+  { lv:4, key:'boardc', v:'neon',  n:'네온 보드',      ic:'🟢' },
+  { lv:6, key:'hat',    v:'crown', n:'왕관',           ic:'👑' },
+];
+const myLv = () => lvOf(playXp(ME?.profile?.play || { base:0, bonus:0 }));
+/* 잠겨 있으면 필요한 레벨(0부터)을, 열려 있으면 null */
+const lockOf = (key, v) => { const u = UNLOCKS.find(x=>x.key === key && x.v === v); return u && myLv() < u.lv ? u.lv : null; };
+
 /* 조건은 stats(s)와 저장값(p)만 본다. xp 는 받는 순간 한 번만 더해진다. */
 const BADGES = [
   { id:'drill1',  ic:'🏄', n:'첫 테이크오프',  d:'훈련을 처음 체크했어요',            t:s=>s.drillDays >= 1 },
@@ -124,7 +145,10 @@ function playTick(){
   else{
     if(allNow) _popQ.push({ ic:'🎉', t:'오늘의 퀘스트 완료!', d:'세 가지를 모두 해냈어요  +20 XP' });
     fresh.forEach(b=>_popQ.push({ ic:b.ic, t:`새 배지 · ${b.n}`, d:b.d }));
-    if(lv > (p.lvSeen||0)){ _popQ.push({ ic:PLV[lv][2], t:`레벨 업! Lv.${lv+1} ${PLV[lv][1]}`, d:'바다에서 한 걸음 더 나아갔어요', up:true }); }
+    if(lv > (p.lvSeen||0)){
+      const opened = UNLOCKS.filter(u=>u.lv > (p.lvSeen||0) && u.lv <= lv);
+      _popQ.push({ ic:PLV[lv][2], t:`레벨 업! Lv.${lv+1} ${PLV[lv][1]}`,
+        d: opened.length ? `새 아이템이 열렸어요: ${opened.map(u=>u.ic + ' ' + u.n).join(', ')}\n내 캐릭터 꾸미기에서 써보세요` : '바다에서 한 걸음 더 나아갔어요', up:true }); }
   }
   p.lvSeen = Math.max(p.lvSeen||0, lv);
   if(ch) playPush();
@@ -203,6 +227,7 @@ function renderPlay(){
       <div class="ph-t"><b>Lv.${lv+1} ${PLV[lv][1]}</b><span>${xp} XP${nxt ? ` · 다음 ${nxt[1]}까지 ${nxt[0] - xp}` : ' · 최고 레벨'}</span></div>
     </div>
     <div class="xpbar big" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+    ${(()=>{ const nu = UNLOCKS.find(u=>u.lv > lv); return nu ? `<div class="note" style="margin-top:8px">🔓 Lv.${nu.lv+1} ${PLV[nu.lv][1]}에서 <b>${nu.ic} ${nu.n}</b>이 열려요</div>` : `<div class="note" style="margin-top:8px">🎉 꾸미기 아이템을 모두 열었어요</div>`; })()}
 
     <div class="pt">오늘의 퀘스트 <small>${qs.filter(q=>q.done).length}/${qs.length} · 모두 하면 +20 XP</small></div>
     ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-q="${i}">
