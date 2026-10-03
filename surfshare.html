@@ -1612,20 +1612,28 @@ function renderBolts(){
       if(cv && typeof drawSpr==='function'){ const q = withLook(x.profile || {}, x.name); drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); } });
   });
   bindNotes(box);
-  const patch = async (id, next)=>{
+  const patch = async (id, mutate)=>{
     const b = bolts.find(x=>x.id===id); if(!b) return;
     const before = b.joins;
-    b.joins = next; renderBolts();                       // 화면부터 — 서버를 기다리면 눌렀는지 모른다
-    try{ await api(`parties?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', body:JSON.stringify({ joins:next }) }); }
+    b.joins = mutate([...(before||[])]); renderBolts();   // 화면부터 — 서버를 기다리면 눌렀는지 모른다
+    try{
+      /* 서버의 최신 목록에 내 변화만 적용한다 — 동시에 들어온 사람을 지우지 않게 */
+      const q = `parties?id=eq.${encodeURIComponent(id)}`;
+      let cur = before || [];
+      try{ const fresh = await api(`${q}&select=joins`); if(fresh && fresh[0]) cur = fresh[0].joins || []; }catch(e){}
+      const merged = mutate([...cur]);
+      await api(q, { method:'PATCH', body:JSON.stringify({ joins:merged }) });
+      b.joins = merged; renderBolts();
+    }
     catch(e){ b.joins = before; renderBolts(); toast('실패 · 신호 확인'); }
   };
   box.querySelectorAll('[data-bin]').forEach(el=>el.onclick = ()=>{
     const b = bolts.find(x=>x.id===el.dataset.bin);
     burst(el, 10); navigator.vibrate?.(15);                 // 합류는 가볍게 축하한다 — 화면이 다시 그려지기 전에 터뜨린다
-    patch(b.id, [...(b.joins||[]), { id:ME.id, name:ME.name, profile:pubRow() }]); });
+    patch(b.id, cur => cur.some(x=>x.id===ME.id) ? cur : [...cur, { id:ME.id, name:ME.name, profile:pubRow() }]); });
   box.querySelectorAll('[data-bout]').forEach(el=>el.onclick = ()=>{
     const b = bolts.find(x=>x.id===el.dataset.bout);
-    patch(b.id, (b.joins||[]).filter(x=>x.id!==ME.id)); });
+    patch(b.id, cur => cur.filter(x=>x.id!==ME.id)); });
   box.querySelectorAll('[data-bdel]').forEach(el=>el.onclick = async ()=>{
     if(!confirm('이 번개를 지울까요?')) return; el.disabled = true;
     try{ await api(`parties?id=eq.${encodeURIComponent(el.dataset.bdel)}`, { method:'DELETE' });
@@ -3133,8 +3141,13 @@ function bindCards(box, kind){
   const table = kind==='ride' ? 'rides' : 'stays';
   const field = kind==='ride' ? 'riders' : 'guests';
   const rows  = kind==='ride' ? state.rides : state.stays;
-  const patch = async (id, list) => {
-    await api(`${table}?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', body:JSON.stringify({ [field]:list }) });
+  /* 화면에 있는 목록을 통째로 덮어쓰면 같은 순간에 들어온 사람이 사라진다(마지막 쓴 사람만 남는다).
+     그래서 쓰기 직전에 서버의 최신 목록을 다시 읽어 거기에 내 변화만 적용한다. 창이 밀리초로 줄어든다. */
+  const patch = async (id, mutate) => {
+    const q = `${table}?id=eq.${encodeURIComponent(id)}`;
+    let cur = (rows.find(x=>x.id===id)?.[field]) || [];
+    try{ const fresh = await api(`${q}&select=${field}`); if(fresh && fresh[0]) cur = fresh[0][field] || []; }catch(e){}
+    await api(q, { method:'PATCH', body:JSON.stringify({ [field]:mutate([...cur]) }) });
     kind==='ride' ? pullRides() : pullStays();
   };
   box.querySelectorAll('[data-join]').forEach(b=>b.onclick = async ()=>{
@@ -3144,13 +3157,17 @@ function bindCards(box, kind){
     const cap = kind==='ride' ? r.seats : r.capacity;
     if(list.length >= cap) return toast('자리가 찼어요');
     b.disabled = true;
-    try{ await patch(r.id, [...list, { id:ME.id, name:ME.name, profile:pubRow() }]); toast(kind==='ride'?'탔어요':'같이 써요'); }
-    catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
+    try{ await patch(r.id, cur => {
+        if(cur.some(x=>x.id===ME.id)) return cur;                          // 그새 내가 이미 들어가 있으면 그대로
+        if(cur.length >= cap) throw new Error('full');                      // 그새 자리가 찼으면 넣지 않는다
+        return [...cur, { id:ME.id, name:ME.name, profile:pubRow() }]; });
+      toast(kind==='ride'?'탔어요':'같이 써요'); }
+    catch(e){ b.disabled = false; toast(e.message === 'full' ? '그새 자리가 찼어요' : '실패 · 신호 확인'); if(e.message === 'full') kind==='ride' ? pullRides() : pullStays(); }
   });
   box.querySelectorAll('[data-leave]').forEach(b=>b.onclick = async ()=>{
     const r = rows.find(x=>x.id===b.dataset.leave); if(!r) return;
     b.disabled = true;
-    try{ await patch(r.id, (r[field]||[]).filter(x=>x.id!==ME.id)); toast('뺐어요'); }
+    try{ await patch(r.id, cur => cur.filter(x=>x.id!==ME.id)); toast('뺐어요'); }
     catch(e){ b.disabled = false; toast('실패 · 신호 확인'); }
   });
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick = async ()=>{
