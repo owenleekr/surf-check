@@ -11,6 +11,12 @@
 const W = 180, H = 220, GY = 168;               // 월드 크기, 보드가 닿는 수면 높이
 const G = 760, JV = 262, CUT = 120;             // 중력, 점프 속도, 일찍 떼면 깎는 속도(px/s)
 let cv, ctx, me = null, st = null, raf = 0, last = 0, mode = 'idle', held = false;
+/* 오늘의 챌린지 — 날짜로 씨앗을 줘서 모두가 같은 장애물 순서를 만난다. 같은 코스라야 점수를 견줄 수 있다.
+   물리를 고정 단위(1/60초)로 돌리는 것도 같은 이유다: 기기 프레임이 달라도 같은 입력이면 같은 결과가 나온다. */
+let daily = false, rnd = Math.random, acc = 0;
+const FIX = 1 / 60;
+const hashStr = s => { let h = 2166136261; for(const c of s){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
 const $g = id => document.getElementById(id);
 const PAL = { foam:'#FFFFFF', rock:'#5B5368', rock2:'#7B7290', fin:'#6C7A8E', jelly:'#FF9BD2', shell:'#FFD27A' };
@@ -44,22 +50,23 @@ function mkMe(){
 }
 
 function reset(){
-  st = { t:0, dist:0, speed:92, y:0, vy:0, air:false, buf:0, coyote:0, shells:0, obs:[], pick:[], next:150, nextShell:260,
+  rnd = daily ? mulberry(hashStr('wave-' + today())) : Math.random;
+  st = { t:0, dist:0, speed:92, y:0, vy:0, air:false, buf:0, coyote:0, shells:0, shield:0, invuln:0, obs:[], pick:[], next:150, nextShell:260,
          dead:false, deadT:0, flash:0, shake:0, clouds:[{x:20,y:18,s:3},{x:100,y:34,s:5},{x:150,y:12,s:2}], pops:[] };
 }
 const score = () => Math.floor(st.dist / 14) + st.shells * 10;
 
 function spawn(){
-  const sp = st.speed, roll = Math.random();
+  const sp = st.speed, roll = rnd();
   /* 간격은 '뜬 시간 × 속도'보다 반드시 크다 — 안 그러면 착지하자마자 다음 장애물에 막혀 못 피하는 판이 생긴다 */
-  const air = (2*JV/G) * sp, gap = air * 0.78 + 34 + Math.random() * 46;
+  const air = (2*JV/G) * sp, gap = air * 0.78 + 34 + rnd() * 46;
   let o;
   if(roll < 0.45)      o = { k:'rock',  w:12, h:10, y:0 };
   else if(roll < 0.78) o = { k:'fin',   w:14, h:17, y:0 };
   else                 o = { k:'jelly', w:10, h:10, y:3 };
   o.x = W + 8; st.obs.push(o);
   /* 가끔 장애물 위에 조개 — 뛰어넘는 길목이 곧 보상 */
-  if(Math.random() < 0.7) st.pick.push({ x:o.x + o.w/2 - 3, y:o.h + 20 + Math.random()*8, got:false });
+  if(rnd() < 0.7) st.pick.push({ x:o.x + o.w/2 - 3, y:o.h + 20 + rnd()*8, got:false });
   st.next = gap;
 }
 
@@ -88,12 +95,19 @@ function step(dt){
   s.pops.forEach(p=>{ p.t += dt; p.y += 26 * dt; }); s.pops = s.pops.filter(p=>p.t < 0.7);
   // 충돌 — 서퍼 몸통은 그림보다 좁게 잡는다(억울한 죽음이 제일 싫다)
   const sx = 40, sw = 12, sb = s.y, st_ = s.y + 20;
+  s.invuln = Math.max(0, s.invuln - dt);
   for(const o of s.obs){
     const ox = o.x + 2, ow = o.w - 4, ob = o.y, ot = o.y + o.h - 2;
-    if(sx + sw > ox && sx < ox + ow && sb < ot && st_ > ob){ wipeout(); return; }
+    if(sx + sw > ox && sx < ox + ow && sb < ot && st_ > ob){
+      if(s.invuln > 0) continue;                                        // 막 튜브가 터진 직후엔 잠깐 무적
+      if(s.shield){ s.shield = 0; s.invuln = 0.8; s.flash = 0.45; s.obs = s.obs.filter(x=>x !== o);
+        s.pops.push({ x:36, y:GY - 40, t:0, v:'🛟 튕겨냄' }); vib([20, 30, 20]); beep(500, 250, 0.18, 'triangle', 0.06); break; }
+      wipeout(); return;
+    }
   }
   for(const p of s.pick){
-    if(!p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+10' }); vib(6); beep(880, 1320, 0.09, 'triangle', 0.06); }
+    if(!p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+10' }); vib(6); beep(880, 1320, 0.09, 'triangle', 0.06);
+      if(s.shells % 5 === 0 && !s.shield){ s.shield = 1; s.pops.push({ x:30, y:GY - 56, t:0, v:'🛟 구명튜브!' }); beep(660, 1320, 0.2, 'triangle', 0.07); } }
   }
 }
 
@@ -106,7 +120,7 @@ function finish(){
   if(mode !== 'run') return;
   mode = 'over'; window._gameRun = false;
   const sc = score();
-  const r = typeof playGameDone === 'function' ? playGameDone(sc) : { gain:0, newBest:false, best:sc };
+  const r = typeof playGameDone === 'function' ? playGameDone(sc, daily) : { gain:0, newBest:false, best:sc };
   showOver(sc, r);
   if(typeof popNext === 'function') setTimeout(popNext, 400);
 }
@@ -145,7 +159,10 @@ function draw(){
     else{
       R('rgba(27,27,47,.28)', 38 - Math.min(4, s.y / 8), GY + 1, 18, 2);               // 높이 뜰수록 그림자가 작아진다
       const tilt = s.air ? Math.max(-.22, Math.min(.22, -s.vy / 1500)) : 0;
+      if(s.invuln > 0 && ((s.t * 20) | 0) % 2) ctx.globalAlpha = 0.45;                  // 무적 중엔 깜빡인다
       ctx.translate(x + me.width/2, y + me.height/2); ctx.rotate(tilt); ctx.drawImage(me, -me.width/2, -me.height/2);
+      if(s.shield){ ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.strokeStyle = '#FF6B6B'; ctx.beginPath(); ctx.arc(0, 4, 16 + Math.sin(s.t * 8), 0, 6.3); ctx.stroke();
+        ctx.strokeStyle = '#FFFFFF'; ctx.setLineDash([4, 6]); ctx.beginPath(); ctx.arc(0, 4, 16 + Math.sin(s.t * 8), 0, 6.3); ctx.stroke(); ctx.setLineDash([]); }
     }
     ctx.restore();
   }
@@ -161,12 +178,17 @@ function loop(t){
   raf = requestAnimationFrame(loop);
   if(!last) last = t;
   let dt = (t - last) / 1000; last = t; dt = Math.min(dt, 0.033);        // 탭을 다녀오면 dt 가 커진다 — 한 번에 뛰어넘지 않게
-  if(mode === 'run') step(dt);
+  if(mode === 'run'){ acc += dt; let n = 0; while(acc >= FIX && n++ < 6){ step(FIX); acc -= FIX; if(mode !== 'run') break; } }
   else if(mode === 'idle'){ st.t += dt; st.clouds.forEach(c=>{ c.x -= c.s * dt; if(c.x < -30) c.x = W + 10; }); }
   draw();
 }
 
 /* ── 화면 ── */
+function dailyRows(){
+  const day = today();
+  return (state.town||[]).filter(x=>x.id !== ME.id).map(x=>{ const d = (typeof peerPlay === 'function' ? peerPlay(x.profile?.play)?.dbest : null); return d && d.day === day ? { id:x.id, name:x.name, best:d.score } : null; }).filter(Boolean)
+    .concat((ME.profile.play?.dbest?.day === day) ? [{ id:ME.id, name:ME.name, best:ME.profile.play.dbest.score }] : []).sort((a,b)=>b.best - a.best).slice(0, 3);
+}
 function myBestRows(){
   const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>({ id:x.id, name:x.name, best:(typeof peerPlay === 'function' ? peerPlay(x.profile?.play)?.best : 0) || 0 }))
     .concat([{ id:ME.id, name:ME.name, best:ME.profile?.play?.best || 0 }]).filter(r=>r.best > 0).sort((a,b)=>b.best - a.best);
@@ -188,25 +210,29 @@ function showStart(){
       <div class="go-d">탭하면 점프 · 길게 누르면 더 높이<br>바위·상어·해파리를 넘고 🐚을 모아요</div>
       <div class="go-b">내 최고 <b>${p.best || 0}</b>점</div>
       ${top.length ? `<div class="go-r">${top.map((r,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(r.name)} ${r.best}</span>`).join('')}</div>` : ''}
-      <button class="btn blue" id="g-go" type="button" style="width:100%;min-height:52px;font-size:16px">시작</button></div>`;
-  $g('g-go').onclick = begin;
+      <div class="go-b" style="margin:0 0 8px">📅 오늘의 챌린지 내 기록 <b>${(p.dbest && p.dbest.day === today()) ? p.dbest.score : '—'}</b></div>
+      <button class="btn blue" id="g-go" type="button" style="width:100%;min-height:52px;font-size:16px">📅 오늘의 챌린지 <small style="font-weight:700">모두 같은 코스</small></button>
+      <button class="btn ghost" id="g-free" type="button" style="width:100%;min-height:48px;margin-top:8px">자유 플레이</button></div>`;
+  $g('g-go').onclick = ()=>begin(true); $g('g-free').onclick = ()=>begin(false);
 }
-function begin(){
-  me = mkMe(); TH = themeNow(); reset(); mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false;
+function begin(isDaily){
+  daily = isDaily === true;
+  me = mkMe(); TH = themeNow(); reset(); mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false; acc = 0;
 }
 function showOver(sc, r){
   const p = ME.profile.play || {};
   const v = (typeof VOICES !== 'undefined' && VOICES.length) ? VOICES[Math.floor(Math.random() * VOICES.length)] : null;
   $g('g-ov').hidden = false;
   $g('g-ov').innerHTML = `<div class="go-card">
-      <div class="go-t">${r.newBest && sc > 0 ? '🎉 최고 기록!' : '🌊 와이프아웃'}</div>
+      <div class="go-t">${daily ? '📅 ' : ''}${r.newBest && sc > 0 ? '🎉 최고 기록!' : '🌊 와이프아웃'}</div>
       <div class="go-s">${sc}<small>점</small></div>
       <div class="go-b">🐚 ${st.shells}개 · 최고 <b>${p.best || sc}</b>점${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
+      ${daily ? (()=>{ const rk = dailyRows(); return rk.length ? `<div class="go-r" style="margin-bottom:10px"><span style="color:var(--ink)">오늘의 챌린지 순위</span>${rk.map((q,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(q.name)} ${q.best}</span>`).join('')}</div>` : ''; })() : ''}
       ${v ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
       <div style="display:flex;gap:8px"><button class="btn blue" id="g-again" type="button" style="flex:1;min-height:52px;font-size:16px">한 판 더</button>
         <button class="btn ghost" id="g-exit" type="button" style="min-height:52px">닫기</button></div>
       ${sc >= 100 && typeof sendChat === 'function' ? `<button class="btn ghost" id="g-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;
-  $g('g-again').onclick = begin; $g('g-exit').onclick = gameClose;
+  $g('g-again').onclick = ()=>begin(daily); $g('g-exit').onclick = gameClose;
   if($g('g-brag')) $g('g-brag').onclick = async ()=>{ const b = $g('g-brag'); b.disabled = true;
     await sendChat(`🎮 파도 점프 ${sc}점!${r.newBest ? ' (내 최고 기록 🎉)' : ''}`, true); b.textContent = '✅ 올렸어요'; };
 }
@@ -233,7 +259,7 @@ function wire(){
   addEventListener('keydown', e=>{
     if($g('game').hidden) return;
     if(e.key === 'Escape'){ gameClose(); return; }
-    if((e.code === 'Space' || e.key === 'ArrowUp' || e.key === 'w') && !e.repeat){ e.preventDefault(); if(mode === 'run') jump(); else if(mode === 'idle' || mode === 'over') begin(); }
+    if((e.code === 'Space' || e.key === 'ArrowUp' || e.key === 'w') && !e.repeat){ e.preventDefault(); if(mode === 'run') jump(); else if(mode === 'idle') begin(true); else if(mode === 'over') begin(daily); }
   });
   addEventListener('keyup', e=>{ if(e.code === 'Space' || e.key === 'ArrowUp' || e.key === 'w') release(); });
   $g('g-x').onclick = gameClose;

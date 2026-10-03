@@ -33,7 +33,7 @@ console.log('   팝업 닫은 뒤 hidden=', await S(()=>document.getElementById(
 await p.screenshot({path:'/tmp/pl_home.png'});
 await S(()=>document.getElementById('prof-lv').click()); await new Promise(r=>setTimeout(r,500));
 console.log('② 도감', JSON.stringify(await S(()=>({ 퀘스트:[...document.querySelectorAll('.pq')].map(q=>q.textContent.replace(/\s+/g,' ').trim()), 배지켜짐:document.querySelectorAll('.bd.on').length, 배지전체:document.querySelectorAll('.bd').length, 순위:[...document.querySelectorAll('.prk')].map(r=>r.textContent.replace(/\s+/g,' ').trim()) }))));
-await (await p.$('.sheet-in')).screenshot({path:'/tmp/pl_sheet.png'});
+await (await p.$('#play-sheet .sheet-in')).screenshot({path:'/tmp/pl_sheet.png'});
 await S(()=>document.getElementById('pg-start').click()); await new Promise(r=>setTimeout(r,500));
 console.log('③ 게임 시작화면', JSON.stringify(await S(()=>({ 열림:!document.getElementById('game').hidden, 카드:document.querySelector('.go-card .go-t').textContent }))));
 await p.screenshot({path:'/tmp/pl_game0.png'});

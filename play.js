@@ -15,7 +15,8 @@ const PLV = [[0,'모래알','🐚'],[50,'물장구','💦'],[150,'패들러','�
    (실제로 xp 에 <img onerror> 를 넣으면 모두의 도감에서 실행됐다.) 화면에 찍기 전에 반드시 숫자로 걸러 범위를 가둔다.
    레벨은 적힌 값을 믿지 않고 xp 로 다시 계산한다. */
 const _num = (v, max) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(max, x)) : 0; };
-const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000) } : null;
+const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000),
+  dbest:(pl.dbest && typeof pl.dbest === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.dbest.day))) ? { day:String(pl.dbest.day), score:_num(pl.dbest.score, 100000) } : null } : null;
 const lvOf = xp => { let i = 0; PLV.forEach((l,k)=>{ if(xp >= l[0]) i = k; }); return i; };
 
 /* ── 레벨 보상 ── 새 꾸미기 아이템은 여기서만 정의한다.
@@ -59,6 +60,7 @@ const BADGES = [
   { id:'quiz30',  ic:'🎓', n:'코치님 제자',     d:'코치 퀴즈에서 정답을 30개 맞혔어요', t:(s,p)=>(p.qz||0) >= 30, xp:40 },
   { id:'goal1',    ic:'🤝', n:'함께 채운 한 주',  d:'6기 이번 주 목표를 같이 채웠어요',     t:(s,p)=>(p.goalN||0) >= 1 },
   { id:'goal4',    ic:'🌈', n:'한 달 팀워크',     d:'6기 주간 목표를 4주 채웠어요',         t:(s,p)=>(p.goalN||0) >= 4, xp:50 },
+  { id:'daily7',   ic:'📅', n:'7일 챌린저',       d:'오늘의 챌린지에 7일 참여했어요',       t:(s,p)=>(p.dN||0) >= 7, xp:40 },
   { id:'game1',   ic:'🎮', n:'첫 파도 점프',   d:'파도 점프를 한 판 해봤어요',        t:(s,p)=>(p.best||0) > 0 },
   { id:'game300', ic:'🦈', n:'상어도 피했다',  d:'파도 점프에서 600점을 넘겼어요',    t:(s,p)=>(p.best||0) >= 600, xp:40 },
   { id:'quest5',  ic:'✅', n:'퀘스트 5일',     d:'오늘의 퀘스트를 5일 완료했어요',    t:(s,p)=>(p.qall||0) >= 5, xp:40 },
@@ -131,12 +133,14 @@ function playPush(){
 function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
-  ['base','bonus','best','qall','qz','goalN'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  ['base','bonus','best','qall','qz','goalN','dN'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
     else Object.keys(remote.qd[d]).forEach(q=>{ if(!p.qd[d][q]){ p.qd[d][q] = 1; ch = true; } }); });
   Object.keys(remote.gn||{}).forEach(d=>{ if((remote.gn[d]||0) > (p.gn[d]||0)){ p.gn[d] = remote.gn[d]; ch = true; } });
   Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
+  if(remote.dbest && remote.dbest.day && (!p.dbest || remote.dbest.day > p.dbest.day || (remote.dbest.day === p.dbest.day && remote.dbest.score > p.dbest.score))){ p.dbest = remote.dbest; ch = true; }
+  if(remote.dcday && remote.dcday > (p.dcday || '')){ p.dcday = remote.dcday; ch = true; }
   if(remote.goalWk && remote.goalWk > (p.goalWk || '')){ p.goalWk = remote.goalWk; ch = true; }
   if(remote.gday === p.gday && (remote.gxp||0) > (p.gxp||0)){ p.gxp = remote.gxp; ch = true; }
   if(ch){ p.lvSeen = Math.max(p.lvSeen||0, lvOf(playXp(p))); playPush(); renderPlayBits(); }
@@ -190,7 +194,7 @@ function playTick(){
 }
 
 /* 게임이 끝났을 때 — 하루 XP 상한을 둔다(게임만 해서 레벨을 올리지 못하게). 상한은 저장값(gxp)으로 막는다 */
-function playGameDone(score){
+function playGameDone(score, isDaily){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today();
   p.gn[day] = (p.gn[day] || 0) + 1;
@@ -198,8 +202,15 @@ function playGameDone(score){
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(score / 30), 15 - p.gxp));
   p.gxp += gain; p.bonus += gain;
+  /* 오늘의 챌린지 — 그날 최고점만 남기고(다른 날 값은 덮어쓴다), 그날 처음 참여하면 +5 XP. 연속 참여일이 아니라 '참여한 날 수'를 센다. */
+  let dGain = 0;
+  if(isDaily){
+    if(!p.dbest || p.dbest.day !== day) p.dbest = { day, score:0 };
+    if(score > p.dbest.score) p.dbest.score = score;
+    if(p.dcday !== day){ p.dcday = day; p.dN = (p.dN || 0) + 1; p.bonus += 5; dGain = 5; }
+  }
   playTick(); playPush();
-  return { gain, newBest, best:p.best };
+  return { gain:gain + dGain, newBest, best:p.best, daily:!!isDaily };
 }
 
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
@@ -263,9 +274,10 @@ function renderPlay(){
   const p = ME.profile.play, xp = playXp(p), lv = lvOf(xp), cur = PLV[lv][0], nxt = PLV[lv+1];
   const pct = nxt ? Math.max(4, Math.round((xp - cur) / (nxt[0] - cur) * 100)) : 100;
   const qs = playQuests(p), got = Object.keys(p.badges).length;
-  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>{ const pp = peerPlay(x.profile?.play) || { xp:0, best:0 }; return { id:x.id, name:x.name, xp:pp.xp, best:pp.best }; })
-    .concat([{ id:ME.id, name:ME.name, xp, best:p.best||0 }]);
-  const key = _rkView === 'xp' ? 'xp' : 'best';
+  const dToday = d => (d && d.day === today()) ? d.score : 0;
+  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>{ const pp = peerPlay(x.profile?.play) || { xp:0, best:0, dbest:null }; return { id:x.id, name:x.name, xp:pp.xp, best:pp.best, daily:dToday(pp.dbest) }; })
+    .concat([{ id:ME.id, name:ME.name, xp, best:p.best||0, daily:dToday(p.dbest) }]);
+  const key = _rkView === 'xp' ? 'xp' : _rkView === 'daily' ? 'daily' : 'best';
   const top = rows.filter(r=>r[key] > 0).sort((a,b)=>b[key]-a[key]);
   const myRank = top.findIndex(r=>r.id === ME.id) + 1;
   const shown = top.slice(0, 5); if(myRank > 5) shown.push(top[myRank-1]);
@@ -283,7 +295,7 @@ function renderPlay(){
         <i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
 
     <div class="pt">🎮 파도 점프 <small>내 최고 ${p.best || 0}점</small></div>
-    <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">점프하러 가기 — 하루 15 XP까지</button>
+    <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">📅 오늘의 챌린지 · 점프하러 가기</button>
 
     <div class="pt">🧠 코치 퀴즈 <small>누적 정답 ${p.qz || 0}개</small></div>
     <button type="button" class="btn mint" id="pg-quiz" style="width:100%;min-height:48px">누가 한 말일까요? — 한 판에 5문제</button>
@@ -294,11 +306,12 @@ function renderPlay(){
 
     <div class="pt">동기 순위 <small>
       <button type="button" class="prk-tab${_rkView==='xp'?' on':''}" data-rk="xp">레벨</button>
-      <button type="button" class="prk-tab${_rkView==='best'?' on':''}" data-rk="best">점프</button></small></div>
+      <button type="button" class="prk-tab${_rkView==='best'?' on':''}" data-rk="best">점프</button>
+      <button type="button" class="prk-tab${_rkView==='daily'?' on':''}" data-rk="daily">오늘</button></small></div>
     ${shown.length ? shown.map(r=>{ const i = top.indexOf(r); const l = lvOf(r.xp);
       return `<div class="prk${r.id===ME.id?' me':''}"><span class="n">${medal(i)}</span><span class="nm2">${esc(r.name)}</span>
-        <span class="v">${_rkView==='xp' ? `Lv.${l+1} · ${r.xp}` : `${r.best}점`}</span></div>`; }).join('')
-      : `<div class="note">${_rkView==='xp' ? '아직 기록이 없어요.' : '아직 아무도 안 뛰었어요 — 첫 번째가 되어보세요'}</div>`}
+        <span class="v">${_rkView==='xp' ? `Lv.${l+1} · ${r.xp}` : `${r[key]}점`}</span></div>`; }).join('')
+      : `<div class="note">${_rkView==='xp' ? '아직 기록이 없어요.' : _rkView==='daily' ? '오늘의 챌린지는 아직 아무도 안 뛰었어요 — 첫 번째가 되어보세요' : '아직 아무도 안 뛰었어요 — 첫 번째가 되어보세요'}</div>`}
     <div class="note" style="margin-top:10px">점수는 훈련·번개·차량·숙소·마을 활동에서 쌓여요. 순위는 재미로만 봐주세요 — 서버가 누가 했는지 증명하진 못해요.</div>`;
   $('play-body').querySelectorAll('[data-q]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.q]; if(!q.done) q.go(); });
   $('play-body').querySelectorAll('[data-bd]').forEach(b=>b.onclick = ()=>{ const bd = BADGES.find(x=>x.id === b.dataset.bd);
