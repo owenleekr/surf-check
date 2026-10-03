@@ -13,8 +13,28 @@ const G = 760, JV = 262, CUT = 120;             // 중력, 점프 속도, 일찍
 let cv, ctx, me = null, st = null, raf = 0, last = 0, mode = 'idle', held = false;
 
 const $g = id => document.getElementById(id);
-const PAL = { sky:['#CFEFFF','#B5E5FF','#9DDBFF','#86D0FA'], far:'#5BB4EE', mid:'#3F9BDF', near:'#2C84CB', deep:'#1F6FB5',
-              foam:'#FFFFFF', sun:'#FFE27A', rock:'#5B5368', rock2:'#7B7290', fin:'#6C7A8E', jelly:'#FF9BD2', shell:'#FFD27A' };
+const PAL = { foam:'#FFFFFF', rock:'#5B5368', rock2:'#7B7290', fin:'#6C7A8E', jelly:'#FF9BD2', shell:'#FFD27A' };
+/* 지금 시각의 하늘 — 저녁에 켠 사람은 노을을, 밤에 켠 사람은 달을 본다. 같은 게임이 매번 같은 낮이면 금방 질린다. */
+const THEMES = {
+  day:    { sky:['#CFEFFF','#B5E5FF','#9DDBFF','#86D0FA'], sun:'#FFE27A', far:'#5BB4EE', mid:'#3F9BDF', near:'#2C84CB', deep:'#1F6FB5', w:['#8CCBF6','#6DB4EA','#9ED3F7','#4C98D8','#3A86C8','#2C76B8'], cloud:'#FFFFFF', cloud2:'#E4F4FF', stars:false },
+  sunset: { sky:['#FFE3B8','#FFC48C','#FF9F7A','#E97C86'], sun:'#FFB347', far:'#C0689A', mid:'#8E5AA6', near:'#5F4C9A', deep:'#3E3A86', w:['#F0A7B4','#C98BC0','#E7B0C8','#6F5CB0','#5B4BA0','#4A3D90'], cloud:'#FFE2CF', cloud2:'#F4B8A0', stars:false },
+  night:  { sky:['#0B1E3F','#10294F','#16355F','#1E4270'], sun:'#E8EEF9', far:'#1E4F85', mid:'#18416F', near:'#12335A', deep:'#0E2848', w:['#2D6AA8','#27598F','#356FAA','#1F4D80','#1A416F','#15375F'], cloud:'#2A4673', cloud2:'#1F3A62', stars:true },
+};
+const themeNow = () => { const h = new Date().getHours(); return THEMES[(h >= 19 || h < 5) ? 'night' : (h >= 17 || h < 6) ? 'sunset' : 'day']; };
+let TH = THEMES.day;
+const STARS = Array.from({length:22}, (_,i)=>({ x:(i*47 + 13) % W, y:(i*29 + 7) % 100, s:(i % 3 === 0) ? 2 : 1 }));
+
+/* 소리 — 기본은 꺼짐. 수업 중·바다 앞에서 갑자기 울리면 곤란하다. 켠 건 기억한다. */
+let AC = null, snd = false; try{ snd = localStorage.getItem('lineup.share.snd') === '1'; }catch(e){}
+function beep(f0, f1, dur, type, vol){
+  if(!snd) return;
+  try{ AC ||= new (window.AudioContext || window.webkitAudioContext)(); if(AC.state === 'suspended') AC.resume();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
+    o.type = type || 'square'; o.frequency.setValueAtTime(f0, t); if(f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    g.gain.setValueAtTime(vol || 0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + 0.02); }catch(e){}
+}
+function sndBtn(){ const b = $g('g-snd'); if(!b) return; b.textContent = snd ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(snd)); b.setAttribute('aria-label', snd ? '소리 끄기' : '소리 켜기'); }
 
 function mkMe(){
   /* 내 캐릭터를 그대로 태운다 — 남의 캐릭터를 조종하는 게임은 두 번 하면 질린다 */
@@ -45,7 +65,7 @@ function spawn(){
 
 function jump(){
   if(mode !== 'run' || st.dead) return;
-  if(!st.air || st.coyote > 0){ st.vy = JV; st.air = true; st.coyote = 0; st.buf = 0; held = true; vib(8); }
+  if(!st.air || st.coyote > 0){ st.vy = JV; st.air = true; st.coyote = 0; st.buf = 0; held = true; vib(8); beep(300, 560, 0.12, 'square', 0.04); }
   else st.buf = 0.12;                                // 착지 직전에 눌러도 먹는다
 }
 function release(){ held = false; if(st && st.vy > CUT) st.vy = CUT; }
@@ -73,12 +93,12 @@ function step(dt){
     if(sx + sw > ox && sx < ox + ow && sb < ot && st_ > ob){ wipeout(); return; }
   }
   for(const p of s.pick){
-    if(!p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+10' }); vib(6); }
+    if(!p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+10' }); vib(6); beep(880, 1320, 0.09, 'triangle', 0.06); }
   }
 }
 
 function wipeout(){
-  st.dead = true; st.flash = 1; st.shake = 5; held = false;
+  st.dead = true; st.flash = 1; st.shake = 5; held = false; beep(220, 60, 0.4, 'sawtooth', 0.07);
   vib([40, 30, 60]);
   setTimeout(finish, 650);
 }
@@ -96,14 +116,15 @@ function R(c, x, y, w, h){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.r
 function draw(){
   const s = st, sh = s.shake ? (Math.random() - .5) * s.shake : 0;
   ctx.save(); ctx.translate(Math.round(sh), 0);
-  for(let i = 0; i < 4; i++) R(PAL.sky[i], 0, i*32, W, 32);
-  R(PAL.sun, 138, 14, 16, 16); R(PAL.sky[0], 138, 14, 2, 2); R(PAL.sky[0], 152, 14, 2, 2); R(PAL.sky[0], 138, 28, 2, 2); R(PAL.sky[0], 152, 28, 2, 2);
-  s.clouds.forEach(c=>{ R('#FFFFFF', c.x, c.y, 22, 5); R('#FFFFFF', c.x + 4, c.y - 3, 12, 4); R('#E4F4FF', c.x, c.y + 4, 22, 1); });
+  for(let i = 0; i < 4; i++) R(TH.sky[i], 0, i*32, W, 32);
+  if(TH.stars) STARS.forEach((st, i)=>{ if(((s.t * 1.3 + i) | 0) % 5 !== 0) R('#FFFFFF', st.x, st.y, st.s, st.s); });      // 별은 가끔 깜빡인다
+  R(TH.sun, 138, 14, 16, 16); R(TH.sky[0], 138, 14, 2, 2); R(TH.sky[0], 152, 14, 2, 2); R(TH.sky[0], 138, 28, 2, 2); R(TH.sky[0], 152, 28, 2, 2);
+  s.clouds.forEach(c=>{ R(TH.cloud, c.x, c.y, 22, 5); R(TH.cloud, c.x + 4, c.y - 3, 12, 4); R(TH.cloud2, c.x, c.y + 4, 22, 1); });
   // 먼 바다 → 가까운 바다. 줄마다 속도를 다르게 줘서 달리는 느낌을 만든다
-  R(PAL.far, 0, 118, W, 18); R(PAL.mid, 0, 136, W, 20); R(PAL.near, 0, 156, W, 12); R(PAL.deep, 0, GY, W, H - GY);
+  R(TH.far, 0, 118, W, 18); R(TH.mid, 0, 136, W, 20); R(TH.near, 0, 156, W, 12); R(TH.deep, 0, GY, W, H - GY);
   const wl = (y, spd, c, len, gap)=>{ const off = (s.t * spd) % (len + gap); for(let x = -off; x < W; x += len + gap) R(c, x, y + Math.round(Math.sin((x + s.t*20) / 11)), len, 1); };
-  wl(124, 14, '#8CCBF6', 8, 18); wl(142, 30, '#6DB4EA', 10, 14); wl(160, 70, '#9ED3F7', 12, 12);
-  wl(180, s.speed * 0.9, '#4C98D8', 14, 20); wl(196, s.speed * 1.1, '#3A86C8', 18, 22); wl(210, s.speed * 1.3, '#2C76B8', 22, 26);
+  wl(124, 14, TH.w[0], 8, 18); wl(142, 30, TH.w[1], 10, 14); wl(160, 70, TH.w[2], 12, 12);
+  wl(180, s.speed * 0.9, TH.w[3], 14, 20); wl(196, s.speed * 1.1, TH.w[4], 18, 22); wl(210, s.speed * 1.3, TH.w[5], 22, 26);
   // 앞쪽 파도 거품 — 수면선을 따라 흐른다
   const foam = (s.t * s.speed * 0.9) % 16; for(let x = -foam; x < W; x += 16) R(PAL.foam, x, GY - 1 + ((x / 16 | 0) % 2), 6, 1);
   // 조개
@@ -151,6 +172,13 @@ function myBestRows(){
     .concat([{ id:ME.id, name:ME.name, best:ME.profile?.play?.best || 0 }]).filter(r=>r.best > 0).sort((a,b)=>b.best - a.best);
   return rows.slice(0, 3);
 }
+function pause(){
+  if(mode !== 'run' || st.dead) return;
+  mode = 'paused'; held = false; $g('g-ov').hidden = false;
+  $g('g-ov').innerHTML = `<div class="go-card"><div class="go-t">⏸ 잠깐 멈췄어요</div><div class="go-b">점수 <b>${score()}</b></div>
+    <button class="btn blue" id="g-resume" type="button" style="width:100%;min-height:52px;font-size:16px">이어서</button></div>`;
+  $g('g-resume').onclick = ()=>{ mode = 'run'; last = 0; $g('g-ov').hidden = true; };
+}
 function showStart(){
   mode = 'idle'; window._gameRun = false; reset();
   const p = ME.profile.play || {}, top = myBestRows();
@@ -164,7 +192,7 @@ function showStart(){
   $g('g-go').onclick = begin;
 }
 function begin(){
-  me = mkMe(); reset(); mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false;
+  me = mkMe(); TH = themeNow(); reset(); mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false;
 }
 function showOver(sc, r){
   const p = ME.profile.play || {};
@@ -176,14 +204,17 @@ function showOver(sc, r){
       <div class="go-b">🐚 ${st.shells}개 · 최고 <b>${p.best || sc}</b>점${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
       ${v ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
       <div style="display:flex;gap:8px"><button class="btn blue" id="g-again" type="button" style="flex:1;min-height:52px;font-size:16px">한 판 더</button>
-        <button class="btn ghost" id="g-exit" type="button" style="min-height:52px">닫기</button></div></div>`;
+        <button class="btn ghost" id="g-exit" type="button" style="min-height:52px">닫기</button></div>
+      ${sc >= 100 && typeof sendChat === 'function' ? `<button class="btn ghost" id="g-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;
   $g('g-again').onclick = begin; $g('g-exit').onclick = gameClose;
+  if($g('g-brag')) $g('g-brag').onclick = async ()=>{ const b = $g('g-brag'); b.disabled = true;
+    await sendChat(`🎮 파도 점프 ${sc}점!${r.newBest ? ' (내 최고 기록 🎉)' : ''}`, true); b.textContent = '✅ 올렸어요'; };
 }
 
 function gameOpen(){
   cv = $g('g-cv'); ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
   $g('game').hidden = false; document.body.classList.add('game-on');
-  me = mkMe(); showStart(); last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  me = mkMe(); TH = themeNow(); sndBtn(); showStart(); last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
 function gameClose(){
   cancelAnimationFrame(raf); raf = 0; mode = 'idle'; window._gameRun = false;
@@ -206,11 +237,13 @@ function wire(){
   });
   addEventListener('keyup', e=>{ if(e.code === 'Space' || e.key === 'ArrowUp' || e.key === 'w') release(); });
   $g('g-x').onclick = gameClose;
-  document.addEventListener('visibilitychange', ()=>{ if(document.hidden && mode === 'run'){ last = 0; } });
+  /* 다른 앱을 보다 돌아오면 게임이 이어 달려서 바로 죽는다 — 멈춰 두고 다시 누르면 시작한다 */
+  document.addEventListener('visibilitychange', ()=>{ if(document.hidden && mode === 'run') pause(); });
+  $g('g-snd').onclick = ()=>{ snd = !snd; try{ localStorage.setItem('lineup.share.snd', snd ? '1' : '0'); }catch(e){} sndBtn(); beep(660, 990, 0.1, 'triangle', 0.06); };
 }
 document.addEventListener('DOMContentLoaded', wire);
 if(document.readyState !== 'loading') wire();
 
 window.gameOpen = gameOpen; window.gameClose = gameClose;
-window._game = { get st(){ return st; }, get mode(){ return mode; }, step, jump, release, score, begin, reset: ()=>reset() };
+window._game = { get TH(){ return TH; }, setTheme:k=>{ TH = THEMES[k]; }, pause, get st(){ return st; }, get mode(){ return mode; }, step, jump, release, score, begin, reset: ()=>reset() };
 })();
