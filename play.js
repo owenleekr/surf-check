@@ -49,6 +49,7 @@ const BADGES = [
   { id:'stay1',   ic:'🏠', n:'한 지붕 아래',   d:'숙소 쉐어를 올리거나 함께했어요',   t:s=>s.staysMade + s.staysJoined >= 1 },
   { id:'chat5',   ic:'💬', n:'마을 수다쟁이',  d:'마을에 한마디를 5번 남겼어요',      t:s=>s.chat >= 5 },
   { id:'react10', ic:'👏', n:'응원왕',         d:'동기에게 반응·응원을 10번 보냈어요', t:s=>s.reacts >= 10 },
+  { id:'mvp1',    ic:'👑', n:'주간 MVP',       d:'한 주에 훈련 1위(3회 이상)를 했어요', t:s=>s.mvp >= 1, xp:50 },
   { id:'game1',   ic:'🎮', n:'첫 파도 점프',   d:'파도 점프를 한 판 해봤어요',        t:(s,p)=>(p.best||0) > 0 },
   { id:'game300', ic:'🦈', n:'상어도 피했다',  d:'파도 점프에서 600점을 넘겼어요',    t:(s,p)=>(p.best||0) >= 600, xp:40 },
   { id:'quest5',  ic:'✅', n:'퀘스트 5일',     d:'오늘의 퀘스트를 5일 완료했어요',    t:(s,p)=>(p.qall||0) >= 5, xp:40 },
@@ -71,6 +72,7 @@ function playStats(){
     boltsMade:B.filter(b=>b.user_id === id).length, boltsJoined:B.filter(b=>b.user_id !== id && inL(b.joins)).length,
     ridesMade:R.filter(r=>r.user_id === id).length, ridesJoined:R.filter(r=>r.user_id !== id && inL(r.riders)).length,
     staysMade:T.filter(x=>x.user_id === id).length, staysJoined:T.filter(x=>x.user_id !== id && inL(x.guests)).length,
+    mvp:(typeof weeklyTop === 'function' ? Object.values(weeklyTop()).filter(a=>a.some(x=>x.id === id)).length : 0),
     chat:(state.chat||[]).filter(m=>m.user_id === id).length, reacts:(state.reacts||[]).filter(r=>r.user_id === id).length };
 }
 /* 한 번에 쏟아부을 수 있는 건 상한을 둔다 — 수다·반응 도배로 레벨을 사지 못하게 */

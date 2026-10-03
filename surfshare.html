@@ -195,6 +195,7 @@ button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 
 .dgoal .gb{ height:12px; border:2px solid var(--ink); background:#fff; position:relative; overflow:hidden }
 .dgoal .gb i{ position:absolute; inset:0 auto 0 0; background:linear-gradient(90deg,#4DE1A5,#2ED3E6); transition:width .8s cubic-bezier(.2,.9,.3,1) }
 .dgoal.done .gb i{ background:linear-gradient(90deg,#FFD54A,#FF9F43) }
+.dgoal .mvp{ margin-top:7px; font-size:12.5px; color:#B45309 } .dgoal .mvp b{ color:var(--ink) }
 .drill .risk{ color:#C0392B }
 .dstrip{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin-top:26px }
 .dcell{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:62px;
@@ -421,6 +422,8 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
   font-family:"Galmuri11",sans-serif; font-size:10px; line-height:13px; font-weight:800; background:#FFE27A; color:var(--ink); border:2px solid var(--ink) }
 .vp .vok{ position:absolute; right:3px; top:46px; z-index:2; width:17px; height:17px; text-align:center; font-style:normal; font-size:11px; line-height:13px; font-weight:800;
   background:var(--mint); color:var(--ink); border:2px solid var(--ink); border-radius:50% }
+.vp .vbolt{ position:absolute; left:3px; top:46px; z-index:2; width:17px; height:17px; text-align:center; font-style:normal; font-family:sans-serif; font-size:11px; line-height:13px;
+  background:#FFE27A; border:2px solid var(--ink); border-radius:50% }
 .vp .nm{ font-size:11.5px; font-weight:800; background:rgba(255,249,230,.92); border:2px solid var(--ink);
          padding:1px 5px; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 /* 머리 위로 온전히 띄운다. 칸 높이가 95px 이라 그보다 위여야 캐릭터를 안 가린다.
@@ -1723,9 +1726,15 @@ async function pullTown(){
 /* 마을에서 한눈에: 왼쪽 위 숫자 = 레벨, 오른쪽 아래 ✔ = 오늘 훈련함. 이름표 줄은 건드리지 않는다(겹침 계산이 거기 걸려 있다). */
 function lvOfUser(x){ const pl = x.id === ME.id ? ME.profile?.play : x.profile?.play;
   return pl ? (x.id === ME.id ? lvOf(playXp(pl)) : (pl.lv ?? null)) : null; }
+/* 지금부터 세 시간 안에 시작하는(또는 막 시작한) 번개에 가는 사람 — 마을에서 '곧 나가는 사람'이 보인다 */
+function soonBolt(id){
+  return (bolts||[]).find(b=>!boltGone(b) && (b.joins||[]).some(j=>j.id === id)
+    && new Date(`${b.date}T${b.time||'12:00'}:00`).getTime() - Date.now() < 3*3600e3) || null;
+}
 function vBadges(x){
-  const lv = lvOfUser(x), did = typeof dSet !== 'undefined' && dSet[x.id]?.has(dayOf(0));
-  return (lv != null ? `<i class="vlv" aria-hidden="true">${lv+1}</i>` : '') + (did ? `<i class="vok" aria-hidden="true" title="오늘 훈련 완료">✔</i>` : '');
+  const lv = lvOfUser(x), did = typeof dSet !== 'undefined' && dSet[x.id]?.has(dayOf(0)), sb = soonBolt(x.id);
+  return (lv != null ? `<i class="vlv" aria-hidden="true">${lv+1}</i>` : '') + (did ? `<i class="vok" aria-hidden="true" title="오늘 훈련 완료">✔</i>` : '')
+    + (sb ? `<i class="vbolt" aria-hidden="true" title="곧 서핑번개">⚡</i>` : '');
 }
 function renderTown(){
   const g = $('vgrid'); if(!g) return;
@@ -1767,6 +1776,7 @@ function renderTown(){
     const c = document.createElement('div'); c.className = 'vcard';
     const lvx = lvOfUser(x), stk = typeof drillStat === 'function' ? drillStat(x.id).streak : 0;
     c.innerHTML = `<b>${esc(x.name)}</b>${x.profile?.role==='coach'?' · 코치':''}
+      ${soonBolt(x.id) ? `<br>⚡ ${hLabel(soonBolt(x.id).time)} ${esc(soonBolt(x.id).beach)} 번개에 가요` : ''}
       ${lvx != null ? `<br><span style="color:#B45309;font-weight:800">Lv.${lvx+1} ${PLV[lvx][1]} ${PLV[lvx][2]}</span>${stk ? ` · 🔥 ${stk}일 연속` : ''}` : (stk ? `<br>🔥 ${stk}일 연속` : '')}
       ${moodOf(x)?`<br>💬 ${esc(moodOf(x))}`:''}
       ${here.has(x.id)?`<br>📍 지금 ${esc(here.get(x.id))}`:''}
@@ -2367,6 +2377,17 @@ function renderTodo(){
 const dSet = {};                               // user_id → Set(day)
 let drillLoaded = false, drillRows = [], drillOk = true, drillView = 'streak', drillStampDay = '', boardAll = false;
 const dayOf = n => daysAgo(n);
+/* 월요일 시작 주. 'YYYY-MM-DD' → 그 주 월요일의 같은 형식 */
+const weekKey = day => { const d = new Date(day + 'T00:00'); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+/* 끝난 주마다 훈련 횟수 1위 — {주:[{id,name,n}]} . 3회 미만은 MVP 로 치지 않는다(둘이서 1회씩 한 주를 시상하면 민망하다) */
+function weeklyTop(){
+  const cur = weekKey(dayOf(0)), seen = new Set(), byWeek = {};
+  drillRows.forEach(r=>{ if(isTest(r.user_id)) return; const k = r.user_id + '|' + r.day; if(seen.has(k)) return; seen.add(k);
+    const w = weekKey(r.day); if(w >= cur) return; ((byWeek[w] ||= {})[r.user_id] ||= { id:r.user_id, name:r.name, n:0 }).n++; });
+  const out = {}; Object.keys(byWeek).forEach(w=>{ const arr = Object.values(byWeek[w]), mx = Math.max(...arr.map(x=>x.n)); if(mx >= 3) out[w] = arr.filter(x=>x.n === mx); });
+  return out;
+}
 const DAYS_7 = () => [...Array(7)].map((_,i)=>dayOf(6-i));
 function drillIndex(){
   Object.keys(dSet).forEach(k=>delete dSet[k]);
@@ -2408,7 +2429,9 @@ function renderDrill(){
     const ppl = Math.max((state.town||[]).filter(x=>!isTest(x.id)).length, new Set(drillRows.map(r=>r.user_id)).size, 5);
     const goal = ppl * 3, pc = Math.min(100, Math.round(sum / goal * 100));
     const g = $('dgoal'); g.classList.toggle('done', sum >= goal);
-    g.innerHTML = `<div class="gl"><span>${sum >= goal ? '🎉 이번 주 목표 달성!' : '👥 6기 이번 주 목표'}</span><span><b>${sum}</b> / ${goal}회${todayN ? ` · 오늘 ${todayN}명` : ''}</span></div><div class="gb" role="progressbar" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.max(3, pc)}%"></i></div>`; }
+    const wt = weeklyTop(), lastW = Object.keys(wt).sort().pop();
+    const mvpLine = lastW ? `<div class="mvp">👑 지난주 MVP · ${wt[lastW].map(x=>esc((state.town||[]).find(t=>t.id===x.id)?.name || x.name)).join(', ')} <b>${wt[lastW][0].n}회</b></div>` : '';
+    g.innerHTML = `<div class="gl"><span>${sum >= goal ? '🎉 이번 주 목표 달성!' : '👥 6기 이번 주 목표'}</span><span><b>${sum}</b> / ${goal}회${todayN ? ` · 오늘 ${todayN}명` : ''}</span></div><div class="gb" role="progressbar" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.max(3, pc)}%"></i></div>${mvpLine}`; }
   /* 오후 6시가 지났는데 아직이면 연속이 끊긴다 — 잃는 쪽이 더 크게 느껴진다 */
   const risk = me.streak >= 3 && !did && new Date().getHours() >= 18;
   const many = Object.keys(dSet).length > 1;
