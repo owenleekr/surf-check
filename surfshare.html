@@ -336,6 +336,16 @@ body.game-on{ overflow:hidden }
 .qz-end{ text-align:center; padding:6px 0 4px } .qz-big{ font-size:56px; line-height:1.1; font-family:sans-serif }
 .qz-score{ font-family:"Galmuri11",sans-serif; font-size:40px; color:#B45309; margin:4px 0 } .qz-score small{ font-size:16px; color:#5B6275 }
 .qz-msg{ font-size:14px; font-weight:700; line-height:1.6; word-break:keep-all } .qz-xp{ margin-top:6px; font-size:13px; font-weight:800; color:#168A4A }
+.xpfx{ position:fixed; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:960; pointer-events:none;
+  background:#FFE27A; color:var(--ink); border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); padding:5px 14px; font-family:"Galmuri11",sans-serif; font-weight:800; font-size:15px }
+.xpfx[hidden]{ display:none }
+.xpfx.go{ animation:xpfx 1.7s ease-out both }
+@keyframes xpfx{ 0%{ transform:translate(-50%,10px) scale(.6); opacity:0 } 12%{ transform:translate(-50%,0) scale(1.15); opacity:1 } 20%{ transform:translate(-50%,0) scale(1) }
+  80%{ opacity:1 } 100%{ transform:translate(-50%,-14px); opacity:0 } }
+@media (prefers-reduced-motion:reduce){ .xpfx.go{ animation:none } }
+.stmps{ display:flex; flex-wrap:wrap; gap:6px }
+.stmp{ padding:7px 10px; border:3px dashed #BDB89F; color:#615C47; font-size:13px; font-weight:800; background:#F4F1E1 }
+.stmp.on{ border:3px solid var(--ink); border-style:solid; background:#FFF3C4; color:var(--ink) }
 .burst{ position:fixed; z-index:900; font-size:20px; font-family:sans-serif; pointer-events:none; opacity:0;
   animation:burst .95s cubic-bezier(.2,.8,.3,1) forwards }
 @keyframes burst{ 0%{ opacity:1; transform:translate(0,0) scale(.6) rotate(0) } 70%{ opacity:1 }
@@ -921,6 +931,7 @@ body.onb-on .wrap{ padding-bottom:230px }
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="xpfx" id="xpfx" hidden aria-hidden="true"></div>
 
 <script>
 { const miss = window.__missing(); if(miss.length){ window.__bootFail(miss); throw new Error('boot: '+miss.join(',')); } }
@@ -1541,6 +1552,7 @@ $('now-btn').onclick = async ()=>{
   try{ await api('checkins', { method:'POST', body:JSON.stringify(row) });
     nowRows = (nowRows||[]).filter(c=>c.user_id!==ME.id).concat(row.active ? [row] : []);
     renderNow(); toast(row.active ? `${beach} 체크인!` : '나왔어요');
+    if(row.active && typeof playStamp === 'function') playStamp(beach);
   }catch(e){ $('now-btn').disabled = false;
     toast(e.code==='notable' ? '체크인 표가 아직 없어요' : '실패 · 신호 확인'); }
 };

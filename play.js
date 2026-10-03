@@ -85,6 +85,8 @@ const BADGES = [
   { id:'goal1',    ic:'🤝', n:'함께 채운 한 주',  d:'6기 이번 주 목표를 같이 채웠어요',     t:(s,p)=>(p.goalN||0) >= 1 },
   { id:'goal4',    ic:'🌈', n:'한 달 팀워크',     d:'6기 주간 목표를 4주 채웠어요',         t:(s,p)=>(p.goalN||0) >= 4, xp:50 },
   { id:'daily7',   ic:'📅', n:'7일 챌린저',       d:'오늘의 챌린지에 7일 참여했어요',       t:(s,p)=>(p.dN||0) >= 7, xp:40 },
+  { id:'stamp3',   ic:'🗺️', n:'해변 탐험가',      d:'서로 다른 해변 3곳에서 체크인했어요',   t:(s,p)=>Object.keys(p.stamps||{}).length >= 3, xp:20 },
+  { id:'stampAll', ic:'🧭', n:'양양 마스터',      d:'모든 해변에서 체크인했어요',            t:(s,p)=>typeof SEAS !== 'undefined' && Object.keys(p.stamps||{}).length >= SEAS.length, xp:80 },
   { id:'game1',   ic:'🎮', n:'첫 파도 점프',   d:'파도 점프를 한 판 해봤어요',        t:(s,p)=>(p.best||0) > 0 },
   { id:'game300', ic:'🦈', n:'상어도 피했다',  d:'파도 점프에서 600점을 넘겼어요',    t:(s,p)=>(p.best||0) >= 600, xp:40 },
   { id:'quest5',  ic:'✅', n:'퀘스트 5일',     d:'오늘의 퀘스트를 5일 완료했어요',    t:(s,p)=>(p.qall||0) >= 5, xp:40 },
@@ -157,6 +159,7 @@ function playPush(){
 function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
+  Object.keys(remote.stamps||{}).forEach(k=>{ const s = (p.stamps ||= {}); if(!s[k]){ s[k] = remote.stamps[k]; ch = true; } });
   ['base','bonus','best','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
   Object.keys(remote.own||{}).forEach(k=>{ const o = (p.own ||= {}); if(!o[k]){ o[k] = 1; ch = true; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
@@ -198,6 +201,8 @@ function playTick(){
   Object.keys(p.qd).sort().slice(0, -14).forEach(d=>delete p.qd[d]);      // 2주 지난 기록은 버린다(qall 이 누적을 들고 있다)
   const xp = playXp(p), lv = lvOf(xp);
   if(p.xp !== xp || p.lv !== lv){ p.xp = xp; p.lv = lv; ch = true; }
+  if(_xpShown != null && xp > _xpShown && !first) xpFloat(xp - _xpShown);
+  _xpShown = xp;
   /* 이미 쓰던 사람에게 한 번만 알린다. 방금 시작한 사람은 환영 카드가 있으니 건너뛰고 본 걸로 친다. */
   const NEWS = 'play1';
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
@@ -250,6 +255,26 @@ function playGoal(sum, goal, myWeek){
   playPush(); playTick();
 }
 
+/* 해변 스탬프 — 그 해변에서 체크인하면 한 번 찍힌다. 앱 안의 점수가 아니라 실제로 간 곳을 모으게 한다.
+   해변 이름은 SEAS 목록에 있는 것만 받는다. */
+function playStamp(beach){
+  if(!ME?.profile?.play || typeof SEAS === 'undefined' || !SEAS.some(s=>s[0] === beach)) return;
+  const p = playP(); const st = (p.stamps ||= {});
+  if(st[beach]) return;
+  st[beach] = today(); p.bonus += 5;
+  _popQ.push({ ic:'📍', t:`새 스탬프 · ${beach}`, d:`해변 스탬프 ${Object.keys(st).length}/${SEAS.length}\n+5 XP` });
+  playPush(); playTick();
+}
+
+/* XP 가 오르는 순간 화면 위에 +N 이 떠서, 무엇을 했더니 점수가 됐는지 바로 보인다. 연달아 오르면 합쳐서 한 번에. */
+let _xpShown = null, _xpFx = 0, _xpSum = 0, _xpT = 0;
+function xpFloat(d){
+  const el = $('xpfx'); if(!el || d <= 0) return;
+  _xpSum = (Date.now() - _xpFx < 1400 ? _xpSum : 0) + d; _xpFx = Date.now();
+  el.textContent = `+${_xpSum} XP`; el.hidden = false; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+  clearTimeout(_xpT); _xpT = setTimeout(()=>{ el.hidden = true; }, 1800);
+}
+
 /* ── 알림 카드 ── 한꺼번에 여러 개가 걸려도 한 장씩 */
 function popNext(){
   if(_popBusy || !_popQ.length || !$('pop')) return;
@@ -274,7 +299,8 @@ function renderPlayBits(){
   const pct = nxt ? Math.max(4, Math.round((xp - cur) / (nxt - cur) * 100)) : 100;      // 0% 도 눈에 보이게 조금은 채운다
   if($('lv-chip')) $('lv-chip').textContent = `Lv.${lv+1} ${PLV[lv][1]} ${PLV[lv][2]}`;
   if($('xp-fill')) $('xp-fill').style.width = pct + '%';
-  if($('xp-txt')) $('xp-txt').textContent = nxt ? `${xp - cur}/${nxt - cur} XP` : `${xp} XP · 최고 레벨`;
+  const stk = (typeof drillStat === 'function' && ME) ? drillStat(ME.id).streak : 0;
+  if($('xp-txt')) $('xp-txt').textContent = (stk ? `🔥${stk} · ` : '') + (nxt ? `${xp - cur}/${nxt - cur} XP` : `${xp} XP · 최고 레벨`);
   const qs = playQuests(p), n = qs.filter(q=>q.done).length;
   if($('quest-strip')){
     $('quest-strip').hidden = false;
@@ -322,6 +348,9 @@ function renderPlay(){
 
     <div class="pt">🎮 파도 점프 <small>내 최고 ${p.best || 0}점 · 🐚 ${shellBal()}</small></div>
     <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">📅 오늘의 챌린지 · 점프하러 가기</button>
+
+    <div class="pt">📍 해변 스탬프 <small>${Object.keys(p.stamps||{}).length}/${SEAS.length} · 체크인하면 찍혀요</small></div>
+    <div class="stmps">${SEAS.map(s=>`<span class="stmp${p.stamps?.[s[0]] ? ' on' : ''}"${p.stamps?.[s[0]] ? ` title="${esc(p.stamps[s[0]])}"` : ''}>${p.stamps?.[s[0]] ? '📍' : '·'} ${esc(s[0])}</span>`).join('')}</div>
 
     <div class="pt">🧠 코치 퀴즈 <small>누적 정답 ${p.qz || 0}개</small></div>
     <button type="button" class="btn mint" id="pg-quiz" style="width:100%;min-height:48px">누가 한 말일까요? — 한 판에 5문제</button>
