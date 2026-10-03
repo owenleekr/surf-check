@@ -50,6 +50,7 @@ window.__bootFail = (files) => {
 <script src="roster.js"></script>
 <script src="play.js"></script>
 <script src="surfgame.js"></script>
+<script src="quiz.js"></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
@@ -321,6 +322,19 @@ body.game-on{ overflow:hidden }
 .go-r{ display:flex; flex-direction:column; gap:2px; font-size:12.5px; font-weight:800; color:#5B6275; margin:0 0 12px }
 .go-v{ font-size:13px; line-height:1.6; font-weight:700; margin:0 0 12px; color:#14304F; word-break:keep-all } .go-v small{ display:block; color:#5B6275; margin-top:2px }
 .game-ft{ color:#9FC4E4; font-size:12.5px; font-weight:700; text-align:center; padding-top:10px }
+.qz-hd{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; font-weight:800; color:#5B6275 }
+.qz-dots{ display:flex; gap:4px } .qz-dots i{ width:14px; height:14px; border:2px solid var(--ink); background:#fff }
+.qz-dots i.cur{ background:var(--sun) } .qz-dots i.ok{ background:var(--mint) } .qz-dots i.no{ background:#FF8A8A }
+.qz-q{ margin:16px 0 8px; padding:14px; background:#fff; border:3px solid var(--ink); font-size:15.5px; line-height:1.75; font-weight:700; word-break:keep-all }
+.qz-sub{ font-size:13px; font-weight:800; color:#5B6275; margin:0 0 8px }
+.qz-opts{ display:grid; gap:8px }
+.qz-o{ min-height:52px; font-family:inherit; font-size:15px; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer; padding:0 12px }
+.qz-o:active:not(:disabled){ transform:translate(2px,2px) }
+.qz-o.right{ background:var(--mint) } .qz-o.wrong{ background:#FF8A8A } .qz-o:disabled{ color:var(--ink) } .qz-o:disabled:not(.right):not(.wrong){ opacity:.55 }
+.qz-fb{ min-height:24px; margin-top:10px; font-size:14px; font-weight:800 }
+.qz-end{ text-align:center; padding:6px 0 4px } .qz-big{ font-size:56px; line-height:1.1; font-family:sans-serif }
+.qz-score{ font-family:"Galmuri11",sans-serif; font-size:40px; color:#B45309; margin:4px 0 } .qz-score small{ font-size:16px; color:#5B6275 }
+.qz-msg{ font-size:14px; font-weight:700; line-height:1.6; word-break:keep-all } .qz-xp{ margin-top:6px; font-size:13px; font-weight:800; color:#168A4A }
 .burst{ position:fixed; z-index:900; font-size:20px; font-family:sans-serif; pointer-events:none; opacity:0;
   animation:burst .95s cubic-bezier(.2,.8,.3,1) forwards }
 @keyframes burst{ 0%{ opacity:1; transform:translate(0,0) scale(.6) rotate(0) } 70%{ opacity:1 }
@@ -837,6 +851,15 @@ body.onb-on .wrap{ padding-bottom:230px }
       <div class="game-ov" id="g-ov"></div>
     </div>
     <div class="game-ft">화면을 탭하면 점프 · 스페이스바도 돼요</div>
+  </div>
+</div>
+
+<!-- 코치 퀴즈 -->
+<div class="sheet" id="quiz-sheet" hidden>
+  <div class="sheet-dim" data-quizclose></div>
+  <div class="sheet-in">
+    <div class="sheet-hd"><span class="t">🧠 코치 퀴즈</span><button class="btn sm ghost" data-quizclose>닫기</button></div>
+    <div id="quiz-body"></div>
   </div>
 </div>
 

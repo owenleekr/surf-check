@@ -55,6 +55,8 @@ const BADGES = [
   { id:'chat5',   ic:'💬', n:'마을 수다쟁이',  d:'마을에 한마디를 5번 남겼어요',      t:s=>s.chat >= 5 },
   { id:'react10', ic:'👏', n:'응원왕',         d:'동기에게 반응·응원을 10번 보냈어요', t:s=>s.reacts >= 10 },
   { id:'mvp1',    ic:'👑', n:'주간 MVP',       d:'한 주에 훈련 1위(3회 이상)를 했어요', t:s=>s.mvp >= 1, xp:50 },
+  { id:'quiz10',  ic:'🧠', n:'코치님 말씀 척척', d:'코치 퀴즈에서 정답을 10개 맞혔어요', t:(s,p)=>(p.qz||0) >= 10 },
+  { id:'quiz30',  ic:'🎓', n:'코치님 제자',     d:'코치 퀴즈에서 정답을 30개 맞혔어요', t:(s,p)=>(p.qz||0) >= 30, xp:40 },
   { id:'game1',   ic:'🎮', n:'첫 파도 점프',   d:'파도 점프를 한 판 해봤어요',        t:(s,p)=>(p.best||0) > 0 },
   { id:'game300', ic:'🦈', n:'상어도 피했다',  d:'파도 점프에서 600점을 넘겼어요',    t:(s,p)=>(p.best||0) >= 600, xp:40 },
   { id:'quest5',  ic:'✅', n:'퀘스트 5일',     d:'오늘의 퀘스트를 5일 완료했어요',    t:(s,p)=>(p.qall||0) >= 5, xp:40 },
@@ -95,11 +97,13 @@ function playQuests(p){
     { id:'talk',  ic:'💬', t:'마을에 한마디 · 응원',   hint:'채팅을 남기거나 동기에게 반응', done:talked,
       go:()=>{ closePlay(); setTab('town'); } },
     /* 세 번째는 격일로 바뀐다 — 매일 같은 숙제면 둘째 주부터 안 본다 */
-    (Math.floor(Date.now() / 864e5) % 2 === 0
-      ? { id:'game', ic:'🎮', t:'파도 점프 한 판',   hint:'쉬는 시간에 가볍게', done:(p.gn?.[day] || 0) > 0,
-          go:()=>{ closePlay(); gameOpen(); } }
-      : { id:'cam',  ic:'📹', t:'낙산 캠으로 바다 확인', hint:'오늘 파도 어떤지 보기', done:!!p.vis?.[day]?.cam,
-          go:()=>{ closePlay(); setTab('cam'); } }),
+    [ { id:'game', ic:'🎮', t:'파도 점프 한 판',   hint:'쉬는 시간에 가볍게', done:(p.gn?.[day] || 0) > 0,
+        go:()=>{ closePlay(); gameOpen(); } },
+      { id:'cam',  ic:'📹', t:'낙산 캠으로 바다 확인', hint:'오늘 파도 어떤지 보기', done:!!p.vis?.[day]?.cam,
+        go:()=>{ closePlay(); setTab('cam'); } },
+      { id:'quiz', ic:'🧠', t:'코치님 퀴즈 한 판',   hint:'누가 한 말일까요?', done:!!p.vis?.[day]?.quiz,
+        go:()=>{ closePlay(); quizOpen(); } },
+    ][Math.floor(Date.parse(day + 'T00:00:00Z') / 864e5) % 3],     // 날짜 문자열로 센다 — Date.now()/864e5 는 UTC 라 오전 9시에 바뀐다
   ];
 }
 
@@ -125,7 +129,7 @@ function playPush(){
 function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
-  ['base','bonus','best','qall'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  ['base','bonus','best','qall','qz'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
     else Object.keys(remote.qd[d]).forEach(q=>{ if(!p.qd[d][q]){ p.qd[d][q] = 1; ch = true; } }); });
@@ -267,6 +271,9 @@ function renderPlay(){
     <div class="pt">🎮 파도 점프 <small>내 최고 ${p.best || 0}점</small></div>
     <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">점프하러 가기 — 하루 15 XP까지</button>
 
+    <div class="pt">🧠 코치 퀴즈 <small>누적 정답 ${p.qz || 0}개</small></div>
+    <button type="button" class="btn mint" id="pg-quiz" style="width:100%;min-height:48px">누가 한 말일까요? — 한 판에 5문제</button>
+
     <div class="pt">배지 <small>${got}/${BADGES.length}</small></div>
     <div class="bgrid">${BADGES.map(b=>`<button type="button" class="bd${p.badges[b.id]?' on':''}" data-bd="${b.id}" aria-label="${b.n}${p.badges[b.id]?'':' (잠김)'}">
         <i>${p.badges[b.id] ? b.ic : '🔒'}</i><span>${b.n}</span></button>`).join('')}</div>
@@ -284,6 +291,7 @@ function renderPlay(){
     toast(p.badges[bd.id] ? `${bd.ic} ${bd.n} — ${bd.d}` : `🔒 ${bd.n} — ${bd.d}`); });
   $('play-body').querySelectorAll('[data-rk]').forEach(b=>b.onclick = ()=>{ _rkView = b.dataset.rk; renderPlay(); });
   $('pg-start').onclick = ()=>{ closePlay(); gameOpen(); };
+  $('pg-quiz').onclick = ()=>{ closePlay(); quizOpen(); };
 }
 
 /* ── 배선 ── */
@@ -301,7 +309,7 @@ function playWire(){
    (1) 열릴 때 포커스를 창 안으로, (2) 닫히면 누르던 자리로 돌려놓고, (3) Tab 이 창 밖으로 새지 않게 막는다.
    키보드·화면낭독 사용자가 뒤에 남은 화면을 헤매지 않게 하는 최소한이다. */
 (function dialogs(){
-  const LIST = [['mail-sheet','쪽지'], ['play-sheet','서퍼 도감'], ['game','파도 점프'], ['pop','알림']];   // 뒤에 있을수록 위에 뜬다
+  const LIST = [['mail-sheet','쪽지'], ['play-sheet','서퍼 도감'], ['quiz-sheet','코치 퀴즈'], ['game','파도 점프'], ['pop','알림']];   // 뒤에 있을수록 위에 뜬다
   const opener = {};
   const focusables = root => [...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]
     .filter(e=>!e.disabled && e.offsetParent !== null);
