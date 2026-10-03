@@ -472,6 +472,11 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 @media (prefers-reduced-motion:reduce){ .vp .vemo{ animation:none; opacity:1 } }
 .vp .vbolt{ position:absolute; left:3px; top:46px; z-index:2; width:17px; height:17px; text-align:center; font-style:normal; font-family:sans-serif; font-size:11px; line-height:13px;
   background:#FFE27A; border:2px solid var(--ink); border-radius:50% }
+.news{ list-style:none; margin:0; padding:0; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
+.news li{ display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px; align-items:center; padding:9px 12px; border-top:2px dashed var(--grid); font-size:13.5px; line-height:1.45 }
+.news li:first-child{ border-top:0 }
+.news i{ font-style:normal; font-family:sans-serif; font-size:16px } .news small{ font-size:12px; color:#5B6275; font-weight:700; white-space:nowrap }
+.news span{ min-width:0; overflow-wrap:anywhere }
 .vp .nm{ font-size:11.5px; font-weight:800; background:rgba(255,249,230,.92); border:2px solid var(--ink);
          padding:1px 5px; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 /* 머리 위로 온전히 띄운다. 칸 높이가 95px 이라 그보다 위여야 캐릭터를 안 가린다.
@@ -818,6 +823,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 마을 -->
     <div id="pane-town" hidden>
+      <div class="grp" id="news-grp" hidden><span class="t">오늘 소식</span><ul class="news" id="news" aria-live="off"></ul></div>
       <div class="grp"><span class="t" id="vill-t">마을</span>
         <div class="village" id="village"><canvas id="vbg"></canvas><div class="vgrid" id="vgrid"></div></div>
         <div class="note onsea" id="vill-sub"></div>
@@ -1854,8 +1860,26 @@ function vBadges(x){
     + (sb ? `<i class="vbolt" aria-hidden="true" title="곧 서핑번개">⚡</i>` : '')
     + (()=>{ const em = emoteOf(x); return em ? `<i class="vemo" aria-hidden="true" style="animation-delay:-${em.age}ms">${em.e}</i>` : ''; })();
 }
+/* 마을 소식 — 새로 불러오는 게 없다. 이미 들고 있는 체크인·번개·차량·숙소·훈련 기록에서 '방금 일어난 일'만 추린다.
+   모든 이름·해변은 남이 쓴 값이라 esc 를 거친다. */
+function relKo(t){ const m = Math.round((Date.now() - t) / 6e4); return m < 2 ? '방금' : m < 60 ? `${m}분 전` : m < 1440 ? `${Math.round(m/60)}시간 전` : '어제'; }
+function renderNews(){
+  const el = $('news'), grp = $('news-grp'); if(!el) return;
+  const now = Date.now(), out = [], fresh = iso => { const t = +new Date(iso); return t && now - t < 864e5 && t <= now + 6e4 ? t : 0; };
+  (nowRows||[]).forEach(c=>{ const t = +new Date(c.at); if(t) out.push({ t, ic:'📍', tx:`<b>${esc(c.name)}</b>님이 ${esc(c.beach)}에 있어요` }); });
+  (bolts||[]).filter(b=>!boltGone(b)).forEach(b=>{ const t = fresh(b.created_at); if(t) out.push({ t, ic:'⚡', tx:`<b>${esc(b.name)}</b>님이 ${esc(b.beach)} 번개를 열었어요` }); });
+  (state.rides||[]).filter(r=>!isGone(r,'ride')).forEach(r=>{ const t = fresh(r.created_at); if(t) out.push({ t, ic:'🚗', tx:`<b>${esc(r.name)}</b>님이 차를 올렸어요 · ${esc(r.from_place)} → ${esc(r.to_place)}` }); });
+  (state.stays||[]).filter(r=>!isGone(r,'stay')).forEach(r=>{ const t = fresh(r.created_at); if(t) out.push({ t, ic:'🏠', tx:`<b>${esc(r.name)}</b>님이 숙소를 올렸어요 · ${esc(r.place)}` }); });
+  out.sort((a,b)=>b.t - a.t);
+  const done = typeof dSet !== 'undefined' ? Object.keys(dSet).filter(id=>dSet[id].has(dayOf(0)) && !isTest(id)) : [];
+  const nm = id => (state.town||[]).find(x=>x.id === id)?.name || '';
+  const lines = out.slice(0, 4).map(x=>`<li><i>${x.ic}</i><span>${x.tx}</span><small>${relKo(x.t)}</small></li>`);
+  if(done.length) lines.push(`<li><i>🏄</i><span>오늘 훈련한 사람 <b>${done.length}명</b>${done.length <= 3 ? ' · ' + done.map(id=>esc(nm(id))).filter(Boolean).join(', ') : ''}</span><small>오늘</small></li>`);
+  el.innerHTML = lines.join(''); grp.hidden = !lines.length;
+}
 function renderTown(){
   const g = $('vgrid'); if(!g) return;
+  renderNews();
   if(state.town === null){ g.innerHTML = '<div class="empty" style="background:rgba(255,249,230,.9)">마을을 불러오지 못했어요</div>'; return; }
   const here = new Map((nowRows||[]).map(c=>[c.user_id, c.beach]));
   const rows = [...state.town].sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
