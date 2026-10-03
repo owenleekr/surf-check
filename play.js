@@ -167,7 +167,8 @@ function playTick(){
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
     if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'레벨 · 오늘의 퀘스트 · 배지 도감, 그리고 쉬는 시간용 파도 점프 게임!\n홈의 내 이름 줄을 눌러 보세요.', go:openPlay, btn:'도감 열기' }); }
-  if(first){ p.lvSeen = lv; _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
+  /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
+  if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{
     if(allNow) _popQ.push({ ic:'🎉', t:'오늘의 퀘스트 완료!', d:'세 가지를 모두 해냈어요  +20 XP' });
     fresh.forEach(b=>_popQ.push({ ic:b.ic, t:`새 배지 · ${b.n}`, d:b.d }));
@@ -199,6 +200,7 @@ function popNext(){
   if(_popBusy || !_popQ.length || !$('pop')) return;
   /* 다른 시트가 열려 있거나 게임 중이면 기다린다 — 게임 도중에 카드가 덮으면 죽는다 */
   if(window._gameRun || ($('game') && !$('game').hidden)) return;
+  if($('onb') && !$('onb').hidden) return;                    // 온보딩 중에는 미룬다 — onbEnd 가 다시 부른다
   const c = _popQ.shift(); _popBusy = true;
   $('pop-ic').textContent = c.ic; $('pop-t').textContent = c.t; $('pop-d').textContent = c.d;
   const go = $('pop-go'); go.hidden = !c.go; _popGo = c.go || null; if(c.go) go.textContent = c.btn || '보러가기';

@@ -390,6 +390,8 @@ body.game-on{ overflow:hidden }
 .nav button[aria-pressed="true"]::before{ content:""; position:absolute; top:-4px; left:12%; right:12%; height:4px; background:var(--sea) }
 .nav .dot{ position:absolute; top:4px; right:50%; margin-right:-20px; min-width:16px; height:16px; line-height:16px;
            font-size:10px; border-width:2px }
+/* 쪽지 버튼은 로그인한 뒤에만 — 가입 화면 위에 떠서 눌러도 못 쓰는 버튼이 됐다 */
+body:not(.has-nav) .mailfab{ display:none }
 body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 마지막 줄을 가리지 않게 */
 
 /* ── 라이브캠 ── */
@@ -2229,7 +2231,8 @@ let onbI = -1, onbRing = null;
 const onbDone = () => { try{ return localStorage.getItem('lineup.share.onb') === '1'; }catch(e){ return false; } };
 function onbClear(){ if(onbRing){ onbRing.classList.remove('ring'); onbRing = null; } }
 function onbEnd(){ onbClear(); onbI = -1; $('onb').hidden = true; document.body.classList.remove('onb-on');
-  try{ localStorage.setItem('lineup.share.onb', '1'); }catch(e){} }
+  try{ localStorage.setItem('lineup.share.onb', '1'); }catch(e){}
+  if(typeof popNext === 'function') setTimeout(popNext, 300); }
 function onbShow(i){
   onbI = i; const st = ONB[i]; if(!st) return onbEnd();
   setTab(st.tab);
