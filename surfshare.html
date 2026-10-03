@@ -197,6 +197,13 @@ button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 
 .dgoal.done .gb i{ background:linear-gradient(90deg,#FFD54A,#FF9F43) }
 .dgoal .mvp{ margin-top:7px; font-size:12.5px; color:#B45309 } .dgoal .mvp b{ color:var(--ink) }
 .drill .risk{ color:#C0392B }
+.loadbar{ margin:0 0 10px; padding:8px 12px; background:#FFF0F0; border:3px solid #C2303A; font-size:13px; font-weight:800; color:#8A1F28; display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+.loadbar[hidden]{ display:none }
+.skel{ display:grid; gap:10px }
+.skel i{ display:block; height:84px; border:4px solid var(--ink); background:linear-gradient(100deg,#EFEAD3 30%,#FFF9E6 50%,#EFEAD3 70%) 0 0/200% 100%; animation:skel 1.3s linear infinite }
+@keyframes skel{ to{ background-position:-200% 0 } }
+@media (prefers-reduced-motion:reduce){ .skel i{ animation:none } }
+.sr-only{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
 .dstrip{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; margin-top:26px }
 .dcell{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:62px;
   border:3px solid var(--ink); background:#fff; font-weight:800; position:relative }
@@ -693,7 +700,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="err" id="r-err"></div>
         <button class="btn mint" id="r-save" style="width:100%;margin-top:6px">올리기</button>
       </details>
-      <div class="grp"><span class="t">올라온 차량 쉐어</span><div class="px" id="rides"></div></div>
+      <div class="grp"><span class="t">올라온 차량 쉐어</span><div class="loadbar" id="rides-bar" role="status" hidden></div><div class="px" id="rides"></div></div>
     </div>
 
     <!-- 숙소 -->
@@ -723,7 +730,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="note onsea">
           누구나 고칠 수 있어요. 대신 <b>누가 무엇을 고쳤는지 다 보입니다.</b></div>
       </div>
-      <div class="grp"><span class="t">올라온 숙소 쉐어</span><div class="px" id="stays"></div></div>
+      <div class="grp"><span class="t">올라온 숙소 쉐어</span><div class="loadbar" id="stays-bar" role="status" hidden></div><div class="px" id="stays"></div></div>
     </div>
 
     <!-- 서핑번개 -->
@@ -741,7 +748,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <div class="note">이렇게 올라갑니다 — <b>⚡ 선셋 서핑해요 / 9월 29일 월요일 · 인구 · 오후 5시</b><br>
           몇 명이 모이는지는 사람들이 눌러서 채워요.</div>
       </details>
-      <div class="grp"><span class="t">다가오는 번개</span><div class="px" id="bolts"></div></div>
+      <div class="grp"><span class="t">다가오는 번개</span><div class="loadbar" id="bolts-bar" role="status" hidden></div><div class="px" id="bolts"></div></div>
     </div>
 
     <!-- 라이브캠 -->
@@ -934,6 +941,15 @@ const LAND = [
 ];
 const PERKS = ['해변 도보','주차','보드 보관','온수 샤워','취사','세탁기','수건 제공','조식'];
 const PLACE_KINDS = ['호텔','콘도','펜션','민박','게스트하우스','스테이','기타'];
+/* 불러오기 상태 — 0 처음 읽는 중 · 1 됨 · 2 실패(신호). 실패했다고 있던 글을 지우거나 '표가 없어요'라고 하면 안 된다 */
+const LD = { rides:0, stays:0, bolts:0 };
+const SKEL = '<div class="skel" aria-hidden="true"><i></i><i></i><i></i></div><div class="sr-only" role="status">불러오는 중</div>';
+function loadBar(k, retry){
+  const el = $(k + '-bar'); if(!el) return;
+  el.hidden = LD[k] !== 2;
+  if(LD[k] === 2){ el.innerHTML = `📶 신호가 약해서 새로 못 불러왔어요 <button type="button" class="btn sm ghost" data-retry>다시</button>`;
+    el.querySelector('[data-retry]').onclick = ()=>{ el.querySelector('button').disabled = true; retry(); }; }
+}
 let toastT;
 const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'),1900); };
 const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
@@ -1567,8 +1583,8 @@ const boltGone = b => {
 };
 async function pullBolts(){
   try{ bolts = (await api(`parties?date=gte.${daysAgo(7)}&select=*&order=date.asc,time.asc&limit=100`))
-    .filter(b=>!isTest(b.user_id)); }
-  catch(e){ bolts = null; }
+    .filter(b=>!isTest(b.user_id)); LD.bolts = 1; }
+  catch(e){ if(e.code === 'notable'){ bolts = null; LD.bolts = 1; } else LD.bolts = 2; }
   playMark('bolts');
   renderBolts();
 }
@@ -1577,7 +1593,10 @@ function renderBolts(){
   const sel = $('b-beach');
   if(!sel.options.length){ sel.innerHTML = SEAS.map(([n])=>`<option value="${n}">${n}</option>`).join(''); sel.value = mySea(); }
   if(!$('b-date').value) $('b-date').value = nextWeekend();
+  loadBar('bolts', pullBolts);
   if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-social.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  if(LD.bolts === 0 && !bolts.length){ box.innerHTML = SKEL; return; }
+  if(LD.bolts === 2 && !bolts.length){ box.innerHTML = ''; return; }
   refreshDots(); if(state.tab==='home') renderHome();
   if(!bolts.length){ box.innerHTML = `<div class="empty">아직 잡힌 번개가 없어요.<br>
     시간과 바다만 정하면 사람이 모입니다.<br>
@@ -2602,8 +2621,8 @@ $('bld-fold')?.addEventListener('toggle', function(){
 /* ── 차량 ───────────────────────────────────────────────── */
 async function pullRides(){
   /* 지난 것도 한 달치는 들고 온다. 쿼리에서 빼버리면 올린 사람도 자기 글을 못 지운다. */
-  try{ state.rides = await api(`rides?cohort=eq.${encodeURIComponent(ME.cohort)}&date=gte.${daysAgo(30)}&select=*&order=date.asc,depart_at.asc&limit=200`); }
-  catch(e){ state.rides = null; }
+  try{ state.rides = await api(`rides?cohort=eq.${encodeURIComponent(ME.cohort)}&date=gte.${daysAgo(30)}&select=*&order=date.asc,depart_at.asc&limit=200`); LD.rides = 1; }
+  catch(e){ if(e.code === 'notable'){ state.rides = null; LD.rides = 1; } else LD.rides = 2; }      // 신호 문제는 있던 글을 그대로 둔다
   playMark('rides');
   renderRides(); refreshDots(); if(state.tab==='home') renderHome();
 }
@@ -2623,7 +2642,9 @@ function seatRow(r, kind, gone){
     </div>`;
 }
 function renderRides(){
-  const box = $('rides');
+  const box = $('rides'); loadBar('rides', pullRides);
+  if(state.rides !== null && LD.rides === 0 && !state.rides.length){ box.innerHTML = SKEL; return; }
+  if(state.rides && LD.rides === 2 && !state.rides.length){ box.innerHTML = ''; return; }
   if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
   /* "아직 없어요" 한 줄로 끝내면 첫 사람이 아무것도 안 한다. 여기가 첫 행동 자리다. */
   if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>
@@ -2673,13 +2694,15 @@ $('r-save').onclick = async ()=>{
 /* ── 숙소 ───────────────────────────────────────────────── */
 async function pullStays(){
   await pullReviews();
-  try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${daysAgo(30)}&select=*&order=date_from.asc&limit=200`); }
-  catch(e){ state.stays = null; }
+  try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${daysAgo(30)}&select=*&order=date_from.asc&limit=200`); LD.stays = 1; }
+  catch(e){ if(e.code === 'notable'){ state.stays = null; LD.stays = 1; } else LD.stays = 2; }
   playMark('stays');
   renderStays(); renderMap(); refreshDots(); if(state.tab==='home') renderHome();
 }
 function renderStays(){
-  const box = $('stays');
+  const box = $('stays'); loadBar('stays', pullStays);
+  if(state.stays !== null && LD.stays === 0 && !state.stays.length){ box.innerHTML = SKEL; return; }
+  if(state.stays && LD.stays === 2 && !state.stays.length){ box.innerHTML = ''; return; }
   if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
   if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.<br>
     <button class="btn sm mint" type="button" data-first="stay" style="margin-top:9px">🏠 첫 숙소 올리기</button></div>`;
@@ -3236,6 +3259,7 @@ function start(){
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
+  ['rides','stays','bolts'].forEach(k=>{ if($(k)) $(k).innerHTML = SKEL; });          // 처음 읽는 동안 '아직 없어요'가 먼저 깜빡이지 않게
   playWire(); syncMe(); setTab('home'); playSync();
   pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow(); pullCond(); pullBolts();
   clearInterval(nowPoll); nowPoll = setInterval(()=>{ if(!document.hidden) pullNow(); }, 60000);
