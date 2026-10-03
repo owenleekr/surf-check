@@ -87,6 +87,7 @@ const BADGES = [
   { id:'daily7',   ic:'📅', n:'7일 챌린저',       d:'오늘의 챌린지에 7일 참여했어요',       t:(s,p)=>(p.dN||0) >= 7, xp:40 },
   { id:'stamp3',   ic:'🗺️', n:'해변 탐험가',      d:'서로 다른 해변 3곳에서 체크인했어요',   t:(s,p)=>Object.keys(p.stamps||{}).length >= 3, xp:20 },
   { id:'stampAll', ic:'🧭', n:'양양 마스터',      d:'모든 해변에서 체크인했어요',            t:(s,p)=>typeof SEAS !== 'undefined' && Object.keys(p.stamps||{}).length >= SEAS.length, xp:80 },
+  { id:'secret1',  ic:'🥚', n:'비밀 발견',        d:'SurfShare 제목을 연달아 눌러 숨은 걸 찾았어요', t:(s,p)=>!!p.secret, xp:30 },
   { id:'game1',   ic:'🎮', n:'첫 파도 점프',   d:'파도 점프를 한 판 해봤어요',        t:(s,p)=>(p.best||0) > 0 },
   { id:'game300', ic:'🦈', n:'상어도 피했다',  d:'파도 점프에서 600점을 넘겼어요',    t:(s,p)=>(p.best||0) >= 600, xp:40 },
   { id:'quest5',  ic:'✅', n:'퀘스트 5일',     d:'오늘의 퀘스트를 5일 완료했어요',    t:(s,p)=>(p.qall||0) >= 5, xp:40 },
@@ -275,6 +276,35 @@ function xpFloat(d){
   clearTimeout(_xpT); _xpT = setTimeout(()=>{ el.hidden = true; }, 1800);
 }
 
+/* 오늘의 서핑 운세 — 사람(아이디)과 날짜로 정해지니 하루 종일 같고 내일이면 바뀐다. 컨디션은 3~5별만 나온다(안 좋은 운세는 재미가 없다).
+   여는 건 하루 한 번 +3 XP. 재료는 앱 안에 있는 것(해변·보드 색·코치님 말씀)이라 새 데이터가 없다. */
+const _fh = s => { let h = 2166136261; for(const c of String(s)){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+function fortune(){
+  const h = _fh(ME.id + '|' + today()), pick = (arr, k) => arr[(h >>> k) % arr.length];
+  const colors = Object.entries(BOARDC_KO || {}).map(x=>x[1]);
+  const v = (typeof VOICES !== 'undefined' && VOICES.length) ? VOICES[(h >>> 11) % VOICES.length] : null;
+  return { star:3 + (h % 3), beach:pick(SEAS.map(s=>s[0]), 3), time:pick(['오전 6시','오전 7시','오전 9시','오후 1시','오후 4시','오후 5시'], 7),
+           color:pick(colors, 5), n:1 + ((h >>> 9) % 9), voice:v };
+}
+function playFortune(){
+  const p = playP(), day = today();
+  if(p.fortDay !== day){ p.fortDay = day; p.bonus += 3; playPush(); playTick(); }
+  renderPlay();
+}
+
+/* 숨은 보너스 — 제목을 3초 안에 7번. 알려주지 않는다. 한 번만 받는다. */
+function playSecret(){
+  if(!ME?.profile?.play) return;
+  const p = playP(); if(p.secret) return toast('🥚 이미 찾았어요!');
+  p.secret = 1; if(typeof burst === 'function') burst($('title-egg') || document.body, 24); vib([20, 30, 20, 30, 60]);
+  playPush(); playTick();
+}
+(function eggWire(){
+  const arm = ()=>{ const h = document.querySelector('.wrap h1'); if(!h || h._egg) return; h._egg = 1; h.id = h.id || 'title-egg'; let n = 0, t0 = 0;
+    h.addEventListener('click', ()=>{ const now = Date.now(); if(now - t0 > 3000){ n = 0; t0 = now; } if(++n >= 7){ n = 0; playSecret(); } }); };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arm); else arm();
+})();
+
 /* ── 알림 카드 ── 한꺼번에 여러 개가 걸려도 한 장씩 */
 function popNext(){
   if(_popBusy || !_popQ.length || !$('pop')) return;
@@ -349,6 +379,12 @@ function renderPlay(){
     <div class="pt">🎮 파도 점프 <small>내 최고 ${p.best || 0}점 · 🐚 ${shellBal()}</small></div>
     <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">📅 오늘의 챌린지 · 점프하러 가기</button>
 
+    <div class="pt">🔮 오늘의 서핑 운세</div>
+    ${p.fortDay === today() ? (()=>{ const f = fortune(); return `<div class="fort"><div class="fs">서핑 컨디션 <b>${'★'.repeat(f.star)}${'☆'.repeat(5 - f.star)}</b></div>
+      <div>🌊 행운의 해변 <b>${esc(f.beach)}</b></div><div>⏰ 행운의 시간 <b>${f.time}</b></div><div>🎨 행운의 보드 색 <b>${esc(f.color)}</b></div><div>🐚 행운의 조개 <b>${f.n}개</b></div>
+      ${f.voice ? `<div class="fv">“${esc(f.voice[0])}”<small>— ${esc(f.voice[1])}</small></div>` : ''}</div>`; })()
+      : `<button type="button" class="btn mint" id="pg-fort" style="width:100%;min-height:48px">🔮 오늘의 운세 열어보기 (+3 XP)</button>`}
+
     <div class="pt">📍 해변 스탬프 <small>${Object.keys(p.stamps||{}).length}/${SEAS.length} · 체크인하면 찍혀요</small></div>
     <div class="stmps">${SEAS.map(s=>`<span class="stmp${p.stamps?.[s[0]] ? ' on' : ''}"${p.stamps?.[s[0]] ? ` title="${esc(p.stamps[s[0]])}"` : ''}>${p.stamps?.[s[0]] ? '📍' : '·'} ${esc(s[0])}</span>`).join('')}</div>
 
@@ -374,6 +410,7 @@ function renderPlay(){
   $('play-body').querySelectorAll('[data-rk]').forEach(b=>b.onclick = ()=>{ _rkView = b.dataset.rk; renderPlay(); });
   $('pg-start').onclick = ()=>{ closePlay(); gameOpen(); };
   $('pg-quiz').onclick = ()=>{ closePlay(); quizOpen(); };
+  if($('pg-fort')) $('pg-fort').onclick = playFortune;
 }
 
 /* ── 배선 ── */

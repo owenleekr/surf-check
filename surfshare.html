@@ -346,6 +346,9 @@ body.game-on{ overflow:hidden }
 .stmps{ display:flex; flex-wrap:wrap; gap:6px }
 .stmp{ padding:7px 10px; border:3px dashed #BDB89F; color:#615C47; font-size:13px; font-weight:800; background:#F4F1E1 }
 .stmp.on{ border:3px solid var(--ink); border-style:solid; background:#FFF3C4; color:var(--ink) }
+.fort{ padding:12px 14px; background:#FFF3C4; border:3px solid var(--ink); font-size:14px; line-height:1.9; font-weight:700 }
+.fort .fs{ font-size:15px; margin-bottom:2px } .fort .fs b{ color:#B45309; letter-spacing:.1em }
+.fort .fv{ margin-top:8px; padding-top:8px; border-top:2px dashed #C9BE97; font-size:13px; line-height:1.7; word-break:keep-all } .fort .fv small{ display:block; color:#5B6275 }
 .burst{ position:fixed; z-index:900; font-size:20px; font-family:sans-serif; pointer-events:none; opacity:0;
   animation:burst .95s cubic-bezier(.2,.8,.3,1) forwards }
 @keyframes burst{ 0%{ opacity:1; transform:translate(0,0) scale(.6) rotate(0) } 70%{ opacity:1 }
@@ -3312,7 +3315,8 @@ function bindCards(box, kind){
         if(cur.some(x=>x.id===ME.id)) return cur;                          // 그새 내가 이미 들어가 있으면 그대로
         if(cur.length >= cap) throw new Error('full');                      // 그새 자리가 찼으면 넣지 않는다
         return [...cur, { id:ME.id, name:ME.name, profile:pubRow() }]; });
-      toast(kind==='ride'?'탔어요':'같이 써요'); }
+      toast(kind==='ride'?'탔어요':'같이 써요');
+      if(list.length + 1 >= cap){ burst(b, 18); toast(kind==='ride' ? '🎉 만석! 이 차는 다 찼어요' : '🎉 만실! 방이 다 찼어요'); } }
     catch(e){ b.disabled = false; toast(e.message === 'full' ? '그새 자리가 찼어요' : '실패 · 신호 확인'); if(e.message === 'full') kind==='ride' ? pullRides() : pullStays(); }
   });
   box.querySelectorAll('[data-leave]').forEach(b=>b.onclick = async ()=>{
