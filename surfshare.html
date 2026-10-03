@@ -49,6 +49,8 @@ window.__bootFail = (files) => {
 </script>
 <script src="sprite.js"></script>
 <script src="roster.js"></script>
+<script src="play.js"></script>
+<script src="surfgame.js"></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
@@ -231,6 +233,78 @@ button.perk{ min-height:44px }                    /* 누르는 칩은 손가락 
 .mrow.soon .cd{ background:var(--coral); color:#fff; animation:soon 1.6s ease-in-out infinite }
 @keyframes soon{ 50%{ transform:scale(1.07) } }
 @media (prefers-reduced-motion:reduce){ .mrow.soon .cd{ animation:none } }
+/* ── 레벨 · 퀘스트 · 도감 ── */
+.prof{ display:flex; gap:8px; align-items:center; margin-top:14px }
+.prof-lv{ flex:1 1 60px; min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 8px; align-items:center; text-align:left;
+  background:none; border:0; padding:2px 0; font-family:inherit; cursor:pointer; min-height:48px }
+.pl-n{ grid-column:1 / -1; display:flex; align-items:center; gap:6px; min-width:0 }
+.pl-n b{ font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0 }
+.pl-n .tag{ font-size:11px; padding:0 5px; border-width:2px; flex:0 0 auto }
+.pl-l{ font-family:"Galmuri11",sans-serif; font-size:12.5px; font-weight:800; color:#B45309; white-space:nowrap }
+.prof-lv small{ font-size:11.5px; color:#5B6275; font-weight:700; text-align:right; white-space:nowrap }
+.xpbar{ grid-column:1 / -1; height:10px; border:2px solid var(--ink); background:#fff; position:relative; overflow:hidden }
+.xpbar i{ position:absolute; left:0; top:0; bottom:0; width:0; background:linear-gradient(90deg,#FFD54A,#FF9F43); transition:width .7s cubic-bezier(.2,.9,.3,1) }
+.xpbar.big{ height:16px; margin-top:8px }
+.prof-lv .xpbar{ grid-column:1 / -1 }
+.qs{ display:flex; align-items:center; gap:10px; width:100%; margin-top:10px; text-align:left; min-height:56px; padding:8px 12px;
+  background:#fff; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); font-family:inherit; cursor:pointer }
+.qs.all{ background:#E6FBEF }
+.qs-ic{ display:flex; gap:4px }
+.qs-ic i{ font-style:normal; font-family:sans-serif; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:16px;
+  border:3px solid var(--ink); background:#F2EEDC }
+.qs-ic i.on{ background:var(--mint); font-weight:800 }
+.qs-m{ flex:1; min-width:0; font-size:14px; line-height:1.35 } .qs-m b{ display:block; font-weight:800 }
+.qs-m small{ display:block; font-size:12.5px; font-weight:700; color:#5B6275; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.qs-go{ font-family:sans-serif; font-size:16px }
+.ph{ display:flex; align-items:center; gap:12px }
+.ph-em{ font-size:44px; line-height:1; font-family:sans-serif; width:72px; height:72px; display:flex; align-items:center; justify-content:center;
+  background:#fff; border:4px solid var(--ink); box-shadow:3px 3px 0 var(--ink) }
+.ph-t b{ display:block; font-family:"Galmuri11",sans-serif; font-size:19px } .ph-t span{ font-size:13px; font-weight:700; color:#5B6275 }
+.pt{ margin:18px 0 8px; font-family:"Galmuri11",sans-serif; font-size:14px; font-weight:800; display:flex; align-items:center; gap:8px; flex-wrap:wrap }
+.pt small{ font-family:inherit; font-size:12.5px; font-weight:700; color:#5B6275; margin-left:auto; display:flex; gap:6px; align-items:center }
+.pq{ display:flex; align-items:center; gap:10px; width:100%; text-align:left; min-height:56px; padding:8px 10px; margin-bottom:6px;
+  background:#fff; border:3px solid var(--ink); font-family:inherit; font-size:14px; font-weight:800; cursor:pointer }
+.pq i{ font-style:normal; font-family:sans-serif; font-size:22px; width:30px; text-align:center }
+.pq span{ flex:1; min-width:0 } .pq small{ display:block; font-size:12.5px; color:#5B6275; font-weight:700 }
+.pq.done{ background:#E6FBEF; cursor:default } .pq.done i{ color:#168A4A }
+.bgrid{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px }
+.bd{ display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:4px; min-height:80px; padding:8px 2px; background:#EDEAD9;
+  border:3px solid #BDB89F; font-family:inherit; cursor:pointer; color:#8A8570 }
+.bd i{ font-style:normal; font-family:sans-serif; font-size:26px; line-height:1; filter:grayscale(1); opacity:.55 }
+.bd span{ font-size:11.5px; font-weight:800; line-height:1.25; text-align:center; word-break:keep-all }
+.bd.on{ background:#FFF3C4; border-color:var(--ink); color:var(--ink) } .bd.on i{ filter:none; opacity:1 }
+.prk{ display:grid; grid-template-columns:30px minmax(0,1fr) auto; gap:8px; align-items:center; padding:8px 0; border-top:2px dashed var(--grid); font-size:14px; font-weight:800 }
+.prk.me{ background:rgba(255,213,74,.35); margin:0 -6px; padding:8px 6px }
+.prk .n{ text-align:center; font-family:sans-serif } .prk .v{ font-family:"Galmuri11",sans-serif; font-size:13px }
+.prk-tab{ min-height:36px; padding:0 12px; font-family:inherit; font-size:12.5px; font-weight:800; border:3px solid var(--ink); background:#fff; cursor:pointer }
+.prk-tab.on{ background:var(--ink); color:#fff }
+.pop{ position:fixed; inset:0; z-index:950; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(27,27,47,.62) }
+.pop[hidden]{ display:none }
+.pop-card{ width:100%; max-width:340px; text-align:center; background:var(--paper); border:4px solid var(--ink); box-shadow:6px 6px 0 var(--ink); padding:22px 18px; animation:popin .35s cubic-bezier(.2,1.5,.4,1) }
+@keyframes popin{ 0%{ transform:scale(.6); opacity:0 } 100%{ transform:scale(1); opacity:1 } }
+.pop-ic{ font-size:60px; line-height:1.1; font-family:sans-serif }
+.pop-t{ font-family:"Galmuri11",sans-serif; font-size:18px; font-weight:800; margin-top:8px; word-break:keep-all }
+.pop-d{ font-size:14px; line-height:1.6; color:#5B6275; font-weight:700; margin:6px 0 16px; word-break:keep-all }
+.game{ position:fixed; inset:0; z-index:940; background:#0B2540; display:flex; align-items:center; justify-content:center }
+.game[hidden]{ display:none }
+body.game-on{ overflow:hidden }
+.game-box{ width:100%; max-width:440px; height:100%; max-height:100dvh; display:flex; flex-direction:column; justify-content:center; padding:10px 10px calc(10px + env(safe-area-inset-bottom)) }
+.game-hd{ display:flex; align-items:center; gap:10px; color:#fff; padding:4px 2px 10px; font-size:15px }
+.game-hd > b{ flex:1; font-family:"Galmuri11",sans-serif }
+.game-sc{ font-family:"Galmuri11",sans-serif; font-size:20px; color:#FFE27A } .game-sc small{ font-size:12px; color:#9FC4E4 }
+.game-stage{ position:relative; width:100%; flex:0 1 auto; border:4px solid var(--ink); background:#000; touch-action:none; -webkit-user-select:none; user-select:none }
+#g-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; -webkit-touch-callout:none }
+.game-ov{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:14px; background:rgba(11,37,64,.55) }
+.game-ov[hidden]{ display:none }
+.go-card{ width:100%; max-width:300px; background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:16px 14px; text-align:center }
+.go-t{ font-family:"Galmuri11",sans-serif; font-size:20px; font-weight:800 }
+.go-d{ font-size:13.5px; line-height:1.6; color:#5B6275; font-weight:700; margin:8px 0 }
+.go-s{ font-family:"Galmuri11",sans-serif; font-size:44px; color:#B45309; line-height:1.1; margin:6px 0 }
+.go-s small{ font-size:16px; margin-left:2px }
+.go-b{ font-size:14px; font-weight:700; margin:6px 0 10px } .go-b b{ color:#B45309 }
+.go-r{ display:flex; flex-direction:column; gap:2px; font-size:12.5px; font-weight:800; color:#5B6275; margin:0 0 12px }
+.go-v{ font-size:13px; line-height:1.6; font-weight:700; margin:0 0 12px; color:#14304F; word-break:keep-all } .go-v small{ display:block; color:#5B6275; margin-top:2px }
+.game-ft{ color:#9FC4E4; font-size:12.5px; font-weight:700; text-align:center; padding-top:10px }
 .burst{ position:fixed; z-index:900; font-size:20px; font-family:sans-serif; pointer-events:none; opacity:0;
   animation:burst .95s cubic-bezier(.2,.8,.3,1) forwards }
 @keyframes burst{ 0%{ opacity:1; transform:translate(0,0) scale(.6) rotate(0) } 70%{ opacity:1 }
@@ -533,13 +607,21 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 홈 -->
     <div id="pane-home" hidden>
-      <div class="px" style="display:flex;gap:8px;align-items:center;margin-top:14px">
+      <div class="px prof">
         <canvas class="me-av" id="me-av"></canvas>
-        <b id="who" style="flex:1 1 60px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px"></b>
-        <span class="tag" id="cohort-tag"></span>
+        <button type="button" class="prof-lv" id="prof-lv" aria-label="내 레벨과 도감 열기">
+          <span class="pl-n"><b id="who"></b><span class="tag" id="cohort-tag"></span></span>
+          <span class="pl-l" id="lv-chip">Lv.1</span>
+          <span class="xpbar"><i id="xp-fill"></i></span>
+          <small id="xp-txt"></small>
+        </button>
         <button class="btn sm ghost" id="help" title="사용법" aria-label="사용법">❓</button>
         <button class="btn sm ghost" id="out" title="나가기" aria-label="나가기">↩</button>
       </div>
+      <button type="button" class="qs" id="quest-strip" hidden aria-label="오늘의 퀘스트">
+        <span class="qs-ic" id="qs-ic"></span>
+        <span class="qs-m"><b id="qs-t"></b><small id="qs-s"></small></span><b class="qs-go">›</b>
+      </button>
       <button type="button" class="todo" id="todo" hidden></button>
       <section class="mine" id="mine" aria-label="내 일정" hidden>
         <h3>📌 내 일정</h3>
@@ -720,6 +802,35 @@ body.onb-on .wrap{ padding-bottom:230px }
   <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>캠</button>
 </nav>
 <button type="button" class="mailfab" id="mail" aria-label="쪽지">✉️<span class="dot" id="mail-dot" hidden>0</span></button>
+<!-- 파도 점프 -->
+<div class="game" id="game" hidden role="dialog" aria-modal="true" aria-label="파도 점프 게임">
+  <div class="game-box">
+    <div class="game-hd"><b>🎮 파도 점프</b><span class="game-sc"><small>점수</small> <b id="g-score">0</b></span><button class="btn sm ghost" id="g-x" type="button" aria-label="게임 닫기">✕</button></div>
+    <div class="game-stage">
+      <canvas id="g-cv" width="180" height="220" aria-label="게임 화면. 화면을 누르면 점프"></canvas>
+      <div class="game-ov" id="g-ov"></div>
+    </div>
+    <div class="game-ft">화면을 탭하면 점프 · 스페이스바도 돼요</div>
+  </div>
+</div>
+
+<!-- 서퍼 도감 -->
+<div class="sheet" id="play-sheet" hidden>
+  <div class="sheet-dim" data-playclose></div>
+  <div class="sheet-in">
+    <div class="sheet-hd"><span class="t">📖 서퍼 도감</span><button class="btn sm ghost" data-playclose>닫기</button></div>
+    <div id="play-body"></div>
+  </div>
+</div>
+<div class="pop" id="pop" hidden role="dialog" aria-modal="true" aria-label="알림">
+  <div class="pop-card">
+    <div class="pop-ic" id="pop-ic"></div>
+    <div class="pop-t" id="pop-t"></div>
+    <div class="pop-d" id="pop-d"></div>
+    <button class="btn blue" id="pop-ok" type="button" style="min-width:140px;min-height:48px">좋아요</button>
+  </div>
+</div>
+
 <!-- 쪽지 -->
 <div class="sheet" id="mail-sheet" hidden>
   <div class="sheet-dim" data-mailclose></div>
@@ -1426,6 +1537,7 @@ async function pullBolts(){
   try{ bolts = (await api(`parties?date=gte.${daysAgo(7)}&select=*&order=date.asc,time.asc&limit=100`))
     .filter(b=>!isTest(b.user_id)); }
   catch(e){ bolts = null; }
+  playMark('bolts');
   renderBolts();
 }
 function renderBolts(){
@@ -1562,6 +1674,7 @@ async function pullTown(){
   }
   /* 내 기수가 서버와 어긋나 있으면 맞춰 둔다 — 라벨과 글 필터가 이걸 본다 */
   const mine = (state.town||[]).find(x=>x.id===ME.id);
+  if(mine?.profile?.play) playMerge(mine.profile.play);
   if(mine && mine.cohort && mine.cohort !== ME.cohort){ ME.cohort = mine.cohort;
     try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){} }
   try{ state.reacts = await api('reacts?select=*&order=created_at.desc&limit=500'); state.reactsOk = true; }
@@ -1845,6 +1958,7 @@ function bindRx(root){
       if(had) await api(`reacts?id=eq.${encodeURIComponent(id)}`, { method:'DELETE' });
       else await api('reacts', { method:'POST', body:JSON.stringify({ id, user_id:ME.id, name:ME.name, target, emo, to_user:toUser||null }) });
       if(!had) navigator.vibrate?.(15);
+      playTick();
     }catch(e){ toast('반응을 보내지 못했어요'); }
   });
 }
@@ -1896,7 +2010,8 @@ async function sendChat(text, noBubble){
   try{ await api('chat', { method:'POST', body:JSON.stringify(row) });
     if(text == null) $('chat-in').value = '';
     state.chat.push(row); renderChat();
-    if(text == null && !noBubble) saveMood(t, true);   /* 마을과 채팅은 한 곳 — 친 말이 머리 위로 뜬다 */
+    if(text == null && !noBubble) saveMood(t, true);
+    playTick();   /* 마을과 채팅은 한 곳 — 친 말이 머리 위로 뜬다 */
   }catch(e){ toast(state.chatOk===false ? '채팅 표가 아직 없어요' : '보내지 못했어요 · 신호 확인'); }
 }
 $('chat-send').onclick = ()=>sendChat();
@@ -2215,6 +2330,7 @@ function drillStat(id){
 async function pullDrills(){
   try{ drillRows = await api(`drills?select=user_id,name,day&day=gte.${dayOf(120)}&order=day.desc&limit=5000`); drillOk = true; drillLoaded = true; }
   catch(e){ if(e.code==='notable') drillOk = false; }
+  playMark('drill');
   /* 홈에서는 마을을 아직 안 불러왔다 — 누가 아직 안 했는지 보려면 명단이 있어야 한다 */
   if(!(state.town||[]).length){
     try{ state.town = (await api('surfers?select=id,name,cohort,profile&limit=300')).filter(x=>!isTest(x.id)); }catch(e){} }
@@ -2316,7 +2432,7 @@ $('drill-btn').onclick = async ()=>{
       navigator.vibrate?.([18,40,18]); const s = drillStat(ME.id).streak;
       const MS = { 3:'3일 연속 — 습관의 시작이에요', 7:'7일 연속 — 한 주 완성!', 14:'14일 연속 — 2주 개근', 30:'30일 연속 — 한 달 개근!' };
       toast(MS[s] ? `🔥 ${MS[s]}` : s > 1 ? `🔥 ${s}일 연속!` : '오늘 훈련 완료');
-      burst($('drill-btn'), MS[s] ? 18 : 9); }
+      burst($('drill-btn'), MS[s] ? 18 : 9); playTick(); }
   }catch(e){
     if(!did && e.status === 409) return;            // 다른 폰에서 이미 눌렀다 — 그대로 둔다
     drillRows = back; renderDrill(); renderTodo();
@@ -2368,7 +2484,7 @@ function renderMine(){
 setInterval(()=>{ if(!document.hidden && state.tab==='home') renderMine(); }, 60000);   // '2시간 뒤'가 낡지 않게
 
 function renderHome(){
-  renderMine(); renderTodo(); renderVoice(); startVoice(); renderDrill();
+  renderMine(); renderTodo(); renderVoice(); startVoice(); renderDrill(); playTick();
   const box = $('home-sum'); if(!box) return;
   /* 내가 올렸거나 든 것은 위 '내 일정'에 있다 — 같은 걸 두 번 보여주지 않는다.
      비어 있는 줄은 감춘다(아직 없어요 ×3 은 정보가 아니라 소음이다). 줄마다 가장 가까운 한 건만. */
@@ -2402,6 +2518,7 @@ async function pullRides(){
   /* 지난 것도 한 달치는 들고 온다. 쿼리에서 빼버리면 올린 사람도 자기 글을 못 지운다. */
   try{ state.rides = await api(`rides?cohort=eq.${encodeURIComponent(ME.cohort)}&date=gte.${daysAgo(30)}&select=*&order=date.asc,depart_at.asc&limit=200`); }
   catch(e){ state.rides = null; }
+  playMark('rides');
   renderRides(); refreshDots(); if(state.tab==='home') renderHome();
 }
 function seatRow(r, kind, gone){
@@ -2472,6 +2589,7 @@ async function pullStays(){
   await pullReviews();
   try{ state.stays = await api(`stays?cohort=eq.${encodeURIComponent(ME.cohort)}&date_to=gte.${daysAgo(30)}&select=*&order=date_from.asc&limit=200`); }
   catch(e){ state.stays = null; }
+  playMark('stays');
   renderStays(); renderMap(); refreshDots(); if(state.tab==='home') renderHome();
 }
 function renderStays(){
@@ -3023,7 +3141,7 @@ function start(){
   $('s-perks').querySelectorAll('button').forEach(b=>b.onclick = ()=>{
     const on = b.getAttribute('aria-pressed')==='true';
     b.setAttribute('aria-pressed', String(!on)); b.classList.toggle('on', !on); });
-  syncMe(); setTab('home');
+  playWire(); syncMe(); setTab('home'); playSync();
   pullRides(); pullStays(); pullPlaces(); pullMail(true); pullNow(); pullCond(); pullBolts();
   clearInterval(nowPoll); nowPoll = setInterval(()=>{ if(!document.hidden) pullNow(); }, 60000);
   clearInterval(mailPoll); mailPoll = setInterval(()=>{ if(!document.hidden) pullMail(true); }, 25000);
