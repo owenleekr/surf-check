@@ -1,3 +1,6 @@
 .vercel
 _preview.html
 node_modules
+
+qa/node_modules/
+qa/package-lock.json

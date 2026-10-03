@@ -1,0 +1,33 @@
+import puppeteer from 'puppeteer-core';
+const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'*'};
+const evil='<img src=x onerror="window.__p=(window.__p||0)+1">';
+const quote='" onmouseover="window.__q=1" x="';
+const today=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const surfers=[{id:'u0',cohort:'6기',name:evil,profile:{gender:'m',mood:evil,role:'coach',badge:evil,boardName:evil,slevel:evil,pet:'dog',petName:evil,petLv:'<b>9'},xp:50,level:1,attend:evil,rides:evil},
+               {id:'u1',cohort:'6기',name:'정상',profile:{gender:'f'},xp:10,level:1,attend:1,rides:1}];
+const chat=[{id:'c1',user_id:'u0',name:evil,text:evil+'본문',profile:{role:'coach',badge:evil},created_at:new Date().toISOString()},{id:'c2',user_id:'u1',name:quote,text:quote,profile:{},created_at:new Date().toISOString()}];
+const parties=[{id:'p1',user_id:'u0',name:evil,date:today,beach:evil,time:evil,note:evil,joins:[{id:'u0',name:evil}],created_at:new Date().toISOString()}];
+const reacts=[{id:'u1|chat:c1|👏',user_id:'u1',name:evil,target:'chat:c1',emo:'👏',to_user:'u0'}];
+const b=await puppeteer.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:'new'});
+const p=await b.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,140)));
+await p.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await p.setRequestInterception(true);
+p.on('request', r=>{ const u=r.url(), J=(o)=>r.respond({status:200,headers:CORS,contentType:'application/json',body:JSON.stringify(o)});
+  if(r.method()==='OPTIONS'&&u.includes('supabase')) return r.respond({status:204,headers:CORS,body:''});
+  if(u.includes('rest/v1/surfers')) return J(surfers); if(u.includes('rest/v1/chat')) return J(chat); if(u.includes('rest/v1/parties')) return J(parties); if(u.includes('rest/v1/reacts')) return J(reacts);
+  if(u.includes('rest/v1/')) return J([]); if(/smilecdn|wsbfarm|supabase|open-meteo/.test(u)) return r.abort(); r.continue(); });
+await p.goto('http://localhost:8765/school.html',{waitUntil:'domcontentloaded'});
+await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.app.invited','2');
+  const pr={gender:'f',board:'long',role:'member',cls:'beginner',top:'r',hat:'none',bottom:'b',boardc:'y',hair:'bob',hairc:'k',skin:'s',face:'smile',wear:'rash',pet:'none',petc:'y'};
+  const D={onboarded:true,attend:{},skills:{},missions:{},notes:{},logs:0,sessions:{},lvl:{}};
+  localStorage.setItem('surf.users',JSON.stringify({u1:{name:'정상',cohort:'6기',salt:'x',hash:'y',profile:pr}})); localStorage.setItem('surf.session',JSON.stringify('u1')); localStorage.setItem('surf.data.u1',JSON.stringify(D)); });
+await p.goto('http://localhost:8765/school.html',{waitUntil:'networkidle2'}); await new Promise(r=>setTimeout(r,4000));
+const S=f=>p.evaluate(f), sleep=ms=>new Promise(r=>setTimeout(r,ms));
+console.log('로그인 상태', await S(()=>typeof ME!=='undefined'&&!!ME?ME.name:'(없음)'));
+for(const tab of ['rank','today','home']){ await S(t=>{ const b=document.getElementById('t-'+t)||document.querySelector(`[data-tab="${t}"]`); b&&b.click(); },tab); await sleep(1500); }
+await S(()=>{ try{ showTab('rank'); }catch(e){} }); await sleep(2500);
+await S(()=>{ const v=document.querySelector('.vp'); v&&v.click(); }); await sleep(500);
+console.log('실행된 주입', await S(()=>({p:window.__p||0,q:window.__q||0})));
+console.log('렌더된 요소', await S(()=>({ 마을:document.querySelectorAll('.vp').length, 채팅:document.querySelectorAll('.msg').length, img_onerror:document.querySelectorAll('img[onerror]').length, onmouseover:document.querySelectorAll('[onmouseover]').length })));
+console.log('img[onerror] 출처', await S(()=>[...document.querySelectorAll('img[onerror]')].map(i=>i.outerHTML.slice(0,110))));
+console.log('errs',errs); await b.close();

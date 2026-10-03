@@ -1,0 +1,27 @@
+import puppeteer from 'puppeteer-core';
+const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'*'};
+const STUB=`window.Hls=class{static isSupported(){return true} constructor(){window.__hlsMade=(window.__hlsMade||0)+1} loadSource(u){window.__hlsSrc=u} attachMedia(){} on(){} destroy(){}}; Hls.Events={MANIFEST_PARSED:'m',ERROR:'e'};`;
+let mode='ok', hlsReq=0;
+const b=await puppeteer.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:'new'});
+const p=await b.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,140)));
+await p.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await p.setRequestInterception(true);
+p.on('request', r=>{ const u=r.url(), J=(o)=>r.respond({status:200,headers:CORS,contentType:'application/json',body:JSON.stringify(o)});
+  if(u.includes('hls.min.js')){ hlsReq++; return mode==='ok' ? r.respond({status:200,contentType:'application/javascript',body:STUB}) : r.abort('failed'); }
+  if(r.method()==='OPTIONS'&&u.includes('supabase')) return r.respond({status:204,headers:CORS,body:''});
+  if(u.includes('rpc/note_box')) return J({inbox:[],sent:[],unread:0});
+  if(u.includes('supabase')) return J([]);
+  if(/smilecdn|wsbfarm|open-meteo/.test(u)) return r.abort(); r.continue(); });
+await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'domcontentloaded'});
+await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.news','play1'); localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',token:'T',profile:{gender:'f',birth:'1'}})); });
+await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'networkidle2'}); await new Promise(r=>setTimeout(r,1500));
+const S=f=>p.evaluate(f), sleep=ms=>new Promise(r=>setTimeout(r,ms));
+console.log('부팅 시 hls 요청', hlsReq, '| 네이티브 HLS', await S(()=>document.createElement('video').canPlayType('application/vnd.apple.mpegurl')||'(불가)'));
+await S(()=>{ HTMLMediaElement.prototype.canPlayType=()=>''; });
+mode='fail'; await S(()=>{ setTab('cam'); }); await sleep(1200);
+console.log('① 캠 탭 진입(받기 실패)  hls 요청', hlsReq, '|', await S(()=>document.getElementById('cam-cover').textContent.replace(/\s+/g,' ').trim().slice(0,56)));
+mode='ok'; await S(()=>{ setTab('home'); }); await sleep(300); await S(()=>{ setTab('cam'); }); await sleep(1200);
+console.log('② 다시 들어가면 재시도  hls 요청', hlsReq, '| Hls 생성', await S(()=>window.__hlsMade||0), '| 소스', await S(()=>(window.__hlsSrc||'').slice(0,34)));
+await S(()=>{ setTab('home'); }); await sleep(200); await S(()=>{ setTab('cam'); }); await sleep(800);
+console.log('③ 세 번째 진입 — 다시 받지 않음  hls 요청', hlsReq, '| Hls 생성', await S(()=>window.__hlsMade||0));
+console.log('errs',errs); await b.close();

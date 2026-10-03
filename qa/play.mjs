@@ -1,0 +1,57 @@
+import puppeteer from 'puppeteer-core';
+const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'*'};
+const iso=n=>new Date(Date.now()-n*864e5-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+const d=n=>new Date(Date.now()+n*864e5).toISOString().slice(0,10);
+const drills=[]; [1,2,3,4,5].forEach(n=>drills.push({user_id:'u4',name:'이성현',day:iso(n)})); [0,1,2,3,4,5,6,7,8,9].forEach(n=>drills.push({user_id:'u0',name:'김도훈',day:iso(n)}));
+const surfers=[['u0','김도훈',{play:{xp:210,best:240,base:150,bonus:60,badges:{},qd:{},gn:{}}}],['u1','김태은',{play:{xp:520,best:120}}],['u2','박초롱',{}],['u4','이성현',{}]].map(([id,name,pr])=>({id,name,cohort:'6기',profile:{gender:'f',...pr}}));
+const rides=[{id:'r1',user_id:'u4',name:'이성현',cohort:'6기',profile:{},date:d(3),dir:'go',depart_at:'06:00',from_place:'별내역',to_place:'인구리',seats:3,riders:[],note:'',created_at:new Date().toISOString()}];
+const parties=[{id:'p1',user_id:'u0',name:'김도훈',date:d(1),beach:'인구',time:'06:00',note:'',joins:[{id:'u0',name:'김도훈',profile:{}},{id:'u4',name:'이성현',profile:{}}],created_at:new Date().toISOString()}];
+const posts=[]; let myProfile=null;
+const b=await puppeteer.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:'new'});
+const p=await b.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(String(e).slice(0,160))); p.on('console',m=>{ if(m.type()==='error' && !/Failed to load resource|net::ERR/.test(m.text())) errs.push('console:'+m.text().slice(0,140)); });
+await p.setViewport({width:390,height:844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
+await p.setRequestInterception(true);
+p.on('request', r=>{ const u=r.url(), m=r.method(), J=(st,o)=>r.respond({status:st,headers:CORS,contentType:'application/json',body:JSON.stringify(o)});
+  if(m==='OPTIONS' && u.includes('supabase')) return r.respond({status:204,headers:CORS,body:''});
+  if(u.includes('rest/v1/surfers') && m==='POST'){ const j=JSON.parse(r.postData()); if(j.id==='u4'){ myProfile=j.profile; posts.push(j.profile.play?JSON.stringify(j.profile.play).length:0);} return J(201,[]); }
+  if(u.includes('rest/v1/surfers')){ if(u.includes('id=eq.u4')) return J(200,[{profile:myProfile||{}}]); return J(200,surfers); }
+  if(u.includes('rest/v1/drills')) return J(200,drills);
+  if(u.includes('rest/v1/rides')) return J(200,rides);
+  if(u.includes('rest/v1/parties')) return J(200,parties);
+  if(u.includes('rpc/note_box')) return J(200,{inbox:[],sent:[],unread:0});
+  if(u.includes('rest/v1/')) return J(200,[]);
+  if(/smilecdn|wsbfarm|supabase/.test(u)) return r.abort(); r.continue(); });
+await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'domcontentloaded'});
+await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1');
+  localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',profile:{gender:'f',birth:'900101'},token:'T'})); });
+await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'networkidle2'});
+await new Promise(r=>setTimeout(r,2500));
+const S=(f)=>p.evaluate(f);
+console.log('① 첫 진입', JSON.stringify(await S(()=>({ 레벨칩:document.getElementById('lv-chip').textContent, xp:document.getElementById('xp-txt').textContent, 퀘스트띠:document.getElementById('qs-t').textContent, 팝업:!document.getElementById('pop').hidden?document.getElementById('pop-t').textContent+' | '+document.getElementById('pop-d').textContent:'(없음)', play:ME.profile.play&&{xp:ME.profile.play.xp,badges:Object.keys(ME.profile.play.badges)} }))));
+await S(()=>document.getElementById('pop-ok').click()); await new Promise(r=>setTimeout(r,500));
+console.log('   팝업 닫은 뒤 hidden=', await S(()=>document.getElementById('pop').hidden));
+await p.screenshot({path:'/tmp/pl_home.png'});
+await S(()=>document.getElementById('prof-lv').click()); await new Promise(r=>setTimeout(r,500));
+console.log('② 도감', JSON.stringify(await S(()=>({ 퀘스트:[...document.querySelectorAll('.pq')].map(q=>q.textContent.replace(/\s+/g,' ').trim()), 배지켜짐:document.querySelectorAll('.bd.on').length, 배지전체:document.querySelectorAll('.bd').length, 순위:[...document.querySelectorAll('.prk')].map(r=>r.textContent.replace(/\s+/g,' ').trim()) }))));
+await (await p.$('.sheet-in')).screenshot({path:'/tmp/pl_sheet.png'});
+await S(()=>document.getElementById('pg-start').click()); await new Promise(r=>setTimeout(r,500));
+console.log('③ 게임 시작화면', JSON.stringify(await S(()=>({ 열림:!document.getElementById('game').hidden, 카드:document.querySelector('.go-card .go-t').textContent }))));
+await p.screenshot({path:'/tmp/pl_game0.png'});
+await S(()=>document.getElementById('g-go').click()); await new Promise(r=>setTimeout(r,1800));
+await p.screenshot({path:'/tmp/pl_game1.png'});
+const bot = await S(()=>{ const g=window._game; const out={};
+  const sim=(smart,secs)=>{ g.begin(); const s=g.st; let steps=0; const SX=52;
+    while(!s.dead && steps<secs*60){ if(smart){ const o=s.obs.find(o=>o.x+o.w>SX-4); if(o && !s.air && (o.x-SX) < s.speed*0.30) g.jump(); }
+      g.step(1/60); steps++; if(!s.air) g.release(); }
+    return { 죽음:s.dead, 초:+(steps/60).toFixed(1), 점수:g.score(), 조개:s.shells, 속도:Math.round(s.speed) }; };
+  out.안뛰면=sim(false,30); out.봇60초=sim(true,60); out.봇120초=sim(true,120); return out; });
+console.log('④ 시뮬', JSON.stringify(bot));
+await new Promise(r=>setTimeout(r,1500));
+console.log('⑤ 끝난 뒤', JSON.stringify(await S(()=>({ 모드:window._game.mode, 카드:document.querySelector('#g-ov .go-t')?.textContent, 점수:document.querySelector('#g-ov .go-s')?.textContent, 최고:ME.profile.play.best, 오늘게임:ME.profile.play.gn, xp:ME.profile.play.xp, gxp:ME.profile.play.gxp, 배지:Object.keys(ME.profile.play.badges) }))));
+await p.screenshot({path:'/tmp/pl_over.png'});
+await S(()=>document.getElementById('g-exit')?.click()); await new Promise(r=>setTimeout(r,600));
+console.log('⑥ 닫고 퀘스트', JSON.stringify(await S(()=>({ 게임닫힘:document.getElementById('game').hidden, 띠:document.getElementById('qs-t').textContent, 팝업:!document.getElementById('pop').hidden?document.getElementById('pop-t').textContent:'(없음)' }))));
+await new Promise(r=>setTimeout(r,2200));
+console.log('⑦ 저장 크기', posts.slice(-3), 'play키', myProfile&&Object.keys(myProfile.play||{}));
+console.log('errs', errs);
+await b.close();

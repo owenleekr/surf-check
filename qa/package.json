@@ -1,0 +1,7 @@
+{
+  "name": "surfshare-qa",
+  "private": true,
+  "type": "module",
+  "description": "서프쉐어·라인업 화면 검증 스크립트 (puppeteer-core + 시스템 Chrome). 서버는 목업이라 실제 데이터를 건드리지 않는다.",
+  "devDependencies": { "puppeteer-core": "^24.0.0" }
+}
