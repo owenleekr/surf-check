@@ -57,6 +57,8 @@ const BADGES = [
   { id:'mvp1',    ic:'👑', n:'주간 MVP',       d:'한 주에 훈련 1위(3회 이상)를 했어요', t:s=>s.mvp >= 1, xp:50 },
   { id:'quiz10',  ic:'🧠', n:'코치님 말씀 척척', d:'코치 퀴즈에서 정답을 10개 맞혔어요', t:(s,p)=>(p.qz||0) >= 10 },
   { id:'quiz30',  ic:'🎓', n:'코치님 제자',     d:'코치 퀴즈에서 정답을 30개 맞혔어요', t:(s,p)=>(p.qz||0) >= 30, xp:40 },
+  { id:'goal1',    ic:'🤝', n:'함께 채운 한 주',  d:'6기 이번 주 목표를 같이 채웠어요',     t:(s,p)=>(p.goalN||0) >= 1 },
+  { id:'goal4',    ic:'🌈', n:'한 달 팀워크',     d:'6기 주간 목표를 4주 채웠어요',         t:(s,p)=>(p.goalN||0) >= 4, xp:50 },
   { id:'game1',   ic:'🎮', n:'첫 파도 점프',   d:'파도 점프를 한 판 해봤어요',        t:(s,p)=>(p.best||0) > 0 },
   { id:'game300', ic:'🦈', n:'상어도 피했다',  d:'파도 점프에서 600점을 넘겼어요',    t:(s,p)=>(p.best||0) >= 600, xp:40 },
   { id:'quest5',  ic:'✅', n:'퀘스트 5일',     d:'오늘의 퀘스트를 5일 완료했어요',    t:(s,p)=>(p.qall||0) >= 5, xp:40 },
@@ -129,12 +131,13 @@ function playPush(){
 function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
-  ['base','bonus','best','qall','qz'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  ['base','bonus','best','qall','qz','goalN'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
     else Object.keys(remote.qd[d]).forEach(q=>{ if(!p.qd[d][q]){ p.qd[d][q] = 1; ch = true; } }); });
   Object.keys(remote.gn||{}).forEach(d=>{ if((remote.gn[d]||0) > (p.gn[d]||0)){ p.gn[d] = remote.gn[d]; ch = true; } });
   Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
+  if(remote.goalWk && remote.goalWk > (p.goalWk || '')){ p.goalWk = remote.goalWk; ch = true; }
   if(remote.gday === p.gday && (remote.gxp||0) > (p.gxp||0)){ p.gxp = remote.gxp; ch = true; }
   if(ch){ p.lvSeen = Math.max(p.lvSeen||0, lvOf(playXp(p))); playPush(); renderPlayBits(); }
 }
@@ -197,6 +200,17 @@ function playGameDone(score){
   p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
   return { gain, newBest, best:p.best };
+}
+
+/* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
+   주(월요일 시작)마다 한 번만. 렌더 때마다 불리므로 저장값(goalWk)으로 막는다. */
+function playGoal(sum, goal, myWeek){
+  if(!ME?.profile?.play || sum < goal || myWeek < 1) return;
+  const wk = weekKey(dayOf(0)), p = playP();
+  if(p.goalWk === wk) return;
+  p.goalWk = wk; p.goalN = (p.goalN || 0) + 1; p.bonus += 10;
+  _popQ.push({ ic:'🎉', t:'6기 이번 주 목표 달성!', d:'다 같이 채웠어요\n+10 XP', up:true });
+  playPush(); playTick();
 }
 
 /* ── 알림 카드 ── 한꺼번에 여러 개가 걸려도 한 장씩 */

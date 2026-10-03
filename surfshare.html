@@ -2489,6 +2489,7 @@ function renderDrill(){
     const ppl = Math.max((state.town||[]).filter(x=>!isTest(x.id)).length, new Set(drillRows.map(r=>r.user_id)).size, 5);
     const goal = ppl * 3, pc = Math.min(100, Math.round(sum / goal * 100));
     const g = $('dgoal'); g.classList.toggle('done', sum >= goal);
+    if(typeof playGoal === 'function' && drillLoaded) playGoal(sum, goal, me.week);
     const wt = weeklyTop(), lastW = Object.keys(wt).sort().pop();
     const mvpLine = lastW ? `<div class="mvp">👑 지난주 MVP · ${wt[lastW].map(x=>esc((state.town||[]).find(t=>t.id===x.id)?.name || x.name)).join(', ')} <b>${wt[lastW][0].n}회</b></div>` : '';
     g.innerHTML = `<div class="gl"><span>${sum >= goal ? '🎉 이번 주 목표 달성!' : '👥 6기 이번 주 목표'}</span><span><b>${sum}</b> / ${goal}회${todayN ? ` · 오늘 ${todayN}명` : ''}</span></div><div class="gb" role="progressbar" aria-valuenow="${pc}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.max(3, pc)}%"></i></div>${mvpLine}`; }
