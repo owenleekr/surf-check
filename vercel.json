@@ -1,7 +1,38 @@
 {
-  "functions": { "api/news.js": { "maxDuration": 15 } },
+  "functions": {
+    "api/news.js": {
+      "maxDuration": 15
+    }
+  },
   "cleanUrls": true,
   "redirects": [
-    { "source": "/", "destination": "/surfshare", "permanent": false }
+    {
+      "source": "/",
+      "destination": "/surfshare",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), payment=()"
+        }
+      ]
+    }
   ]
 }
