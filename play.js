@@ -11,6 +11,11 @@
 
 const PLV = [[0,'모래알','🐚'],[50,'물장구','💦'],[150,'패들러','🏊'],[300,'테이크오프','🏄'],[500,'라인업','🌊'],
              [800,'아웃사이드','🦈'],[1200,'튜브라이더','🌀'],[1800,'로컬','🌴'],[2600,'바다의 주인','👑']];
+/* 남의 프로필(play)은 누구나 쓸 수 있는 곳에서 온 값이다 — 글자를 넣어 HTML 을 주입하거나 99 같은 레벨로 화면을 깨뜨릴 수 있다.
+   (실제로 xp 에 <img onerror> 를 넣으면 모두의 도감에서 실행됐다.) 화면에 찍기 전에 반드시 숫자로 걸러 범위를 가둔다.
+   레벨은 적힌 값을 믿지 않고 xp 로 다시 계산한다. */
+const _num = (v, max) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(max, x)) : 0; };
+const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000) } : null;
 const lvOf = xp => { let i = 0; PLV.forEach((l,k)=>{ if(xp >= l[0]) i = k; }); return i; };
 
 /* ── 레벨 보상 ── 새 꾸미기 아이템은 여기서만 정의한다.
@@ -238,7 +243,7 @@ function renderPlay(){
   const p = ME.profile.play, xp = playXp(p), lv = lvOf(xp), cur = PLV[lv][0], nxt = PLV[lv+1];
   const pct = nxt ? Math.max(4, Math.round((xp - cur) / (nxt[0] - cur) * 100)) : 100;
   const qs = playQuests(p), got = Object.keys(p.badges).length;
-  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>({ id:x.id, name:x.name, xp:x.profile?.play?.xp || 0, best:x.profile?.play?.best || 0 }))
+  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>{ const pp = peerPlay(x.profile?.play) || { xp:0, best:0 }; return { id:x.id, name:x.name, xp:pp.xp, best:pp.best }; })
     .concat([{ id:ME.id, name:ME.name, xp, best:p.best||0 }]);
   const key = _rkView === 'xp' ? 'xp' : 'best';
   const top = rows.filter(r=>r[key] > 0).sort((a,b)=>b[key]-a[key]);

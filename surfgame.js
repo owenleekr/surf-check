@@ -168,7 +168,7 @@ function loop(t){
 
 /* ── 화면 ── */
 function myBestRows(){
-  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>({ id:x.id, name:x.name, best:x.profile?.play?.best || 0 }))
+  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>({ id:x.id, name:x.name, best:(typeof peerPlay === 'function' ? peerPlay(x.profile?.play)?.best : 0) || 0 }))
     .concat([{ id:ME.id, name:ME.name, best:ME.profile?.play?.best || 0 }]).filter(r=>r.best > 0).sort((a,b)=>b.best - a.best);
   return rows.slice(0, 3);
 }
