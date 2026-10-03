@@ -445,6 +445,11 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
   font-family:"Galmuri11",sans-serif; font-size:10px; line-height:13px; font-weight:800; background:#FFE27A; color:var(--ink); border:2px solid var(--ink) }
 .vp .vok{ position:absolute; right:3px; top:46px; z-index:2; width:17px; height:17px; text-align:center; font-style:normal; font-size:11px; line-height:13px; font-weight:800;
   background:var(--mint); color:var(--ink); border:2px solid var(--ink); border-radius:50% }
+.vp .vemo{ position:absolute; left:calc(50% + 10px); top:-2px; z-index:6; font-style:normal; font-size:26px; line-height:1; font-family:sans-serif; pointer-events:none;
+  animation:emo 12s ease-out both; filter:drop-shadow(1px 1px 0 rgba(27,27,47,.5)) }
+@keyframes emo{ 0%{ transform:translateY(12px) scale(.2); opacity:0 } 3%{ transform:translateY(-4px) scale(1.5); opacity:1 } 6%{ transform:translateY(0) scale(1) }
+  80%{ opacity:1; transform:translateY(-6px) } 100%{ opacity:0; transform:translateY(-16px) } }
+@media (prefers-reduced-motion:reduce){ .vp .vemo{ animation:none; opacity:1 } }
 .vp .vbolt{ position:absolute; left:3px; top:46px; z-index:2; width:17px; height:17px; text-align:center; font-style:normal; font-family:sans-serif; font-size:11px; line-height:13px;
   background:#FFE27A; border:2px solid var(--ink); border-radius:50% }
 .vp .nm{ font-size:11.5px; font-weight:800; background:rgba(255,249,230,.92); border:2px solid var(--ink);
@@ -987,7 +992,7 @@ const DOW = ['일','월','화','수','목','금','토'];
    pubRow : 글·채팅·참여자 행용 — 매번 복사되니 도감 데이터도 뺀다. */
 const _drop = (p, ks) => { const o = { ...(p || {}) }; ks.forEach(k=>delete o[k]); return o; };
 const pubSelf = () => _drop(ME.profile, ['birth','token','pw']);
-const pubRow  = () => _drop(ME.profile, ['birth','token','pw','play','dressed']);
+const pubRow  = () => _drop(ME.profile, ['birth','token','pw','play','dressed','emote']);
 /* 10.02 (금) 보다 '내일'이 먼저 읽힌다. 사흘 안쪽은 말로, 그 밖은 날짜로.
    같은 화면에 10.02 (금) · 9월 30일 화요일 · 10.01~10.03 이 섞여 있었다. */
 const dLabel = d => { const x=new Date(d+'T00:00');
@@ -1790,10 +1795,32 @@ function soonBolt(id){
   return (bolts||[]).find(b=>!boltGone(b) && (b.joins||[]).some(j=>j.id === id)
     && new Date(`${b.date}T${b.time||'12:00'}:00`).getTime() - Date.now() < 3*3600e3) || null;
 }
+/* ── 이모트 ── 내 캐릭터를 눌러 이모지를 띄운다. 12초 떠 있다가 사라진다.
+   남의 프로필에서 온 값이므로 허용 목록에 있는 글자만 그린다(임의의 글자·HTML 은 무시). */
+const EMOTES = ['👋','🔥','🌊','💪','😎','🥳','😴','🍜'];
+const EMO_MS = 12000;
+function emoteOf(x){
+  const em = x.id === ME.id ? ME.profile?.emote : x.profile?.emote;
+  if(!em || typeof em !== 'object' || !EMOTES.includes(em.e)) return null;
+  const age = Date.now() - (+em.at || 0);
+  return (age >= -5000 && age < EMO_MS) ? { e:em.e, age:Math.max(0, age) } : null;
+}
+let _emoAt = 0;
+async function sendEmote(e){
+  if(!EMOTES.includes(e)) return;
+  if(Date.now() - _emoAt < 2500) return toast('조금 천천히요 🙂');           // 도배 방지 — 서버에 쓰는 일이라 간격을 둔다
+  _emoAt = Date.now();
+  ME.profile = { ...(ME.profile||{}), emote:{ e, at:Date.now() } };
+  try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(err){}
+  navigator.vibrate?.(12); renderTown();
+  try{ await api('surfers', { method:'POST', body:JSON.stringify({ id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) }); }
+  catch(err){ toast('보내지 못했어요 · 신호 확인'); }
+}
 function vBadges(x){
   const lv = lvOfUser(x), did = typeof dSet !== 'undefined' && dSet[x.id]?.has(dayOf(0)), sb = soonBolt(x.id);
   return (lv != null ? `<i class="vlv" aria-hidden="true">${lv+1}</i>` : '') + (did ? `<i class="vok" aria-hidden="true" title="오늘 훈련 완료">✔</i>` : '')
-    + (sb ? `<i class="vbolt" aria-hidden="true" title="곧 서핑번개">⚡</i>` : '');
+    + (sb ? `<i class="vbolt" aria-hidden="true" title="곧 서핑번개">⚡</i>` : '')
+    + (()=>{ const em = emoteOf(x); return em ? `<i class="vemo" aria-hidden="true" style="animation-delay:-${em.age}ms">${em.e}</i>` : ''; })();
 }
 function renderTown(){
   const g = $('vgrid'); if(!g) return;
@@ -1844,12 +1871,15 @@ function renderTown(){
         <button class="btn sm ghost" type="button" data-vnote>✉️ 쪽지</button>`:''}
         ${x.id===ME.id&&moodOf(x)?`<button class="btn sm ghost" type="button" data-unbub>💬 말풍선 내리기</button>`:''}
         <button class="btn sm ghost" type="button" data-close>닫기</button></div>
+      ${x.id===ME.id?`<div class="note" style="margin:8px 0 4px">표정 짓기 — 머리 옆에 12초 떠요</div><div style="display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px">
+        ${EMOTES.map(e=>`<button class="btn sm ghost" type="button" data-emote="${e}" aria-label="${e} 이모트" style="padding:8px 0;font-family:sans-serif">${e}</button>`).join('')}</div>`:''}
       ${x.id!==ME.id?`<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px">
         ${[['👏','수고했어요'],['🔥','오늘 불탔다'],['🌊','같이 들어가요'],['💪','파이팅']].map(([e,t])=>
           `<button class="btn sm ghost" type="button" data-cheer="${e}|${t}" style="padding:8px 0;font-family:sans-serif">${e}</button>`).join('')}</div>`:''}`;
     $('village').appendChild(c); bindRx(c);
     c.querySelector('[data-close]').onclick = ()=>c.remove();
     c.querySelector('[data-unbub]')?.addEventListener('click', ()=>{ c.remove(); saveMood(''); });
+    c.querySelectorAll('[data-emote]').forEach(b=>b.addEventListener('click', ()=>{ c.remove(); sendEmote(b.dataset.emote); }));
     c.querySelectorAll('[data-cheer]').forEach(b=>b.addEventListener('click', async ()=>{
       const [e,t] = b.dataset.cheer.split('|'); c.remove();
       el.classList.remove('hop'); void el.offsetWidth; el.classList.add('hop');
