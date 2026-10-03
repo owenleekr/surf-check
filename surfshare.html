@@ -408,6 +408,10 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .vp{ position:absolute; width:66px; display:flex; flex-direction:column; align-items:center; gap:3px;
      cursor:pointer; will-change:transform }
 .vp canvas{ width:66px; height:74px; image-rendering:pixelated }
+.vp .vlv{ position:absolute; left:2px; top:2px; z-index:2; min-width:17px; height:17px; padding:0 3px; text-align:center; font-style:normal;
+  font-family:"Galmuri11",sans-serif; font-size:10px; line-height:13px; font-weight:800; background:#FFE27A; color:var(--ink); border:2px solid var(--ink) }
+.vp .vok{ position:absolute; right:3px; top:46px; z-index:2; width:17px; height:17px; text-align:center; font-style:normal; font-size:11px; line-height:13px; font-weight:800;
+  background:var(--mint); color:var(--ink); border:2px solid var(--ink); border-radius:50% }
 .vp .nm{ font-size:11.5px; font-weight:800; background:rgba(255,249,230,.92); border:2px solid var(--ink);
          padding:1px 5px; max-width:112px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 /* 머리 위로 온전히 띄운다. 칸 높이가 95px 이라 그보다 위여야 캐릭터를 안 가린다.
@@ -1682,6 +1686,13 @@ async function pullTown(){
   await pullChat();
   renderTown();
 }
+/* 마을에서 한눈에: 왼쪽 위 숫자 = 레벨, 오른쪽 아래 ✔ = 오늘 훈련함. 이름표 줄은 건드리지 않는다(겹침 계산이 거기 걸려 있다). */
+function lvOfUser(x){ const pl = x.id === ME.id ? ME.profile?.play : x.profile?.play;
+  return pl ? (x.id === ME.id ? lvOf(playXp(pl)) : (pl.lv ?? null)) : null; }
+function vBadges(x){
+  const lv = lvOfUser(x), did = typeof dSet !== 'undefined' && dSet[x.id]?.has(dayOf(0));
+  return (lv != null ? `<i class="vlv" aria-hidden="true">${lv+1}</i>` : '') + (did ? `<i class="vok" aria-hidden="true" title="오늘 훈련 완료">✔</i>` : '');
+}
 function renderTown(){
   const g = $('vgrid'); if(!g) return;
   if(state.town === null){ g.innerHTML = '<div class="empty" style="background:rgba(255,249,230,.9)">마을을 불러오지 못했어요</div>'; return; }
@@ -1707,7 +1718,7 @@ function renderTown(){
     return `<div class="vp ${x.id===ME.id?'me':''} ${here.has(x.id)?'here':''}" data-id="${esc(x.id)}"
       data-where="${z}" data-ph="${(hsh(x.id)%628)/100}"${mood?' data-bub':''}>
       ${mood?`<div class="bub">${esc(mood.length > 16 ? mood.slice(0,16) + '…' : mood)}</div>`:''}
-      <canvas data-av="${esc(x.id)}" data-anim></canvas><span class="nm">${esc(x.name)}</span></div>`;
+      ${vBadges(x)}<canvas data-av="${esc(x.id)}" data-anim></canvas><span class="nm">${esc(x.name)}</span></div>`;
   }).join('') || '<div class="empty" style="background:rgba(255,249,230,.9)">아직 아무도 없어요</div>';
   layoutTown();
   /* 펫을 같이 그리면 스프라이트가 24칸 → 38칸이라 그림이 두 배 가까이 넓어진다.
@@ -1720,7 +1731,9 @@ function renderTown(){
     if(e.target.closest('.rx')) return;
     const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
     const c = document.createElement('div'); c.className = 'vcard';
+    const lvx = lvOfUser(x), stk = typeof drillStat === 'function' ? drillStat(x.id).streak : 0;
     c.innerHTML = `<b>${esc(x.name)}</b>${x.profile?.role==='coach'?' · 코치':''}
+      ${lvx != null ? `<br><span style="color:#B45309;font-weight:800">Lv.${lvx+1} ${PLV[lvx][1]} ${PLV[lvx][2]}</span>${stk ? ` · 🔥 ${stk}일 연속` : ''}` : (stk ? `<br>🔥 ${stk}일 연속` : '')}
       ${moodOf(x)?`<br>💬 ${esc(moodOf(x))}`:''}
       ${here.has(x.id)?`<br>📍 지금 ${esc(here.get(x.id))}`:''}
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
