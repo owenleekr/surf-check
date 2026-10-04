@@ -407,7 +407,7 @@ body.game-on{ overflow:hidden }
 .now{ margin-top:10px }
 
 /* 쪽지는 어느 탭에서든 닿아야 한다. 하단 탭 위에 띄운다 */
-.mailfab{ position:fixed; right:10px; bottom:calc(64px + env(safe-area-inset-bottom)); z-index:56;
+.mailfab{ position:fixed; right:max(10px, calc((100vw - 720px) / 2 + 10px)); bottom:calc(64px + env(safe-area-inset-bottom)); z-index:56;
           width:46px; height:46px; border:3px solid var(--ink); background:var(--sun); box-shadow:2px 2px 0 var(--ink);
           font-size:19px; font-family:sans-serif; cursor:pointer; padding:0; opacity:.94 }
 .mailfab .dot{ position:absolute; top:-8px; right:-8px; margin:0 }
@@ -415,7 +415,9 @@ body.game-on{ overflow:hidden }
 /* ── 하단 탭 ──
    탭이 다섯이 되면서 위에 두면 제목과 붙어 뭉친다. 엄지가 닿는 아래로 내린다. */
 .nav{ position:fixed; left:0; right:0; bottom:0; z-index:55; display:flex; background:var(--paper);
-      border-top:4px solid var(--ink); padding-bottom:env(safe-area-inset-bottom) }
+      border-top:4px solid var(--ink); padding-bottom:env(safe-area-inset-bottom);
+      /* 본문은 720px 가운데 열이다 — 탭 버튼이 넓은 화면 끝까지 퍼지지 않게 같은 폭으로 모은다(배경 띠는 전체 폭 그대로) */
+      padding-inline:max(0px, calc((100% - 720px) / 2)) }
 .nav button{ flex:1; border:0; background:none; font-family:inherit; cursor:pointer;
              padding:7px 2px 8px; min-height:56px; display:flex; flex-direction:column; align-items:center; gap:2px;
              font-size:10.5px; font-weight:800; color:var(--ink2); position:relative }
@@ -1751,6 +1753,7 @@ $('b-save').onclick = async ()=>{
   const date = $('b-date').value, time = $('b-time').value, beach = $('b-beach').value;
   if(!date) return e.textContent = '날짜를 골라주세요';
   if(!time) return e.textContent = '몇 시에 만날지 정해주세요';
+  if(date < today() || (date === today() && time < nowHM())) return e.textContent = '이미 지난 시각이에요 — 앞으로의 시각을 골라주세요';
   /* parties 에는 profile 칸이 없다(라인업이 만든 표다). 모르고 같이 보냈다가
      PGRST204 로 전부 튕겼다 — 화면엔 "신호 확인"만 떠서 원인이 안 보였다.
      연 사람 캐릭터는 joins 안에 이미 들어 있으니 거기서 꺼내 쓴다. */
@@ -2809,14 +2812,18 @@ $('r-save').onclick = async ()=>{
   if(!date) return e.textContent = '날짜를 골라주세요';
   if(!time) return e.textContent = '출발 시각을 적어주세요';
   if(!from || !to) return e.textContent = '타는 곳과 내리는 곳을 적어주세요';
+  if(date < today() || (date === today() && time < nowHM())) return e.textContent = '이미 떠난 시각이에요 — 앞으로의 날짜·시각을 골라주세요';
+  const btn = $('r-save'); if(btn.disabled) return;
   const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:pubRow(),
     date, dir:$('r-dir').value, depart_at:time, from_place:from.slice(0,20), to_place:to.slice(0,20),
     seats:Math.max(1, Math.min(8, +$('r-seats').value||3)), riders:[],
     note:$('r-note').value.trim().slice(0,60)||null, contact:$('r-contact').value.trim().slice(0,80)||null };
+  btn.disabled = true;                                   // 연타하면 같은 차가 두 번 올라간다
   try{ await api('rides', { method:'POST', body:JSON.stringify(row) });
     toast('올렸어요'); ['r-from','r-to','r-note','r-contact'].forEach(x=>$(x).value='');
     document.querySelector('#pane-ride details').open = false; pullRides(); }
   catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 (supabase-surfshare.sql)' : '올리지 못했어요 · 신호 확인'; }
+  finally{ btn.disabled = false; }
 };
 
 /* ── 숙소 ───────────────────────────────────────────────── */
@@ -3301,6 +3308,8 @@ $('s-save').onclick = async ()=>{
   if(!place) return e.textContent = '숙소 이름을 적어주세요';
   if(!from || !to) return e.textContent = '체크인·체크아웃 날짜를 골라주세요';
   if(to < from) return e.textContent = '체크아웃이 체크인보다 빠릅니다';
+  if(to < today()) return e.textContent = '이미 끝난 날짜예요 — 앞으로의 날짜를 골라주세요';
+  const btn = $('s-save'); if(btn.disabled) return;
   const url = $('s-url').value.trim() || null;
   if(url && !isNaN(+url)) return e.textContent = '좌표 말고 네이버지도 링크를 붙여주세요';
   if(url && !/^https?:\/\//i.test(url)) return e.textContent = '링크는 http 로 시작해야 해요';
@@ -3315,12 +3324,14 @@ $('s-save').onclick = async ()=>{
     price:$('s-price').value.trim().slice(0,20)||null, lat:hasXY?lat:null, lon:hasXY?lon:null,
     perks:[...$('s-perks').querySelectorAll('[aria-pressed="true"]')].map(b=>b.textContent),
     note:$('s-note').value.trim().slice(0,60)||null, contact:$('s-contact').value.trim().slice(0,80)||null };
+  btn.disabled = true;
   try{ await api('stays', { method:'POST', body:JSON.stringify(row) });
     toast('올렸어요'); ['s-place','s-price','s-note','s-contact','s-url'].forEach(x=>$(x).value='');
     delete $('s-near').dataset.xy;
     $('s-perks').querySelectorAll('[aria-pressed="true"]').forEach(b=>b.setAttribute('aria-pressed','false'));
     document.querySelector('#pane-stay details').open = false; pullStays(); }
   catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 (supabase-surfshare.sql)' : '올리지 못했어요 · 신호 확인'; }
+  finally{ btn.disabled = false; }
 };
 
 /* ── 자리 넣고 빼기 · 내리기 ───────────────────────────── */
