@@ -19,7 +19,7 @@ const probe = () => t.S(()=>{
     const fs=parseFloat(s.fontSize), bold=+s.fontWeight>=700; const need=(fs>=18.66||(fs>=14&&bold))?3:4.5;
     if(r<need){ const k=fg+' on '+bg+' '+r.toFixed(2)+'<'+need; (bad[k] ||= []).push(e.textContent.trim().slice(0,14)); } });
   return Object.entries(bad).map(([k,v])=>k+' → '+[...new Set(v)].slice(0,4).join(' | ')); });
-for(const tab of ['home','ride','stay','bolt','town','cam']){
+for(const tab of ['home','ride','stay','bolt','town','play','cam']){
   await t.S(tb=>document.getElementById('t-'+tb).click(), tab); await t.sleep(800);
   const r=await probe(); console.log('■',tab, r.length?'\n   '+r.join('\n   '):'OK');
 }

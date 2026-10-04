@@ -8,7 +8,7 @@ const parties=[{id:'p1',user_id:'u4',name:'이성현',date:dfw(0),beach:'인구'
 for(const W of [390,320]){
   const t=await open({surfers,drills,rides,stays,parties},{id:'u4',name:'이성현',profile:{gender:'m',birth:'1'}},{width:W});
   await t.S(()=>{ document.getElementById('pop').hidden=true; });
-  for(const tab of ['home','ride','stay','bolt','town','cam']){
+  for(const tab of ['home','ride','stay','bolt','town','play','cam']){
     await t.S(tb=>document.getElementById('t-'+tb).click(), tab); await t.sleep(900);
     const o=await t.S(()=>{ const out={작은글씨:{},작은터치:[],넘침:[]}; const Wd=document.documentElement.clientWidth;
       document.querySelectorAll('#main *').forEach(e=>{ if(!e.offsetParent) return; const r=e.getBoundingClientRect(); if(!r.width) return;

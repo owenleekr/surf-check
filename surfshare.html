@@ -337,6 +337,34 @@ body.game-on{ overflow:hidden }
 .qz-msg{ font-size:14px; font-weight:700; line-height:1.6; word-break:keep-all } .qz-xp{ margin-top:6px; font-size:13px; font-weight:800; color:#168A4A }
 .offbar{ position:fixed; top:0; left:0; right:0; z-index:970; padding:calc(6px + env(safe-area-inset-top)) 12px 6px; background:#C2303A; color:#fff; font-size:12.5px; font-weight:800; text-align:center; line-height:1.45 }
 .offbar[hidden]{ display:none }
+.tin{ animation:tabin .24s ease-out both }
+@keyframes tabin{ from{ opacity:0; transform:translateX(var(--dx, 16px)) } to{ opacity:1; transform:none } }
+.nav button[aria-pressed="true"] i{ animation:navpop .32s cubic-bezier(.2,1.6,.4,1) }
+@keyframes navpop{ 0%{ transform:scale(.7) } 60%{ transform:scale(1.25) translateY(-2px) } 100%{ transform:none } }
+@media (prefers-reduced-motion:reduce){ .tin, .nav button[aria-pressed="true"] i{ animation:none } }
+html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨서 새로고침(전체 새로 불러옴)을 끄고 아래 것으로 대신한다 */
+.ptr{ position:fixed; top:calc(8px + env(safe-area-inset-top)); left:50%; z-index:965; transform:translate(-50%,-70px); padding:6px 14px; background:#fff; border:3px solid var(--ink);
+  box-shadow:3px 3px 0 var(--ink); font-size:13px; font-weight:800; pointer-events:none; opacity:0; white-space:nowrap }
+.ptr.on{ opacity:1 } .ptr.spin b{ display:inline-block; animation:ptrspin .8s linear infinite }
+@keyframes ptrspin{ to{ transform:rotate(360deg) } }
+/* 허브의 소제목은 하늘색 바탕 위에 바로 놓인다 — 시트 안(크림색)과 달리 회색 글자가 안 읽힌다(대비 2.67) */
+#play-hub .pt{ color:var(--paper); text-shadow:2px 2px 0 var(--ink) }
+#play-hub .pt small{ color:#fff; text-shadow:1px 1px 0 var(--ink) }
+.hubhero{ padding:14px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
+.hh-em{ float:left; width:64px; height:64px; display:flex; align-items:center; justify-content:center; font-size:38px; font-family:sans-serif; background:#fff; border:4px solid var(--ink); margin-right:12px }
+.hh-t b{ display:block; font-family:"Galmuri11",sans-serif; font-size:18px } .hh-t span{ font-size:13px; font-weight:700; color:#5B6275 }
+.hh-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px } .hh-chips span{ padding:3px 9px; border:3px solid var(--ink); background:#fff; font-size:12.5px; font-weight:800 }
+.hubhero .xpbar{ clear:both; margin-top:12px }
+.hubgrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
+.hubcard{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:104px; padding:12px; text-align:left; font-family:inherit;
+  background:#fff; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); cursor:pointer; transition:transform .08s, box-shadow .08s }
+.hubcard:active{ transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink) }
+.hubcard .hc-ic{ font-size:30px; line-height:1.1; font-family:sans-serif } .hubcard b{ font-size:15px; margin-top:4px } .hubcard small{ font-size:12.5px; font-weight:700; color:#5B6275; line-height:1.4 }
+.hubcard em{ position:absolute; top:8px; right:8px; font-style:normal; font-size:12px; font-weight:800; padding:2px 7px; background:#C2303A; color:#fff; border:2px solid var(--ink) }
+#play-hub.enter .hubhero, #play-hub.enter .pq, #play-hub.enter .hubcard{ animation:hubin .42s cubic-bezier(.2,.9,.3,1) both }
+#play-hub.enter .hubcard{ animation-delay:calc(var(--i, 0) * 45ms + 120ms) }
+@keyframes hubin{ from{ opacity:0; transform:translateY(12px) } to{ opacity:1; transform:none } }
+@media (prefers-reduced-motion:reduce){ #play-hub.enter .hubhero, #play-hub.enter .pq, #play-hub.enter .hubcard{ animation:none } }
 .xpfx{ position:fixed; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:960; pointer-events:none;
   background:#FFE27A; color:var(--ink); border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); padding:5px 14px; font-family:"Galmuri11",sans-serif; font-weight:800; font-size:15px }
 .xpfx[hidden]{ display:none }
@@ -801,6 +829,9 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
 
     <!-- 라이브캠 -->
+    <!-- 놀이 -->
+    <div id="pane-play" hidden><div id="play-hub"></div></div>
+
     <div id="pane-cam" hidden>
       <div class="grp"><span class="t">라이브캠</span>
         <div class="camwrap">
@@ -873,6 +904,7 @@ body.onb-on .wrap{ padding-bottom:230px }
   <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
   <button type="button" id="t-bolt" aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
   <button type="button" id="t-town" aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
+  <button type="button" id="t-play" aria-pressed="false"><i>🎮</i>놀이<span class="dot" id="play-dot" hidden>0</span></button>
   <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>캠</button>
 </nav>
 <button type="button" class="mailfab" id="mail" aria-label="쪽지">✉️<span class="dot" id="mail-dot" hidden>0</span></button>
@@ -950,6 +982,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="xpfx" id="xpfx" hidden aria-hidden="true"></div>
+<div class="ptr" id="ptr" aria-hidden="true"><b>↓</b> <span>당겨서 새로고침</span></div>
 <div class="offbar" id="offbar" hidden role="status">📶 오프라인이에요 — 저장된 화면만 보여요. 신호가 잡히면 저절로 새로 불러와요</div>
 
 <script>
@@ -2304,8 +2337,8 @@ function bindNotes(box){ box.querySelectorAll('[data-note]').forEach(b=>b.onclic
    덮개(dim)를 쓰지 않는다. 앱에서 덮개의 pointer-events 가 탭을 삼켜
    "누를 수 없는 안내"가 됐던 적이 있다. 여기선 아래 카드 + 테두리만 쓴다. */
 const ONB = [
-  { tab:'home', at:'prof-lv', t:'내 레벨 — 눌러서 도감',
-    d:'훈련 · 번개 · 차량 · 숙소 · 한마디로 <b>XP</b>가 쌓여요.<br>눌러서 오늘의 퀘스트, 배지, 동기 순위, <b>🎮 파도 점프</b> 게임을 봅니다.' },
+  { tab:'home', at:'prof-lv', t:'내 레벨 — 눌러서 놀이 메뉴',
+    d:'훈련 · 번개 · 차량 · 숙소 · 한마디로 <b>XP</b>가 쌓여요.<br>아래 <b>🎮 놀이</b> 탭에 퀘스트 · 파도 점프 · 코치 퀴즈 · 운세 · 스탬프 · 배지 · 순위 · 조개 상점이 모여 있어요.' },
   { tab:'home', at:'drill-btn', t:'하루 한 번 테이크오프 체크',
     d:'오늘 했으면 눌러요. 연속일수가 쌓이고, 동기들과 <b>이번 주 목표</b>를 같이 채웁니다.<br>아래 순위에서 누가 꾸준한지도 볼 수 있어요.' },
   { tab:'home', at:'bld-fold', t:'내 캐릭터 꾸미기',
@@ -2381,7 +2414,7 @@ function refreshDots(){
   setDot('bolt', bolts, boltGone);
 }
 
-const TABS = ['home','ride','stay','bolt','town','cam'];
+const TABS = ['home','ride','stay','bolt','town','play','cam'];
 let nowOpen = false;
 /* 머리를 탭에 따라 접는다 — 홈에서는 온전히, 나머지에서는 한 줄. */
 function layoutHead(){
@@ -2393,8 +2426,8 @@ function layoutHead(){
 }
 $('nowbar').onclick = ()=>{ nowOpen = !nowOpen; layoutHead(); if(nowOpen) renderNow(); };
 
-const setTab = t => { state.tab = t;
-  ['home','ride','stay','bolt','town','cam','me'].forEach(k=>{
+const setTab = t => { const prevTab = state.tab; state.tab = t;
+  ['home','ride','stay','bolt','town','play','cam','me'].forEach(k=>{
     const btn = $('t-'+k); if(btn) btn.setAttribute('aria-pressed', String(t===k));
     $('pane-'+k).hidden = t!==k; });
   if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); homeDot(); }
@@ -2404,12 +2437,46 @@ const setTab = t => { state.tab = t;
   else camStop();                       /* 다른 탭으로 가면 끈다 — 데이터가 계속 나간다 */
   if(t==='town'){ pullTown(); startTownPoll(); } else stopTownPoll();
   if(t==='bolt') pullBolts();
+  if(t==='play' && typeof renderHub === 'function') renderHub(true);
   if(t==='ride' || t==='stay' || t==='bolt'){ markSeen(t); const d = $(t+'-dot'); if(d) d.hidden = true; }
   $('trust').hidden = !(t==='ride' || t==='stay');
   $('school').hidden = t!=='home';                  // 커밍순 카드는 홈에만
+  /* 새로 보이는 탭이 옆에서 미끄러져 들어온다 — 오른쪽 탭으로 가면 오른쪽에서, 왼쪽이면 왼쪽에서.
+     어디로 이동했는지 몸으로 알게 하는 장치다. 움직임 줄이기 설정이면 건너뛴다. */
+  if(prevTab && prevTab !== t && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    const el = $('pane-' + t), dx = (TABS.indexOf(t) >= TABS.indexOf(prevTab) ? 1 : -1) * 18;
+    if(el){ el.style.setProperty('--dx', dx + 'px'); el.classList.remove('tin'); void el.offsetWidth; el.classList.add('tin'); } }
   window.scrollTo({ top:0, behavior:'instant' });
 };
 TABS.forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
+/* ── 당겨서 새로고침 ──
+   홈 화면에 추가해 쓰는 앱(standalone)에는 브라우저 새로고침이 없다 — 새 글을 보려면 앱을 껐다 켜야 했다.
+   맨 위에서 아래로 끌면 지금 탭의 데이터를 다시 읽는다. 지도·캔버스·입력칸·창 위에서 시작한 끌기는 건드리지 않는다. */
+async function refreshAll(){
+  if(!ME) return;
+  const jobs = [pullRides(), pullStays(), pullBolts(), pullNow(), pullMail(true)];
+  if(typeof pullDrills === 'function') jobs.push(pullDrills());
+  if(state.tab === 'town') jobs.push(pullTown());
+  await Promise.allSettled(jobs);
+}
+(function ptrWire(){
+  const bar = $('ptr'); if(!bar) return;
+  const TH = 80; let y0 = 0, dy = 0, on = false, busy = false;
+  const show = (d)=>{ bar.classList.add('on'); bar.style.transform = `translate(-50%, ${Math.min(d, 110) * 0.55 - 40}px)`;
+    bar.querySelector('span').textContent = d > TH ? '놓으면 새로고침' : '당겨서 새로고침'; bar.querySelector('b').textContent = d > TH ? '↑' : '↓'; };
+  const hide = ()=>{ bar.classList.remove('on', 'spin'); bar.style.transform = 'translate(-50%,-70px)'; };
+  document.addEventListener('touchstart', e=>{
+    if(busy || window.scrollY > 0 || e.touches.length !== 1 || !ME) return;
+    if(e.target.closest('.sheet, .pop, .game, .onb, input, textarea, select, video, canvas, .map, #map, .leaflet-container, [data-nopull]')) return;
+    y0 = e.touches[0].clientY; dy = 0; on = true; }, { passive:true });
+  document.addEventListener('touchmove', e=>{ if(!on) return; dy = e.touches[0].clientY - y0; if(dy > 8) show(dy); else if(dy < -4){ on = false; hide(); } }, { passive:true });
+  document.addEventListener('touchend', async ()=>{
+    if(!on) return; on = false;
+    if(dy > TH){ busy = true; bar.classList.add('spin'); bar.querySelector('span').textContent = '새로 불러오는 중'; bar.querySelector('b').textContent = '↻'; bar.style.transform = 'translate(-50%, 6px)'; navigator.vibrate?.(12);
+      const t0 = Date.now(); await refreshAll(); await new Promise(r=>setTimeout(r, Math.max(0, 700 - (Date.now() - t0)))); hide(); busy = false; toast('새로 불러왔어요'); }
+    else hide(); });
+})();
+
 /* 버튼마다 손끝에 짧게 닿는 느낌 — 지원하는 기기에서만(iOS Safari 는 진동을 막는다) */
 document.addEventListener('click', e=>{ if(e.target.closest('.btn, .nav button, .dbtn, .dlink, .dtabs button')) navigator.vibrate?.(8); }, true);
 

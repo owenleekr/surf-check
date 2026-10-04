@@ -288,6 +288,7 @@ function fortune(){
            color:pick(colors, 5), n:1 + ((h >>> 9) % 9), voice:v };
 }
 function playFortune(){
+  _hubFort = true;
   const p = playP(), day = today();
   if(p.fortDay !== day){ p.fortDay = day; p.bonus += 3; playPush(); playTick(); }
   renderPlay();
@@ -324,8 +325,68 @@ function popGo(){ const f = _popGo; popClose(); if(f) setTimeout(f, 260); }
 function popClose(){ $('pop').hidden = true; _popBusy = false; setTimeout(popNext, 220); }
 
 /* ── 화면 조각 ── 홈 프로필 줄의 레벨 막대, 퀘스트 띠 */
+/* ── 놀이 메뉴(허브) ─────────────────────────────────────────────
+   게임·퀴즈·운세·스탬프·도감·순위·상점이 도감 시트 안에 묻혀 있어서 찾기 어려웠다. 탭 하나로 모아 한눈에 보이게 한다.
+   카드는 '지금 할 수 있는 것'을 먼저 말한다(오늘 안 했으면 +XP 표시). 새로 그리는 건 탭에 들어올 때만 연출한다. */
+let _hubFort = false;
+function renderHub(enter){
+  const root = $('play-hub'); if(!root || !ME?.profile?.play) return;
+  const p = ME.profile.play, xp = playXp(p), lv = lvOf(xp), cur = PLV[lv][0], nxt = PLV[lv+1];
+  const pct = nxt ? Math.max(4, Math.round((xp - cur) / (nxt[0] - cur) * 100)) : 100;
+  const qs = playQuests(p), done = qs.filter(q=>q.done).length, day = today();
+  const stk = (typeof drillStat === 'function') ? drillStat(ME.id).streak : 0;
+  const got = Object.keys(p.badges).length, st = Object.keys(p.stamps||{}).length;
+  const fortOpen = p.fortDay === day, dsc = (p.dbest && p.dbest.day === day) ? p.dbest.score : null;
+  const quizDone = !!p.vis?.[day]?.quiz;
+  // 내 순위(레벨) — 명단이 아직 없으면 생략
+  const peers = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>peerPlay(x.profile?.play)?.xp || 0);
+  const myRank = peers.length ? 1 + peers.filter(v=>v > xp).length : 0;
+  const card = (i, ic, t, sub, tag, id)=>`<button type="button" class="hubcard" data-hub="${id}" style="--i:${i}"><span class="hc-ic">${ic}</span><b>${t}</b><small>${sub}</small>${tag ? `<em>${tag}</em>` : ''}</button>`;
+  root.classList.toggle('enter', !!enter);
+  { const d = $('play-dot'); if(d) d.hidden = true; }                 // 놀이 탭에 있으면 점은 필요 없다
+  root.innerHTML = `
+    <div class="hubhero">
+      <div class="hh-em">${PLV[lv][2]}</div>
+      <div class="hh-t"><b>Lv.${lv+1} ${PLV[lv][1]}</b><span><i class="cu" data-to="${xp}">${enter ? 0 : xp}</i> XP${nxt ? ` · 다음 ${nxt[1]}까지 ${nxt[0] - xp}` : ' · 최고 레벨'}</span></div>
+      <div class="hh-chips"><span>${stk ? `🔥 ${stk}일` : '🔥 —'}</span><span>🐚 ${shellBal()}</span><span>🏅 ${got}/${BADGES.length}</span></div>
+      <div class="xpbar big" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${enter ? 0 : pct}%" data-w="${pct}"></i></div>
+    </div>
+    <div class="pt" style="margin-top:16px">오늘의 퀘스트 <small>${done}/${qs.length}${done === qs.length ? ' · 모두 완료 🎉' : ' · 모두 하면 +20 XP'}</small></div>
+    ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-hq="${i}"><i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
+    <div class="pt" style="margin-top:18px">놀이 메뉴</div>
+    <div class="hubgrid">
+      ${card(0,'🏄','파도 점프', `최고 ${p.best || 0} · 오늘 ${dsc != null ? dsc : '—'}`, dsc == null ? '챌린지' : '', 'game')}
+      ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
+      ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
+      ${card(3,'📍','해변 스탬프', `${st}/${SEAS.length} 곳`, '', 'stamp')}
+      ${card(4,'🎒','배지 도감', `${got}/${BADGES.length}개`, '', 'badge')}
+      ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
+      ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
+      ${card(7,'🥳','마을 이모트', '내 캐릭터를 눌러요', '', 'emote')}
+    </div>
+    ${_hubFort && fortOpen ? (()=>{ const f = fortune(); return `<div class="fort" style="margin-top:12px"><div class="fs">서핑 컨디션 <b>${'★'.repeat(f.star)}${'☆'.repeat(5 - f.star)}</b></div>
+      <div>🌊 행운의 해변 <b>${esc(f.beach)}</b></div><div>⏰ 행운의 시간 <b>${f.time}</b></div><div>🎨 행운의 보드 색 <b>${esc(f.color)}</b></div><div>🐚 행운의 조개 <b>${f.n}개</b></div>
+      ${f.voice ? `<div class="fv">“${esc(f.voice[0])}”<small>— ${esc(f.voice[1])}</small></div>` : ''}</div>`; })() : ''}`;
+  /* 들어올 때 XP 숫자가 0 에서 올라온다 — 막대가 차오르는 것과 같은 박자(0.7초) */
+  if(enter && !matchMedia('(prefers-reduced-motion: reduce)').matches){ const el = root.querySelector('.cu'); if(el){ const to = +el.dataset.to, t0 = performance.now();
+    const tick = now=>{ const k = Math.min(1, (now - t0) / 700); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if(k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); } }
+  else if(enter){ const el = root.querySelector('.cu'); if(el) el.textContent = el.dataset.to; }
+  if(enter) requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = root.querySelector('.xpbar i'); if(i) i.style.width = i.dataset.w + '%'; }));   // 막대가 0 에서 차오른다
+  root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
+  root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
+    if(k === 'game') gameOpen(); else if(k === 'quiz') quizOpen();
+    else if(k === 'fort'){ if(!fortOpen) playFortune(); _hubFort = !_hubFort || !fortOpen ? true : false; renderHub(); setTimeout(()=>root.querySelector('.fort')?.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
+    else if(k === 'stamp' || k === 'badge') openPlay('collect');
+    else if(k === 'rank') openPlay('rank');
+    else if(k === 'shop'){ setTab('home'); setTimeout(()=>{ const d = $('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
+    else if(k === 'emote'){ setTab('town'); toast('내 캐릭터를 눌러 표정을 지어 보세요 🙂'); } });
+}
+
 function renderPlayBits(){
   if(!ME?.profile?.play) return;
+  if(typeof state !== 'undefined' && state.tab === 'play') renderHub();
+  { const q = playQuests(ME.profile.play).filter(x=>!x.done).length, d = $('play-dot');
+    if(d){ d.textContent = q; d.hidden = !q || state.tab === 'play'; } }       // 안 한 퀘스트 수가 놀이 탭에 점으로 뜬다
   const p = ME.profile.play, xp = playXp(p), lv = lvOf(xp), cur = PLV[lv][0], nxt = PLV[lv+1]?.[0];
   const pct = nxt ? Math.max(4, Math.round((xp - cur) / (nxt - cur) * 100)) : 100;      // 0% 도 눈에 보이게 조금은 채운다
   if($('lv-chip')) $('lv-chip').textContent = `Lv.${lv+1} ${PLV[lv][1]} ${PLV[lv][2]}`;
@@ -344,7 +405,8 @@ function renderPlayBits(){
 
 /* ── 도감 시트 ── */
 let _rkView = 'xp', _plTab = 'today';
-async function openPlay(){
+async function openPlay(tab){
+  if(tab) _plTab = tab;
   $('play-sheet').hidden = false;
   renderPlay();
   /* 순위는 마을 명단이 있어야 나온다 — 홈에서는 아직 안 불러왔을 수 있다 */
@@ -428,7 +490,7 @@ function playWire(){
   $('pop-ok').onclick = popClose; $('pop-go').onclick = popGo;
   $('pop').addEventListener('click', e=>{ if(e.target === $('pop')) popClose(); });
   document.querySelectorAll('[data-playclose]').forEach(b=>b.onclick = closePlay);
-  ['prof-lv','quest-strip'].forEach(id=>{ const el = $(id); if(el) el.onclick = openPlay; });
+  ['prof-lv','quest-strip'].forEach(id=>{ const el = $(id); if(el) el.onclick = ()=>setTab('play'); });       // 놀이 메뉴가 정문이다. 도감 시트는 거기서 상세로 연다
   document.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ if(!$('pop').hidden) popClose(); else if(!$('play-sheet').hidden) closePlay(); } });
 }
 

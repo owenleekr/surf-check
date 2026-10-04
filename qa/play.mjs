@@ -31,7 +31,7 @@ console.log('① 첫 진입', JSON.stringify(await S(()=>({ 레벨칩:document.g
 await S(()=>document.getElementById('pop-ok').click()); await new Promise(r=>setTimeout(r,500));
 console.log('   팝업 닫은 뒤 hidden=', await S(()=>document.getElementById('pop').hidden));
 await p.screenshot({path:'/tmp/pl_home.png'});
-await S(()=>document.getElementById('prof-lv').click()); await new Promise(r=>setTimeout(r,500));
+await S(()=>openPlay()); await new Promise(r=>setTimeout(r,500));
 console.log('② 도감', JSON.stringify(await S(()=>({ 퀘스트:[...document.querySelectorAll('.pq')].map(q=>q.textContent.replace(/\s+/g,' ').trim()), 배지켜짐:document.querySelectorAll('.bd.on').length, 배지전체:document.querySelectorAll('.bd').length, 순위:[...document.querySelectorAll('.prk')].map(r=>r.textContent.replace(/\s+/g,' ').trim()) }))));
 await (await p.$('#play-sheet .sheet-in')).screenshot({path:'/tmp/pl_sheet.png'});
 await S(()=>document.getElementById('pg-start').click()); await new Promise(r=>setTimeout(r,500));
