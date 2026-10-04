@@ -206,10 +206,10 @@ function playTick(){
   if(_xpShown != null && xp > _xpShown && !first) xpFloat(xp - _xpShown);
   _xpShown = xp;
   /* 이미 쓰던 사람에게 한 번만 알린다. 방금 시작한 사람은 환영 카드가 있으니 건너뛰고 본 걸로 친다. */
-  const NEWS = 'play1';
+  const NEWS = 'play2';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
-    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'레벨 · 오늘의 퀘스트 · 배지 도감, 그리고 쉬는 시간용 파도 점프 게임!\n홈의 내 이름 줄을 눌러 보세요.', go:openPlay, btn:'도감 열기' }); }
+    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'📅 오늘의 챌린지(모두 같은 코스) · 🧠 코치 퀴즈 · 🔮 오늘의 운세 · 🐚 조개 상점\n마을에서는 내 캐릭터를 눌러 이모트를 띄울 수 있어요.\n홈의 내 이름 줄을 눌러 보세요.', go:openPlay, btn:'도감 열기' }); }
   /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
   if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{

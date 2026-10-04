@@ -9,7 +9,7 @@ p.on('request', r=>{ const u=r.url(), J=(o)=>r.respond({status:200,headers:CORS,
   if(!u.startsWith(ORIGIN)){ if(!net && r.method()!=='OPTIONS') return r.abort('internetdisconnected'); if(!net) return r.abort('internetdisconnected'); if(r.method()==='OPTIONS') return r.respond({status:204,headers:CORS,body:''}); if(u.includes('rpc/note_box')) return J({inbox:[],sent:[],unread:0}); if(u.includes('supabase')) return J([]); return r.abort(); }
   r.continue(); });
 await p.goto(''+PAGE+'',{waitUntil:'domcontentloaded'});
-await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.news','play1'); localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',token:'T',profile:{gender:'f',birth:'1',dressed:1}})); });
+await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.news','play2'); localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',token:'T',profile:{gender:'f',birth:'1',dressed:1}})); });
 await p.goto(''+PAGE+'',{waitUntil:'networkidle2'}); await new Promise(r=>setTimeout(r,2500));
 console.log('SW 등록', await p.evaluate(async()=>{ const r=await navigator.serviceWorker?.getRegistration(); return r? (r.active?'active':'installing'):'(없음)'; }));
 net=false; const cdp=await p.createCDPSession(); await cdp.send('Network.enable'); await cdp.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});

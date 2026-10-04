@@ -13,7 +13,7 @@ p.on('request', r=>{ const u=r.url(), J=(o)=>r.respond({status:200,headers:CORS,
   if(u.includes('supabase')) return J([]);
   if(/smilecdn|wsbfarm|open-meteo/.test(u)) return r.abort(); r.continue(); });
 await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'domcontentloaded'});
-await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.news','play1'); localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',token:'T',profile:{gender:'f',birth:'1'}})); });
+await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.news','play2'); localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',token:'T',profile:{gender:'f',birth:'1'}})); });
 await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'networkidle2'}); await new Promise(r=>setTimeout(r,1500));
 const S=f=>p.evaluate(f), sleep=ms=>new Promise(r=>setTimeout(r,ms));
 console.log('부팅 시 hls 요청', hlsReq, '| 네이티브 HLS', await S(()=>document.createElement('video').canPlayType('application/vnd.apple.mpegurl')||'(불가)'));

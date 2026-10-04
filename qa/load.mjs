@@ -14,7 +14,7 @@ async function run(mode){
     if(u.includes('rest/v1/')) return J(200,[]);
     if(/smilecdn|wsbfarm|supabase/.test(u)) return r.abort(); r.continue(); });
   await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'domcontentloaded'});
-  await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.news','play1'); localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',token:'T',profile:{gender:'f',birth:'1'}})); });
+  await p.evaluate(()=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.news','play2'); localStorage.setItem('lineup.share.me', JSON.stringify({id:'u4',name:'이성현',cohort:'6기',token:'T',profile:{gender:'f',birth:'1'}})); });
   const S=(f)=>p.evaluate(f), sleep=ms=>new Promise(r=>setTimeout(r,ms));
   const snap=()=>S(()=>({ 목록:document.getElementById('rides').textContent.replace(/\s+/g,' ').trim().slice(0,46), 스켈레톤:!!document.querySelector('#rides .skel'), 알림줄:document.getElementById('rides-bar').hidden?'(없음)':document.getElementById('rides-bar').textContent.replace(/\s+/g,' ').trim() }));
   if(mode==='slow'){ delayMs=1500; await p.goto('http://localhost:8765/surfshare.html',{waitUntil:'domcontentloaded'}); await sleep(900); await S(()=>setTab('ride')); await sleep(300); console.log('느린 응답 중   ', JSON.stringify(await snap())); await sleep(2200); console.log('도착 후        ', JSON.stringify(await snap())); }
