@@ -49,8 +49,8 @@ window.__bootFail = (files) => {
 <script src="sprite.js"></script>
 <script src="roster.js"></script>
 <script src="play.js"></script>
-<script src="surfgame.js"></script>
-<script src="quiz.js"></script>
+<script src="surfgame.js" defer></script>
+<script src="quiz.js" defer></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
@@ -348,6 +348,10 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .ptr.on{ opacity:1 } .ptr.spin b{ display:inline-block; animation:ptrspin .8s linear infinite }
 @keyframes ptrspin{ to{ transform:rotate(360deg) } }
 /* 허브의 소제목은 하늘색 바탕 위에 바로 놓인다 — 시트 안(크림색)과 달리 회색 글자가 안 읽힌다(대비 2.67) */
+#play-hub .dtop{ margin-top:12px; padding:10px 12px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
+#play-hub .dtop h4{ margin:0 0 4px; font-family:"Galmuri11",sans-serif; font-size:14px }
+#play-hub .dtop div{ display:flex; justify-content:space-between; gap:8px; padding:5px 0; border-top:2px dashed var(--grid); font-size:14px; font-weight:800 } #play-hub .dtop h4 + div{ border-top:0 }
+#play-hub .dtop .me{ background:rgba(255,213,74,.4); margin:0 -6px; padding-inline:6px }
 #play-hub .pt{ color:var(--paper); text-shadow:2px 2px 0 var(--ink) }
 #play-hub .pt small{ color:#fff; text-shadow:1px 1px 0 var(--ink) }
 .hubhero{ padding:14px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }

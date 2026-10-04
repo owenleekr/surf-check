@@ -329,6 +329,12 @@ function popClose(){ $('pop').hidden = true; _popBusy = false; setTimeout(popNex
    게임·퀴즈·운세·스탬프·도감·순위·상점이 도감 시트 안에 묻혀 있어서 찾기 어려웠다. 탭 하나로 모아 한눈에 보이게 한다.
    카드는 '지금 할 수 있는 것'을 먼저 말한다(오늘 안 했으면 +XP 표시). 새로 그리는 건 탭에 들어올 때만 연출한다. */
 let _hubFort = false;
+/* 오늘의 챌린지 순위 — 남의 값은 peerPlay 로 걸러서 읽는다(날짜 형식·점수 범위 검증됨) */
+function dailyTop(){
+  const day = today(), rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>{ const d = peerPlay(x.profile?.play)?.dbest; return d && d.day === day ? { id:x.id, name:x.name, s:d.score } : null; }).filter(Boolean);
+  const mine = ME.profile.play?.dbest; if(mine && mine.day === day) rows.push({ id:ME.id, name:ME.name, s:mine.score });
+  return rows.sort((a,b)=>b.s - a.s).slice(0, 3);
+}
 function renderHub(enter){
   const root = $('play-hub'); if(!root || !ME?.profile?.play) return;
   const p = ME.profile.play, xp = playXp(p), lv = lvOf(xp), cur = PLV[lv][0], nxt = PLV[lv+1];
@@ -364,6 +370,7 @@ function renderHub(enter){
       ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
       ${card(7,'🥳','마을 이모트', '내 캐릭터를 눌러요', '', 'emote')}
     </div>
+    ${(()=>{ const top = dailyTop(); return top.length ? `<div class="dtop"><h4>📅 오늘의 챌린지 TOP ${top.length}</h4>${top.map((r,i)=>`<div class="${r.id===ME.id?'me':''}"><span>${['🥇','🥈','🥉'][i]} ${esc(r.name)}</span><b>${r.s}점</b></div>`).join('')}</div>` : ''; })()}
     ${_hubFort && fortOpen ? (()=>{ const f = fortune(); return `<div class="fort" style="margin-top:12px"><div class="fs">서핑 컨디션 <b>${'★'.repeat(f.star)}${'☆'.repeat(5 - f.star)}</b></div>
       <div>🌊 행운의 해변 <b>${esc(f.beach)}</b></div><div>⏰ 행운의 시간 <b>${f.time}</b></div><div>🎨 행운의 보드 색 <b>${esc(f.color)}</b></div><div>🐚 행운의 조개 <b>${f.n}개</b></div>
       ${f.voice ? `<div class="fv">“${esc(f.voice[0])}”<small>— ${esc(f.voice[1])}</small></div>` : ''}</div>`; })() : ''}`;
