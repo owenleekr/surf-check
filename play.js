@@ -329,6 +329,8 @@ function popClose(){ $('pop').hidden = true; _popBusy = false; setTimeout(popNex
    게임·퀴즈·운세·스탬프·도감·순위·상점이 도감 시트 안에 묻혀 있어서 찾기 어려웠다. 탭 하나로 모아 한눈에 보이게 한다.
    카드는 '지금 할 수 있는 것'을 먼저 말한다(오늘 안 했으면 +XP 표시). 새로 그리는 건 탭에 들어올 때만 연출한다. */
 let _hubFort = false;
+const hapticOn = () => { try{ return localStorage.getItem('lineup.share.haptic') !== '0'; }catch(e){ return true; } };
+const soundOn = () => { try{ return localStorage.getItem('lineup.share.snd') === '1'; }catch(e){ return false; } };
 /* 오늘의 챌린지 순위 — 남의 값은 peerPlay 로 걸러서 읽는다(날짜 형식·점수 범위 검증됨) */
 function dailyTop(){
   const day = today(), rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>{ const d = peerPlay(x.profile?.play)?.dbest; return d && d.day === day ? { id:x.id, name:x.name, s:d.score } : null; }).filter(Boolean);
@@ -370,6 +372,12 @@ function renderHub(enter){
       ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
       ${card(7,'🥳','마을 이모트', '내 캐릭터를 눌러요', '', 'emote')}
     </div>
+    <div class="pt" style="margin-top:18px">설정 · 공유</div>
+    <div class="hubset">
+      <button type="button" data-set="haptic" aria-pressed="${hapticOn()}"><span>📳 진동</span><b>${hapticOn() ? '켜짐' : '꺼짐'}</b></button>
+      <button type="button" data-set="sound" aria-pressed="${soundOn()}"><span>🔊 게임 소리</span><b>${soundOn() ? '켜짐' : '꺼짐'}</b></button>
+      <button type="button" data-set="share"><span>🔗 친구에게 앱 알리기</span><b>공유</b></button>
+    </div>
     ${(()=>{ const top = dailyTop(); return top.length ? `<div class="dtop"><h4>📅 오늘의 챌린지 TOP ${top.length}</h4>${top.map((r,i)=>`<div class="${r.id===ME.id?'me':''}"><span>${['🥇','🥈','🥉'][i]} ${esc(r.name)}</span><b>${r.s}점</b></div>`).join('')}</div>` : ''; })()}
     ${_hubFort && fortOpen ? (()=>{ const f = fortune(); return `<div class="fort" style="margin-top:12px"><div class="fs">서핑 컨디션 <b>${'★'.repeat(f.star)}${'☆'.repeat(5 - f.star)}</b></div>
       <div>🌊 행운의 해변 <b>${esc(f.beach)}</b></div><div>⏰ 행운의 시간 <b>${f.time}</b></div><div>🎨 행운의 보드 색 <b>${esc(f.color)}</b></div><div>🐚 행운의 조개 <b>${f.n}개</b></div>
@@ -379,6 +387,11 @@ function renderHub(enter){
     const tick = now=>{ const k = Math.min(1, (now - t0) / 700); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))); if(k < 1) requestAnimationFrame(tick); }; requestAnimationFrame(tick); } }
   else if(enter){ const el = root.querySelector('.cu'); if(el) el.textContent = el.dataset.to; }
   if(enter) requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = root.querySelector('.xpbar i'); if(i) i.style.width = i.dataset.w + '%'; }));   // 막대가 0 에서 차오른다
+  root.querySelectorAll('[data-set]').forEach(b=>b.onclick = async ()=>{ const k = b.dataset.set;
+    if(k === 'haptic'){ const on = !hapticOn(); try{ localStorage.setItem('lineup.share.haptic', on ? '1' : '0'); }catch(e){} if(on) navigator.vibrate?.(15); renderHub(); toast(on ? '진동을 켰어요' : '진동을 껐어요'); }
+    else if(k === 'sound'){ const on = !soundOn(); try{ localStorage.setItem('lineup.share.snd', on ? '1' : '0'); }catch(e){} renderHub(); toast(on ? '게임 소리를 켰어요' : '게임 소리를 껐어요'); }
+    else if(k === 'share'){ const data = { title:'SurfShare', text:'양양 낙산 서핑 — 차 같이 타고, 숙소 같이 쓰고. 비밀번호는 단톡방에서 받아요.', url:'https://surf.owenai.xyz/' };
+      try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });
   root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
   root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
     if(k === 'game') gameOpen(); else if(k === 'quiz') quizOpen();

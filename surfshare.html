@@ -348,6 +348,10 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .ptr.on{ opacity:1 } .ptr.spin b{ display:inline-block; animation:ptrspin .8s linear infinite }
 @keyframes ptrspin{ to{ transform:rotate(360deg) } }
 /* 허브의 소제목은 하늘색 바탕 위에 바로 놓인다 — 시트 안(크림색)과 달리 회색 글자가 안 읽힌다(대비 2.67) */
+.hubset{ display:grid; gap:8px }
+.hubset button{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:50px; padding:0 14px; font-family:inherit; font-size:14px; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer }
+.hubset button b{ font-family:"Galmuri11",sans-serif; font-size:13px; padding:3px 9px; border:2px solid var(--ink); background:#E9E5D2 }
+.hubset button[aria-pressed="true"] b{ background:var(--mint) }
 #play-hub .dtop{ margin-top:12px; padding:10px 12px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
 #play-hub .dtop h4{ margin:0 0 4px; font-family:"Galmuri11",sans-serif; font-size:14px }
 #play-hub .dtop div{ display:flex; justify-content:space-between; gap:8px; padding:5px 0; border-top:2px dashed var(--grid); font-size:14px; font-weight:800 } #play-hub .dtop h4 + div{ border-top:0 }
@@ -1052,6 +1056,10 @@ let toastT;
 const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'),1900); };
 const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const today = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+/* 진동 — 손에 닿는 피드백이지만 수업 중·조용한 곳에선 거슬린다. 끌 수 있어야 한다.
+   코드 곳곳이 navigator.vibrate 를 직접 부르므로, 한 곳에서 가로채 설정을 본다(켠 기기에서만 의미가 있다). */
+(function(){ try{ const raw = navigator.vibrate && navigator.vibrate.bind(navigator);
+  if(raw) navigator.vibrate = p => { try{ return localStorage.getItem('lineup.share.haptic') === '0' ? false : raw(p); }catch(e){ return raw(p); } }; }catch(e){} })();
 const DOW = ['일','월','화','수','목','금','토'];
 /* 공개 표(surfers·chat·checkins·rides…)에 프로필을 쓸 때는 반드시 이 둘을 거친다.
    ME.profile 에는 가입 때 적은 생년월일(birth)이 들어 있는데, 그건 비밀번호 재설정(reset_pw)의 인증값이다.

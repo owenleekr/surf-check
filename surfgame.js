@@ -240,6 +240,7 @@ function showOver(sc, r){
 function gameOpen(){
   cv = $g('g-cv'); ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
   $g('game').hidden = false; document.body.classList.add('game-on');
+  try{ snd = localStorage.getItem('lineup.share.snd') === '1'; }catch(e){}            // 놀이 메뉴 설정에서 바꿨을 수 있다
   me = mkMe(); TH = themeNow(); sndBtn(); showStart(); last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
 function gameClose(){
