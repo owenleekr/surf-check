@@ -336,6 +336,8 @@ body.game-on{ overflow:hidden }
 .qz-end{ text-align:center; padding:6px 0 4px } .qz-big{ font-size:56px; line-height:1.1; font-family:sans-serif }
 .qz-score{ font-family:"Galmuri11",sans-serif; font-size:40px; color:#B45309; margin:4px 0 } .qz-score small{ font-size:16px; color:#5B6275 }
 .qz-msg{ font-size:14px; font-weight:700; line-height:1.6; word-break:keep-all } .qz-xp{ margin-top:6px; font-size:13px; font-weight:800; color:#168A4A }
+.offbar{ position:fixed; top:0; left:0; right:0; z-index:970; padding:calc(6px + env(safe-area-inset-top)) 12px 6px; background:#C2303A; color:#fff; font-size:12.5px; font-weight:800; text-align:center; line-height:1.45 }
+.offbar[hidden]{ display:none }
 .xpfx{ position:fixed; top:calc(12px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%); z-index:960; pointer-events:none;
   background:#FFE27A; color:var(--ink); border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); padding:5px 14px; font-family:"Galmuri11",sans-serif; font-weight:800; font-size:15px }
 .xpfx[hidden]{ display:none }
@@ -949,6 +951,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <div class="xpfx" id="xpfx" hidden aria-hidden="true"></div>
+<div class="offbar" id="offbar" hidden role="status">📶 오프라인이에요 — 저장된 화면만 보여요. 신호가 잡히면 저절로 새로 불러와요</div>
 
 <script>
 { const miss = window.__missing(); if(miss.length){ window.__bootFail(miss); throw new Error('boot: '+miss.join(',')); } }
@@ -1461,7 +1464,7 @@ const myNow = () => (nowRows||[]).find(c=>c.user_id===ME.id);
 async function pullNow(){
   const since = new Date(Date.now() - 4*3600e3).toISOString();
   try{ nowRows = (await api(`checkins?select=*&active=eq.true&at=gte.${since}&order=at.desc&limit=100`)).filter(c=>!isTest(c.user_id)); }
-  catch(e){ nowRows = null; }
+  catch(e){ if(e.code === 'notable') nowRows = null; else if(nowRows === undefined) nowRows = []; }   // 신호 문제면 있던 값을 그대로 둔다. 표가 없을 때(404)만 '표 없음'
   renderNow();
 }
 function renderNow(){
@@ -3418,6 +3421,13 @@ function nextWeekend(plus){
   d.setDate(d.getDate() + (add || (d.getDay()===6 ? 0 : 7)) + (plus||0));
   return new Date(d.getTime() - d.getTimezoneOffset()*6e4).toISOString().slice(0,10);
 }
+/* 서비스워커 — 이 앱의 정문은 여기인데 등록이 라인업(school.html)에만 있었다. 그래서 바다 앞에서 신호가 끊기면 빈 화면이 떴다.
+   sw.js 는 '네트워크 우선, 실패하면 캐시'라 평소엔 항상 최신이 뜨고, 끊겼을 때만 저장된 껍데기가 뜬다. */
+if('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') navigator.serviceWorker?.register('sw.js').catch(()=>{});
+{ const off = ()=>{ const b = $('offbar'); if(b) b.hidden = navigator.onLine !== false; };
+  addEventListener('offline', off);
+  addEventListener('online', ()=>{ off(); if(ME){ pullRides(); pullStays(); pullBolts(); pullNow(); pullMail(true); pullDrills?.(); } });   // 신호가 돌아오면 사람이 새로고침하지 않아도 된다
+  addEventListener('DOMContentLoaded', off); off(); }
 (function boot(){
   if(!SUPA.url){ $('lerr').textContent = '서버 설정이 없어요 (config.js)'; return; }
   if(!shareInvited()) return showGate();          // 비번 먼저. 계정은 그 다음이다
