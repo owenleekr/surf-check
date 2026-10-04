@@ -1,3 +1,26 @@
+# 구조 한눈에 (2026-10-04 기준)
+
+| 파일 | 역할 |
+|---|---|
+| `surfshare.html` | **정문**(`/` → `/surfshare`). 차량·숙소·번개·마을·캠 + 훈련 체크·내 일정. 빌드 없는 단일 HTML |
+| `school.html` | 학교 앱(라인업, `/school`). 입장 코드 `app` 필요 |
+| `play.js` | 레벨·XP·배지·퀘스트·도감·조개 상점·스탬프·운세. 점수는 서버 기록에서 계산해 `profile.play` 에 저장(새 SQL 없음) |
+| `surfgame.js` · `quiz.js` | 파도 점프(오늘의 챌린지·구명튜브) · 코치 퀴즈 |
+| `sprite.js` · `roster.js` | 캐릭터 도트·6기 명단 (두 앱 공용) |
+| `sw.js` | 네트워크 우선·실패 시 캐시. 두 앱이 모두 등록한다 |
+| `supabase-*.sql` | 서버 설치·정리 SQL. 실행 상태는 `HANDOFF.md` 맨 위 |
+| `qa/` | 화면 검증 스크립트(배포 제외). 사용법은 `qa/README.md` |
+
+## 지켜야 할 규칙
+
+- **배포** = `git push origin main`(Vercel 자동). 배포마다 `sw.js` 의 `surf-vNN` 을 올리고, 새 파일은 `FILES` 에 넣는다. 확인: `curl https://surf.owenai.xyz/sw.js | grep surf-v`
+- **남이 쓴 값은 그대로 화면에 찍지 않는다.** surfers·chat·rides·stays·reviews 쓰기가 anon 에 열려 있어, 값에 HTML 을 넣으면 보는 사람 화면에서 실행된다. 글자는 `esc()`, 주소는 `safeHttp()`, 숫자는 `peerPlay()`/`_num()` 으로 걸러 범위를 가둔다.
+- **공개 표에 프로필을 쓸 때는 `pubSelf()`/`pubRow()`(서프쉐어)·`pubPf()`(라인업)을 거친다.** `ME.profile` 에는 비밀번호 재설정 인증값(birth)이 있다.
+- **서버가 누가 했는지 증명하지 못한다.** 점수·조개·순위는 브라우저에서 조작할 수 있으니 상품·평가를 걸지 말 것.
+- 새로 저장하는 값이 생기면 `privacy.html` 도 같이 고친다.
+
+---
+
 # 라인업 (LINEUP) — 오늘 파도 어때
 
 양양서핑학교 6기 파도 체크 · 미션 · 레벨. 빌드 없음.
