@@ -15,7 +15,7 @@ const PLV = [[0,'모래알','🐚'],[50,'물장구','💦'],[150,'패들러','�
    (실제로 xp 에 <img onerror> 를 넣으면 모두의 도감에서 실행됐다.) 화면에 찍기 전에 반드시 숫자로 걸러 범위를 가둔다.
    레벨은 적힌 값을 믿지 않고 xp 로 다시 계산한다. */
 const _num = (v, max) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(max, x)) : 0; };
-const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000),
+const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000), bat:_num(pl.bat, 4e12),
   dbest:(pl.dbest && typeof pl.dbest === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.dbest.day))) ? { day:String(pl.dbest.day), score:_num(pl.dbest.score, 100000) } : null } : null;
 const lvOf = xp => { let i = 0; PLV.forEach((l,k)=>{ if(xp >= l[0]) i = k; }); return i; };
 
@@ -162,7 +162,7 @@ function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
   Object.keys(remote.stamps||{}).forEach(k=>{ const s = (p.stamps ||= {}); if(!s[k]){ s[k] = remote.stamps[k]; ch = true; } });
-  ['base','bonus','best','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  ['base','bonus','best','bat','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
   Object.keys(remote.own||{}).forEach(k=>{ const o = (p.own ||= {}); if(!o[k]){ o[k] = 1; ch = true; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
@@ -206,10 +206,10 @@ function playTick(){
   if(_xpShown != null && xp > _xpShown && !first) xpFloat(xp - _xpShown);
   _xpShown = xp;
   /* 이미 쓰던 사람에게 한 번만 알린다. 방금 시작한 사람은 환영 카드가 있으니 건너뛰고 본 걸로 친다. */
-  const NEWS = 'play3';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
+  const NEWS = 'play4';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
-    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🍜 맛집 탭이 생겼어요 — 양서학 서퍼들의 찐맛집, 네이버지도 목록과 자동으로 맞춰져요.\n🏄 서핑 스팟 모아보기도 같이요. 놀이 탭에는 챌린지·퀴즈·운세·상점이 있어요.', go:()=>setTab('food'), btn:'맛집 보기' }); }
+    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🌊 파도 점프가 어려워졌어요 — 구간이 올라가면 🐦 갈매기(뛰지 말기)·🪵 통나무·⛈ 폭풍이 나와요. 오늘의 파도도 매일 바뀌어요.\n💬 맛집·스팟에 댓글·추천·🙋 가봤어요를 남길 수 있어요(내 기수가 같이 보여요).\n📣 맨 위 소식줄에 누가 몇 점 돌파했는지 떠요.', go:()=>setTab('food'), btn:'맛집 보기' }); }
   /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
   if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{
@@ -230,7 +230,7 @@ function playGameDone(score, isDaily, shells){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today();
   p.gn[day] = (p.gn[day] || 0) + 1;
-  const newBest = score > (p.best || 0); if(newBest) p.best = score;
+  const newBest = score > (p.best || 0); if(newBest){ p.best = score; p.bat = Date.now(); }       // bat = 최고기록 시각 — 상단 소식줄이 '방금 돌파'를 보여준다
   p.shells = (p.shells || 0) + _num(shells, 500);                       // 이번 판에 모은 조개는 지갑에 쌓인다
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(score / 30), 15 - p.gxp));

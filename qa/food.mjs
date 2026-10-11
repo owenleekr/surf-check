@@ -9,18 +9,14 @@ await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); }); aw
 console.log('탭', await t.S(()=>({ 탭수:document.querySelectorAll('#nav button').length, 가로넘침:document.documentElement.scrollWidth-innerWidth, 버튼폭:Math.round(document.getElementById('t-food').getBoundingClientRect().width) })));
 console.log('홈 줄', await t.S(()=>[...document.querySelectorAll('.hrow')].map(r=>r.textContent.replace(/\s+/g,' ').trim()).filter(x=>x.includes('맛집'))));
 await t.S(()=>document.querySelector('.hrow[data-go="food"]').click()); await t.sleep(800);
-console.log('맛집 탭', await t.S(()=>({ 탭:state.tab, 카드:document.querySelectorAll('.food-card').length, 안내:!!document.querySelector('.food-how'), 링크:[...document.querySelectorAll('.food-how a')].map(a=>a.getAttribute('href')), 쪽지버튼:!!document.getElementById('food-rec'), 칩:[...document.querySelectorAll('[data-area]')].map(b=>b.textContent.replace(/\s+/g,' ').trim()) })));
-await t.S(()=>document.getElementById('food-rec').click()); await t.sleep(500);
-console.log('추천 쪽지', await t.S(()=>({ 열림:!document.getElementById('mail-sheet').hidden, 받는사람:document.getElementById('mail-to-name').textContent, 양식:document.getElementById('mail-text').value.split('\n')[0] })));
-await t.S(()=>mailClose());
+console.log('맛집 탭', await t.S(()=>({ 탭:state.tab, 카드:document.querySelectorAll('.food-card').length, 안내:!!document.querySelector('.food-how'), 링크:[...document.querySelectorAll('.food-how a')].map(a=>a.getAttribute('href')), 가이드버튼:!!document.querySelector('[data-guide="food"]'), 요청버튼:!!document.querySelector('[data-rqopen="food"]'), 칩:[...document.querySelectorAll('[data-area]')].map(b=>b.textContent.replace(/\s+/g,' ').trim()) })));
 console.log('주입', await t.S(()=>({f:window.__f||0, js링크:[...document.querySelectorAll('#pane-food a')].filter(a=>/^javascript/i.test(a.getAttribute('href'))).length })));
 await t.S(()=>document.querySelector('#food-seg [data-view="spot"]').click()); await t.sleep(400);
-console.log('서핑 스팟', await t.S(()=>({ 카드:document.querySelectorAll('.food-card').length, 첫:document.querySelector('.food-card b').textContent, 캠버튼:document.querySelectorAll('[data-cam]').length, 링크예:document.querySelector('.food-card a').getAttribute('href').slice(0,60), 칩:[...document.querySelectorAll('[data-sarea]')].map(b=>b.textContent.replace(/\s+/g,' ').trim()), 캠이름:[...document.querySelectorAll('[data-cam]')].map(b=>b.dataset.cam), 아라캠프:document.body.textContent.includes('아라캠프'), 스팟쪽지:!!document.getElementById('spot-rec'), 주입:window.__f||0 })));
+console.log('서핑 스팟', await t.S(()=>({ 카드:document.querySelectorAll('.food-card').length, 첫:document.querySelector('.food-card b').textContent, 캠버튼:document.querySelectorAll('[data-cam]').length, 링크예:document.querySelector('.food-card a').getAttribute('href').slice(0,60), 칩:[...document.querySelectorAll('[data-sarea]')].map(b=>b.textContent.replace(/\s+/g,' ').trim()), 캠이름:[...document.querySelectorAll('[data-cam]')].map(b=>b.dataset.cam), 아라캠프:document.body.textContent.includes('아라캠프'), 스팟요청:!!document.querySelector('[data-rqopen="spot"]'), 주입:window.__f||0 })));
 await t.S(()=>document.querySelector('[data-sarea="고성"]').click()); await t.sleep(300);
 console.log('고성만', await t.S(()=>({ 카드:document.querySelectorAll('.food-card').length, 다른해변:document.body.textContent.includes('다른 해변') })));
 await t.S(()=>document.querySelector('[data-sarea="전체"]').click()); await t.sleep(300);
-await t.S(()=>document.getElementById('spot-rec').click()); await t.sleep(500);
-console.log('스팟 쪽지', await t.S(()=>document.getElementById('mail-text').value.split('\n')[0])); await t.S(()=>mailClose());
+
 fs.writeFileSync('/tmp/food2.png', await t.p.screenshot());
 await t.S(()=>document.querySelector('[data-cam]').click()); await t.sleep(400); console.log('캠 보기 →', await t.S(()=>state.tab));
 // 온보딩: 맛집 단계

@@ -5,7 +5,11 @@
    180×220 도트 해상도로 그리고 CSS 로 키운다 — 도트가 저절로 뭉툭하게 보이고 계산도 가볍다.
    물리는 고정 단위(초)로 돈다. 기기 프레임이 달라도 점프 높이·속도가 같아야 점수를 비교할 수 있다.
 
-   점수는 프로필(play.best)에 얹혀 동기 순위에 나온다. 서버 검증은 없다 — 재미로만. */
+   점수는 프로필(play.best)에 얹혀 동기 순위에 나온다. 서버 검증은 없다 — 재미로만.
+
+   난이도: 시간이 지나면 '구간'이 올라간다(잔잔한 바다 → 갈매기 → 통나무·연속 → 폭풍). 구간마다 새 장애물이 붙고
+   속도·간격이 빡빡해진다. 갈매기는 '뛰지 말고 아래로' 지나가야 하고, 통나무는 높이 뛰어야 한다 — 탭을 연타하면 죽는다.
+   오늘의 파도(MODS)는 날짜로 정해져 모두 같다. 장애물은 전부 rnd() 한 줄로만 뽑아 오늘의 챌린지 코스가 같게 유지된다. */
 
 (function(){
 const W = 180, H = 220, GY = 168;               // 월드 크기, 보드가 닿는 수면 높이
@@ -15,6 +19,11 @@ let cv, ctx, me = null, st = null, raf = 0, last = 0, mode = 'idle', held = fals
    물리를 고정 단위(1/60초)로 돌리는 것도 같은 이유다: 기기 프레임이 달라도 같은 입력이면 같은 결과가 나온다. */
 let daily = false, rnd = Math.random, acc = 0;
 const FIX = 1 / 60;
+const ZONES = [[0,'잔잔한 바다'],[14,'갈매기 구간'],[32,'통나무·연속'],[55,'폭풍']];
+const MODS = [
+  { n:'균형 잡힌 바다', ic:'🌊', w:{} }, { n:'갈매기의 날', ic:'🐦', w:{ bird:2.4 } }, { n:'통나무의 날', ic:'🪵', w:{ log:2.6, double:1.6 } },
+  { n:'해파리 떼의 날', ic:'🪼', w:{ jelly:2.6 } }, { n:'상어의 날', ic:'🦈', w:{ fin:2.3 } }, { n:'연속의 날', ic:'⛓️', w:{ double:2.4, stair:2.4 } } ];
+let mod = MODS[0];
 const hashStr = s => { let h = 2166136261; for(const c of s){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
@@ -51,23 +60,34 @@ function mkMe(){
 
 function reset(){
   rnd = daily ? mulberry(hashStr('wave-' + today())) : Math.random;
-  st = { t:0, dist:0, speed:92, y:0, vy:0, air:false, buf:0, coyote:0, shells:0, shield:0, invuln:0, obs:[], pick:[], next:150, nextShell:260,
+  mod = daily ? MODS[hashStr('mod-' + today()) % MODS.length] : MODS[Math.floor(Math.random() * MODS.length)];
+  st = { t:0, zone:1, dist:0, speed:100, y:0, vy:0, air:false, buf:0, coyote:0, shells:0, shield:0, invuln:0, obs:[], pick:[], next:150, nextShell:260,
          dead:false, deadT:0, flash:0, shake:0, clouds:[{x:20,y:18,s:3},{x:100,y:34,s:5},{x:150,y:12,s:2}], pops:[] };
 }
 const score = () => Math.floor(st.dist / 14) + st.shells * 10;
 
+const DIM = { rock:{ w:12, h:10, y:0 }, fin:{ w:14, h:17, y:0 }, jelly:{ w:10, h:10, y:3 }, log:{ w:28, h:8, y:0 }, bird:{ w:12, h:7, y:24 } };
+/* 구간이 올라갈수록 장애물 종류가 늘어난다. 뽑기는 rnd() 한 번 — 오늘의 챌린지에서 모두 같은 코스가 나오게 */
+function pickKind(){
+  const z = st.zone, w = { rock:.45, fin:.33, jelly:.22 };
+  if(z >= 2) w.bird = .24;
+  if(z >= 3){ w.log = .2; w.double = .16; }
+  if(z >= 4){ w.stair = .18; }
+  for(const k in mod.w) w[k] = (w[k] || .1) * mod.w[k];
+  let tot = 0; for(const k in w) tot += w[k];
+  let r = rnd() * tot; for(const k in w){ r -= w[k]; if(r <= 0) return k; }
+  return 'rock';
+}
 function spawn(){
-  const sp = st.speed, roll = rnd();
-  /* 간격은 '뜬 시간 × 속도'보다 반드시 크다 — 안 그러면 착지하자마자 다음 장애물에 막혀 못 피하는 판이 생긴다 */
-  const air = (2*JV/G) * sp, gap = air * 0.78 + 34 + rnd() * 46;
-  let o;
-  if(roll < 0.45)      o = { k:'rock',  w:12, h:10, y:0 };
-  else if(roll < 0.78) o = { k:'fin',   w:14, h:17, y:0 };
-  else                 o = { k:'jelly', w:10, h:10, y:3 };
-  o.x = W + 8; st.obs.push(o);
-  /* 가끔 장애물 위에 조개 — 뛰어넘는 길목이 곧 보상 */
-  if(rnd() < 0.7) st.pick.push({ x:o.x + o.w/2 - 3, y:o.h + 20 + rnd()*8, got:false });
-  st.next = gap;
+  const sp = st.speed, z = st.zone, kind = pickKind();
+  /* 간격은 '뜬 시간 × 속도'에 비례한다 — 구간이 올라갈수록 비율이 줄어 빡빡해진다(그래도 억울한 판은 없게: qa/gamefair.mjs 가 검증) */
+  const air = (2*JV/G) * sp, gap = air * [0.78, 0.74, 0.68, 0.64][z - 1] + 30 + rnd() * (46 - 7 * (z - 1));
+  const parts = kind === 'double' ? [['rock', 0], ['rock', 22]] : kind === 'stair' ? [['rock', 0], ['fin', 46]] : [[kind, 0]];
+  let end = 0;
+  parts.forEach(([k, dx])=>{ const d = DIM[k]; st.obs.push({ k, w:d.w, h:d.h, y:d.y, x:W + 8 + dx }); end = Math.max(end, dx + d.w); });
+  /* 조개 — 뛰어넘는 길목이 곧 보상. 갈매기 아래엔 땅 가까이에 둔다(갈매기를 피해 '안 뛰는' 쪽이 보상) */
+  if(rnd() < 0.7){ const o = st.obs[st.obs.length - 1]; st.pick.push({ x:o.x + o.w/2 - 3, y:kind === 'bird' ? 4 : o.h + 20 + rnd()*8, got:false }); }
+  st.next = end + gap;
 }
 
 function jump(){
@@ -80,7 +100,9 @@ function release(){ held = false; if(st && st.vy > CUT) st.vy = CUT; }
 function step(dt){
   const s = st; s.t += dt;
   if(s.dead){ s.deadT += dt; s.flash = Math.max(0, s.flash - dt*3); s.shake = Math.max(0, s.shake - dt*20); return; }
-  s.speed = Math.min(210, 92 + s.t * 3.4);
+  s.speed = Math.min(240, 100 + s.t * 4.2);
+  const zi = s.t < ZONES[1][0] ? 1 : s.t < ZONES[2][0] ? 2 : s.t < ZONES[3][0] ? 3 : 4;
+  if(zi > s.zone){ s.zone = zi; s.pops.push({ x:34, y:GY - 96, t:0, life:1.4, v:(zi === 4 ? '⛈ ' : '🌊 ') + '구간 ' + zi + ' · ' + ZONES[zi - 1][1] }); vib([10, 20, 10]); beep(440, 880, 0.18, 'triangle', 0.05); }
   s.dist += s.speed * dt;
   // 점프 물리
   if(s.air){ s.vy -= G * dt; s.y += s.vy * dt;
@@ -92,7 +114,7 @@ function step(dt){
   s.obs.forEach(o=>o.x -= s.speed * dt); s.obs = s.obs.filter(o=>o.x > -24);
   s.pick.forEach(p=>p.x -= s.speed * dt); s.pick = s.pick.filter(p=>p.x > -12 && !p.got);
   s.clouds.forEach(c=>{ c.x -= c.s * dt; if(c.x < -30) c.x = W + 10; });
-  s.pops.forEach(p=>{ p.t += dt; p.y += 26 * dt; }); s.pops = s.pops.filter(p=>p.t < 0.7);
+  s.pops.forEach(p=>{ p.t += dt; p.y += 26 * dt; }); s.pops = s.pops.filter(p=>p.t < (p.life || 0.7));
   // 충돌 — 서퍼 몸통은 그림보다 좁게 잡는다(억울한 죽음이 제일 싫다)
   const sx = 40, sw = 12, sb = s.y, st_ = s.y + 20;
   s.invuln = Math.max(0, s.invuln - dt);
@@ -107,14 +129,14 @@ function step(dt){
   }
   for(const p of s.pick){
     if(!p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+10' }); vib(6); beep(880, 1320, 0.09, 'triangle', 0.06);
-      if(s.shells % 5 === 0 && !s.shield){ s.shield = 1; s.pops.push({ x:30, y:GY - 56, t:0, v:'🛟 구명튜브!' }); beep(660, 1320, 0.2, 'triangle', 0.07); } }
+      if(s.shells % 8 === 0 && !s.shield){ s.shield = 1; s.pops.push({ x:30, y:GY - 56, t:0, v:'🛟 구명튜브!' }); beep(660, 1320, 0.2, 'triangle', 0.07); } }
   }
 }
 
 function wipeout(){
   st.dead = true; st.flash = 1; st.shake = 5; held = false; beep(220, 60, 0.4, 'sawtooth', 0.07);
   vib([40, 30, 60]);
-  setTimeout(finish, 650);
+  if(!window._gameSim) setTimeout(finish, 650);
 }
 function finish(){
   if(mode !== 'run') return;
@@ -147,6 +169,10 @@ function draw(){
   s.obs.forEach(o=>{ const by = GY - o.y - o.h;
     if(o.k === 'rock'){ R(PAL.rock, o.x, by + 3, o.w, o.h - 3); R(PAL.rock2, o.x + 2, by, o.w - 5, 4); R('#FFFFFF', o.x - 1, GY - 1, o.w + 2, 1); }
     else if(o.k === 'fin'){ for(let i = 0; i < o.h; i++) R(PAL.fin, o.x + Math.floor(i * 0.35), by + i, o.w - Math.floor(i * 0.8) , 1); R('#FFFFFF', o.x - 2, GY - 1, o.w + 4, 1); }
+    else if(o.k === 'log'){ R('#8A5A3C', o.x, by + 1, o.w, o.h - 1); R('#B07A52', o.x, by, o.w, 2); R('#6B4328', o.x, by + o.h - 2, o.w, 2); R('#D9A878', o.x, by + 2, 3, o.h - 3); R('#6B4328', o.x + 1, by + 4, 1, 1); R('#FFFFFF', o.x - 2, GY - 1, o.w + 4, 1); }
+    else if(o.k === 'bird'){ const f = ((s.t * 9) | 0) % 2, by2 = by + Math.round(Math.sin(s.t * 6 + o.x / 9));
+      R('#FFFFFF', o.x + 2, by2 + 3, 8, 3); R('#FFFFFF', o.x, by2 + 4, 3, 2); R('#FFB347', o.x - 2, by2 + 4, 2, 1); R('#1B1B2F', o.x + 1, by2 + 3, 1, 1);
+      R('#DDE7F2', o.x + 4, f ? by2 : by2 + 5, 5, 3); R('#B9C9DC', o.x + 6, f ? by2 - 1 : by2 + 7, 3, 2); }
     else{ const wob = Math.round(Math.sin(s.t * 8 + o.x) * 1); R(PAL.jelly, o.x + 1, by + wob, o.w - 2, 6); R('#FFD1E8', o.x + 2, by + wob, 3, 2);
       for(let i = 0; i < 3; i++) R('#FF77BE', o.x + 2 + i*3, by + 6 + wob + (i % 2), 1, 4); }
   });
@@ -168,7 +194,9 @@ function draw(){
   }
   // 점수 팝
   ctx.font = '8px Galmuri11, sans-serif'; ctx.textBaseline = 'top';
-  s.pops.forEach(p=>{ ctx.globalAlpha = 1 - p.t / 0.7; ctx.fillStyle = '#FFE27A'; ctx.fillText(p.v, Math.round(p.x - 2), Math.round(p.y - p.t * 20)); ctx.globalAlpha = 1; });
+  s.pops.forEach(p=>{ ctx.globalAlpha = Math.min(1, 1 - p.t / (p.life || 0.7) + 0.2); ctx.fillStyle = '#FFE27A'; ctx.fillText(p.v, Math.round(p.x - 2), Math.round(p.y - p.t * 20)); ctx.globalAlpha = 1; });
+  if(s.zone >= 4 && !s.dead){ ctx.globalAlpha = 0.16; R('#0B1E3F', 0, 0, W, H); ctx.globalAlpha = 0.5;
+    for(let i = 0; i < 26; i++){ const rx = (i * 37 + s.t * 120) % (W + 20) - 10, ry = (i * 53 + s.t * 380) % H; R('#CFE6FF', W - rx, ry, 1, 5); } ctx.globalAlpha = 1; }
   if(s.flash > 0){ ctx.globalAlpha = s.flash * 0.55; R('#FFFFFF', 0, 0, W, H); ctx.globalAlpha = 1; }
   ctx.restore();
   $g('g-score').textContent = score();
@@ -204,10 +232,12 @@ function pause(){
 function showStart(){
   mode = 'idle'; window._gameRun = false; reset();
   const p = ME.profile.play || {}, top = myBestRows();
+  mod = MODS[hashStr('mod-' + today()) % MODS.length];                                  // 시작 화면엔 오늘의 파도(챌린지와 같다)
   $g('g-ov').hidden = false;
   $g('g-ov').innerHTML = `<div class="go-card">
       <div class="go-t">🏄 파도 점프</div>
-      <div class="go-d">탭하면 점프 · 길게 누르면 더 높이<br>바위·상어·해파리를 넘고 🐚을 모아요</div>
+      <div class="go-d">탭하면 점프 · 길게 누르면 더 높이<br>🐦 갈매기는 <b>뛰지 말고</b> 아래로 · 🪵 통나무는 <b>높이</b></div>
+      <div class="go-b" style="margin:0 0 6px">${mod.ic} 오늘의 파도 <b>${esc(mod.n)}</b></div>
       <div class="go-b">내 최고 <b>${p.best || 0}</b>점 · 🐚 보유 <b>${typeof shellBal === 'function' ? shellBal() : 0}</b></div>
       ${top.length ? `<div class="go-r">${top.map((r,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(r.name)} ${r.best}</span>`).join('')}</div>` : ''}
       <div class="go-b" style="margin:0 0 8px">📅 오늘의 챌린지 내 기록 <b>${(p.dbest && p.dbest.day === today()) ? p.dbest.score : '—'}</b></div>
@@ -226,6 +256,7 @@ function showOver(sc, r){
   $g('g-ov').innerHTML = `<div class="go-card">
       <div class="go-t">${daily ? '📅 ' : ''}${r.newBest && sc > 0 ? '🎉 최고 기록!' : '🌊 와이프아웃'}</div>
       <div class="go-s">${sc}<small>점</small></div>
+      <div class="go-b" style="margin:0 0 4px">구간 ${st.zone} · ${esc(ZONES[st.zone - 1][1])}${daily ? ' · ' + mod.ic + ' ' + esc(mod.n) : ''}</div>
       <div class="go-b">🐚 +${st.shells} (보유 ${r.bal ?? '–'}) · 최고 <b>${p.best || sc}</b>점${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
       ${daily ? (()=>{ const rk = dailyRows(); return rk.length ? `<div class="go-r" style="margin-bottom:10px"><span style="color:var(--ink)">오늘의 챌린지 순위</span>${rk.map((q,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(q.name)} ${q.best}</span>`).join('')}</div>` : ''; })() : ''}
       ${v ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
@@ -272,5 +303,5 @@ document.addEventListener('DOMContentLoaded', wire);
 if(document.readyState !== 'loading') wire();
 
 window.gameOpen = gameOpen; window.gameClose = gameClose;
-window._game = { get TH(){ return TH; }, setTheme:k=>{ TH = THEMES[k]; }, pause, get st(){ return st; }, get mode(){ return mode; }, step, jump, release, score, begin, reset: ()=>reset() };
+window._game = { clone:()=>structuredClone(st), swap:s=>{ const o = st; st = s; return o; }, FIX, get mod(){ return mod; }, set mod(i){ mod = MODS[i]; }, MODS, get TH(){ return TH; }, setTheme:k=>{ TH = THEMES[k]; }, pause, get st(){ return st; }, get mode(){ return mode; }, step, jump, release, score, begin, reset: ()=>reset() };
 })();
