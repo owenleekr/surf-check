@@ -16,6 +16,10 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#5AB4EF">
 <link rel="icon" href="icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SurfShare">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
 <!-- 아이폰은 HLS 를 그냥 재생하지만 안드로이드 크롬은 못 한다. 못 받아도 앱은 굴러가게
      캠 화면에서만 확인하고, 없으면 WSB FARM 링크로 보낸다. -->
@@ -56,6 +60,7 @@ window.__bootFail = (files) => {
 <script src="foodtalk.js" defer></script>
 <script src="food.js" defer></script>
 <script src="feed.js" defer></script>
+<script src="install.js" defer></script>
 <script src="bus.js" defer></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
@@ -317,6 +322,14 @@ body.game-on{ overflow:hidden }
 .game-sc{ font-family:"Galmuri11",sans-serif; font-size:20px; color:#FFE27A } .game-sc small{ font-size:12px; color:#9FC4E4 }
 .game-stage{ position:relative; width:100%; flex:0 1 auto; border:4px solid var(--ink); background:#000; touch-action:none; -webkit-user-select:none; user-select:none }
 #k-cv{ display:block; width:100%; height:auto; max-height:62dvh; object-fit:contain; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none }
+.a2{ display:flex; gap:6px; margin:0 0 12px }
+.a2-go{ flex:1; display:flex; align-items:center; gap:10px; min-height:56px; padding:8px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#E6FBEF; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
+.a2-go span{ display:flex; flex-direction:column; flex:1 } .a2-go b{ font-size:14.5px } .a2-go small{ font-size:12px; color:#5B6275; font-weight:700 } .a2-go i{ font-style:normal; font-size:18px }
+.a2-ic{ font-size:24px; font-family:sans-serif; flex:0 0 auto !important }
+.a2-x{ flex:0 0 44px; font-family:inherit; font-size:16px; background:#fff; border:3px solid var(--ink); cursor:pointer }
+.a2-why{ font-size:13.5px; line-height:1.6; font-weight:700; margin-bottom:10px; word-break:keep-all }
+.a2-st{ list-style:none; margin:8px 0 0; padding:0; display:flex; flex-direction:column; gap:8px } .a2-st li{ display:flex; gap:10px; align-items:center; padding:10px 12px; background:#fff; border:3px solid var(--ink); font-size:14px; line-height:1.5; word-break:keep-all }
+.a2-st li > b{ flex:0 0 auto; min-width:28px; text-align:center; font-family:"Galmuri11",sans-serif } .a2-p{ font-size:13.5px; line-height:1.6; margin:6px 0; word-break:keep-all } .a2-btn{ display:flex; justify-content:center; min-height:50px; margin:8px 0; text-decoration:none } .a2-ok{ padding:12px; background:#E6FBEF; border:3px solid var(--ink); font-weight:700 }
 .sk-tip{ margin:8px 0; padding:8px 10px; background:#E6FBEF; border:2px solid var(--ink); font-size:13px; line-height:1.55; word-break:keep-all } .sk-tip ul{ margin:4px 0 0; padding-left:18px }
 .sk-dr{ display:flex; align-items:center; gap:8px; width:100%; margin-top:6px; padding:8px 10px; text-align:left; font-family:inherit; background:#fff; border:3px solid var(--ink); cursor:pointer } .sk-dr i{ font-style:normal; font-size:20px; font-family:sans-serif } .sk-dr span{ flex:1; display:flex; flex-direction:column } .sk-dr b{ font-size:14px } .sk-dr small{ font-size:11.5px; color:#5B6275; font-weight:700; line-height:1.4 } .sk-dr em{ font-style:normal; font-weight:800; font-size:13px; color:#B45309 }
 #s-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; -webkit-touch-callout:none }
@@ -798,6 +811,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 홈 -->
     <div id="pane-home" hidden>
+      <div class="a2" id="a2hs" hidden></div>
       <div class="px prof">
         <canvas class="me-av" id="me-av"></canvas>
         <button type="button" class="prof-lv" id="prof-lv" aria-label="내 레벨과 도감 열기">

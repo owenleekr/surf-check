@@ -1,2 +1,38 @@
-{ "name": "SurfShare — 차 같이 타고, 숙소 같이 쓰고", "short_name": "SurfShare", "start_url": "/surfshare", "scope": "/", "display": "standalone", "background_color": "#AEE2FF", "theme_color": "#5AB4EF",
-  "icons": [{ "src": "icon-180.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }] }
+{
+ "id": "/surfshare",
+ "name": "SurfShare — 차 같이 타고, 숙소 같이 쓰고",
+ "short_name": "SurfShare",
+ "description": "양양 낙산 서핑 — 차·숙소·맛집·게임",
+ "start_url": "/surfshare",
+ "scope": "/",
+ "display": "standalone",
+ "background_color": "#AEE2FF",
+ "theme_color": "#5AB4EF",
+ "lang": "ko",
+ "icons": [
+  {
+   "src": "icon-180.png",
+   "sizes": "180x180",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "icon-512-maskable.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

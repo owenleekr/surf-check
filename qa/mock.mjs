@@ -9,6 +9,7 @@ export async function open(data, me, opts={}){
   const p=await b.newPage(); const errs=[]; const posts=[];
   p.on('pageerror',e=>errs.push(String(e).slice(0,160)));
   p.on('console',m=>{ if(m.type()==='error' && !/Failed to load resource|net::ERR/.test(m.text())) errs.push('console:'+m.text().slice(0,140)); });
+  if(opts.ua) await p.setUserAgent(opts.ua);
   await p.setViewport({width:opts.width||390,height:opts.height||844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   await p.setRequestInterception(true);
   p.on('request', r=>{ const u=r.url(), m=r.method(), J=(st,o)=>r.respond({status:st,headers:CORS,contentType:'application/json',body:JSON.stringify(o)});
