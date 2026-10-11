@@ -11,7 +11,7 @@
    와이프아웃 = 목숨 -1, 그 파도 점수는 40%만. 풀아웃·끝까지 타면 다 받는다. 목숨 3개.
    240×180 도트로 그리고 CSS 로 키운다. 물리는 1/60초 고정 — 기기마다 같은 손맛. */
 (function(){
-const W = 240, H = 180, TR = 150, RX = 92, FIX = 1 / 60, LIVES = 3, WAVES = 5;
+const W = 240, H = 240, TR = 200, RX = 92, FIX = 1 / 60, LIVES = 3, WAVES = 5;
 const $s = id => document.getElementById(id);
 let cv, ctx, me = null, raf = 0, last = 0, acc = 0, held = false, tapQ = 0;
 let S = null;            // 세션
@@ -38,9 +38,9 @@ function mkMe(){
 
 /* 파도 크기 — 클수록 컬이 빠르고 길고 섹션이 많다 */
 const SIZES = [
-  { n:'무릎 파도', c:62, L:1300, lip:72, close:.12, surf:.35, rock:.0 },
-  { n:'허리 파도', c:76, L:1700, lip:60, close:.22, surf:.35, rock:.2 },
-  { n:'머리 파도', c:92, L:2100, lip:48, close:.32, surf:.3,  rock:.25 } ];
+  { n:'무릎 파도', c:62, L:1300, lip:68, close:.12, surf:.35, rock:.0 },
+  { n:'허리 파도', c:76, L:1700, lip:52, close:.22, surf:.35, rock:.2 },
+  { n:'머리 파도', c:92, L:2100, lip:36, close:.32, surf:.3,  rock:.25 } ];
 const SKY = [ ['#FFE3C2','#FFD0A8','#C9E8FF'], ['#BFE9FF','#9BDBFF','#7ACCF5'], ['#A8E0FF','#86D3FF','#64C3F0'], ['#FFD6A0','#FFB27A','#F08C7E'], ['#7A6CC4','#B57AB8','#F0A07E'] ];
 
 function newSession(){
@@ -215,12 +215,12 @@ function ui(){
 
 /* ── 그리기 ── */
 function Rr(c, x, y, w, h){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
-const lipY = dx => dx < 0 ? 66 : Math.min(128, R.sz.lip + Math.max(0, dx - 150) * 0.11);
+const lipY = dx => dx < 0 ? 62 : Math.min(178, R.sz.lip + Math.max(0, dx - 150) * 0.15);
 function riderY(){ const ly = lipY(R.x - R.curl); return TR - R.h * (TR - ly) - (R.air ? R.ah * (TR - ly) : 0); }
 function draw(){
   const sky = SKY[Math.min(SKY.length - 1, S ? S.wave : 0)];
-  Rr(sky[0], 0, 0, W, 18); Rr(sky[1], 0, 18, W, 18); Rr(sky[2], 0, 36, W, 20);
-  Rr('#3A8FC9', 0, 56, W, 4); Rr('#2C7DB8', 0, 60, W, H - 60);
+  Rr(sky[0], 0, 0, W, 20); Rr(sky[1], 0, 20, W, 22); Rr(sky[2], 0, 42, W, 20);
+  Rr('#3A8FC9', 0, 62, W, 4); Rr('#2C7DB8', 0, 66, W, H - 66);
   if(!S || !R){ return; }
   const t = S.t;
   if(S.phase === 'lineup' || S.phase === 'missed' || S.phase === 'pop'){ drawLineup(t); hud(); pops(); return; }
@@ -284,21 +284,21 @@ function draw(){
 function drawLineup(t){
   // 앉아서 기다리는 서퍼 + 다가오는 너울
   const k = S.phase === 'pop' ? 1 : Math.min(1, R.t / R.arrive), sx = -60 + k * (RX + 40);
-  for(let c = 0; c < W; c += 2){ const dd = (c - sx) / 34, hh = Math.exp(-dd * dd) * (16 + 30 * k * (R.sz.lip < 60 ? 1.2 : 0.8)); Rr('#2E9BD3', c, 92 - hh, 2, hh + 2); if(hh > 8) Rr('#E8FBFF', c, 92 - hh, 2, 1); }
-  Rr('#2C7DB8', 0, 94, W, H - 94);
-  for(let i = 0; i < 12; i++){ const x = ((i * 23 - t * 12) % W + W) % W; Rr('rgba(255,255,255,.3)', x, 100 + (i % 4) * 14, 9, 1); }
-  const bob = Math.round(Math.sin(t * 3) * 1.5), py = S.phase === 'pop' ? 72 : 90 + bob;
+  for(let c = 0; c < W; c += 2){ const dd = (c - sx) / 34, hh = Math.exp(-dd * dd) * (20 + 44 * k * (R.sz.lip < 60 ? 1.2 : 0.8)); Rr('#2E9BD3', c, 142 - hh, 2, hh + 2); if(hh > 8) Rr('#E8FBFF', c, 142 - hh, 2, 1); }
+  Rr('#2C7DB8', 0, 144, W, H - 144);
+  for(let i = 0; i < 12; i++){ const x = ((i * 23 - t * 12) % W + W) % W; Rr('rgba(255,255,255,.3)', x, 150 + (i % 4) * 18, 9, 1); }
+  const bob = Math.round(Math.sin(t * 3) * 1.5), py = S.phase === 'pop' ? 118 : 140 + bob;
   Rr('#FF6B6B', RX - 9, py + 2, 18, 3); if(me) ctx.drawImage(me, RX - 12, py - 20);
   ctx.font = '9px Galmuri11, sans-serif'; ctx.textBaseline = 'top'; ctx.fillStyle = '#FFFFFF';
   if(S.phase === 'lineup'){
-    ctx.fillText(`🌊 ${R.sz.n} 다가와요`, 8, 116);
-    Rr('rgba(0,0,0,.35)', 8, 130, 140, 9); Rr('#4ADE80', 8 + 140 * 0.65, 130, 2, 9); Rr(R.meter >= 0.65 ? '#4ADE80' : '#FFE27A', 8, 131, Math.min(140, 140 * R.meter), 7);
-    ctx.fillText('패들 (연타!)', 154, 130);
-    Rr('rgba(0,0,0,.3)', 8, 144, 140, 3); Rr('#FFFFFF', 8, 144, 140 * Math.min(1, R.t / R.arrive), 3);
+    ctx.fillText(`🌊 ${R.sz.n} 다가와요`, 8, 168);
+    Rr('rgba(0,0,0,.35)', 8, 182, 140, 9); Rr('#4ADE80', 8 + 140 * 0.65, 182, 2, 9); Rr(R.meter >= 0.65 ? '#4ADE80' : '#FFE27A', 8, 183, Math.min(140, 140 * R.meter), 7);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillText('패들 (연타!)', 154, 182);
+    Rr('rgba(0,0,0,.3)', 8, 198, 140, 3); Rr('#FFFFFF', 8, 198, 140 * Math.min(1, R.t / R.arrive), 3);
   } else if(S.phase === 'pop'){
-    ctx.fillText('지금! 팝업 타이밍', 8, 116);
-    Rr('rgba(0,0,0,.35)', 8, 130, 160, 10); Rr('#FFE27A', 8 + 160 * 0.26, 130, 160 * 0.48, 10); Rr('#4ADE80', 8 + 160 * 0.4, 130, 160 * 0.2, 10);
-    Rr('#FFFFFF', 8 + 160 * R.needle - 1, 127, 3, 16);
+    ctx.fillText('지금! 팝업 타이밍', 8, 168);
+    Rr('rgba(0,0,0,.35)', 8, 182, 160, 12); Rr('#FFE27A', 8 + 160 * 0.26, 182, 160 * 0.48, 12); Rr('#4ADE80', 8 + 160 * 0.4, 182, 160 * 0.2, 12);
+    Rr('#FFFFFF', 8 + 160 * R.needle - 1, 179, 3, 18);
   }
 }
 function hud(){
