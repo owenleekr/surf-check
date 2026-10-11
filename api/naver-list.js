@@ -50,7 +50,31 @@ import SNAP from './_naver-snapshot.js';
 /* 네이버가 완전히 죽었을 때를 위한 저장본 — 비어 있는 것보다 며칠 묵은 목록이 낫다. 정상일 때는 쓰이지 않는다. */
 const snapshot = () => SNAP;        // 정적 import — 파일 경로를 계산하지 않는다(import.meta 는 이 배포 방식에서 안 통했다)
 
+/* ?resolve=<네이버지도 링크> — 앱에서 가게를 등록할 때 링크에서 '네이버 장소 번호(pid)'만 뽑는다.
+   naver.me 짧은 링크는 브라우저처럼 리다이렉트 주소(Location)만 따라가고, 페이지 내용은 읽지 않는다.
+   네이버 주소가 아니면 따라가지 않는다(아무 주소나 대신 열어 주는 통로가 되면 안 된다). */
+const pidFrom = s => (String(s).match(/(?:entry\/place|\/place|\/restaurant|\/cafe|\/accommodation|\/attraction|\/hairshop|\/nailshop|\/hospital)\/(\d{4,12})/) || [])[1]
+  || (String(s).match(/[?&](?:pinId|placeId)=(\d{4,12})/) || [])[1] || null;
+async function resolvePid(raw){
+  let url = String(raw || '').slice(0, 300);
+  for(let k = 0; k < 4; k++){
+    let h; try{ h = new URL(url); }catch(e){ return null; }
+    if(!/^https?:$/.test(h.protocol) || !/(^|\.)naver\.(me|com)$/i.test(h.hostname)) return null;
+    const pid = pidFrom(h.pathname + h.search); if(pid) return pid;
+    if(h.hostname.toLowerCase() !== 'naver.me') return null;                       // 짧은 링크만 따라간다
+    try{ const r = await fetch(url, { redirect:'manual', headers:HDR, signal:AbortSignal.timeout(4000) });
+      const loc = r.headers.get('location'); if(!loc) return null; url = new URL(loc, url).href; }catch(e){ return null; }
+  }
+  return null;
+}
+
 export default async function handler(req, res){
+  const rq = req.query?.resolve;
+  if(rq){
+    const pid = await resolvePid(Array.isArray(rq) ? rq[0] : rq);
+    res.setHeader('Cache-Control', pid ? 's-maxage=86400' : 'no-store');
+    return res.status(200).json({ pid });
+  }
   const out = await Promise.allSettled(FOLDERS.map(readFolder));
   const folders = out.filter(x=>x.status === 'fulfilled').map(x=>x.value);
   res.setHeader('Access-Control-Allow-Origin', '*');
