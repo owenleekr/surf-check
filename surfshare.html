@@ -51,6 +51,7 @@ window.__bootFail = (files) => {
 <script src="play.js"></script>
 <script src="surfgame.js" defer></script>
 <script src="quiz.js" defer></script>
+<script src="food.js" defer></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
@@ -358,6 +359,22 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 #play-hub .dtop .me{ background:rgba(255,213,74,.4); margin:0 -6px; padding-inline:6px }
 #play-hub .pt{ color:var(--paper); text-shadow:2px 2px 0 var(--ink) }
 #play-hub .pt small{ color:#fff; text-shadow:1px 1px 0 var(--ink) }
+.seg{ display:flex; gap:6px; margin:0 0 12px }
+.seg button{ flex:1; min-height:46px; font-family:inherit; font-size:14px; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer }
+.seg button[aria-pressed="true"]{ background:var(--ink); color:#fff }
+.seg em{ font-style:normal; font-size:11.5px; padding:1px 6px; margin-left:4px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
+#pane-stay[data-view="food"] > :not(#stay-seg):not(#food-view){ display:none }
+#pane-stay:not([data-view="food"]) #food-view{ display:none }
+.food-hd{ padding:12px 14px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); display:flex; flex-direction:column; gap:4px; align-items:flex-start }
+.food-hd b{ font-family:"Galmuri11",sans-serif; font-size:16px } .food-hd span{ font-size:13.5px; font-weight:700 } .food-hd small{ font-size:12px; color:#5B6275; line-height:1.5; font-weight:700 }
+.food-chips, .food-sort{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px }
+.food-chips button, .food-sort button{ min-height:44px; padding:0 12px; font-family:inherit; font-size:13.5px; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer }
+.food-chips button[aria-pressed="true"], .food-sort button[aria-pressed="true"]{ background:var(--sun) }
+.food-chips small{ font-size:12px; color:#5B6275 }
+.food-card{ margin-top:12px; padding:12px 14px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
+.food-card .hd{ display:flex; flex-wrap:wrap; align-items:center; gap:6px } .food-card .hd b{ font-size:15.5px; min-width:0; overflow-wrap:anywhere }
+.food-card .meta{ margin-top:6px } .food-card .acts{ margin-top:8px }
+.food-hd a.btn, .food-card a.btn{ text-decoration:none; display:inline-flex; align-items:center; min-height:44px } .food-memo{ margin:6px 0 4px; padding:8px 10px; background:#FFF3C4; border:2px solid var(--ink); font-size:14px; font-weight:700; line-height:1.55; word-break:keep-all }
 .hubhero{ padding:14px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
 .hh-em{ float:left; width:64px; height:64px; display:flex; align-items:center; justify-content:center; font-size:38px; font-family:sans-serif; background:#fff; border:4px solid var(--ink); margin-right:12px }
 .hh-t b{ display:block; font-family:"Galmuri11",sans-serif; font-size:18px } .hh-t span{ font-size:13px; font-weight:700; color:#5B6275 }
@@ -789,7 +806,9 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
 
     <!-- 숙소 -->
-    <div id="pane-stay" hidden>
+    <div id="pane-stay" hidden data-view="stay">
+      <div class="seg" id="stay-seg" role="group" aria-label="숙소와 맛집"><button type="button" data-view="stay" aria-pressed="true">🏠 숙소</button><button type="button" data-view="food" aria-pressed="false">🍜 맛집·스팟 <em id="food-new" hidden></em></button></div>
+      <div id="food-view" hidden><div class="food-body"></div></div>
       <details class="px sand fold"><summary>🏠 숙소 쉐어 올리기</summary>
         <div class="grid2" style="margin-top:8px">
           <div><label for="s-place">숙소 이름</label><input id="s-place" maxlength="20" placeholder="예) 낙산 OO펜션"></div>
@@ -2800,6 +2819,7 @@ function renderHome(){
       <span class="hko">${ko}${n > 1 ? ` <b>+${n-1}</b>` : ''}<small>${text}</small></span>
       <span class="hgo">›</span></button>`;
   const rows = [];
+  if(typeof foodCount === 'function' && foodCount()) rows.push(line('🍜','맛집·스팟', 0, 'food', `양서학 추천 ${foodCount()}곳 · 네이버지도 목록과 자동으로 맞춰져요`));
   if(bs.length)    rows.push(line('⚡','번개', bs.length, 'bolt', `${dShort(bs[0].date)} ${hLabel(bs[0].time)} · ${esc(bs[0].beach)} · ${(bs[0].joins||[]).length}명`));
   if(rides.length) rows.push(line('🚗','차량', rides.length, 'ride', `${dShort(rides[0].date)} ${hLabel(rides[0].depart_at)} · ${esc(rides[0].from_place)} → ${esc(rides[0].to_place)} · 빈자리 ${Math.max(0,(rides[0].seats||0)-(rides[0].riders||[]).length)}`));
   if(stays.length) rows.push(line('🏠','숙소', stays.length, 'stay', `${dShort(stays[0].date_from)} ~ ${dShort(stays[0].date_to)} · ${esc(stays[0].place)} · ${(stays[0].guests||[]).length}/${stays[0].capacity}명`));
@@ -2807,7 +2827,7 @@ function renderHome(){
       <div class="hq"><button type="button" class="btn sm mint" data-go="bolt">⚡ 번개</button>
       <button type="button" class="btn sm mint" data-go="ride">🚗 차량</button>
       <button type="button" class="btn sm mint" data-go="stay">🏠 숙소</button></div>`;
-  box.querySelectorAll('[data-go]').forEach(el=>el.onclick = ()=>setTab(el.dataset.go));
+  box.querySelectorAll('[data-go]').forEach(el=>el.onclick = ()=>{ el.dataset.go === 'food' ? foodOpen() : setTab(el.dataset.go); });
 }
 
 /* 홈 안에서 여는 꾸미기 — 탭을 하나 줄이려고 pane-me 를 통째로 옮겨 넣는다 */

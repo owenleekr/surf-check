@@ -1,0 +1,20 @@
+import { open } from './mock.mjs';
+import fs from 'fs';
+const snap=JSON.parse(fs.readFileSync('../api/_naver-snapshot.json','utf8'));
+// 악성 항목 하나 섞기
+const evil={id:'999',n:'<img src=x onerror=window.__f=1>',a:'강원 양양군 <b>',lat:38.11,lon:128.64,m:'<img src=x onerror=window.__f=2>',c:'음식점',u:'javascript:window.__f=3',t:Date.now()};
+const data={folders:[{...snap.folders[0],items:[...snap.folders[0].items,evil]}]};
+const t=await open({surfers:[{id:'u4',name:'이성현',cohort:'6기',profile:{}}],__naver:data},{id:'u4',name:'이성현',profile:{gender:'f',birth:'1',dressed:1}},{wait:3000});
+await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); }); await t.sleep(300);
+console.log('홈 줄', await t.S(()=>[...document.querySelectorAll('.hrow')].map(r=>r.textContent.replace(/\s+/g,' ').trim()).filter(x=>x.includes('맛집'))));
+await t.S(()=>document.querySelector('.hrow[data-go="food"]').click()); await t.sleep(700);
+console.log('맛집 보기', await t.S(()=>({ 탭:state.tab, 보기:document.getElementById('pane-stay').dataset.view, 숙소폼숨김:getComputedStyle(document.querySelector('#pane-stay details')).display, 카드:document.querySelectorAll('.food-card').length, 칩:[...document.querySelectorAll('[data-area]')].map(b=>b.textContent.replace(/\s+/g,' ').trim()) })));
+console.log('첫 카드', await t.S(()=>document.querySelector('.food-card').textContent.replace(/\s+/g,' ').trim().slice(0,110)));
+await t.S(()=>document.querySelector('[data-area="속초"]').click()); await t.sleep(200); console.log('속초 필터', await t.S(()=>document.querySelectorAll('.food-card').length));
+await t.S(()=>document.querySelector('[data-sort="new"]').click()); await t.sleep(200); console.log('최근 추가순 첫 카드', await t.S(()=>document.querySelector('.food-card b').textContent));
+await t.S(()=>document.querySelector('[data-area="전체"]').click());
+console.log('주입', await t.S(()=>({f:window.__f||0, js링크:[...document.querySelectorAll('.food-card a')].filter(a=>/^javascript/i.test(a.getAttribute('href'))).length, 악성링크:[...document.querySelectorAll('.food-card a')].map(a=>a.getAttribute('href')).filter(h=>h.includes('search')).length })));
+fs.writeFileSync('/tmp/food.png', await t.p.screenshot());
+await t.S(()=>document.querySelector('#stay-seg [data-view="stay"]').click()); await t.sleep(300);
+console.log('숙소로 돌아옴', await t.S(()=>({ 보기:document.getElementById('pane-stay').dataset.view, 폼보임:getComputedStyle(document.querySelector('#pane-stay details')).display!=='none', 맛집숨김:document.getElementById('food-view').hidden })));
+console.log('errs',t.errs); await t.b.close(); process.exit(0);

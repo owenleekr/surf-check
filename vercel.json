@@ -2,6 +2,9 @@
   "functions": {
     "api/news.js": {
       "maxDuration": 15
+    },
+    "api/naver-list.js": {
+      "maxDuration": 15
     }
   },
   "cleanUrls": true,
