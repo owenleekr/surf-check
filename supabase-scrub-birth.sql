@@ -49,10 +49,10 @@ begin
 end $$;
 
 -- ③ 확인 — 전부 0 이어야 한다 (읽기만 한다)
+--    (reviews 표는 운영에 없어서 뺐다 — 없는 표를 읽으면 오류가 나고, 한 번에 실행하면 위 ①②까지 되돌려진다)
 select 'surfers' as 표, count(*) as 남은_birth from surfers where profile ? 'birth'
 union all select 'chat',     count(*) from chat     where profile ? 'birth'
 union all select 'checkins', count(*) from checkins where profile ? 'birth'
-union all select 'reviews',  count(*) from reviews  where profile ? 'birth'
 union all select 'rides',    count(*) from rides    where profile ? 'birth' or riders::text like '%birth%'
 union all select 'stays',    count(*) from stays    where profile ? 'birth' or guests::text like '%birth%'
 union all select 'parties',  count(*) from parties  where joins::text like '%birth%';
