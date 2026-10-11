@@ -57,7 +57,7 @@ const HEAD = [
 const LEGS = ['........kbbbbbbk........','........kbbkkbbk........','........ksk..ksk........','........kkk..kkk........'];
 const WEAR = {
   rash: { ko:'래시가드', rows:['.....krrkrrrrrrkrrk.....','...ksskkkrrrrrrkkkssk...','...kkkk.krrrrrrk.kkkk...','........krrrrrrk........'].concat(LEGS) },
-  hood: { ko:'후디',     rows:['.....krrkrrrrrrkrrk.....','...krrkkkrrrrrrkkkrrk...','...kkkk.krwrrwrk.kkkk...','........krkkkkrk........'].concat(LEGS),
+  hood: { ko:'후디',     rows:['.....krrkrwrrwrkrrk.....','...krrkkkrwrrwrkkkrrk...','...kkkk.krrrrrrk.kkkk...','........kRRRRRRk........'].concat(LEGS),   // 가슴 무늬가 얼굴처럼 읽혀서 끈 두 줄 + 밑단으로
           neck:['....krr..........rrk....','....krr..........rrk....'] },
   tank: { ko:'민소매',   rows:['.....kssksrrrrskssk.....','...ksskkkrrrrrrkkkssk...','...kkkk.krrrrrrk.kkkk...','........krrrrrrk........'].concat(LEGS) },
   suit: { ko:'풀슈트',   rows:['.....krrkrrrrrrkrrk.....','...krrkkkrrrrrrkkkrrk...','...kkkk.krrrrrrk.kkkk...','........krrrrrrk........',
@@ -247,6 +247,9 @@ function avatarRows(pr, withPet){
   rows = overlay(rows, HAIR[hairOf(pr)], 0);
   if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 12);
   if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
+  /* 보드 무늬(서프쉐어 조개 상점, play.js 가 BPAT 을 정의) — 보드 색 칸 위에만 칠한다(보드 모양이 달라도 밖으로 안 샌다) */
+  if(typeof BPAT === 'object' && BPAT[pr.bpat]){ const y0 = rows.length - 4;
+    rows = rows.map((r,y)=>{ const pt = BPAT[pr.bpat][y - y0]; return pt ? [...r].map((c,x)=> c === 'y' && pt[x] && pt[x] !== '.' ? pt[x] : c).join('') : r; }); }
   rows = softOutline(rows);
   if(withPet===false || !PET[pr.pet]) return rows;
   const body = petDress(PET[pr.pet], pr.pet, pr.petLv||0);
@@ -271,22 +274,68 @@ const avatarTintOf = (pr, L) => ({
   Q: shade('#FF4B4B', .6), O: shade('#FF9F1C', .6), G: shade('#4DE1A5', .6), C: shade('#8FD3FF', .6),
 });
 let frame = 0; setInterval(()=>{ frame ^= 1; document.querySelectorAll('canvas[data-anim]').forEach(c=>{ if(c._rows) paint(c, c._rows, c._tint, frame); }); }, 550);
+/* 부드러운 확대 — 24칸 도트를 크게 띄우면 계단이 도드라져 조잡해 보였다("너무 도트라 이상하다").
+   크게 보이는 자리에서는 Scale2x(EPX)를 두 번 돌려 4배로 그린다 — 대각선·둥근 머리가 매끈하게 이어져 미니미처럼 보인다.
+   작게 쓰는 자리(채팅 머리 등)·화면에 안 붙은 캔버스(게임이 1:1 로 가져다 그린다)·data-raw 는 예전 그대로. */
+const _rgba = {};
+function rgbaOf(c){
+  if(_rgba[c] != null) return _rgba[c];
+  let r = 0, g = 0, b = 0, a = 255, m;
+  if((m = /^#([0-9a-f]{6})$/i.exec(c))){ const n = parseInt(m[1], 16); r = n >> 16 & 255; g = n >> 8 & 255; b = n & 255; }
+  else if((m = /^#([0-9a-f]{3})$/i.exec(c))){ const h = m[1]; r = parseInt(h[0] + h[0], 16); g = parseInt(h[1] + h[1], 16); b = parseInt(h[2] + h[2], 16); }
+  else if((m = /^rgba?\(([^)]+)\)$/i.exec(c))){ const v = m[1].split(',').map(Number); [r, g, b] = v; a = Math.round((v[3] == null ? 1 : v[3]) * 255); }
+  return (_rgba[c] = ((a << 24) | (b << 16) | (g << 8) | r) >>> 0);        // ImageData 를 Uint32 로 볼 때의 순서(리틀엔디언)
+}
+function epx(src, w, h){
+  const out = new Uint32Array(w * h * 4), W2 = w * 2, at = (x, y)=>src[Math.max(0, Math.min(h - 1, y)) * w + Math.max(0, Math.min(w - 1, x))];
+  for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){
+    const P = src[y * w + x], A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
+    const o = y * 2 * W2 + x * 2;
+    out[o]          = (C === A && C !== D && A !== B) ? A : P;
+    out[o + 1]      = (A === B && A !== C && B !== D) ? B : P;
+    out[o + W2]     = (D === C && D !== B && C !== A) ? C : P;
+    out[o + W2 + 1] = (B === D && B !== A && D !== C) ? D : P;
+  }
+  return out;
+}
 function paint(cv, rows, tint, f){
   const W = rows[0].length, H = rows.length, anim = cv.dataset.anim!=null, pad = anim ? 1 : 0;
-  cv.width = W + pad*2; cv.height = H + pad*2;
+  const ch = cv.clientHeight, hq = cv.isConnected && cv.dataset.raw == null && ch >= (H + pad*2) * 1.6, K = hq ? 4 : 1;
+  cv.width = (W + pad*2) * K; cv.height = (H + pad*2) * K;
   /* 펫이 있으면 장면이 36칸으로 넓어진다 — CSS는 정사각으로 잡혀 있으므로 높이 기준으로 폭을 다시 준다.
      (안 그러면 캐릭터가 가로로 눌려 보인다) */
-  const ch = cv.clientHeight; if(ch) cv.style.width = Math.round(ch * cv.width / cv.height) + 'px';
+  if(ch) cv.style.width = Math.round(ch * cv.width / cv.height) + 'px';
   const g = cv.getContext('2d'); g.clearRect(0,0,cv.width,cv.height);
   const bob = anim && f ? 1 : 0;                                   // 몸만 1px 위아래, 보드(마지막 3줄)는 고정
   const px = [];                                                   // [x,y,ch] 최종 좌표
   rows.forEach((r,y)=>[...r].forEach((ch,x)=>{ if(ch!=='.') px.push([x+pad, y+pad-(y>=H-4?0:bob), ch]); }));
-  if(anim){
-    g.fillStyle = 'rgba(27,27,47,.18)'; g.fillRect(pad+2, H+pad-2, W-4, 1);          // 보드 그림자
-    const occ = new Set(px.map(([x,y])=>x+','+y)); g.fillStyle = 'rgba(255,255,255,.6)';
-    px.forEach(([x,y])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ if(!occ.has((x+dx)+','+(y+dy))) g.fillRect(x+dx,y+dy,1,1); }));
+  const cw = W + pad*2, chh = H + pad*2;
+  if(!hq){
+    if(anim){
+      g.fillStyle = 'rgba(27,27,47,.18)'; g.fillRect(pad+2, H+pad-2, W-4, 1);          // 보드 그림자
+      const occ = new Set(px.map(([x,y])=>x+','+y)); g.fillStyle = 'rgba(255,255,255,.6)';
+      px.forEach(([x,y])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ if(!occ.has((x+dx)+','+(y+dy))) g.fillRect(x+dx,y+dy,1,1); }));
+    }
+    px.forEach(([x,y,ch])=>{ g.fillStyle = (tint&&tint[ch])||PAL[ch]||ch; g.fillRect(x,y,1,1); });
+    return;
   }
-  px.forEach(([x,y,ch])=>{ g.fillStyle = (tint&&tint[ch])||PAL[ch]||ch; g.fillRect(x,y,1,1); });
+  const key = f + '|' + cw + 'x' + chh;
+  if(cv._hqRows !== rows || cv._hqTint !== tint){ cv._hqRows = rows; cv._hqTint = tint; cv._hq = {}; }
+  let img = cv._hq[key];
+  if(!img){
+    let grid = new Uint32Array(cw * chh);
+    const put = (x, y, c)=>{ if(x >= 0 && y >= 0 && x < cw && y < chh) grid[y * cw + x] = rgbaOf(c); };
+    if(anim){
+      for(let x = pad + 2; x < pad + W - 2; x++) put(x, H + pad - 2, 'rgba(27,27,47,.18)');
+      const occ = new Set(px.map(([x,y])=>x+','+y));
+      px.forEach(([x,y])=>[[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{ if(!occ.has((x+dx)+','+(y+dy))) put(x+dx, y+dy, 'rgba(255,255,255,.6)'); }));
+    }
+    px.forEach(([x,y,c])=>put(x, y, (tint&&tint[c])||PAL[c]||c));
+    grid = epx(epx(grid, cw, chh), cw * 2, chh * 2);
+    img = new ImageData(new Uint8ClampedArray(grid.buffer), cw * 4, chh * 4);
+    cv._hq[key] = img;
+  }
+  g.putImageData(img, 0, 0);
 }
 function drawSpr(cv, name, tint){
   const rows = Array.isArray(name) ? name : SPR[name]; if(!rows||!cv) return;

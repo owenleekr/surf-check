@@ -186,7 +186,7 @@ function over(){
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">${r.newBest && S.total > 0 ? '🎉 최고 기록!' : '🏁 세션 끝'}</div>
     <div class="go-s">${S.total}<small>점</small></div>
     <div class="go-st"><span>사용한 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>베스트 라이드<b>${S.bestRide}</b></span><span>최고<b>${p.sbest || S.total}</b></span></div>
-    <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}</div>
+    <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}${r.shells ? ` · 🐚 +${r.shells}` : ''}</div>
     <div style="display:flex;gap:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">새 세션</button>
       <button class="btn ghost" id="s-exit" type="button" style="min-height:52px">닫기</button></div>
     ${S.total >= 300 && typeof sendChat === 'function' ? `<button class="btn ghost" id="s-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;

@@ -34,6 +34,30 @@ BOARDC.sunset = '#FF7A59'; BOARDC_KO.sunset = '노을';
 BOARDC.violet = '#8E5BFF'; BOARDC_KO.violet = '바이올렛';
 BOARDC.gold = '#E8B923'; BOARDC_KO.gold = '골드';
 BOARDC.neon = '#3DFFE0'; BOARDC_KO.neon = '네온';
+/* ── 조개 상점 전용 옷·모자·보드 무늬 ── sprite.js(라인업 앱과 공유)는 건드리지 않고 여기서 목록에 얹는다.
+   상의는 가슴(x9~14, 위 4줄)만 무늬를 바꿔 끼운다 — 실루엣은 래시가드 그대로라 어떤 머리·모자와도 맞는다. */
+const _chest = pat => WEAR.rash.rows.map((r,i)=> i < 4 && pat[i] ? r.slice(0, 9) + pat[i] + r.slice(15) : r);
+WEAR.aloha  = { ko:'알로하 셔츠', rows:_chest(['rwwwwr','rpryrw','yrwrpr','rrypry']) };
+WEAR.stripe = { ko:'스트라이프 티', rows:_chest(['wwwwww','rrrrrr','wwwwww','rrrrrr']).map((r,i)=> i === 1 ? r.replace('ksskkk', 'kwwkkk').replace('kkkssk', 'kkkwwk') : r) };
+WEAR.heart  = { ko:'하트 티', rows:_chest(['rrrrrr','rwrrwr','rwwwwr','rrwwrr']) };
+WEAR.vest   = { ko:'구명조끼', rows:_chest(['oorroo','oorroo','okkkko','oorroo']) };
+WEAR.poncho = { ko:'서핑 판초', rows:['.....krrrrrrrrrrrrk.....','....krrrrrrrrrrrrrrk....','...krwrwrwrwrwrwrwrwk...','...kkkkkkkkkkkkkkkkkk...'].concat(LEGS) };
+HAT.straw   = ['........................','.......kttttttttk.......','......kqqqqqqqqqqk......','.kttttttttttttttttttttk.','..kkkkkkkkkkkkkkkkkkkk..'];
+HAT.cat     = ['......kk........kk......','.....kepk......kpek.....','.....keek......keek.....','......kkkkkkkkkkkk......'];
+HAT.flower  = ['........................','........................','..............kyk.......','.............kypyk......','..............kyk.......'];
+Object.assign(HAT_KO, { straw:'밀짚모자', cat:'고양이 귀', flower:'꽃핀' });
+/* 보드 무늬 — 보드 색('y') 칸에만 칠해진다(sprite.js) */
+const _row = f => Array.from({ length:24 }, (_, x)=>f(x) || '.').join('');
+const BPAT = {
+  none:null,
+  stringer:[ _row(()=>''), _row(x=>x === 11 || x === 12 ? 'w' : ''), _row(x=>x === 11 || x === 12 ? 'w' : ''), _row(()=>'') ],
+  racing:  [ _row(()=>''), _row(x=>x % 6 < 2 ? 'q' : ''), _row(x=>x % 6 < 2 ? 'q' : ''), _row(()=>'') ],
+  flower:  [ _row(()=>''), _row(x=>[3, 9, 15, 20].includes(x) ? 'w' : [4, 10, 16].includes(x) ? 'p' : ''), _row(x=>[4, 10, 16, 21].includes(x) ? 'p' : [3, 9, 15].includes(x) ? 'w' : ''), _row(()=>'') ],
+  flame:   [ _row(()=>''), _row(x=>x < 10 ? (x % 3 ? 'o' : 'q') : ''), _row(x=>x < 7 ? (x % 2 ? 'q' : 'o') : ''), _row(()=>'') ],
+};
+window.BPAT = BPAT;
+const BPAT_KO = { none:'없음', stringer:'스트링거', racing:'레이싱', flower:'꽃무늬', flame:'불꽃' };
+
 /* lv 는 0부터(Lv.1 = 0). 아이콘은 해금 카드와 도감에 쓴다 */
 const UNLOCKS = [
   { lv:1, key:'boardc', v:'gold',  n:'골드 보드',      ic:'🟡' },
@@ -43,22 +67,78 @@ const UNLOCKS = [
 ];
 /* 조개 상점 — 값은 조개(🐚). 번 만큼(shells) 쓴 만큼(spent)을 빼서 잔액을 센다. 산 것(own)은 영구. */
 const SHOP = [
-  { key:'boardc', v:'sunset', n:'노을 보드',     ic:'🟠', cost:20 },
-  { key:'boardc', v:'violet', n:'바이올렛 보드', ic:'🟣', cost:20 },
-  { key:'hat',    v:'sprout', n:'새싹',          ic:'🌱', cost:30 },
-  { key:'hat',    v:'wave',   n:'파도 모자',     ic:'🌊', cost:60 },
+  { key:'wear',   v:'stripe', n:'스트라이프 티', ic:'👕', cost:30, cat:'옷' },
+  { key:'wear',   v:'heart',  n:'하트 티',       ic:'💗', cost:35, cat:'옷' },
+  { key:'wear',   v:'aloha',  n:'알로하 셔츠',   ic:'🌺', cost:50, cat:'옷' },
+  { key:'wear',   v:'vest',   n:'구명조끼',      ic:'🦺', cost:45, cat:'옷' },
+  { key:'wear',   v:'poncho', n:'서핑 판초',     ic:'🧥', cost:70, cat:'옷' },
+  { key:'hat',    v:'sprout', n:'새싹',          ic:'🌱', cost:30, cat:'모자' },
+  { key:'hat',    v:'flower', n:'꽃핀',          ic:'🌼', cost:25, cat:'모자' },
+  { key:'hat',    v:'cat',    n:'고양이 귀',     ic:'🐱', cost:45, cat:'모자' },
+  { key:'hat',    v:'straw',  n:'밀짚모자',      ic:'👒', cost:50, cat:'모자' },
+  { key:'hat',    v:'wave',   n:'파도 모자',     ic:'🌊', cost:60, cat:'모자' },
+  { key:'boardc', v:'sunset', n:'노을 보드',     ic:'🟠', cost:20, cat:'보드' },
+  { key:'boardc', v:'violet', n:'바이올렛 보드', ic:'🟣', cost:20, cat:'보드' },
+  { key:'bpat',   v:'stringer', n:'스트링거 무늬', ic:'➖', cost:20, cat:'보드' },
+  { key:'bpat',   v:'racing', n:'레이싱 무늬',   ic:'🏁', cost:35, cat:'보드' },
+  { key:'bpat',   v:'flower', n:'꽃무늬 보드',   ic:'🌸', cost:40, cat:'보드' },
+  { key:'bpat',   v:'flame',  n:'불꽃 보드',     ic:'🔥', cost:55, cat:'보드' },
 ];
+/* 오늘의 할인 — 날짜로 하나를 골라 30% 싸게(모두 같은 물건) */
+const dealOf = () => { const d = typeof today === 'function' ? today() : ''; let h = 7; for(const c of d) h = (h * 31 + c.charCodeAt(0)) >>> 0; return SHOP[h % SHOP.length]; };
+const priceOf = it => it === dealOf() ? Math.round(it.cost * 0.7) : it.cost;
 const shellBal = () => { const p = ME?.profile?.play; return p ? Math.max(0, (p.shells||0) - (p.spent||0)) : 0; };
 /* 아직 안 샀으면 상품을, 샀거나 상품이 아니면 null */
 const shopOf = (key, v) => { const it = SHOP.find(x=>x.key === key && x.v === v); return it && !ME?.profile?.play?.own?.[key + ':' + v] ? it : null; };
 function playBuy(key, v){
   const it = SHOP.find(x=>x.key === key && x.v === v), p = ME?.profile?.play; if(!it || !p) return false;
   if(p.own?.[key + ':' + v]) return true;
-  if(shellBal() < it.cost){ toast(`🐚 조개가 모자라요 — ${it.cost}개 필요 (보유 ${shellBal()})`); return false; }
-  (p.own ||= {})[key + ':' + v] = 1; p.spent = (p.spent || 0) + it.cost;
+  const cost = priceOf(it);
+  if(shellBal() < cost){ toast(`🐚 조개가 모자라요 — ${cost}개 필요 (보유 ${shellBal()})`); return false; }
+  (p.own ||= {})[key + ':' + v] = 1; p.spent = (p.spent || 0) + cost;
   playPush(); vib([20, 40, 20]); if(typeof burst === 'function') setTimeout(()=>burst($('bld-av') || document.body, 12), 50);
   toast(`${it.ic} ${it.n}을(를) 샀어요!`); return true;
 }
+
+/* ── 조개 상점 화면 ── 내 캐릭터에 입혀 본 모습(미리보기)으로 고르고, 사면 바로 입는다 */
+let shopCat = '전체', shopTry = null;
+function shopOpen(){
+  let sh = $('shop-sheet');
+  if(!sh){ sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'shop-sheet';
+    sh.innerHTML = '<div class="sheet-dim" data-shclose></div><div class="sheet-in"><div class="sheet-hd"><span class="t">🛍️ 조개 상점</span><button class="btn sm ghost" data-shclose>닫기</button></div><div id="shop-body"></div></div>';
+    document.body.appendChild(sh);
+    sh.addEventListener('click', e=>{
+      if(e.target.closest('[data-shclose]')){ sh.hidden = true; shopTry = null; return; }
+      const c = e.target.closest('[data-cat]'); if(c){ shopCat = c.dataset.cat; renderShop(); return; }
+      const t = e.target.closest('[data-try]'); if(t){ const it = SHOP[+t.dataset.try]; shopTry = shopTry === it ? null : it; renderShop(); return; }
+      const b = e.target.closest('[data-buy]'); if(b){ const it = SHOP[+b.dataset.buy]; const own = ME.profile.play?.own?.[it.key + ':' + it.v];
+        if(own){ ME.profile[it.key] = it.v; saveProfile?.(); toast(`${it.ic} ${it.n} 입었어요`); renderShop(); if(typeof renderBuilder === 'function') renderBuilder(); return; }
+        const cost = priceOf(it);
+        if(shellBal() < cost) return toast(`🐚 조개가 모자라요 — ${cost}개 필요 (보유 ${shellBal()}). 라인업 서핑·파도 점프·서프스케이트에서 모아요!`);
+        if(!confirm(`🐚 ${cost}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`)) return;
+        if(playBuy(it.key, it.v)){ ME.profile[it.key] = it.v; shopTry = null; saveProfile?.(); renderShop(); if(typeof renderBuilder === 'function') renderBuilder(); } }
+    }); }
+  sh.hidden = false; renderShop();
+}
+function renderShop(){
+  const body = $('shop-body'); if(!body) return;
+  const own = ME.profile.play?.own || {}, deal = dealOf();
+  const cats = ['전체', '옷', '모자', '보드'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
+  const base = withLook(ME.profile || {}, ME.name), wear = shopTry ? { ...base, [shopTry.key]:shopTry.v } : base;
+  body.innerHTML = `<div class="shop-top"><canvas id="shop-me" data-anim></canvas><div><b>🐚 ${shellBal()}개</b><small>${shopTry ? `👀 ${esc(shopTry.n)} 입어 보는 중` : '물건을 누르면 내 캐릭터에 입혀 봐요'}</small>
+      <small>조개는 🌊 라인업 서핑 · 🏄 파도 점프 · 🛹 서프스케이트에서 모여요</small></div></div>
+    <div class="shop-deal">🏷️ 오늘의 할인 <b>${esc(deal.ic)} ${esc(deal.n)}</b> 🐚 <s>${deal.cost}</s> → <b>${priceOf(deal)}</b></div>
+    <div class="food-chips" role="group" aria-label="종류">${cats.map(c=>`<button type="button" data-cat="${c}" aria-pressed="${c === shopCat}">${c}</button>`).join('')}</div>
+    <div class="shop-grid">${list.map(({ it, i })=>{ const got = own[it.key + ':' + it.v], on = ME.profile[it.key] === it.v, sale = it === deal;
+      return `<div class="shop-it${shopTry === it ? ' try' : ''}${got ? ' got' : ''}"><button type="button" class="shop-pv" data-try="${i}" aria-label="${esc(it.n)} 입어 보기"><canvas data-pv="${i}"></canvas>${sale ? '<em>할인</em>' : ''}</button>
+        <b>${esc(it.ic)} ${esc(it.n)}</b>
+        <button type="button" class="btn sm ${got ? (on ? 'ghost' : 'mint') : 'blue'}" data-buy="${i}" ${got && on ? 'disabled' : ''}>${got ? (on ? '입는 중' : '입기') : `🐚 ${priceOf(it)}${sale ? ` <s>${it.cost}</s>` : ''}`}</button></div>`; }).join('')}</div>`;
+  if(typeof drawSpr === 'function'){
+    drawSpr($('shop-me'), avatarRows(wear, false), avatarTintOf(wear, 0));
+    body.querySelectorAll('[data-pv]').forEach(c=>{ const it = SHOP[+c.dataset.pv], q = { ...base, [it.key]:it.v }; drawSpr(c, avatarRows(q, false), avatarTintOf(q, 0)); });
+  }
+}
+window.shopOpen = shopOpen;
 
 const myLv = () => lvOf(playXp(ME?.profile?.play || { base:0, bonus:0 }));
 /* 잠겨 있으면 필요한 레벨(0부터)을, 열려 있으면 null */
@@ -210,10 +290,10 @@ function playTick(){
   if(_xpShown != null && xp > _xpShown && !first) xpFloat(xp - _xpShown);
   _xpShown = xp;
   /* 이미 쓰던 사람에게 한 번만 알린다. 방금 시작한 사람은 환영 카드가 있으니 건너뛰고 본 걸로 친다. */
-  const NEWS = 'play5';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
+  const NEWS = 'play6';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
-    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🌊 새 게임 「라인업 서핑」 — 패들해서 파도 잡고, 팝업하고, 튜브·탑턴·에어, 무너지면 풀아웃!\n🛹 「서프스케이트 훈련」 — 땅에서 펌핑·바텀턴·컷백 리듬 연습.\n🏄 파도 점프는 목숨 3개 · 아이템 7가지(⭐무적 🧲자석 🐢느리게 ✖️2 💎 🛟 ❤️) · 스테이지 5개로 배경이 바뀌어요.', go:()=>setTab('play'), btn:'놀이 보기' }); }
+    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🛍️ 조개 상점이 커졌어요 — 알로하 셔츠·판초·밀짚모자·고양이 귀·보드 무늬, 입어 보고 사요(오늘의 할인도).\n🙂 캐릭터가 더 매끈하고 귀여워졌어요.\n🌊 라인업 서핑·🛹 서프스케이트도 이제 조개를 줘요.', go:()=>shopOpen(), btn:'상점 보기' }); }
   /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
   if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{
@@ -257,11 +337,12 @@ function playSurfDone(score, bestRide){
   const sc = _num(score, 1000000), newBest = sc > (p.sbest || 0);
   if(newBest){ p.sbest = sc; p.sbat = Date.now(); }
   p.sn = (p.sn || 0) + 1;
+  const shells = Math.min(30, Math.floor(sc / 40)); p.shells = (p.shells || 0) + shells;           // 조개 — 상점에서 옷을 산다
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(sc / 60), 15 - p.gxp));
   p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
-  return { gain, newBest, best:p.sbest };
+  return { gain, newBest, best:p.sbest, shells, bal:shellBal() };
 }
 
 /* 서프스케이트 훈련 — 드릴별 최고 정확도(sk.best), XP 는 하루 상한(gxp) 공유. 실제로 탔다는 체크는 하루 1번 +5 */
@@ -269,10 +350,11 @@ function playSkateDone(kind, accP){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today(), sk = (p.sk ||= { best:{}, real:{}, n:0 });
   const a = _num(accP, 100); sk.best ||= {}; sk.best[kind] = Math.max(sk.best[kind] || 0, a); sk.n = (sk.n || 0) + 1;
+  const shells = a >= 80 ? 5 : a >= 60 ? 3 : 1; p.shells = (p.shells || 0) + shells;
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(a / 25), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
-  return { gain, best:sk.best[kind], real:!!(sk.real || {})[day] };
+  return { gain, best:sk.best[kind], real:!!(sk.real || {})[day], shells };
 }
 function playSkateReal(){
   const p = playP(), day = today(), sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.real ||= {};
@@ -440,7 +522,7 @@ function renderHub(enter){
     else if(k === 'fort'){ if(!fortOpen) playFortune(); _hubFort = !_hubFort || !fortOpen ? true : false; renderHub(); setTimeout(()=>root.querySelector('.fort')?.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');
-    else if(k === 'shop'){ setTab('home'); setTimeout(()=>{ const d = $('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
+    else if(k === 'shop') shopOpen();
     else if(k === 'emote'){ setTab('town'); toast('내 캐릭터를 눌러 표정을 지어 보세요 🙂'); } });
 }
 

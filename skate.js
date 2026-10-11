@@ -91,7 +91,7 @@ function finish(stalled){
   $k('k-ov').innerHTML = `<div class="go-card" style="text-align:left"><div class="go-t" style="text-align:center">${stalled ? '🛑 멈췄어요' : accP >= 80 ? '🔥 몸에 붙었어요!' : '🛹 드릴 끝'}</div>
     <div class="go-st"><span>정확도<b>${accP}%</b></span><span>최고 속도<b>${Math.round(g.maxV)}</b></span><span>턴<b>${qs.length}/${g.segs.length}</b></span><span>내 최고<b>${r.best}%</b></span></div>
     <div class="sk-tip"><b>${D.ic} 실제로 해 보기 — ${esc(D.n)}</b><ul>${D.tips.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>
-    ${r.gain ? `<div class="go-b" style="text-align:center">+${r.gain} XP</div>` : ''}
+    ${r.gain || r.shells ? `<div class="go-b" style="text-align:center">${r.gain ? `+${r.gain} XP` : ''}${r.shells ? ` · 🐚 +${r.shells}` : ''}</div>` : ''}
     <button class="btn mint" id="k-real" type="button" style="width:100%;min-height:48px" ${r.real ? 'disabled' : ''}>${r.real ? '✅ 오늘 실제로 탔어요' : '🛹 오늘 실제로 10분 탔어요 (+5 XP)'}</button>
     <div style="display:flex;gap:8px;margin-top:8px"><button class="btn blue" id="k-again" type="button" style="flex:1;min-height:48px">다시</button>
       ${ni < ORDER.length ? `<button class="btn blue" id="k-next" type="button" style="flex:1;min-height:48px">다음: ${esc(DRILLS[ORDER[ni]].n)}</button>` : ''}

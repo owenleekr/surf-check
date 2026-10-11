@@ -1,0 +1,24 @@
+/* 조개 상점 화면 — 입어 보기 미리보기, 오늘의 할인 가격, 사면 바로 입기, 입기/입는 중, 잔액 부족, 보드 무늬가 캐릭터에 그려짐 */
+import { open } from './mock.mjs';
+import fs from 'fs';
+const play={base:300,bonus:0,badges:{drill1:1},qd:{},qall:0,best:0,gday:'',gxp:0,gn:{},lvSeen:3,xp:300,lv:3,shells:120,spent:0,own:{}};
+const t=await open({surfers:[{id:'u4',name:'이성현',cohort:'6기',profile:{}}]},{id:'u4',name:'이성현',profile:{gender:'f',birth:'1',dressed:1,hair:'bob',hairc:'k',play}},{wait:2500});
+t.p.on('dialog', d=>d.accept());
+await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); setTab('play'); }); await t.sleep(400);
+await t.S(()=>document.querySelector('[data-hub="shop"]').click()); await t.sleep(400);
+console.log('상점', await t.S(()=>({ 열림:!document.getElementById('shop-sheet').hidden, 물건:document.querySelectorAll('.shop-it').length, 잔액:document.querySelector('.shop-top b').textContent, 할인:document.querySelector('.shop-deal').textContent.replace(/\s+/g,' ').trim() })));
+await t.S(()=>document.querySelector('[data-cat="옷"]').click()); await t.sleep(200);
+console.log('옷만', await t.S(()=>[...document.querySelectorAll('.shop-it b')].map(b=>b.textContent)));
+await t.S(()=>document.querySelector('.shop-it [data-try]').click()); await t.sleep(200);
+console.log('입어 보기', await t.S(()=>document.querySelector('.shop-top small').textContent));
+fs.writeFileSync('/tmp/shop.png', await t.p.screenshot());
+const before = await t.S(()=>shellBal());
+await t.S(()=>[...document.querySelectorAll('.shop-it')].find(x=>/알로하/.test(x.textContent)).querySelector('[data-buy]').click()); await t.sleep(500);
+console.log('알로하 구매', await t.S(()=>({ 입은옷:ME.profile.wear, 잔액:shellBal(), 버튼:[...document.querySelectorAll('.shop-it')].find(x=>/알로하/.test(x.textContent)).querySelector('[data-buy]').textContent })), '이전 잔액', before);
+await t.S(()=>document.querySelector('[data-cat="보드"]').click()); await t.sleep(200);
+await t.S(()=>[...document.querySelectorAll('.shop-it')].find(x=>/불꽃/.test(x.textContent)).querySelector('[data-buy]').click()); await t.sleep(500);
+console.log('불꽃 보드', await t.S(()=>({ 무늬:ME.profile.bpat, 잔액:shellBal(), 그려진무늬:avatarRows(withLook(ME.profile,ME.name),false).slice(-4).join('').includes('q') })));
+await t.S(()=>[...document.querySelectorAll('.shop-it')].find(x=>/레이싱/.test(x.textContent)).querySelector('[data-buy]').click()); await t.sleep(300);
+console.log('잔액 부족이면', await t.S(()=>document.getElementById('toast').textContent.slice(0,30)));
+fs.writeFileSync('/tmp/shop2.png', await t.p.screenshot());
+console.log('errs', t.errs); await t.b.close(); process.exit(0);

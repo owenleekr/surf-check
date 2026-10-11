@@ -470,6 +470,16 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .hubgrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
 .hubcard{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:104px; padding:12px; text-align:left; font-family:inherit;
   background:#fff; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); cursor:pointer; transition:transform .08s, box-shadow .08s }
+.shop-top{ display:flex; gap:12px; align-items:center; padding:10px; background:#E6F6FF; border:3px solid var(--ink) }
+#shop-me{ width:84px; height:84px; image-rendering:pixelated; background:#8FD3FF; border:3px solid var(--ink); flex:0 0 auto }
+.shop-top div{ display:flex; flex-direction:column; gap:2px } .shop-top b{ font-size:16px } .shop-top small{ font-size:12px; color:#5B6275; font-weight:700; line-height:1.45 }
+.shop-deal{ margin-top:8px; padding:8px 10px; background:#FFF3C4; border:3px solid var(--ink); font-size:13.5px; font-weight:700 } .shop-deal s{ color:#8A8FA0 }
+.shop-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-top:10px }
+.shop-it{ display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 6px; background:#fff; border:3px solid var(--ink); text-align:center } .shop-it.try{ background:#FFF9E6; box-shadow:0 0 0 3px var(--sun) } .shop-it.got{ background:#F2FFF8 }
+.shop-it b{ font-size:12.5px; line-height:1.3; word-break:keep-all; min-height:32px; display:flex; align-items:center }
+.shop-it .btn{ width:100%; min-height:38px; font-size:13px; padding:0 4px } .shop-it .btn s{ opacity:.7; font-weight:600 }
+.shop-pv{ position:relative; padding:0; background:#8FD3FF; border:2px solid var(--ink); cursor:pointer } .shop-pv canvas{ display:block; width:64px; height:64px; image-rendering:pixelated }
+.shop-pv em{ position:absolute; top:-8px; right:-8px; font-style:normal; font-size:10.5px; font-weight:800; padding:1px 5px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
 .hubcard.wide{ grid-column:1/-1; min-height:84px; background:#E6F6FF }
 .hubcard:active{ transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink) }
 .hubcard .hc-ic{ font-size:30px; line-height:1.1; font-family:sans-serif } .hubcard b{ font-size:15px; margin-top:4px } .hubcard small{ font-size:12.5px; font-weight:700; color:#5B6275; line-height:1.4 }
@@ -1392,7 +1402,7 @@ function renderBuilder(){
     <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>{ const lk = typeof lockOf === 'function' ? lockOf(key, v) : null;
       const sp = typeof shopOf === 'function' ? shopOf(key, v) : null;
       return lk != null ? `<button type="button" class="perk lock" data-lock="${lk}" aria-label="${t} (Lv.${lk+1}에서 열려요)">🔒 ${t}</button>`
-        : sp ? `<button type="button" class="perk lock shop" data-shop="${key}:${v}" aria-label="${t} — 조개 ${sp.cost}개로 사기">🐚 ${sp.cost} · ${t}</button>`
+        : sp ? `<button type="button" class="perk lock shop" data-shop="${key}:${v}" aria-label="${t} — 조개 ${priceOf(sp)}개로 사기">🐚 ${priceOf(sp)} · ${t}</button>`
         : `<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}">${render?render(v,t):t}</button>`; }).join('')}</div></div>`;
   const keys = o => Object.keys(o);
   const G = {
@@ -1405,7 +1415,8 @@ function renderBuilder(){
         + opt('팬츠 · 웻수트', 'bottom', keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS))
         + opt('모자', 'hat', keys(HAT).map(k=>[k,HAT_KO[k]])),
     board: opt('보드', 'board', [['long','롱보드'],['fun','펀보드'],['short','숏보드']])
-        + opt('보드 색', 'boardc', keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), sw(BOARDC)),
+        + opt('보드 색', 'boardc', keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), sw(BOARDC))
+        + (typeof BPAT === 'object' ? opt('보드 무늬', 'bpat', keys(BPAT).map(k=>[k,BPAT_KO[k]])) : ''),
     pet:  opt('같이 타는 친구', 'pet', keys(PET).map(k=>[k,PET_KO[k]]))
         + (cur.pet==='none' ? '' : opt('친구 색', 'petc', keys(PETC).map(k=>[k,PETC_KO[k]]), sw(PETC))),
   };
@@ -1420,14 +1431,14 @@ function renderBuilder(){
   $('bld-opts').querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{ bldTab=b.dataset.bt; renderBuilder(); });
   $('bld-opts').querySelectorAll('[data-shop]').forEach(b=>b.onclick = ()=>{
     const [key, v] = b.dataset.shop.split(':'), it = SHOP.find(x=>x.key === key && x.v === v); if(!it) return;
-    if(shellBal() < it.cost) return toast(`🐚 조개가 모자라요 — ${it.cost}개 필요 (보유 ${shellBal()}). 파도 점프에서 모아요!`);
-    if(!confirm(`🐚 ${it.cost}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`)) return;
+    if(shellBal() < priceOf(it)) return toast(`🐚 조개가 모자라요 — ${priceOf(it)}개 필요 (보유 ${shellBal()}). 게임에서 모아요!`);
+    if(!confirm(`🐚 ${priceOf(it)}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`)) return;
     if(playBuy(key, v)){ ME.profile[key] = v; renderBuilder(); saveProfile(); } });
   $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(`🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
   /* 랜덤이 잠긴 걸 뽑으면 레벨 보상이 의미가 없다 */
   $('bld-rand').onclick = ()=>{ const pick = (o, key) => { const ks = Object.keys(o).filter(k=>key == null || (lockOf(key, k) == null && !(typeof shopOf === 'function' && shopOf(key, k)))); return ks[Math.floor(Math.random()*ks.length)]; };
     Object.assign(ME.profile, { hair:pick(HAIR), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
-      wear:pick(WEAR), top:pick(TOPS), bottom:pick(BOTTOMS), hat:pick(HAT,'hat'), boardc:pick(BOARDC,'boardc'), pet:pick(PET), petc:pick(PETC) });
+      wear:pick(WEAR,'wear'), top:pick(TOPS), bottom:pick(BOTTOMS), hat:pick(HAT,'hat'), boardc:pick(BOARDC,'boardc'), pet:pick(PET), petc:pick(PETC) });
     renderBuilder(); saveProfile(); };
   $('bld-opts').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
     ME.profile[b.dataset.k] = b.dataset.v; renderBuilder(); saveProfile(); });
