@@ -11,6 +11,7 @@
 // 폴더를 더 보여주려면(예: 서핑 스팟 폴더) 네이버지도에서 폴더 공유 링크를 만들어 shareId 를 여기에 추가한다.
 const FOLDERS = [
   { id:'fef5bd35c7a245e8b9b6e8b1eb27c2aa', kind:'food', label:'양서학 추천 맛집', share:'https://naver.me/xiLePsoO' },
+  { id:'6df327f7963c4a6abb30319265b541b1', kind:'spot', label:'양서학 서핑 스팟 리스트', share:'https://naver.me/FWTnIrDa' },
 ];
 const HDR = { 'user-agent':'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
   referer:'https://map.naver.com/', accept:'application/json, text/plain, */*', 'accept-language':'ko-KR,ko;q=0.9' };
@@ -32,9 +33,10 @@ async function readFolder(f){
       const lat = num(b.py), lon = num(b.px);
       if(lat == null || lon == null || lat < 33 || lat > 39 || lon < 124 || lon > 132) continue;    // 한국 밖 좌표는 버린다
       if(b.available === false) continue;                                           // 폐업·삭제로 표시된 곳
+      if(/외부\s*유출|비공개|공유\s*금지/.test(String(b.memo || ''))) continue;          // 메모에 '외부유출 금지'라고 적은 곳은 공개 앱에 싣지 않는다
       items.push({
         id:String(b.bookmarkId), n:String(b.displayName || b.name || '').slice(0, 40), a:String(b.address || '').slice(0, 60),
-        lat, lon, m:String(b.memo || '').slice(0, 140), c:String(b.mcidName || '').slice(0, 12),
+        lat, lon, m:String(b.memo || '').slice(0, 140), c:f.kind === 'food' ? String(b.mcidName || '').slice(0, 12) : '',
         u:/^\d{4,12}$/.test(String(b.sid || '')) ? `https://map.naver.com/p/entry/place/${b.sid}` : '',
         t:b.creationTime || b.lastUpdateTime || 0 });
     }

@@ -2,7 +2,8 @@ import { open } from './mock.mjs';
 import fs from 'fs';
 const snap=(await import('../api/_naver-snapshot.js')).default;
 const evil={id:'999',n:'<img src=x onerror=window.__f=1>',a:'강원 양양군 <b>',lat:38.11,lon:128.64,m:'<img src=x onerror=window.__f=2>',c:'음식점',u:'javascript:window.__f=3',t:Date.now()};
-const data={folders:[{...snap.folders[0],items:[...snap.folders[0].items,evil]}]};
+const sp=snap.folders.find(f=>f.kind==='spot'), evil2={...evil,id:'998',n:'<b>악성스팟</b>',lat:38.0,lon:128.7};
+const data={folders:[{...snap.folders[0],items:[...snap.folders[0].items,evil]},{...sp,items:[...sp.items,evil2]}]};
 const t=await open({surfers:[{id:'u4',name:'이성현',cohort:'6기',profile:{}},{id:'infinagree',name:'이성현',cohort:'6기',profile:{}}],__naver:data},{id:'u4',name:'테스터',profile:{gender:'f',birth:'1',dressed:1}},{wait:3000});
 await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); }); await t.sleep(300);
 console.log('탭', await t.S(()=>({ 탭수:document.querySelectorAll('#nav button').length, 가로넘침:document.documentElement.scrollWidth-innerWidth, 버튼폭:Math.round(document.getElementById('t-food').getBoundingClientRect().width) })));
@@ -14,7 +15,12 @@ console.log('추천 쪽지', await t.S(()=>({ 열림:!document.getElementById('m
 await t.S(()=>mailClose());
 console.log('주입', await t.S(()=>({f:window.__f||0, js링크:[...document.querySelectorAll('#pane-food a')].filter(a=>/^javascript/i.test(a.getAttribute('href'))).length })));
 await t.S(()=>document.querySelector('#food-seg [data-view="spot"]').click()); await t.sleep(400);
-console.log('서핑 스팟', await t.S(()=>({ 카드:document.querySelectorAll('.food-card').length, 첫:document.querySelector('.food-card b').textContent, 캠버튼:document.querySelectorAll('[data-cam]').length, 링크예:document.querySelector('.food-card a').getAttribute('href').slice(0,60) })));
+console.log('서핑 스팟', await t.S(()=>({ 카드:document.querySelectorAll('.food-card').length, 첫:document.querySelector('.food-card b').textContent, 캠버튼:document.querySelectorAll('[data-cam]').length, 링크예:document.querySelector('.food-card a').getAttribute('href').slice(0,60), 칩:[...document.querySelectorAll('[data-sarea]')].map(b=>b.textContent.replace(/\s+/g,' ').trim()), 캠이름:[...document.querySelectorAll('[data-cam]')].map(b=>b.dataset.cam), 아라캠프:document.body.textContent.includes('아라캠프'), 스팟쪽지:!!document.getElementById('spot-rec'), 주입:window.__f||0 })));
+await t.S(()=>document.querySelector('[data-sarea="고성"]').click()); await t.sleep(300);
+console.log('고성만', await t.S(()=>({ 카드:document.querySelectorAll('.food-card').length, 다른해변:document.body.textContent.includes('다른 해변') })));
+await t.S(()=>document.querySelector('[data-sarea="전체"]').click()); await t.sleep(300);
+await t.S(()=>document.getElementById('spot-rec').click()); await t.sleep(500);
+console.log('스팟 쪽지', await t.S(()=>document.getElementById('mail-text').value.split('\n')[0])); await t.S(()=>mailClose());
 fs.writeFileSync('/tmp/food2.png', await t.p.screenshot());
 await t.S(()=>document.querySelector('[data-cam]').click()); await t.sleep(400); console.log('캠 보기 →', await t.S(()=>state.tab));
 // 온보딩: 맛집 단계
