@@ -9,7 +9,7 @@
 
    바깥에서 필요한 것: 없음. 이 파일만으로 돈다. */
 /* ═══════════ 스프라이트 (문자 = 팔레트 키, . = 투명) ═══════════ */
-const PAL = { k:'#1B1B2F', w:'#FFF9E6', s:'#F7C59F', h:'#3A2A1E', r:'#FF6B6B', b:'#2E6BFF', y:'#FFD23F', g:'#4DE1A5', p:'#9B6BFF', o:'#FF9F1C', c:'#8FD3FF', d:'#1A47C9', t:'#E2B96A' };
+const PAL = { S:'#7A4F35', H:'#3A2A1E', R:'#9A2F2F', B:'#14308F', Y:'#8A6B10', T:'#8A6F3A', Q:'#992D2D', O:'#99600F', G:'#1F7A5A', C:'#4A7FA3', k:'#1B1B2F', w:'#FFF9E6', s:'#F7C59F', h:'#3A2A1E', r:'#FF6B6B', b:'#2E6BFF', y:'#FFD23F', g:'#4DE1A5', p:'#9B6BFF', o:'#FF9F1C', c:'#8FD3FF', d:'#1A47C9', t:'#E2B96A' };
 const SPR = {
   surfer:[ '......kkk.......','.....khhhk......','.....kssske.....','.....ksskk......','......kss.......','....kkrrrkk.....','...krkrrrkrk....','...ks.krr.sk....','......krr.......','.....kbbbk......','....kbbkbbk.....','....kb...bk.....','.yyyyyyyyyyyyyy.','kyyyyyyyyyyyyyyk','.kkkkkkkkkkkkkk.','................'],
   wave:[ '......ww........','....wwcw........','...wccccw.......','..wcccccbw......','.wccccbbbbw.....','wcbbbbbbbbbwwww.','bbbbbbbbbbbbbbbb','dddddddddddddddd'],
@@ -56,13 +56,13 @@ const HEAD = [
    LEGS/ARMS가 아니라 8줄 통째로 두는 편이 읽기 쉬워서 변형마다 전부 적는다. */
 const LEGS = ['........kbbbbbbk........','........kbbkkbbk........','........ksk..ksk........','........kkk..kkk........'];
 const WEAR = {
-  rash: { ko:'래시가드', rows:['...kssrrkrrrrrrkrrssk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........'].concat(LEGS) },
-  hood: { ko:'후디',     rows:['...krrrrkrrrrrrkrrrrk...','...kkkkkkrrrrrrkkkkkk...','........krwrrwrk........','........krkkkkrk........'].concat(LEGS),
+  rash: { ko:'래시가드', rows:['.....krrkrrrrrrkrrk.....','...ksskkkrrrrrrkkkssk...','...kkkk.krrrrrrk.kkkk...','........krrrrrrk........'].concat(LEGS) },
+  hood: { ko:'후디',     rows:['.....krrkrrrrrrkrrk.....','...krrkkkrrrrrrkkkrrk...','...kkkk.krwrrwrk.kkkk...','........krkkkkrk........'].concat(LEGS),
           neck:['....krr..........rrk....','....krr..........rrk....'] },
-  tank: { ko:'민소매',   rows:['...kssssksrrrrskssssk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........'].concat(LEGS) },
-  suit: { ko:'풀슈트',   rows:['...krrrrkrrrrrrkrrrrk...','...kkkkkkrrrrrrkkkkkk...','........krrrrrrk........','........krrrrrrk........',
+  tank: { ko:'민소매',   rows:['.....kssksrrrrskssk.....','...ksskkkrrrrrrkkkssk...','...kkkk.krrrrrrk.kkkk...','........krrrrrrk........'].concat(LEGS) },
+  suit: { ko:'풀슈트',   rows:['.....krrkrrrrrrkrrk.....','...krrkkkrrrrrrkkkrrk...','...kkkk.krrrrrrk.kkkk...','........krrrrrrk........',
                                '........krrrrrrk........','........krrkkrrk........','........krk..krk........','........kkk..kkk........'] },
-  bare: { ko:'맨몸',     rows:['...kssssksssssskssssk...','...kkkkkksssssskkkkkk...','........kssssssk........','........kssssssk........'].concat(LEGS) },
+  bare: { ko:'맨몸',     rows:['.....kssksssssskssk.....','...ksskkksssssskkkssk...','...kkkk.kssssssk.kkkk...','........kssssssk........'].concat(LEGS) },
 };
 const WEAR_KO = Object.fromEntries(Object.entries(WEAR).map(([k,v])=>[k,v.ko]));
 const BOARD = {
@@ -72,11 +72,11 @@ const BOARD = {
 };
 /* 표정 — y5부터 5줄(눈·볼·입)을 통째로 갈아끼운다 */
 const FACE = {
-  smile:[ '......ksswesswessk......','......ksseesseessk......','......kppssssssppk......','......kssskssksssk......','......ksssskkssssk......'],
-  happy:[ '......kssssssssssk......','......ksseesseessk......','......kppssssssppk......','......kssskkkksssk......','......kssskwwksssk......'],
+  smile:[ '......kswesssswesk......','......kseesssseesk......','......kseesssseesk......','......kppskssksppk......','......ksssskkssssk......' ],
+  happy:[ '......kseesssseesk......','......kessessessek......','......kssssssssssk......','......kppskkkksppk......','......kssssqqssssk......' ],
   cool:[  '......kkkkkkkkkkkk......','......kkdddkkdddkk......','......kppssssssppk......','......ksssskkssssk......','......kssssssssssk......'],
-  wow:[   '......ksskksskkssk......','......ksseesseessk......','......kppssssssppk......','......ksssskkssssk......','......ksssskkssssk......'],
-  wink:[  '......ksswessssssk......','......ksseesseessk......','......kppssssssppk......','......kssskssksssk......','......ksssskkssssk......'],
+  wow:[ '......kswwsssswwsk......','......kswesssswesk......','......kswwsssswwsk......','......kppsskkssppk......','......ksssskkssssk......' ],
+  wink:[ '......kswesssssssk......','......kseesssseesk......','......kseesssssssk......','......kppskssksppk......','......ksssskkssssk......' ],
 };
 const FACE_KO = { smile:'미소', happy:'신남', cool:'선글라스', wow:'놀람', wink:'윙크' };
 /* 머리 — '.'은 아래(맨머리)를 그대로 둔다 */
@@ -225,6 +225,19 @@ function withLook(pr, name){
 }
 /* withPet=false — 헤더·채팅처럼 40px 안팎으로 작게 그리는 자리에서는 펫을 빼서
    서퍼가 화면의 2/3로 쪼그라드는 걸 막는다 */
+/* 외곽선을 전부 같은 검정으로 두면 캐릭터가 '도장 찍은 스티커'처럼 뻣뻣해 보인다(실제로 못생겼다는 말이 많았다).
+   닿아 있는 색의 어두운 톤으로 바꾼다 — 피부 옆은 진한 살색, 머리카락 옆은 진한 머리색, 옷·보드도 같다.
+   (픽셀아트의 '선택적 외곽선'이다.) 어느 색 옆인지는 네 이웃을 먼저, 없으면 대각선을 본다. 눈동자·안경 같은 'e'·'d' 는 건드리지 않는다. */
+const SOFT = { h:'H', r:'R', q:'Q', o:'O', g:'G', c:'C', t:'T', b:'B', y:'Y', s:'S' }, SOFT_ORDER = ['h','r','q','o','g','c','t','b','y','s'];
+function softOutline(rows){
+  const at = (x,y)=> (y >= 0 && y < rows.length && x >= 0 && x < rows[y].length) ? rows[y][x] : '.';
+  return rows.map((r,y)=>[...r].map((ch,x)=>{
+    if(ch !== 'k') return ch;
+    if(y >= 5 && y <= 9 && x >= 7 && x <= 16) return ch;          // 얼굴 안쪽(입·눈썹)은 선명한 어두운 색 그대로 — 살색 톤으로 번지면 입이 코처럼 보인다
+    for(const set of [[at(x,y-1),at(x,y+1),at(x-1,y),at(x+1,y)], [at(x-1,y-1),at(x+1,y-1),at(x-1,y+1),at(x+1,y+1)]])
+      for(const c of SOFT_ORDER) if(set.includes(c)) return SOFT[c];
+    return 'k'; }).join(''));
+}
 function avatarRows(pr, withPet){
   pr = pr || {};
   const w = WEAR[pr.wear] || WEAR.rash;
@@ -234,6 +247,7 @@ function avatarRows(pr, withPet){
   rows = overlay(rows, HAIR[hairOf(pr)], 0);
   if(pr.role==='coach' && pr.vest!==false) rows = overlay(rows, VEST, 12);
   if(HAT[pr.hat]) rows = overlay(rows, HAT[pr.hat], 0);
+  rows = softOutline(rows);
   if(withPet===false || !PET[pr.pet]) return rows;
   const body = petDress(PET[pr.pet], pr.pet, pr.petLv||0);
   const pet = body.concat(PETBOARD), blank = '.'.repeat(14);
@@ -251,6 +265,10 @@ const avatarTintOf = (pr, L) => ({
   e:'#2A2438', w:'#FFFFFF', p:'#FF9BB3', d:'#1A47C9', o:'#FF9F1C',
   q:'#FF4B4B', t:'#F7DC8F', n: PETC[pr?.petc] || PETC.y, m: shade(PETC[pr?.petc] || PETC.y, 0.7),
   b: BOTTOMS[pr?.bottom] || BOTTOMS.b, y: BOARDC[pr?.boardc] || BOARDC.y, r: TOPS[pr?.top] || TOPS.r,
+  // 부드러운 외곽선 — 각 색의 어두운 톤 (softOutline)
+  S: shade(SKIN[pr?.skin] || SKIN.s, .6), H: shade(HAIRC[pr?.hairc] || HAIRC.k, .55), R: shade(TOPS[pr?.top] || TOPS.r, .55),
+  B: shade(BOTTOMS[pr?.bottom] || BOTTOMS.b, .55), Y: shade(BOARDC[pr?.boardc] || BOARDC.y, .55), T: shade('#F7DC8F', .6),
+  Q: shade('#FF4B4B', .6), O: shade('#FF9F1C', .6), G: shade('#4DE1A5', .6), C: shade('#8FD3FF', .6),
 });
 let frame = 0; setInterval(()=>{ frame ^= 1; document.querySelectorAll('canvas[data-anim]').forEach(c=>{ if(c._rows) paint(c, c._rows, c._tint, frame); }); }, 550);
 function paint(cv, rows, tint, f){

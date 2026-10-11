@@ -1,0 +1,11 @@
+import { open } from './mock.mjs';
+import fs from 'fs';
+const t=await open({surfers:[{id:'u4',name:'이성현',cohort:'6기',profile:{}}]},{id:'u4',name:'이성현',profile:{gender:'f',birth:'1',dressed:1}},{wait:2000});
+const out=await t.S(()=>{ const hats=['none','bucket','cap','visor','beanie','band','crown','sprout','wave']; const wears=['rash','hood','tank','suit','bare'];
+  const cells=[]; hats.forEach((h,i)=>cells.push({hat:h,wear:'rash',hair:['bob','long','short','pony','twin','wave','surf','buzz','bob'][i],hairc:['k','y','n','r','p','b','g','w','k'][i],gender:i%2?'m':'f',skin:['s','l','d','t'][i%4],face:['smile','happy','wow','wink','smile','happy','wow','wink','smile'][i],top:['r','b','g','p','y','k','w','o','r'][i]}));
+  wears.forEach((w,i)=>cells.push({hat:'none',wear:w,hair:'bob',hairc:'n',gender:'f',skin:'s',face:'smile',top:['r','b','g','p','o'][i]}));
+  const S=6, W=24*S, H=24*S, per=7, rows=Math.ceil(cells.length/per);
+  const c=document.createElement('canvas'); c.width=per*(W+6)+6; c.height=rows*(H+6)+6; const g=c.getContext('2d'); g.fillStyle='#BFE6FF'; g.fillRect(0,0,c.width,c.height); g.imageSmoothingEnabled=false;
+  cells.forEach((lk,i)=>{ const q=withLook({board:'long',boardc:'y',bottom:'b',...lk},'x'+i); const cv=document.createElement('canvas'); drawSpr(cv,avatarRows(q,false),avatarTintOf(q,0)); g.drawImage(cv,(i%per)*(W+6)+6,Math.floor(i/per)*(H+6)+6,cv.width*S,cv.height*S); });
+  return c.toDataURL('image/png'); });
+fs.writeFileSync('/tmp/chars2.png', Buffer.from(out.split(',')[1],'base64')); await t.b.close(); process.exit(0);
