@@ -15,7 +15,7 @@ const PLV = [[0,'모래알','🐚'],[50,'물장구','💦'],[150,'패들러','�
    (실제로 xp 에 <img onerror> 를 넣으면 모두의 도감에서 실행됐다.) 화면에 찍기 전에 반드시 숫자로 걸러 범위를 가둔다.
    레벨은 적힌 값을 믿지 않고 xp 로 다시 계산한다. */
 const _num = (v, max) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(max, x)) : 0; };
-const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000), bat:_num(pl.bat, 4e12),
+const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000), bat:_num(pl.bat, 4e12), sbest:_num(pl.sbest, 1000000), sbat:_num(pl.sbat, 4e12),
   dbest:(pl.dbest && typeof pl.dbest === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.dbest.day))) ? { day:String(pl.dbest.day), score:_num(pl.dbest.score, 100000) } : null } : null;
 const lvOf = xp => { let i = 0; PLV.forEach((l,k)=>{ if(xp >= l[0]) i = k; }); return i; };
 
@@ -162,7 +162,7 @@ function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
   Object.keys(remote.stamps||{}).forEach(k=>{ const s = (p.stamps ||= {}); if(!s[k]){ s[k] = remote.stamps[k]; ch = true; } });
-  ['base','bonus','best','bat','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  ['base','bonus','best','bat','sbest','sbat','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
   Object.keys(remote.own||{}).forEach(k=>{ const o = (p.own ||= {}); if(!o[k]){ o[k] = 1; ch = true; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
@@ -206,10 +206,10 @@ function playTick(){
   if(_xpShown != null && xp > _xpShown && !first) xpFloat(xp - _xpShown);
   _xpShown = xp;
   /* 이미 쓰던 사람에게 한 번만 알린다. 방금 시작한 사람은 환영 카드가 있으니 건너뛰고 본 걸로 친다. */
-  const NEWS = 'play4';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
+  const NEWS = 'play5';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
-    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🌊 파도 점프가 어려워졌어요 — 구간이 올라가면 🐦 갈매기(뛰지 말기)·🪵 통나무·⛈ 폭풍이 나와요. 오늘의 파도도 매일 바뀌어요.\n💬 맛집·스팟에 댓글·추천·🙋 가봤어요를 남길 수 있어요(내 기수가 같이 보여요).\n📣 맨 위 소식줄에 누가 몇 점 돌파했는지 떠요.', go:()=>setTab('food'), btn:'맛집 보기' }); }
+    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🌊 새 게임 「라인업 서핑」 — 패들해서 파도 잡고, 팝업하고, 튜브·탑턴·에어, 무너지면 풀아웃!\n🏄 파도 점프는 목숨 3개 · 아이템 7가지(⭐무적 🧲자석 🐢느리게 ✖️2 💎 🛟 ❤️) · 스테이지 5개로 배경이 바뀌어요.', go:()=>setTab('food'), btn:'맛집 보기' }); }
   /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
   if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{
@@ -244,6 +244,20 @@ function playGameDone(score, isDaily, shells){
   }
   playTick(); playPush();
   return { gain:gain + dGain, newBest, best:p.best, daily:!!isDaily, shells:_num(shells, 500), bal:shellBal() };
+}
+
+/* 라인업 서핑이 끝났을 때 — 최고점(sbest)과 그 시각(sbat). XP 는 파도 점프와 같은 하루 상한(gxp)을 나눠 쓴다 */
+function playSurfDone(score, bestRide){
+  if(!ME.profile.play){ playReady.force = true; playTick(); }
+  const p = playP(), day = today();
+  const sc = _num(score, 1000000), newBest = sc > (p.sbest || 0);
+  if(newBest){ p.sbest = sc; p.sbat = Date.now(); }
+  p.sn = (p.sn || 0) + 1;
+  if(p.gday !== day){ p.gday = day; p.gxp = 0; }
+  const gain = Math.max(0, Math.min(Math.floor(sc / 60), 15 - p.gxp));
+  p.gxp += gain; p.bonus += gain;
+  playTick(); playPush();
+  return { gain, newBest, best:p.sbest };
 }
 
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
@@ -363,6 +377,7 @@ function renderHub(enter){
     ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-hq="${i}"><i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
     <div class="pt" style="margin-top:18px">놀이 메뉴</div>
     <div class="hubgrid">
+      ${card(0,'🌊','라인업 서핑', `진짜 서핑처럼 — 패들·팝업·튜브·풀아웃 · 최고 ${p.sbest || 0}`, (p.sn || 0) ? '' : 'NEW', 'surf').replace('class="hubcard"', 'class="hubcard wide"')}
       ${card(0,'🏄','파도 점프', `최고 ${p.best || 0} · 오늘 ${dsc != null ? dsc : '—'}`, dsc == null ? '챌린지' : '', 'game')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
@@ -394,7 +409,7 @@ function renderHub(enter){
       try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });
   root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
   root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
-    if(k === 'game') gameOpen(); else if(k === 'quiz') quizOpen();
+    if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'quiz') quizOpen();
     else if(k === 'fort'){ if(!fortOpen) playFortune(); _hubFort = !_hubFort || !fortOpen ? true : false; renderHub(); setTimeout(()=>root.querySelector('.fort')?.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');

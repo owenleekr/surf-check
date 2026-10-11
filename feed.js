@@ -21,7 +21,7 @@ async function pullPeers(){
   if(typeof api !== 'function' || !hasMe()) return;
   try{ const rows = await api('surfers?select=id,name,cohort,play:profile->play&limit=300');
     peers = (rows || []).filter(x=>x && x.id !== ME.id && !(typeof isTest === 'function' && isTest(x.id))).map(x=>{
-      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat } : null; }).filter(Boolean);
+      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat, sbest:pp.sbest, sbat:pp.sbat } : null; }).filter(Boolean);
   }catch(e){}
   pulledAt = Date.now();
 }
@@ -29,7 +29,9 @@ async function pullPeers(){
 function collect(){
   const out = [], now = Date.now(), tag = c => c === '6기' ? '6기' : '서퍼';
   peers.forEach(p=>{ if(p.best >= 100 && p.bat > now - 72 * 3600e3 && p.bat <= now + 6e4)
-    out.push({ ts:p.bat, ic:'🏄', who:`${p.name}(${tag(p.cohort)})`, text:`님이 파도 점프 ${tierOf(p.best)}점 돌파! (${p.best}점)`, go:'game' }); });
+    out.push({ ts:p.bat, ic:'🏄', who:`${p.name}(${tag(p.cohort)})`, text:`님이 파도 점프 ${tierOf(p.best)}점 돌파! (${p.best}점)`, go:'game' });
+    if(p.sbest >= 100 && p.sbat > now - 72 * 3600e3 && p.sbat <= now + 6e4)
+      out.push({ ts:p.sbat, ic:'🌊', who:`${p.name}(${tag(p.cohort)})`, text:`님이 라인업 서핑 ${p.sbest}점 기록!`, go:'surf' }); });
   const wk = now - 14 * 864e5;
   ['food', 'spot'].forEach(k=>{ (window.foodItems ? window.foodItems(k) : []).forEach(it=>{ const t = +it.t; if(t > wk && t <= now + 6e4)
     out.push({ ts:t, ic:k === 'food' ? '🍜' : '🏄', who:'', text:`새 ${k === 'food' ? '맛집' : '서핑 스팟'} ‘${it.n}’ 등록!`, go:k }); }); });
@@ -63,6 +65,7 @@ function go(){
   const el = $f('feed'), g = el?.dataset.go;
   try{ localStorage.setItem(SEEN, String(Date.now())); }catch(err){}
   if(g === 'game' && typeof gameOpen === 'function') gameOpen();
+  else if(g === 'surf' && typeof surfOpen === 'function') surfOpen();
   else if((g === 'food' || g === 'spot') && typeof foodOpen === 'function') foodOpen(g);
   paint(false);
 }

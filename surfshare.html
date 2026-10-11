@@ -49,6 +49,7 @@ window.__bootFail = (files) => {
 <script src="sprite.js"></script>
 <script src="roster.js"></script>
 <script src="play.js"></script>
+<script src="surfride.js" defer></script>
 <script src="surfgame.js" defer></script>
 <script src="quiz.js" defer></script>
 <script src="foodtalk.js" defer></script>
@@ -314,6 +315,8 @@ body.game-on{ overflow:hidden }
 .game-hd > b{ flex:1; font-family:"Galmuri11",sans-serif }
 .game-sc{ font-family:"Galmuri11",sans-serif; font-size:20px; color:#FFE27A } .game-sc small{ font-size:12px; color:#9FC4E4 }
 .game-stage{ position:relative; width:100%; flex:0 1 auto; border:4px solid var(--ink); background:#000; touch-action:none; -webkit-user-select:none; user-select:none }
+#s-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; -webkit-touch-callout:none }
+.surf-pull{ margin-top:10px; min-height:52px; font-size:16px; background:#FF6B6B; color:#fff } .surf-pull[hidden]{ display:none }
 #g-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; -webkit-touch-callout:none }
 .game-ov{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:14px; background:rgba(11,37,64,.55) }
 .game-ov[hidden]{ display:none }
@@ -324,6 +327,7 @@ body.game-on{ overflow:hidden }
 .go-s small{ font-size:16px; margin-left:2px }
 .go-b{ font-size:14px; font-weight:700; margin:6px 0 10px } .go-b b{ color:#B45309 }
 .go-r{ display:flex; flex-direction:column; gap:2px; font-size:12.5px; font-weight:800; color:#5B6275; margin:0 0 12px }
+.go-st{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:4px 0 8px } .go-st span{ display:flex; flex-direction:column; font-size:11px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); padding:4px 2px } .go-st b{ font-family:"Galmuri11",sans-serif; font-size:15px; color:var(--ink) }
 .go-v{ font-size:13px; line-height:1.6; font-weight:700; margin:0 0 12px; color:#14304F; word-break:keep-all } .go-v small{ display:block; color:#5B6275; margin-top:2px }
 .game-ft{ color:#9FC4E4; font-size:12.5px; font-weight:700; text-align:center; padding-top:10px }
 .qz-hd{ display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:13px; font-weight:800; color:#5B6275 }
@@ -436,6 +440,7 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .hubgrid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
 .hubcard{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:104px; padding:12px; text-align:left; font-family:inherit;
   background:#fff; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); cursor:pointer; transition:transform .08s, box-shadow .08s }
+.hubcard.wide{ grid-column:1/-1; min-height:84px; background:#E6F6FF }
 .hubcard:active{ transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink) }
 .hubcard .hc-ic{ font-size:30px; line-height:1.1; font-family:sans-serif } .hubcard b{ font-size:15px; margin-top:4px } .hubcard small{ font-size:12.5px; font-weight:700; color:#5B6275; line-height:1.4 }
 .hubcard em{ position:absolute; top:8px; right:8px; font-style:normal; font-size:12px; font-weight:800; padding:2px 7px; background:#C2303A; color:#fff; border:2px solid var(--ink) }
@@ -999,6 +1004,19 @@ body.onb-on .wrap{ padding-bottom:230px }
   <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>캠</button>
 </nav>
 <button type="button" class="mailfab" id="mail" aria-label="쪽지">✉️<span class="dot" id="mail-dot" hidden>0</span></button>
+<!-- 라인업 서핑 (surfride.js) -->
+<div class="game" id="surf" hidden role="dialog" aria-modal="true" aria-label="라인업 서핑 게임">
+  <div class="game-box">
+    <div class="game-hd"><b>🌊 라인업 서핑</b><span class="game-sc"><small>점수</small> <b id="s-score">0</b></span><button class="btn sm ghost" id="s-x" type="button" aria-label="게임 닫기">✕</button></div>
+    <div class="game-stage">
+      <canvas id="s-cv" width="240" height="180" aria-label="서핑 화면. 누르고 있으면 위로, 떼면 아래로"></canvas>
+      <div class="game-ov" id="s-ov"></div>
+    </div>
+    <button class="btn surf-pull" id="s-pull" type="button" hidden>🛑 풀아웃 (파도에서 빠지기)</button>
+    <div class="game-ft" id="s-ft"></div>
+  </div>
+</div>
+
 <!-- 파도 점프 -->
 <div class="game" id="game" hidden role="dialog" aria-modal="true" aria-label="파도 점프 게임">
   <div class="game-box">

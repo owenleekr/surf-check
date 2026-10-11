@@ -4,7 +4,7 @@ await t.S(()=>{ document.getElementById('pop').hidden=true; gameOpen(); }); awai
 for(const k of ['day','sunset','night']){
   await t.S(k=>{ _game.setTheme(k); _game.begin(); const g=_game; const s=g.st; for(let i=0;i<150;i++){ const o=s.obs.find(o=>o.x+o.w>48); if(o&&!s.air&&(o.x-52)<s.speed*0.30) g.jump(); g.step(1/60); if(!s.air) g.release(); } }, k);
   await t.sleep(300);
-  await (await t.p.$('.game-stage')).screenshot({path:`/tmp/gm_${k}.png`});
+  await (await t.p.$('#game .game-stage')).screenshot({path:`/tmp/gm_${k}.png`});
 }
 // 일시정지/이어서
 await t.S(()=>{ _game.begin(); }); await t.sleep(200);
