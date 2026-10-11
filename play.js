@@ -170,6 +170,10 @@ function playMerge(remote){
   Object.keys(remote.gn||{}).forEach(d=>{ if((remote.gn[d]||0) > (p.gn[d]||0)){ p.gn[d] = remote.gn[d]; ch = true; } });
   Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
   if(remote.dbest && remote.dbest.day && (!p.dbest || remote.dbest.day > p.dbest.day || (remote.dbest.day === p.dbest.day && remote.dbest.score > p.dbest.score))){ p.dbest = remote.dbest; ch = true; }
+  if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
+    Object.keys(remote.sk.best || {}).forEach(k=>{ if((remote.sk.best[k] || 0) > (sk.best[k] || 0)){ sk.best[k] = remote.sk.best[k]; ch = true; } });
+    Object.keys(remote.sk.real || {}).forEach(d=>{ if(!sk.real[d]){ sk.real[d] = 1; ch = true; } });
+    if((remote.sk.n || 0) > (sk.n || 0)){ sk.n = remote.sk.n; ch = true; } }
   if(remote.dcday && remote.dcday > (p.dcday || '')){ p.dcday = remote.dcday; ch = true; }
   if(remote.goalWk && remote.goalWk > (p.goalWk || '')){ p.goalWk = remote.goalWk; ch = true; }
   if(remote.gday === p.gday && (remote.gxp||0) > (p.gxp||0)){ p.gxp = remote.gxp; ch = true; }
@@ -258,6 +262,24 @@ function playSurfDone(score, bestRide){
   p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
   return { gain, newBest, best:p.sbest };
+}
+
+/* 서프스케이트 훈련 — 드릴별 최고 정확도(sk.best), XP 는 하루 상한(gxp) 공유. 실제로 탔다는 체크는 하루 1번 +5 */
+function playSkateDone(kind, accP){
+  if(!ME.profile.play){ playReady.force = true; playTick(); }
+  const p = playP(), day = today(), sk = (p.sk ||= { best:{}, real:{}, n:0 });
+  const a = _num(accP, 100); sk.best ||= {}; sk.best[kind] = Math.max(sk.best[kind] || 0, a); sk.n = (sk.n || 0) + 1;
+  if(p.gday !== day){ p.gday = day; p.gxp = 0; }
+  const gain = Math.max(0, Math.min(Math.floor(a / 25), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
+  playTick(); playPush();
+  return { gain, best:sk.best[kind], real:!!(sk.real || {})[day] };
+}
+function playSkateReal(){
+  const p = playP(), day = today(), sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.real ||= {};
+  if(sk.real[day]) return false;
+  sk.real[day] = 1; p.bonus += 5;
+  const keys = Object.keys(sk.real).sort(); if(keys.length > 60) delete sk.real[keys[0]];               // 프로필이 끝없이 커지지 않게
+  playTick(); playPush(); return true;
 }
 
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
@@ -378,6 +400,7 @@ function renderHub(enter){
     <div class="pt" style="margin-top:18px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🌊','라인업 서핑', `진짜 서핑처럼 — 패들·팝업·튜브·풀아웃 · 최고 ${p.sbest || 0}`, (p.sn || 0) ? '' : 'NEW', 'surf').replace('class="hubcard"', 'class="hubcard wide"')}
+      ${card(0,'🛹','서프스케이트 훈련', `땅에서 펌핑·바텀턴·컷백 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate').replace('class="hubcard"', 'class="hubcard wide"')}
       ${card(0,'🏄','파도 점프', `최고 ${p.best || 0} · 오늘 ${dsc != null ? dsc : '—'}`, dsc == null ? '챌린지' : '', 'game')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
@@ -409,7 +432,7 @@ function renderHub(enter){
       try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });
   root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
   root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
-    if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'quiz') quizOpen();
+    if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'skate') skateOpen(); else if(k === 'quiz') quizOpen();
     else if(k === 'fort'){ if(!fortOpen) playFortune(); _hubFort = !_hubFort || !fortOpen ? true : false; renderHub(); setTimeout(()=>root.querySelector('.fort')?.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');
