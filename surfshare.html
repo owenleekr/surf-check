@@ -363,8 +363,9 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .seg button{ flex:1; min-height:46px; font-family:inherit; font-size:14px; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer }
 .seg button[aria-pressed="true"]{ background:var(--ink); color:#fff }
 .seg em{ font-style:normal; font-size:11.5px; padding:1px 6px; margin-left:4px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
-#pane-stay[data-view="food"] > :not(#stay-seg):not(#food-view){ display:none }
-#pane-stay:not([data-view="food"]) #food-view{ display:none }
+.food-how{ margin-top:12px; padding:12px 14px; background:#E6FBEF; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); font-size:13.5px; line-height:1.65 }
+.food-how b{ font-size:14.5px } .food-how ol{ margin:6px 0 10px; padding-left:20px } .food-how li{ margin-bottom:4px; word-break:keep-all }
+.food-btns{ display:flex; flex-wrap:wrap; gap:8px }
 .food-hd{ padding:12px 14px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); display:flex; flex-direction:column; gap:4px; align-items:flex-start }
 .food-hd b{ font-family:"Galmuri11",sans-serif; font-size:16px } .food-hd span{ font-size:13.5px; font-weight:700 } .food-hd small{ font-size:12px; color:#5B6275; line-height:1.5; font-weight:700 }
 .food-chips, .food-sort{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px }
@@ -806,9 +807,7 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
 
     <!-- 숙소 -->
-    <div id="pane-stay" hidden data-view="stay">
-      <div class="seg" id="stay-seg" role="group" aria-label="숙소와 맛집"><button type="button" data-view="stay" aria-pressed="true">🏠 숙소</button><button type="button" data-view="food" aria-pressed="false">🍜 맛집·스팟 <em id="food-new" hidden></em></button></div>
-      <div id="food-view" hidden><div class="food-body"></div></div>
+    <div id="pane-stay" hidden>
       <details class="px sand fold"><summary>🏠 숙소 쉐어 올리기</summary>
         <div class="grid2" style="margin-top:8px">
           <div><label for="s-place">숙소 이름</label><input id="s-place" maxlength="20" placeholder="예) 낙산 OO펜션"></div>
@@ -856,6 +855,12 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
 
     <!-- 라이브캠 -->
+    <!-- 맛집·서핑 스팟 -->
+    <div id="pane-food" hidden>
+      <div class="seg" id="food-seg" role="group" aria-label="맛집과 서핑 스팟"><button type="button" data-view="food" aria-pressed="true">🍜 맛집</button><button type="button" data-view="spot" aria-pressed="false">🏄 서핑 스팟</button></div>
+      <div id="food-body"></div>
+    </div>
+
     <!-- 놀이 -->
     <div id="pane-play" hidden><div id="play-hub"></div></div>
 
@@ -929,6 +934,7 @@ body.onb-on .wrap{ padding-bottom:230px }
   <button type="button" id="t-home" aria-pressed="true"><i>🏄</i>홈<span class="dot" id="home-dot" hidden>!</span></button>
   <button type="button" id="t-ride" aria-pressed="false"><i>🚗</i>차량<span class="dot" id="ride-dot" hidden>0</span></button>
   <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
+  <button type="button" id="t-food" aria-pressed="false"><i>🍜</i>맛집<span class="dot" id="food-dot" hidden>0</span></button>
   <button type="button" id="t-bolt" aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
   <button type="button" id="t-town" aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
   <button type="button" id="t-play" aria-pressed="false"><i>🎮</i>놀이<span class="dot" id="play-dot" hidden>0</span></button>
@@ -2382,6 +2388,8 @@ const ONB = [
     d:'남는 자리가 있는 숙소에 들어가거나, 내가 잡은 방을 올려 사람을 채웁니다.<br>지도는 <b>양양서핑학교</b>가 한가운데예요 — 거리는 학교까지 잰 값입니다.' },
   { tab:'stay', at:'stays',  t:'다녀왔으면 별점을',
     d:'숙소는 자보기 전엔 알 수가 없어요. 별점과 한마디를 남기면<br>다음 사람이 그걸 보고 고릅니다. 한 숙소에 한 번, 언제든 고칠 수 있어요.' },
+  { tab:'food', at:'t-food', t:'맛집 · 서핑 스팟 — 양서학 찐맛집',
+    d:'양서학 서퍼들의 <b>네이버지도 맛집 목록</b>이 그대로 들어와요. 폴더에 가게를 추가하면 <b>10분 안에 자동으로</b> 여기에도 나타나요.<br>추가하는 법·네이버 목록 바로가기는 이 탭 맨 위에, 해변별 서핑 스팟은 위쪽 <b>🏄 서핑 스팟</b> 버튼에 있어요.' },
   { tab:'bolt', at:'t-bolt', t:'서핑번개 — 언제 같이 들어갈지',
     d:'시간과 바다만 정해서 올리면, 갈 사람이 <b>[나도 갈래요]</b>를 눌러 채웁니다.<br>정원은 없어요 — 바다는 자리가 모자라지 않으니까요.' },
   { tab:'cam',  at:'t-cam',  t:'라이브캠 — 나가기 전에 한 번',
@@ -2445,7 +2453,7 @@ function refreshDots(){
   setDot('bolt', bolts, boltGone);
 }
 
-const TABS = ['home','ride','stay','bolt','town','play','cam'];
+const TABS = ['home','ride','stay','food','bolt','town','play','cam'];
 let nowOpen = false;
 /* 머리를 탭에 따라 접는다 — 홈에서는 온전히, 나머지에서는 한 줄. */
 function layoutHead(){
@@ -2458,7 +2466,7 @@ function layoutHead(){
 $('nowbar').onclick = ()=>{ nowOpen = !nowOpen; layoutHead(); if(nowOpen) renderNow(); };
 
 const setTab = t => { const prevTab = state.tab; state.tab = t;
-  ['home','ride','stay','bolt','town','play','cam','me'].forEach(k=>{
+  ['home','ride','stay','food','bolt','town','play','cam','me'].forEach(k=>{
     const btn = $('t-'+k); if(btn) btn.setAttribute('aria-pressed', String(t===k));
     $('pane-'+k).hidden = t!==k; });
   if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); homeDot(); }
@@ -2468,6 +2476,7 @@ const setTab = t => { const prevTab = state.tab; state.tab = t;
   else camStop();                       /* 다른 탭으로 가면 끈다 — 데이터가 계속 나간다 */
   if(t==='town'){ pullTown(); startTownPoll(); } else stopTownPoll();
   if(t==='bolt') pullBolts();
+  if(t==='food' && typeof foodEnter === 'function'){ foodEnter(); const d = $('food-dot'); if(d) d.hidden = true; }
   if(t==='play' && typeof renderHub === 'function') renderHub(true);
   if(t==='ride' || t==='stay' || t==='bolt'){ markSeen(t); const d = $(t+'-dot'); if(d) d.hidden = true; }
   $('trust').hidden = !(t==='ride' || t==='stay');
