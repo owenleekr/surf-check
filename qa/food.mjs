@@ -1,6 +1,6 @@
 import { open } from './mock.mjs';
 import fs from 'fs';
-const snap=JSON.parse(fs.readFileSync('../api/_naver-snapshot.json','utf8'));
+const snap=(await import('../api/_naver-snapshot.js')).default;
 // 악성 항목 하나 섞기
 const evil={id:'999',n:'<img src=x onerror=window.__f=1>',a:'강원 양양군 <b>',lat:38.11,lon:128.64,m:'<img src=x onerror=window.__f=2>',c:'음식점',u:'javascript:window.__f=3',t:Date.now()};
 const data={folders:[{...snap.folders[0],items:[...snap.folders[0].items,evil]}]};

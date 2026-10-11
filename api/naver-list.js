@@ -44,9 +44,9 @@ async function readFolder(f){
            link:`https://map.naver.com/p/favorite/sharedPlace/folder/${f.id}`, items };
 }
 
-import { readFileSync } from 'node:fs';
+import SNAP from './_naver-snapshot.js';
 /* 네이버가 완전히 죽었을 때를 위한 저장본 — 비어 있는 것보다 며칠 묵은 목록이 낫다. 정상일 때는 쓰이지 않는다. */
-function snapshot(){ try{ return JSON.parse(readFileSync(new URL('./_naver-snapshot.json', import.meta.url), 'utf8')); }catch(e){ return null; } }
+const snapshot = () => SNAP;        // 정적 import — 파일 경로를 계산하지 않는다(import.meta 는 이 배포 방식에서 안 통했다)
 
 export default async function handler(req, res){
   const out = await Promise.allSettled(FOLDERS.map(readFolder));
