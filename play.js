@@ -293,7 +293,7 @@ function playTick(){
   const NEWS = 'play6';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
-    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🛍️ 조개 상점이 커졌어요 — 알로하 셔츠·판초·밀짚모자·고양이 귀·보드 무늬, 입어 보고 사요(오늘의 할인도).\n🙂 캐릭터가 더 매끈하고 귀여워졌어요.\n🌊 라인업 서핑·🛹 서프스케이트도 이제 조개를 줘요.', go:()=>shopOpen(), btn:'상점 보기' }); }
+    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🛍️ 조개 상점이 커졌어요 — 알로하 셔츠·판초·밀짚모자·고양이 귀·보드 무늬, 입어 보고 사요(오늘의 할인도).\n🙂 캐릭터 얼굴이 새로 — 점 눈·볼터치, 더 말랑하게.\n🌊 라인업 서핑·🛹 서프스케이트도 이제 조개를 줘요.', go:()=>window.updOpen ? updOpen() : shopOpen(), btn:'업데이트 보기' }); }
   /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
   if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{

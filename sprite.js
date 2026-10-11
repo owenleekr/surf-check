@@ -44,12 +44,12 @@ const HEAD = [
   '......kssssssssssk......',
   '......kssssssssssk......',
   '......kssssssssssk......',
-  '......ksswesswessk......',
-  '......ksseesseessk......',
-  '......kppssssssppk......',
-  '......kssskssksssk......',
-  '......ksssskkssssk......',
-  '.......kssssssssk.......',
+  '......kssssssssssk......',
+  '......kssssssssssk......',
+  '......kssssssssssk......',
+  '.....kssssssssssssk.....',
+  '.....kssssssssssssk.....',
+  '......kssssssssssk......',
   '........kkkkkkkk........',
 ];
 /* 상의는 색만 바꾸면 다 같은 옷이라, 실루엣이 바뀌는 5종으로 나눴다.
@@ -71,14 +71,17 @@ const BOARD = {
   short:['.......yyyyyyyyyy.......','......kyyyyyyyyyyk......','......kyyyyyyyyyyk......','.......kkkkkkkkkk.......'],
 };
 /* 표정 — y5부터 5줄(눈·볼·입)을 통째로 갈아끼운다 */
+/* 표정 — 요즘 캐릭터(망그러진 곰·잔망루피·앙코)처럼 '낮게 붙은 점 눈 + 작은 입 + 볼터치'만. 눈이 크고 진하면 무섭고 늙어 보였다.
+   '.' 은 아래(얼굴 살)를 그대로 둔다 — 머리 모양이 바뀌어도 테두리를 덮지 않는다. */
 const FACE = {
-  smile:[ '......kswesssswesk......','......kseesssseesk......','......kseesssseesk......','......kppskssksppk......','......ksssskkssssk......' ],
-  happy:[ '......kseesssseesk......','......kessessessek......','......kssssssssssk......','......kppskkkksppk......','......kssssqqssssk......' ],
-  cool:[  '......kkkkkkkkkkkk......','......kkdddkkdddkk......','......kppssssssppk......','......ksssskkssssk......','......kssssssssssk......'],
-  wow:[ '......kswwsssswwsk......','......kswesssswesk......','......kswwsssswwsk......','......kppsskkssppk......','......ksssskkssssk......' ],
-  wink:[ '......kswesssssssk......','......kseesssseesk......','......kseesssssssk......','......kppskssksppk......','......ksssskkssssk......' ],
+  smile:[ '........................','........................','.........e....e.........','.......ppe....epp.......','...........ee...........' ],
+  happy:[ '........................','........................','.........e....e.........','.......pe.e..e.ep.......','..........eqqe..........' ],
+  cool:[ '........................','........................','.......kkkkkkkkkk.......','.......kdddkkdddk.......','.......p...ee...p.......' ],
+  wow:[ '........................','........................','.........e....e.........','.......ppe....epp.......','...........qq...........' ],
+  wink:[ '........................','........................','.........e..............','.......ppe...eeep.......','...........ee...........' ],
+  sleepy:[ '........................','........................','........................','.......pee....eep.......','...........ee...........' ],
 };
-const FACE_KO = { smile:'미소', happy:'신남', cool:'선글라스', wow:'놀람', wink:'윙크' };
+const FACE_KO = { smile:'미소', happy:'신남', cool:'선글라스', wow:'놀람', wink:'윙크', sleepy:'졸림' };
 /* 머리 — '.'은 아래(맨머리)를 그대로 둔다 */
 const HAIR = {
   buzz: ['........................','.......khhhhhhhhk.......','......khhhhhhhhhhk......'],

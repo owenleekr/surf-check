@@ -61,6 +61,8 @@ window.__bootFail = (files) => {
 <script src="food.js" defer></script>
 <script src="feed.js" defer></script>
 <script src="install.js" defer></script>
+<script src="updates.js" defer></script>
+<script src="icons.js" defer></script>
 <script src="bus.js" defer></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
@@ -397,12 +399,19 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .seg em{ font-style:normal } 
 
 
+/* 홈 — 업데이트 소식 */
+.upd{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; margin:0 0 12px; padding:10px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF3C4; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
+.upd-h{ display:flex; align-items:center; gap:6px; width:100% } .upd-h b{ font-size:12.5px; color:#8A5A00 } .upd-h em{ font-style:normal; font-size:10.5px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
+.upd-t{ font-family:"Galmuri11",sans-serif; font-size:15.5px; font-weight:800 } .upd-l{ font-size:12.5px; font-weight:700; color:#4B4A6B; line-height:1.55 } .upd-more{ align-self:flex-end; font-size:12px; font-weight:800; color:#2E6BFF }
+.upd-sec{ padding:10px 0; border-bottom:2px dashed var(--grid) } .upd-sec h4{ margin:0 0 6px; font-size:14.5px } .upd-sec h4 em{ font-style:normal; font-size:10.5px; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
+.upd-it{ display:flex; align-items:center; gap:8px; padding:5px 0; font-size:13.5px; line-height:1.5 } .upd-it i{ font-style:normal; font-size:18px; font-family:sans-serif } .upd-it span{ flex:1; word-break:keep-all } .upd-it .btn{ flex:0 0 auto; min-height:36px }
 /* 홈 — 오늘 한 판 · 맛집 */
 .hsec{ font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:800; color:#fff; text-shadow:2px 2px 0 var(--ink); margin:14px 0 8px } .hsec small{ font-family:inherit; font-size:12px; text-shadow:1px 1px 0 var(--ink); margin-left:6px }
 .hgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px }
 .hg{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:92px; padding:10px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
 .hg:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink) } .hg-ic{ font-size:26px; font-family:sans-serif; line-height:1.1 } .hg b{ font-size:13.5px; word-break:keep-all } .hg small{ font-size:11.5px; color:#5B6275; font-weight:700 }
 .hf{ display:flex; align-items:center; gap:10px; width:100%; margin-top:6px; padding:9px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); cursor:pointer }
+.hf-spot{ background:#E6F6FF }
 .hf-ic{ font-size:20px; font-family:sans-serif } .hf-m{ flex:1; min-width:0; display:flex; flex-direction:column } .hf-m b{ font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .hf-m small{ font-size:12px; color:#5B6275; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .hf-m em{ font-style:normal; font-size:10.5px; padding:0 5px; background:var(--coral); color:#fff; border:2px solid var(--ink); margin-left:4px }
 /* 상단 소식줄 */
@@ -574,6 +583,8 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
              padding:7px 2px 8px; min-height:56px; display:flex; flex-direction:column; align-items:center; gap:2px;
              font-size:10.5px; font-weight:800; color:var(--ink2); position:relative }
 .nav button i{ font-style:normal; font-size:19px; line-height:1; font-family:sans-serif }
+.nav button i.pxi{ display:block; width:24px; height:24px; margin:0 auto 1px; background:center/contain no-repeat; image-rendering:pixelated }
+.nav button[aria-pressed="false"] i.pxi{ opacity:.78 }
 .nav button[aria-pressed="true"]{ color:var(--ink) }
 .nav button[aria-pressed="true"]::before{ content:""; position:absolute; top:-4px; left:12%; right:12%; height:4px; background:var(--sea) }
 .nav .dot{ position:absolute; top:4px; right:50%; margin-right:-20px; min-width:16px; height:16px; line-height:16px;
@@ -745,7 +756,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 <body>
 <div class="wrap">
   <h1>SurfShare</h1>
-  <div class="sub">차 같이 타고, 숙소 같이 쓰고 · 양양 낙산</div>
+  <div class="sub">서핑 스팟 · 맛집 · 게임 · 연습 — 양양 낙산</div>
 
   <!-- 장면이 먼저다. 문 앞에 선 사람은 설명을 안 읽는다 — 그림이 먼저 말하게 한다 -->
   <div class="scene-wrap" id="scene-wrap" hidden>
@@ -846,17 +857,11 @@ body.onb-on .wrap{ padding-bottom:230px }
         <button class="btn sm ghost" id="help" title="사용법" aria-label="사용법">❓</button>
         <button class="btn sm ghost" id="out" title="나가기" aria-label="나가기">↩</button>
       </div>
+      <section id="home-upd" hidden></section>
       <button type="button" class="qs" id="quest-strip" hidden aria-label="오늘의 퀘스트">
         <span class="qs-ic" id="qs-ic"></span>
         <span class="qs-m"><b id="qs-t"></b><small id="qs-s"></small></span><b class="qs-go">›</b>
       </button>
-      <button type="button" class="todo" id="todo" hidden></button>
-      <section class="hgame" id="home-games" aria-label="오늘 한 판"></section>
-      <section class="hfood" id="home-food" aria-label="맛집·서핑 스팟" hidden></section>
-      <section class="mine" id="mine" aria-label="내 일정" hidden>
-        <h3>📌 내 일정</h3>
-        <div id="mine-list"></div>
-      </section>
       <section class="drill" id="drill" aria-label="테이크오프 훈련" hidden>
         <h3>🏄 테이크오프 훈련</h3>
         <div class="dsub" id="drill-sub"></div>
@@ -875,6 +880,13 @@ body.onb-on .wrap{ padding-bottom:230px }
           <div class="dnone" id="board-none" hidden></div>
         </details>
         <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력</summary><div class="dmgrid" id="dmgrid"></div></details>
+      </section>
+      <section class="hgame" id="home-games" aria-label="오늘 한 판"></section>
+      <section class="hfood" id="home-food" aria-label="맛집·서핑 스팟" hidden></section>
+      <button type="button" class="todo" id="todo" hidden></button>
+      <section class="mine" id="mine" aria-label="내 일정" hidden>
+        <h3>📌 내 일정</h3>
+        <div id="mine-list"></div>
       </section>
       <div class="grp" id="here-grp"><span class="t">같이 가요 — 번개 · 차 · 숙소</span><div class="px" id="home-sum"></div></div>
       <button type="button" class="voice" id="voice" hidden>
@@ -2962,14 +2974,16 @@ function homeGames(){
 /* 홈 — 맛집·스팟: 최근에 올라온 3곳(네이버 리스트 + 앱 등록). 남이 쓴 이름·한줄평은 esc */
 function homeFood(){
   const el = $('home-food'); if(!el || typeof window.foodItems !== 'function') return;
-  const all = window.foodItems('food').concat(window.FT ? FT.added('food') : []).concat(window.foodItems('spot').map(i=>({ ...i, spot:true })));
-  if(!all.length){ el.hidden = true; return; }
-  const recent = all.slice().sort((a,b)=>(b.t || 0) - (a.t || 0)).slice(0, 3), wk = Date.now() - 7 * 864e5;
+  const all = window.foodItems('food').concat(window.FT ? FT.added('food') : []), spots = window.foodItems('spot').concat(window.FT ? FT.added('spot') : []);
+  if(!all.length && !spots.length){ el.hidden = true; return; }
+  const recent = all.slice().sort((a,b)=>(b.t || 0) - (a.t || 0)).slice(0, 2), wk = Date.now() - 7 * 864e5;
+  const cams = SEAS.filter(x=>x[2]).length;
   el.hidden = false;
   el.innerHTML = `<div class="hsec">🍜 맛집 · 🏄 스팟 <small>최근에 올라온 곳</small></div>
     ${recent.map(i=>`<button type="button" class="hf" data-hf="${i.spot ? 'spot' : 'food'}"><span class="hf-ic">${i.spot ? '🏄' : i.by ? '🙋' : '🍜'}</span>
       <span class="hf-m"><b>${esc(i.n)}${i.t > wk ? ' <em>NEW</em>' : ''}</b><small>${esc(i.m || i.a || '')}</small></span><span class="hgo">›</span></button>`).join('')}
-    <div class="hq" style="margin-top:8px"><button type="button" class="btn sm mint" data-hf="food">🍜 맛집 전체</button><button type="button" class="btn sm mint" data-hf="spot">🏄 서핑 스팟</button><button type="button" class="btn sm ghost" data-hf="add">➕ 등록하기</button></div>`;
+    <button type="button" class="hf hf-spot" data-hf="spot"><span class="hf-ic">🏄</span><span class="hf-m"><b>서핑 스팟 ${spots.length}곳</b><small>지역별 포인트 · 📹 캠 ${cams}곳 바로 보기</small></span><span class="hgo">›</span></button>
+    <div class="hq" style="margin-top:8px"><button type="button" class="btn sm mint" data-hf="food">🍜 맛집 전체</button><button type="button" class="btn sm ghost" data-hf="add">➕ 맛집 등록</button></div>`;
   el.querySelectorAll('[data-hf]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hf;
     if(k === 'add'){ foodOpen('food'); setTimeout(()=>document.querySelector('[data-rqopen="food"]')?.click(), 400); } else foodOpen(k); });
 }

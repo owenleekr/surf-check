@@ -39,6 +39,7 @@ function collect(){
   if(window.FT) FT.events(nameOf).forEach(e=>out.push({ ts:e.ts, ic:e.ic, who:e.who, text:e.text, go:e.kind }));
   out.sort((a,b)=>b.ts - a.ts);
   const top = out.slice(0, 8);
+  if(typeof window.updEvents === 'function') top.splice(Math.min(1, top.length), 0, ...window.updEvents());     // 최근 업데이트도 한 칸
   if(top.length < 3){            // 조용한 날엔 '지금의 기록'을 보여 준다 — 도전할 이유
     const best = peers.filter(p=>p.best >= 100).sort((a,b)=>b.best - a.best)[0];
     if(best) top.push({ ts:0, ic:'👑', who:`${best.name}(${tag(best.cohort)})`, text:`님이 파도 점프 최고 ${best.best}점 — 넘어 볼래요?`, go:'game' });
@@ -66,6 +67,7 @@ function go(){
   try{ localStorage.setItem(SEEN, String(Date.now())); }catch(err){}
   if(g === 'game' && typeof gameOpen === 'function') gameOpen();
   else if(g === 'surf' && typeof surfOpen === 'function') surfOpen();
+  else if(g === 'upd' && typeof updOpen === 'function') updOpen();
   else if((g === 'food' || g === 'spot') && typeof foodOpen === 'function') foodOpen(g);
   paint(false);
 }
