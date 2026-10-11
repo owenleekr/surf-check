@@ -396,6 +396,15 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .food-btns{ display:flex; flex-wrap:wrap; gap:8px }
 .seg em{ font-style:normal } 
 
+
+/* 홈 — 오늘 한 판 · 맛집 */
+.hsec{ font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:800; color:#fff; text-shadow:2px 2px 0 var(--ink); margin:14px 0 8px } .hsec small{ font-family:inherit; font-size:12px; text-shadow:1px 1px 0 var(--ink); margin-left:6px }
+.hgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px }
+.hg{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:92px; padding:10px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
+.hg:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink) } .hg-ic{ font-size:26px; font-family:sans-serif; line-height:1.1 } .hg b{ font-size:13.5px; word-break:keep-all } .hg small{ font-size:11.5px; color:#5B6275; font-weight:700 }
+.hf{ display:flex; align-items:center; gap:10px; width:100%; margin-top:6px; padding:9px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); cursor:pointer }
+.hf-ic{ font-size:20px; font-family:sans-serif } .hf-m{ flex:1; min-width:0; display:flex; flex-direction:column } .hf-m b{ font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .hf-m small{ font-size:12px; color:#5B6275; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.hf-m em{ font-style:normal; font-size:10.5px; padding:0 5px; background:var(--coral); color:#fff; border:2px solid var(--ink); margin-left:4px }
 /* 상단 소식줄 */
 .feed{ display:flex; align-items:center; gap:8px; width:100%; min-height:46px; margin:10px 0 0; padding:7px 12px; text-align:left; font-family:inherit; font-size:13.5px; font-weight:700; color:var(--ink);
        background:#FFF3C4; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer; overflow:hidden }
@@ -832,6 +841,8 @@ body.onb-on .wrap{ padding-bottom:230px }
         <span class="qs-m"><b id="qs-t"></b><small id="qs-s"></small></span><b class="qs-go">›</b>
       </button>
       <button type="button" class="todo" id="todo" hidden></button>
+      <section class="hgame" id="home-games" aria-label="오늘 한 판"></section>
+      <section class="hfood" id="home-food" aria-label="맛집·서핑 스팟" hidden></section>
       <section class="mine" id="mine" aria-label="내 일정" hidden>
         <h3>📌 내 일정</h3>
         <div id="mine-list"></div>
@@ -855,7 +866,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         </details>
         <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력</summary><div class="dmgrid" id="dmgrid"></div></details>
       </section>
-      <div class="grp" id="here-grp"><span class="t">오늘 여기서</span><div class="px" id="home-sum"></div></div>
+      <div class="grp" id="here-grp"><span class="t">같이 가요 — 번개 · 차 · 숙소</span><div class="px" id="home-sum"></div></div>
       <button type="button" class="voice" id="voice" hidden>
         <span class="vh">🎙 코치님들의 목소리</span>
         <span class="vt" id="voice-t"></span>
@@ -1017,13 +1028,13 @@ body.onb-on .wrap{ padding-bottom:230px }
 
 <nav class="nav" id="nav" hidden>
   <button type="button" id="t-home" aria-pressed="true"><i>🏄</i>홈<span class="dot" id="home-dot" hidden>!</span></button>
-  <button type="button" id="t-ride" aria-pressed="false"><i>🚗</i>차량<span class="dot" id="ride-dot" hidden>0</span></button>
-  <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
   <button type="button" id="t-food" aria-pressed="false"><i>🍜</i>맛집<span class="dot" id="food-dot" hidden>0</span></button>
+  <button type="button" id="t-play" aria-pressed="false"><i>🎮</i>놀이<span class="dot" id="play-dot" hidden>0</span></button>
   <button type="button" id="t-bolt" aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
   <button type="button" id="t-town" aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
-  <button type="button" id="t-play" aria-pressed="false"><i>🎮</i>놀이<span class="dot" id="play-dot" hidden>0</span></button>
   <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>캠</button>
+  <button type="button" id="t-ride" aria-pressed="false"><i>🚗</i>차량<span class="dot" id="ride-dot" hidden>0</span></button>
+  <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
 </nav>
 <button type="button" class="mailfab" id="mail" aria-label="쪽지">✉️<span class="dot" id="mail-dot" hidden>0</span></button>
 <!-- 서프스케이트 훈련 (skate.js) -->
@@ -2564,7 +2575,7 @@ function refreshDots(){
   setDot('bolt', bolts, boltGone);
 }
 
-const TABS = ['home','ride','stay','food','bolt','town','play','cam'];
+const TABS = ['home','food','play','bolt','town','cam','ride','stay'];        // 서핑·놀이가 먼저, 차·숙소는 뒤로(쓰임이 줄었다)
 let nowOpen = false;
 /* 머리를 탭에 따라 접는다 — 홈에서는 온전히, 나머지에서는 한 줄. */
 function layoutHead(){
@@ -2925,6 +2936,34 @@ function renderMine(){
 }
 setInterval(()=>{ if(!document.hidden && state.tab==='home') renderMine(); }, 60000);   // '2시간 뒤'가 낡지 않게
 
+/* 홈 — 오늘 한 판: 게임 셋과 훈련을 한 줄로. 숫자는 내 기록(남의 값 아님) */
+function homeGames(){
+  const el = $('home-games'); if(!el) return;
+  const p = ME.profile?.play || {}, day = today(), dsc = (p.dbest && p.dbest.day === day) ? p.dbest.score : null;
+  const skDays = Object.keys(p.sk?.real || {}).length;
+  const g = (id, ic, t, sub, fn) => `<button type="button" class="hg" data-hg="${id}"><span class="hg-ic">${ic}</span><b>${t}</b><small>${sub}</small></button>`;
+  el.innerHTML = `<div class="hsec">🎮 오늘 한 판 <small>게임·훈련으로 XP</small></div><div class="hgrid">
+    ${g('surf', '🌊', '라인업 서핑', p.sbest ? `최고 ${p.sbest}` : '패들·튜브·풀아웃')}
+    ${g('skate', '🛹', '서프스케이트', skDays ? `${skDays}일 탐` : '땅에서 펌핑')}
+    ${g('game', '🏄', '파도 점프', dsc != null ? `오늘 ${dsc}` : '오늘의 챌린지')}</div>`;
+  el.querySelectorAll('[data-hg]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hg; (k === 'surf' ? window.surfOpen : k === 'skate' ? window.skateOpen : window.gameOpen)?.(); });
+}
+/* 홈 — 맛집·스팟: 최근에 올라온 3곳(네이버 리스트 + 앱 등록). 남이 쓴 이름·한줄평은 esc */
+function homeFood(){
+  const el = $('home-food'); if(!el || typeof window.foodItems !== 'function') return;
+  const all = window.foodItems('food').concat(window.FT ? FT.added('food') : []).concat(window.foodItems('spot').map(i=>({ ...i, spot:true })));
+  if(!all.length){ el.hidden = true; return; }
+  const recent = all.slice().sort((a,b)=>(b.t || 0) - (a.t || 0)).slice(0, 3), wk = Date.now() - 7 * 864e5;
+  el.hidden = false;
+  el.innerHTML = `<div class="hsec">🍜 맛집 · 🏄 스팟 <small>최근에 올라온 곳</small></div>
+    ${recent.map(i=>`<button type="button" class="hf" data-hf="${i.spot ? 'spot' : 'food'}"><span class="hf-ic">${i.spot ? '🏄' : i.by ? '🙋' : '🍜'}</span>
+      <span class="hf-m"><b>${esc(i.n)}${i.t > wk ? ' <em>NEW</em>' : ''}</b><small>${esc(i.m || i.a || '')}</small></span><span class="hgo">›</span></button>`).join('')}
+    <div class="hq" style="margin-top:8px"><button type="button" class="btn sm mint" data-hf="food">🍜 맛집 전체</button><button type="button" class="btn sm mint" data-hf="spot">🏄 서핑 스팟</button><button type="button" class="btn sm ghost" data-hf="add">➕ 등록하기</button></div>`;
+  el.querySelectorAll('[data-hf]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hf;
+    if(k === 'add'){ foodOpen('food'); setTimeout(()=>document.querySelector('[data-rqopen="food"]')?.click(), 400); } else foodOpen(k); });
+}
+window.homeFood = homeFood;
+
 function renderHome(){
   renderMine(); renderTodo(); renderVoice(); startVoice(); renderDrill(); playTick();
   const box = $('home-sum'); if(!box) return;
@@ -2939,10 +2978,10 @@ function renderHome(){
       <span class="hko">${ko}${n > 1 ? ` <b>+${n-1}</b>` : ''}<small>${text}</small></span>
       <span class="hgo">›</span></button>`;
   const rows = [];
-  if(typeof foodCount === 'function' && foodCount()) rows.push(line('🍜','맛집·스팟', 0, 'food', `양서학 추천 ${foodCount()}곳 · 네이버지도 목록과 자동으로 맞춰져요`));
   if(bs.length)    rows.push(line('⚡','번개', bs.length, 'bolt', `${dShort(bs[0].date)} ${hLabel(bs[0].time)} · ${esc(bs[0].beach)} · ${(bs[0].joins||[]).length}명`));
   if(rides.length) rows.push(line('🚗','차량', rides.length, 'ride', `${dShort(rides[0].date)} ${hLabel(rides[0].depart_at)} · ${esc(rides[0].from_place)} → ${esc(rides[0].to_place)} · 빈자리 ${Math.max(0,(rides[0].seats||0)-(rides[0].riders||[]).length)}`));
   if(stays.length) rows.push(line('🏠','숙소', stays.length, 'stay', `${dShort(stays[0].date_from)} ~ ${dShort(stays[0].date_to)} · ${esc(stays[0].place)} · ${(stays[0].guests||[]).length}/${stays[0].capacity}명`));
+  homeGames(); homeFood();
   box.innerHTML = rows.join('') || `<div class="hsub dim" style="padding:2px 0 8px">아직 올라온 글이 없어요. 먼저 열어볼까요?</div>
       <div class="hq"><button type="button" class="btn sm mint" data-go="bolt">⚡ 번개</button>
       <button type="button" class="btn sm mint" data-go="ride">🚗 차량</button>

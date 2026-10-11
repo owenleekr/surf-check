@@ -27,6 +27,7 @@ async function load(force){
     try{ localStorage.setItem(KEY, JSON.stringify({ at:Date.now(), data:j })); }catch(e){}
   }catch(e){ failed = true; }
   busy = false; render(); badge();
+  if(typeof window.homeFood === 'function') window.homeFood();          // 홈의 '최근에 올라온 곳'도 새로
 }
 
 /* 추가하는 법 — 네이버 리스트는 운영자만 고칠 수 있어서, 누구나 앱에 등록하고 운영자가 리스트에 옮기는 구조 */

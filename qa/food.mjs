@@ -7,8 +7,8 @@ const data={folders:[{...snap.folders[0],items:[...snap.folders[0].items,evil]},
 const t=await open({surfers:[{id:'u4',name:'이성현',cohort:'6기',profile:{}},{id:'infinagree',name:'이성현',cohort:'6기',profile:{}}],__naver:data},{id:'u4',name:'테스터',profile:{gender:'f',birth:'1',dressed:1}},{wait:3000});
 await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); }); await t.sleep(300);
 console.log('탭', await t.S(()=>({ 탭수:document.querySelectorAll('#nav button').length, 가로넘침:document.documentElement.scrollWidth-innerWidth, 버튼폭:Math.round(document.getElementById('t-food').getBoundingClientRect().width) })));
-console.log('홈 줄', await t.S(()=>[...document.querySelectorAll('.hrow')].map(r=>r.textContent.replace(/\s+/g,' ').trim()).filter(x=>x.includes('맛집'))));
-await t.S(()=>document.querySelector('.hrow[data-go="food"]').click()); await t.sleep(800);
+console.log('홈 맛집 블록', await t.S(()=>[...document.querySelectorAll('#home-food .hf')].map(r=>r.textContent.replace(/\s+/g,' ').trim().slice(0,30))));
+await t.S(()=>document.querySelector('#home-food .btn[data-hf="food"]').click()); await t.sleep(800);
 console.log('맛집 탭', await t.S(()=>({ 탭:state.tab, 카드:document.querySelectorAll('.food-card').length, 안내:!!document.querySelector('.food-how'), 링크:[...document.querySelectorAll('.food-how a')].map(a=>a.getAttribute('href')), 가이드버튼:!!document.querySelector('[data-guide="food"]'), 요청버튼:!!document.querySelector('[data-rqopen="food"]'), 칩:[...document.querySelectorAll('[data-area]')].map(b=>b.textContent.replace(/\s+/g,' ').trim()) })));
 console.log('주입', await t.S(()=>({f:window.__f||0, js링크:[...document.querySelectorAll('#pane-food a')].filter(a=>/^javascript/i.test(a.getAttribute('href'))).length })));
 await t.S(()=>document.querySelector('#food-seg [data-view="spot"]').click()); await t.sleep(400);
