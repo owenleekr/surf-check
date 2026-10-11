@@ -2479,31 +2479,30 @@ function bindNotes(box){ box.querySelectorAll('[data-note]').forEach(b=>b.onclic
 /* ── 처음 온 사람 안내 ────────────────────────────────────
    덮개(dim)를 쓰지 않는다. 앱에서 덮개의 pointer-events 가 탭을 삼켜
    "누를 수 없는 안내"가 됐던 적이 있다. 여기선 아래 카드 + 테두리만 쓴다. */
+/* 처음 들어온 사람 안내 — 화면을 직접 짚어 가며 한 장씩. skip() 이 참이면 그 장은 건너뛴다(이미 설치했거나 안 보이는 칸) */
 const ONB = [
-  { tab:'home', at:'prof-lv', t:'내 레벨 — 눌러서 놀이 메뉴',
-    d:'훈련 · 번개 · 차량 · 숙소 · 한마디로 <b>XP</b>가 쌓여요.<br>아래 <b>🎮 놀이</b> 탭에 퀘스트 · 파도 점프 · 코치 퀴즈 · 운세 · 스탬프 · 배지 · 순위 · 조개 상점이 모여 있어요.' },
-  { tab:'home', at:'drill-btn', t:'하루 한 번 테이크오프 체크',
-    d:'오늘 했으면 눌러요. 연속일수가 쌓이고, 동기들과 <b>이번 주 목표</b>를 같이 채웁니다.<br>아래 순위에서 누가 꾸준한지도 볼 수 있어요.' },
-  { tab:'home', at:'bld-fold', t:'내 캐릭터 꾸미기',
-    d:'얼굴 · 옷 · 보드 · 같이 타는 친구를 고릅니다. 고르는 즉시 저장돼요.<br>레벨이 오르면 <b>보드 색과 모자</b>가 새로 열립니다.' },
-  { tab:'ride', at:'t-ride', t:'차 — 같이 타기',
-    d:'빈자리에 <b>[탈래요]</b>를 누르면 내 자리가 잡혀요. 마음이 바뀌면 [자리 빼기].<br>내가 운전하면 <b>[🚗 차량 쉐어 올리기]</b>로 날짜·출발 시각·태울 인원을 적습니다.' },
-  { tab:'ride', at:'r-dir',  t:'가는 차 · 나가는 차',
-    d:'<b>양양 가는 차</b>는 집 → 양양, <b>나가는 차</b>는 양양 → 집이에요.<br>방향을 고르면 타는 곳·내리는 곳 예시도 같이 바뀝니다.', open:'ride' },
-  { tab:'stay', at:'t-stay', t:'숙소 — 같이 쓰기',
-    d:'남는 자리가 있는 숙소에 들어가거나, 내가 잡은 방을 올려 사람을 채웁니다.<br>지도는 <b>양양서핑학교</b>가 한가운데예요 — 거리는 학교까지 잰 값입니다.' },
-  { tab:'stay', at:'stays',  t:'다녀왔으면 별점을',
-    d:'숙소는 자보기 전엔 알 수가 없어요. 별점과 한마디를 남기면<br>다음 사람이 그걸 보고 고릅니다. 한 숙소에 한 번, 언제든 고칠 수 있어요.' },
-  { tab:'food', at:'t-food', t:'맛집 · 서핑 스팟 — 양서학 찐맛집',
-    d:'양서학 서퍼들의 <b>네이버지도 맛집 목록</b>이 그대로 들어와요. 폴더에 가게를 추가하면 <b>10분 안에 자동으로</b> 여기에도 나타나요.<br>추가하는 법·네이버 목록 바로가기는 이 탭 맨 위에, 해변별 서핑 스팟은 위쪽 <b>🏄 서핑 스팟</b> 버튼에 있어요.' },
-  { tab:'bolt', at:'t-bolt', t:'서핑번개 — 언제 같이 들어갈지',
-    d:'시간과 바다만 정해서 올리면, 갈 사람이 <b>[나도 갈래요]</b>를 눌러 채웁니다.<br>정원은 없어요 — 바다는 자리가 모자라지 않으니까요.' },
-  { tab:'cam',  at:'t-cam',  t:'라이브캠 — 나가기 전에 한 번',
-    d:'WSB FARM 웨이브캠을 그대로 가져왔어요. 지금 그 해변이 어떤지 <b>눈으로</b> 보고 나갑니다.<br>소리는 없고 데이터를 꽤 쓰니, 다른 탭으로 가면 알아서 꺼져요.' },
-  { tab:'town', at:'t-town', t:'마을 — 한마디가 머리 위로',
-    d:'채팅에 친 말이 내 머리 위 <b>말풍선</b>으로 떠요. 내 캐릭터를 누르면 🔥😎🥳 <b>이모트</b>도 띄울 수 있고, 동기를 누르면 👏🔥🌊💪 응원을 보내요.<br>바다에 체크인한 사람 머리 위엔 📍, 오늘 훈련한 사람은 ✔가 붙습니다.' },
-  { tab:'home', at:'school', t:'학교는 곧 열려요',
-    d:'파도 예보 · 물때 · 수업 기록 · 자세 분석.<br>준비되면 여기 카드가 <b>문</b>으로 바뀝니다. 마을과 채팅은 지금도 쓸 수 있어요.' },
+  { tab:'home', at:'feed', t:'📣 맨 위 소식줄', skip:()=>$('feed')?.hidden,
+    d:'누가 게임 몇 점을 돌파했는지, 새 맛집·댓글이 올라왔는지 여기서 돌아가며 보여줘요.<br><b>누르면 그곳으로 바로</b> 가요.' },
+  { tab:'home', at:'prof-lv', t:'🏄 내 캐릭터 · 레벨',
+    d:'훈련·번개·차·숙소·한마디·게임으로 <b>XP</b>가 쌓이고, 레벨이 오르면 모자·보드 색이 열려요.<br>캐릭터 꾸미기는 홈 아래 <b>내 캐릭터</b>에서.' },
+  { tab:'home', at:'drill-btn', t:'✅ 하루 한 번 테이크오프 체크',
+    d:'오늘 했으면 눌러요. 연속일수가 쌓이고 동기들과 <b>이번 주 목표</b>를 같이 채웁니다.' },
+  { tab:'food', at:'t-food', t:'🍜 맛집 · 🏄 서핑 스팟',
+    d:'양서학 네이버 리스트가 자동으로 들어와요. 가 본 곳이 없으면 <b>➕ 등록하기</b>(네이버 링크 + 한줄평) — <b>바로 목록에 올라가요</b>.<br>카드마다 👍 추천 · 🙋 가봤어요 · 💬 댓글(내 기수가 같이 보여요).' },
+  { tab:'play', at:'t-play', t:'🎮 놀이 — 게임과 훈련',
+    d:'🌊 <b>라인업 서핑</b>(패들·팝업·튜브·풀아웃) · 🛹 <b>서프스케이트 훈련</b>(땅에서 펌핑·바텀턴·컷백) · 🏄 파도 점프 · 코치 퀴즈 · 운세 · 스탬프 · 조개 상점.' },
+  { tab:'bolt', at:'t-bolt', t:'⚡ 서핑번개',
+    d:'시간과 바다만 정해 올리면 갈 사람이 <b>[나도 갈래요]</b>로 채워요. 정원은 없어요.' },
+  { tab:'town', at:'t-town', t:'🏘 마을 — 한마디가 머리 위로',
+    d:'채팅에 친 말이 내 머리 위 <b>말풍선</b>으로 떠요. 내 캐릭터를 누르면 이모트, 동기를 누르면 응원을 보내요.' },
+  { tab:'cam', at:'t-cam', t:'📹 라이브캠',
+    d:'나가기 전에 그 해변을 <b>눈으로</b> 봐요. 데이터를 꽤 써서 다른 탭으로 가면 알아서 꺼져요.' },
+  { tab:'ride', at:'t-ride', t:'🚗 차 — 같이 타기',
+    d:'빈자리에 <b>[탈래요]</b>를 누르면 자리가 잡혀요. 운전하면 <b>[차량 쉐어 올리기]</b>로 날짜·시각·인원을.<br><b>양양 가는 차 / 나가는 차</b>를 골라 볼 수 있어요.' },
+  { tab:'stay', at:'t-stay', t:'🏠 숙소 — 같이 쓰기',
+    d:'남는 자리가 있는 숙소에 들어가거나 내 방을 올려 사람을 채워요. 다녀왔으면 <b>별점 한 줄</b> — 다음 사람이 그걸 보고 골라요.' },
+  { tab:'home', at:'a2hs', t:'📲 마지막 — 홈 화면에 추가', skip:()=>$('a2hs')?.hidden,
+    d:'한 번 해 두면 카톡에서 링크를 찾지 않아도 <b>아이콘 하나로</b> 열려요. 이 카드를 눌러 방법을 보세요.<br>자세한 사용법은 <a href="/guide" target="_blank" rel="noopener">surf.owenai.xyz/guide</a>' },
 ];
 let onbI = -1, onbRing = null;
 const onbDone = () => { try{ return localStorage.getItem('lineup.share.onb') === '1'; }catch(e){ return false; } };
@@ -2511,7 +2510,9 @@ function onbClear(){ if(onbRing){ onbRing.classList.remove('ring'); onbRing = nu
 function onbEnd(){ onbClear(); onbI = -1; $('onb').hidden = true; document.body.classList.remove('onb-on');
   try{ localStorage.setItem('lineup.share.onb', '1'); }catch(e){}
   if(typeof popNext === 'function') setTimeout(popNext, 300); }
-function onbShow(i){
+function onbShow(i, back){
+  while(ONB[i] && ONB[i].skip && ONB[i].skip()) i += back ? -1 : 1;                    // 안 보이는 칸을 짚는 장은 건너뛴다
+  if(i < 0) i = 0;
   onbI = i; const st = ONB[i]; if(!st) return onbEnd();
   setTab(st.tab);
   if(st.open){ const d = $('pane-'+st.open)?.querySelector('details'); if(d) d.open = true; }
@@ -2526,7 +2527,7 @@ function onbShow(i){
 }
 function onbStart(){ document.body.classList.add('onb-on'); $('onb').hidden = false; onbShow(0); }
 $('onb-next').onclick = ()=>{ onbI + 1 >= ONB.length ? onbEnd() : onbShow(onbI + 1); };
-$('onb-skip').onclick = ()=>{ onbI === 0 ? onbEnd() : onbShow(onbI - 1); };
+$('onb-skip').onclick = ()=>{ onbI === 0 ? onbEnd() : onbShow(onbI - 1, true); };
 $('help').onclick = ()=>{ if($('onb').hidden) onbStart(); else onbEnd(); };
 
 /* ── 탭 ─────────────────────────────────────────────────── */

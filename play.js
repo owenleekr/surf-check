@@ -213,7 +213,7 @@ function playTick(){
   const NEWS = 'play5';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
-    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🌊 새 게임 「라인업 서핑」 — 패들해서 파도 잡고, 팝업하고, 튜브·탑턴·에어, 무너지면 풀아웃!\n🏄 파도 점프는 목숨 3개 · 아이템 7가지(⭐무적 🧲자석 🐢느리게 ✖️2 💎 🛟 ❤️) · 스테이지 5개로 배경이 바뀌어요.', go:()=>setTab('food'), btn:'맛집 보기' }); }
+    if(!first) _popQ.push({ ic:'🎮', t:'새로 생겼어요', d:'🌊 새 게임 「라인업 서핑」 — 패들해서 파도 잡고, 팝업하고, 튜브·탑턴·에어, 무너지면 풀아웃!\n🛹 「서프스케이트 훈련」 — 땅에서 펌핑·바텀턴·컷백 리듬 연습.\n🏄 파도 점프는 목숨 3개 · 아이템 7가지(⭐무적 🧲자석 🐢느리게 ✖️2 💎 🛟 ❤️) · 스테이지 5개로 배경이 바뀌어요.', go:()=>setTab('play'), btn:'놀이 보기' }); }
   /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
   if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
   else{
@@ -415,6 +415,7 @@ function renderHub(enter){
       <button type="button" data-set="haptic" aria-pressed="${hapticOn()}"><span>📳 진동</span><b>${hapticOn() ? '켜짐' : '꺼짐'}</b></button>
       <button type="button" data-set="sound" aria-pressed="${soundOn()}"><span>🔊 게임 소리</span><b>${soundOn() ? '켜짐' : '꺼짐'}</b></button>
       <button type="button" data-set="a2hs"><span>📲 홈 화면에 추가</span><b>방법</b></button>
+      <button type="button" data-set="guide"><span>📖 사용 가이드</span><b>열기</b></button>
       <button type="button" data-set="share"><span>🔗 친구에게 앱 알리기</span><b>공유</b></button>
     </div>
     ${(()=>{ const top = dailyTop(); return top.length ? `<div class="dtop"><h4>📅 오늘의 챌린지 TOP ${top.length}</h4>${top.map((r,i)=>`<div class="${r.id===ME.id?'me':''}"><span>${['🥇','🥈','🥉'][i]} ${esc(r.name)}</span><b>${r.s}점</b></div>`).join('')}</div>` : ''; })()}
@@ -429,6 +430,7 @@ function renderHub(enter){
   root.querySelectorAll('[data-set]').forEach(b=>b.onclick = async ()=>{ const k = b.dataset.set;
     if(k === 'haptic'){ const on = !hapticOn(); try{ localStorage.setItem('lineup.share.haptic', on ? '1' : '0'); }catch(e){} if(on) navigator.vibrate?.(15); renderHub(); toast(on ? '진동을 켰어요' : '진동을 껐어요'); }
     else if(k === 'sound'){ const on = !soundOn(); try{ localStorage.setItem('lineup.share.snd', on ? '1' : '0'); }catch(e){} renderHub(); toast(on ? '게임 소리를 켰어요' : '게임 소리를 껐어요'); }
+    else if(k === 'guide'){ open('/guide', '_blank', 'noopener'); }
     else if(k === 'a2hs'){ if(typeof a2hsOpen === 'function') a2hsOpen(); }
     else if(k === 'share'){ const data = { title:'SurfShare', text:'양양 낙산 서핑 — 차 같이 타고, 숙소 같이 쓰고. 비밀번호는 단톡방에서 받아요.', url:'https://surf.owenai.xyz/' };
       try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });

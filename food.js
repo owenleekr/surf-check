@@ -131,7 +131,8 @@ function guideHTML(k){
       <li><b>잘못 올렸어요</b> — 내 등록 카드의 🗑 로 지울 수 있어요(⭕ 가 되기 전까지).</li>
       <li><b>⭕ 가 안 바뀌어요</b> — 운영자가 아직 리스트에 안 넣은 거예요. 넣고 나서 10분 정도 걸려요.</li></ul></div>
     <div class="gd-tip" style="background:#FFF3C4"><b>운영자용</b><ul><li>${lbl} 화면 위 <b>📥 반영 대기</b> → ❌ 카드의 <b>📌 네이버에 넣기</b> → 네이버지도에서 ⭐ 저장 → ‘${esc(fn)}’ 선택. 10분 안에 ⭕ 로 바뀌어요.</li>
-      <li>메모에 ‘외부유출 금지’를 적은 곳은 앱에 안 올라와요.</li></ul></div></div>`;
+      <li>메모에 ‘외부유출 금지’를 적은 곳은 앱에 안 올라와요.</li></ul></div>
+    <div class="food-btns" style="margin-top:12px"><a class="btn sm blue" href="/guide" target="_blank" rel="noopener">📖 가이드 페이지 열기</a><button type="button" class="btn sm ghost" data-gshare>🔗 단톡방에 가이드 공유</button></div></div>`;
 }
 let guideKind = 'food';
 function guideOpen(k){
@@ -141,6 +142,8 @@ function guideOpen(k){
     sh.innerHTML = '<div class="sheet-dim" data-gclose></div><div class="sheet-in"><div class="sheet-hd"><span class="t">📖 네이버 리스트 추가 가이드</span><button class="btn sm ghost" data-gclose>닫기</button></div><div id="food-guide-body"></div></div>';
     document.body.appendChild(sh);
     sh.addEventListener('click', e=>{ if(e.target.closest('[data-gclose]')) sh.hidden = true;
+      if(e.target.closest('[data-gshare]')){ const d = { title:'SurfShare 가이드', text:'맛집·서핑 스팟 등록하는 법 + 홈 화면에 추가하는 법', url:'https://surf.owenai.xyz/guide' };
+        (navigator.share ? navigator.share(d) : navigator.clipboard.writeText(d.url).then(()=>toast('가이드 링크를 복사했어요'))).catch(()=>{}); return; }
       const g = e.target.closest('[data-gk]'); if(g){ guideKind = g.dataset.gk; $f('food-guide-body').innerHTML = guideHTML(guideKind); } }); }
   $f('food-guide-body').innerHTML = guideHTML(guideKind); sh.hidden = false;
 }
