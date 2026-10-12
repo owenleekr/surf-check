@@ -3,8 +3,12 @@
    누르면 전체 내역(날짜별). 안 본 업데이트가 있으면 NEW 표시 — 본 시점은 이 기기에만 기억한다.
    새 배포 때 맨 위에 한 줄 추가하면 된다(id 는 겹치지 않게). go 는 그 기능으로 바로 가는 버튼. */
 (function(){
-const SEEN = 'lineup.share.upd';
+const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide';
 const UPDATES = [
+  { id:'u1012a', date:'10.12', t:'게임 쉬움 · 어려움 모드', items:[
+      ['🙂', '파도 점프 · 라인업 서핑에 쉬움/어려움 — 쉬움은 처음 버전처럼 가볍게, 기록은 모드별로 따로', 'game'],
+      ['🧹', '화면 간격 정리 · 바다 상황은 한 줄로 접고 연습·게임·맛집을 앞으로', null],
+      ['🔕', '업데이트 알림은 「다시 보지 않기」로 닫을 수 있어요', null] ] },
   { id:'u1011d', date:'10.11', t:'캐릭터가 더 귀여워졌어요', items:[
       ['🙂', '점 눈 · 볼터치 · 통통한 볼 — 표정 6가지(미소·신남·선글라스·놀람·윙크·졸림)', 'me'],
       ['🛍️', '조개 상점 — 알로하 셔츠·판초·밀짚모자·고양이 귀·보드 무늬, 입어 보고 사요 · 오늘의 할인', 'shop'],
@@ -31,13 +35,18 @@ function go(k){
   else if(k === 'guide') window.open('/guide', '_blank', 'noopener');
   else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $u('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
 }
+/* 홈 카드 — 안 본 업데이트가 있을 때만 뜬다. '다시 보지 않기'를 누르면 다음 업데이트가 나올 때까지 숨는다. */
+const hiddenFor = () => { try{ return localStorage.getItem(HIDE) || ''; }catch(e){ return ''; } };
 function card(){
   const el = $u('home-upd'); if(!el) return;
   const u = UPDATES[0], n = unseen();
+  if(!n || hiddenFor() === u.id){ el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   el.innerHTML = `<button type="button" class="upd" id="upd-open"><span class="upd-h"><b>🆕 업데이트 · ${u.date}</b>${n ? `<em>NEW ${n}</em>` : ''}</span>
-    <span class="upd-t">${u.t}</span><span class="upd-l">${u.items.slice(0, 2).map(i=>`${i[0]} ${i[1].split(' — ')[0]}`).join('<br>')}</span><span class="upd-more">전체 보기 ›</span></button>`;
+    <span class="upd-t">${u.t}</span><span class="upd-l">${u.items.slice(0, 2).map(i=>`${i[0]} ${i[1].split(' — ')[0]}`).join('<br>')}</span><span class="upd-more">전체 보기 ›</span></button>
+    <button type="button" class="upd-x" id="upd-x">다시 보지 않기</button>`;
   $u('upd-open').onclick = openAll;
+  $u('upd-x').onclick = ()=>{ try{ localStorage.setItem(HIDE, u.id); localStorage.setItem(SEEN, u.id); }catch(e){} card(); };
 }
 function openAll(){
   let sh = $u('upd-sheet');

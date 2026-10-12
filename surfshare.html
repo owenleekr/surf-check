@@ -113,7 +113,7 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
 .tabs button + button{ border-left:0 }
 .tabs button[aria-pressed="true"]{ background:var(--ink); color:var(--sun) }
 .grp{ margin-top:14px }
-.grp > .t{ display:block; color:var(--paper); text-shadow:2px 2px 0 var(--ink); font-size:17px; margin-bottom:6px }
+.grp > .t{ display:block; color:var(--paper); text-shadow:2px 2px 0 var(--ink); font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:800; margin-bottom:8px }
 /* 지난 글은 지우지 않는다 — 누가 언제 뭘 올렸는지는 남아야 하고,
    올린 사람이 나중에 지울 수도 있어야 한다. 대신 눈에서 한 겹 뒤로 보낸다. */
 .card.gone{ opacity:.45; filter:grayscale(.55) }
@@ -341,7 +341,8 @@ body.game-on{ overflow:hidden }
 #s-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; -webkit-touch-callout:none }
 .surf-pull{ margin-top:10px; min-height:52px; font-size:16px; background:#FF6B6B; color:#fff } .surf-pull[hidden]{ display:none }
 #g-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; -webkit-touch-callout:none }
-.game-ov{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:14px; background:rgba(11,37,64,.55) }
+.game-ov{ position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; padding:10px; background:rgba(11,37,64,.55); overflow:auto; overscroll-behavior:contain }
+.game-ov > .go-card{ margin:auto }       /* 카드가 화면보다 길면 잘리지 않고 스크롤 */
 .game-ov[hidden]{ display:none }
 .go-card{ width:100%; max-width:300px; background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:16px 14px; text-align:center }
 .go-t{ font-family:"Galmuri11",sans-serif; font-size:20px; font-weight:800 }
@@ -350,6 +351,7 @@ body.game-on{ overflow:hidden }
 .go-s small{ font-size:16px; margin-left:2px }
 .go-b{ font-size:14px; font-weight:700; margin:6px 0 10px } .go-b b{ color:#B45309 }
 .go-r{ display:flex; flex-direction:column; gap:2px; font-size:12.5px; font-weight:800; color:#5B6275; margin:0 0 12px }
+.go-mode{ display:flex; gap:6px; margin:8px 0 4px } .go-mode button{ flex:1; min-height:44px; font-family:inherit; font-size:14.5px; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer } .go-mode button[aria-pressed="true"]{ background:var(--ink); color:#fff }
 .go-st{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:4px 0 8px } .go-st span{ display:flex; flex-direction:column; font-size:11px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); padding:4px 2px } .go-st b{ font-family:"Galmuri11",sans-serif; font-size:15px; color:var(--ink) }
 .go-v{ font-size:13px; line-height:1.6; font-weight:700; margin:0 0 12px; color:#14304F; word-break:keep-all } .go-v small{ display:block; color:#5B6275; margin-top:2px }
 .game-ft{ color:#9FC4E4; font-size:12.5px; font-weight:700; text-align:center; padding-top:10px }
@@ -399,9 +401,17 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .seg em{ font-style:normal } 
 
 
+/* 홈 — 카드 사이 간격을 한 값(14px)으로. 각 카드가 제각각 margin 을 들고 있어 들쭉날쭉했다 */
+#pane-home:not([hidden]){ display:flex; flex-direction:column; gap:14px; padding-top:14px }
+#pane-home > *{ margin-top:0 !important; margin-bottom:0 !important }
+#pane-home .hsec{ margin:0 0 8px }
+.ft-links{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px } .ft-links .btn{ min-height:40px }
+.ft-bar .ft-b{ flex:1 1 auto; justify-content:center; padding:0 6px; white-space:nowrap } .sp-cam{ margin-top:8px }
 /* 홈 — 업데이트 소식 */
 .upd{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; margin:0 0 12px; padding:10px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF3C4; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
-.upd-h{ display:flex; align-items:center; gap:6px; width:100% } .upd-h b{ font-size:12.5px; color:#8A5A00 } .upd-h em{ font-style:normal; font-size:10.5px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
+#home-upd{ position:relative; margin:0 0 12px } #home-upd .upd{ margin:0 }
+.upd-x{ position:absolute; right:8px; top:8px; min-height:30px; padding:0 8px; font-family:inherit; font-size:11.5px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); cursor:pointer }
+.upd-h{ display:flex; align-items:center; gap:6px; width:100%; padding-right:96px } .upd-h b{ font-size:12.5px; color:#8A5A00 } .upd-h em{ font-style:normal; font-size:10.5px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
 .upd-t{ font-family:"Galmuri11",sans-serif; font-size:15.5px; font-weight:800 } .upd-l{ font-size:12.5px; font-weight:700; color:#4B4A6B; line-height:1.55 } .upd-more{ align-self:flex-end; font-size:12px; font-weight:800; color:#2E6BFF }
 .upd-sec{ padding:10px 0; border-bottom:2px dashed var(--grid) } .upd-sec h4{ margin:0 0 6px; font-size:14.5px } .upd-sec h4 em{ font-style:normal; font-size:10.5px; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
 .upd-it{ display:flex; align-items:center; gap:8px; padding:5px 0; font-size:13.5px; line-height:1.5 } .upd-it i{ font-style:normal; font-size:18px; font-family:sans-serif } .upd-it span{ flex:1; word-break:keep-all } .upd-it .btn{ flex:0 0 auto; min-height:36px }
@@ -2601,12 +2611,11 @@ function refreshDots(){
 const TABS = ['home','food','play','bolt','town','cam','ride','stay'];        // 서핑·놀이가 먼저, 차·숙소는 뒤로(쓰임이 줄었다)
 let nowOpen = false;
 /* 머리를 탭에 따라 접는다 — 홈에서는 온전히, 나머지에서는 한 줄. */
+/* 바다 상황 카드는 홈에서도 한 줄로 접어 둔다 — 홈 앞자리를 연습·게임·맛집/스팟에 내준다(펼치면 체크인) */
 function layoutHead(){
-  const home = state.tab === 'home';
-  $('nowbar').hidden = home;
-  $('now').hidden = !(home || nowOpen);
+  $('nowbar').hidden = false;
+  $('now').hidden = !nowOpen;
   $('nowbar').classList.toggle('open', nowOpen);
-  if(home) nowOpen = false;
 }
 $('nowbar').onclick = ()=>{ nowOpen = !nowOpen; layoutHead(); if(nowOpen) renderNow(); };
 
@@ -2966,7 +2975,7 @@ function homeGames(){
   const skDays = Object.keys(p.sk?.real || {}).length;
   const g = (id, ic, t, sub, fn) => `<button type="button" class="hg" data-hg="${id}"><span class="hg-ic">${ic}</span><b>${t}</b><small>${sub}</small></button>`;
   el.innerHTML = `<div class="hsec">🎮 오늘 한 판 <small>게임·훈련으로 XP</small></div><div class="hgrid">
-    ${g('surf', '🌊', '라인업 서핑', p.sbest ? `최고 ${p.sbest}` : '패들·튜브·풀아웃')}
+    ${g('surf', '🌊', '라인업 서핑', (p.sebest || p.sbest) ? `최고 ${Math.max(p.sebest || 0, p.sbest || 0)}` : '패들·튜브·풀아웃')}
     ${g('skate', '🛹', '서프스케이트', skDays ? `${skDays}일 탐` : '땅에서 펌핑')}
     ${g('game', '🏄', '파도 점프', dsc != null ? `오늘 ${dsc}` : '오늘의 챌린지')}</div>`;
   el.querySelectorAll('[data-hg]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hg; (k === 'surf' ? window.surfOpen : k === 'skate' ? window.skateOpen : window.gameOpen)?.(); });

@@ -15,6 +15,8 @@ const W = 240, H = 240, TR = 200, RX = 92, FIX = 1 / 60, LIVES = 3, WAVES = 5;
 const $s = id => document.getElementById(id);
 let cv, ctx, me = null, raf = 0, last = 0, acc = 0, held = false, tapQ = 0;
 let S = null;            // 세션
+/* 쉬움: 클로즈아웃·바위 없음, 컬이 느리고 팝업 칸이 넓다, 와이프아웃해도 60% — 어려움: 지금 그대로. 기록도 따로(sebest / sbest) */
+let hardS = false; try{ hardS = localStorage.getItem('lineup.share.smode') === 'hard'; }catch(e){}
 let R = null;            // 지금 파도
 
 /* 소리 — 파도 점프와 같은 설정(기본 꺼짐) */
@@ -49,7 +51,8 @@ function newSession(){
 }
 function newWave(){
   const big = S.wave >= 3 ? 2 : S.wave >= 1 ? 1 : 0;
-  const sz = SIZES[Math.min(2, Math.max(0, big - (Math.random() < 0.3 ? 1 : 0) + (Math.random() < 0.25 ? 1 : 0)))];
+  const base = SIZES[Math.min(2, Math.max(0, big - (Math.random() < 0.3 ? 1 : 0) + (Math.random() < 0.25 ? 1 : 0)))];
+  const sz = hardS ? base : { ...base, c:base.c * 0.85, close:0, rock:0, surf:0.2 };
   R = { sz, t:0, meter:0, arrive:2.7, swell:0, needle:0, popT:0, x:0, curl:-30, v:0, h:0.35, vh:0, air:false, ah:0, avh:0, grab:false,
         tube:0, pts:0, obs:[], spray:[], lastUp:false, topLock:0, done:null, msg:'', trick:{ top:0, tube:0, air:0 } };
   for(let x = 420; x < sz.L - 120; x += 170 + Math.random() * 170){
@@ -90,7 +93,7 @@ function step(dt){
     R.popT += dt; R.needle = (Math.sin(R.popT * 4.2 - Math.PI / 2) + 1) / 2;
     if(taps){
       const off = Math.abs(R.needle - 0.5);
-      const q = off < 0.1 ? 'perfect' : off < 0.24 ? 'good' : 'late';
+      const q = off < (hardS ? 0.1 : 0.15) ? 'perfect' : off < (hardS ? 0.24 : 0.34) ? 'good' : 'late';
       R.v = q === 'perfect' ? 118 : q === 'good' ? 100 : 82; R.vh = -0.9; R.h = 0.9; R.x = 0; R.curl = -26;
       S.pops.push({ x:RX - 20, y:50, t:0, life:1, v:q === 'perfect' ? '✨ 완벽한 테이크오프!' : q === 'good' ? '👍 테이크오프' : '😬 늦은 테이크오프' });
       if(q === 'perfect') R.pts += 30;
@@ -159,7 +162,7 @@ function spray(n){ for(let i = 0; i < n; i++) R.spray.push({ x:(R.cam || RX) - 6
 
 function wipe(why){
   const r = R; S.lives--; S.lost++;
-  const kept = Math.floor(r.pts * 0.4);
+  const kept = Math.floor(r.pts * (hardS ? 0.4 : 0.6));
   r.done = { kind:'wipe', why, got:kept, raw:Math.floor(r.pts) };
   S.total += kept; S.bestRide = Math.max(S.bestRide, kept); S.ridden++;
   S.phase = 'result'; held = false; beep(220, 60, 0.4, 'sawtooth', 0.07); buzz([40, 30, 60]);
@@ -180,19 +183,19 @@ function nextWave(){
 }
 function over(){
   S.phase = 'over'; window._gameRun = false;
-  const r = typeof playSurfDone === 'function' ? playSurfDone(S.total, S.bestRide) : { gain:0, newBest:false, best:S.total };
+  const r = typeof playSurfDone === 'function' ? playSurfDone(S.total, S.bestRide, hardS) : { gain:0, newBest:false, best:S.total };
   const p = ME.profile.play || {};
   $s('s-ov').hidden = false;
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">${r.newBest && S.total > 0 ? '🎉 최고 기록!' : '🏁 세션 끝'}</div>
     <div class="go-s">${S.total}<small>점</small></div>
-    <div class="go-st"><span>사용한 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>베스트 라이드<b>${S.bestRide}</b></span><span>최고<b>${p.sbest || S.total}</b></span></div>
+    <div class="go-st"><span>사용한 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>베스트 라이드<b>${S.bestRide}</b></span><span>${hardS ? '어려움' : '쉬움'} 최고<b>${(hardS ? p.sbest : p.sebest) || S.total}</b></span></div>
     <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}${r.shells ? ` · 🐚 +${r.shells}` : ''}</div>
     <div style="display:flex;gap:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">새 세션</button>
       <button class="btn ghost" id="s-exit" type="button" style="min-height:52px">닫기</button></div>
     ${S.total >= 300 && typeof sendChat === 'function' ? `<button class="btn ghost" id="s-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;
   $s('s-again').onclick = ()=>{ newSession(); $s('s-ov').hidden = true; window._gameRun = true; ui(); };
   $s('s-exit').onclick = surfClose;
-  if($s('s-brag')) $s('s-brag').onclick = async ()=>{ const b = $s('s-brag'); b.disabled = true; await sendChat(`🌊 라인업 서핑 ${S.total}점!${r.newBest ? ' (내 최고 기록 🎉)' : ''}`, true); b.textContent = '✅ 올렸어요'; };
+  if($s('s-brag')) $s('s-brag').onclick = async ()=>{ const b = $s('s-brag'); b.disabled = true; await sendChat(`🌊 라인업 서핑${hardS ? '(어려움)' : ''} ${S.total}점!${r.newBest ? ' (내 최고 기록 🎉)' : ''}`, true); b.textContent = '✅ 올렸어요'; };
   if(typeof popNext === 'function') setTimeout(popNext, 400);
   ui();
 }
@@ -200,7 +203,7 @@ function showResult(){
   const d = R.done;
   $s('s-ov').hidden = false;
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">${d.kind === 'wipe' ? '🌊 와이프아웃' : d.kind === 'shore' ? '🏖 끝까지!' : '🛑 풀아웃'}</div>
-    <div class="go-d">${esc(d.why)}${d.kind === 'wipe' ? ` — 이 파도 점수는 40%만 (${d.raw} → ${d.got})` : ''}</div>
+    <div class="go-d">${esc(d.why)}${d.kind === 'wipe' ? ` — 이 파도 점수는 ${hardS ? 40 : 60}%만 (${d.raw} → ${d.got})` : ''}</div>
     <div class="go-s">+${d.got}<small>점</small></div>
     <div class="go-b">🌀 ${R.trick.tube} · 🚀 ${R.trick.air} · 탑턴 ${R.trick.top} · 합계 <b>${S.total}</b></div>
     <div class="go-st"><span>목숨<b>${'❤️'.repeat(Math.max(0, S.lives))}${'🤍'.repeat(LIVES - Math.max(0, S.lives))}</b></span><span>파도<b>${S.wave + 1}/${WAVES}</b></span></div>
@@ -325,11 +328,12 @@ function startCard(){
   const p = ME.profile.play || {};
   $s('s-ov').hidden = false;
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">🌊 라인업 서핑</div>
-    <div class="go-d" style="text-align:left">① 파도가 오면 <b>연타로 패들</b><br>② 바늘이 초록에 올 때 <b>탭 = 팝업</b><br>③ <b>누르고 있으면 위로, 떼면 아래로</b> — 내려가면 빨라져요<br>
-      · 컬 가까이 높이 붙으면 🌀 <b>튜브</b> · 립을 치면 <b>탑턴</b> · 빠르게 치고 오르면 🚀 <b>에어</b><br>· ⚠ 앞이 무너지면 빨리 지나가거나 <b>🛑 풀아웃</b> · 와이프아웃은 목숨 -1</div>
-    <div class="go-b">파도 ${WAVES}개 · 목숨 ❤️×${LIVES} · 내 최고 <b>${p.sbest || 0}</b>점</div>
-    <button class="btn blue" id="s-go" type="button" style="width:100%;min-height:52px;font-size:16px">패들 아웃!</button></div>`;
+    <div class="go-mode" role="group" aria-label="난이도"><button type="button" data-sm="easy" aria-pressed="${!hardS}">🙂 쉬움</button><button type="button" data-sm="hard" aria-pressed="${hardS}">🔥 어려움</button></div>
+    <div class="go-d" style="text-align:left">① 파도가 오면 <b>연타로 패들</b> ② 초록 칸에서 <b>탭 = 팝업</b><br>③ <b>누르면 위로 · 떼면 아래로</b> — 내려가면 빨라져요<br>${hardS ? '⚠ 앞이 한꺼번에 무너지면 빨리 지나가거나 <b>🛑 풀아웃</b> · 바위·서퍼 피하기' : '컬 가까이 높이 붙으면 🌀 튜브 · 립을 치면 탑턴'}</div>
+    <div class="go-b">파도 ${WAVES}개 · ❤️×${LIVES} · ${hardS ? '어려움' : '쉬움'} 최고 <b>${(hardS ? p.sbest : p.sebest) || 0}</b>점</div>
+    <button class="btn blue" id="s-go" type="button" style="width:100%;min-height:52px;font-size:16px">▶ 패들 아웃!</button></div>`;
   $s('s-go').onclick = ()=>{ newSession(); $s('s-ov').hidden = true; window._gameRun = true; ui(); };
+  $s('s-ov').querySelectorAll('[data-sm]').forEach(b=>b.onclick = ()=>{ hardS = b.dataset.sm === 'hard'; try{ localStorage.setItem('lineup.share.smode', hardS ? 'hard' : 'easy'); }catch(e){} startCard(); });
 }
 function surfOpen(){
   cv = $s('s-cv'); ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
@@ -369,5 +373,5 @@ function wire(){
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 
 window.surfOpen = surfOpen; window.surfClose = surfClose;
-window._surf = { get S(){ return S; }, get R(){ return R; }, step, press, lift, pull, nextWave, newSession, FIX, set held(v){ held = v; } };
+window._surf = { get hard(){ return hardS; }, set hard(v){ hardS = !!v; }, get S(){ return S; }, get R(){ return R; }, step, press, lift, pull, nextWave, newSession, FIX, set held(v){ held = v; } };
 })();

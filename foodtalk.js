@@ -77,13 +77,13 @@ function thread(T, alt){
 
 /* 카드 하나 밑에 붙는 블록: 추천·가봤어요·댓글 + (펼치면) 댓글.
    altId: 앱에서 먼저 등록됐다가 네이버 리스트로 옮겨진 카드 — 그때 달린 댓글·추천을 같이 보여 준다 */
-function block(kind, id, altId){
+function block(kind, id, altId, extra){
   if(!ok(id)) return '';
   const T = tTarget(kind, id), A = altId && ok(altId) ? tTarget(kind, altId) : null;
   const n = (talk || []).filter(t=>t.target === T || (A && t.target === A)).length;
   const bar = `${rxOk === false ? '' : rxBtn(rP(kind, id), '👍', '추천', '', A && rP(kind, altId)) + rxBtn(rP(kind, id), '🙋', '가봤어요', '', A && rP(kind, altId))}
     ${talkOk === false ? '' : `<button type="button" class="ft-b${open.has(T) ? ' on' : ''}" aria-expanded="${open.has(T)}" data-tg="${esc(T)}">💬 댓글${n ? ` <b>${n}</b>` : ''}</button>`}`;
-  return `<div class="ft"><div class="ft-bar">${bar}</div>${open.has(T) && talkOk !== false ? thread(T, A) : ''}</div>`;
+  return `<div class="ft"><div class="ft-bar">${bar}${extra || ''}</div>${open.has(T) && talkOk !== false ? thread(T, A) : ''}</div>`;
 }
 
 /* ── 앱에서 등록 → 운영자가 네이버 리스트에 반영 ──────────────────────────
@@ -124,19 +124,19 @@ function ownerBox(kind){
   const n = registry(kind).pending.length;
   return n ? `<div class="ft-own"><span>📥 <b>양서학 리스트 반영 대기 ${n}곳</b></span><small>❌ 카드의 <b>📌 네이버에 넣기</b>로 열어 리스트에 저장하면 10분 안에 ⭕ 로 바뀌어요</small></div>` : '';
 }
-function addForm(kind){
+function addForm(kind, links){
   const lbl = kind === 'spot' ? '스팟' : '맛집', k = kind, d = n => esc(draft[`rq-${n}-${k}`] || ''), ar = draft[`rq-area-${k}`] || '';
   if(talkOk === false) return '';
   return `<div class="ft-req" data-rqbox="${esc(k)}"><div class="ft-rh"><b>➕ ${lbl} 등록하기</b>
-      <small>네이버지도 링크와 한줄평을 남기면 <b>바로 목록에 올라가요</b>. 운영자가 네이버 ‘양서학’ 리스트에도 넣으면 ❌ → ⭕ 로 바뀌어요.</small></div>
+      <small>네이버지도 링크 + 한줄평이면 <b>바로 올라가요</b> · 운영자가 리스트에 넣으면 ❌ → ⭕</small></div>
     ${addOpen[k] ? `<div class="ft-form">
         <label class="ft-lb">네이버지도 링크 <small>네이버지도 앱 → 장소 → 공유 → 링크 복사</small></label>
         <input maxlength="200" data-rq="link" inputmode="url" placeholder="https://naver.me/…" aria-label="네이버지도 링크" value="${d('link')}">
         <input maxlength="30" data-rq="title" placeholder="${lbl} 이름" aria-label="이름" value="${d('title')}">
         <div class="food-chips" role="group" aria-label="지역">${AREAS[k].map(a=>`<button type="button" data-rqarea="${esc(a)}" aria-pressed="${a === ar}">${esc(a)}</button>`).join('')}</div>
         <input maxlength="80" data-rq="text" placeholder="${kind === 'spot' ? '한줄 설명 (파도·포인트·주의점)' : '한줄평 (메뉴·웨이팅·팁)'}" aria-label="한줄평" value="${d('text')}">
-        <div class="food-btns"><button type="button" class="btn sm mint" data-rqsend="${esc(k)}">등록하기</button><button type="button" class="btn sm ghost" data-rqopen="${esc(k)}">닫기</button></div></div>`
-      : `<button type="button" class="btn sm mint" data-rqopen="${esc(k)}" style="margin-top:8px">➕ ${lbl} 등록하기</button>`}</div>`;
+        <div class="food-btns"><button type="button" class="btn sm mint" data-rqsend="${esc(k)}">등록하기</button><button type="button" class="btn sm ghost" data-rqopen="${esc(k)}">닫기</button></div>${links ? `<div class="ft-links">${links}</div>` : ''}</div>`
+      : `<div class="ft-links"><button type="button" class="btn sm mint" data-rqopen="${esc(k)}">➕ ${lbl} 등록하기</button>${links || ''}</div>`}</div>`;
 }
 
 async function send(T){

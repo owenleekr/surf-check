@@ -31,14 +31,10 @@ async function load(force){
 }
 
 /* 추가하는 법 — 네이버 리스트는 운영자만 고칠 수 있어서, 누구나 앱에 등록하고 운영자가 리스트에 옮기는 구조 */
+/* 추가하는 법 — 단계 설명은 가이드 시트로 보내고, 목록 위에는 '등록하기' 한 줄 + 가이드·네이버 리스트 링크만 둔다(목록이 먼저 보이게) */
 function howTo(kind, link){
-  const food = kind === 'food', lbl = food ? '맛집' : '스팟', fn = food ? '양서학 추천 맛집' : '양서학 서핑 스팟 리스트';
-  return `<div class="food-how"><b>➕ ${lbl} 추가하는 법</b>
-    <ol><li>네이버지도 앱에서 ${food ? '가게' : '해변·포인트'}를 찾아 <b>공유 → 링크 복사</b></li>
-      <li>아래 <b>‘${lbl} 등록하기’</b>에 링크·이름·지역·한줄평 → <b>바로 목록에 올라가요</b></li>
-      <li>운영자가 네이버 <b>‘${esc(fn)}’</b>에도 넣으면 <b>양서학 리스트 ❌ → ⭕</b> 로 바뀌어요</li></ol>
-    <div class="food-btns"><button type="button" class="btn sm ghost" data-guide="${esc(kind)}">📖 자세한 가이드</button>
-      <a class="btn sm blue" href="${esc(safeHttp(link) || '#')}" target="_blank" rel="noopener">${food ? '🍜' : '🏄'} 네이버 ‘${esc(fn)}’ 보기 ↗</a></div></div>`;
+  const fn = kind === 'food' ? '양서학 추천 맛집' : '양서학 서핑 스팟 리스트';
+  return `<button type="button" class="btn sm ghost" data-guide="${esc(kind)}">📖 등록 가이드</button><a class="btn sm ghost" href="${esc(safeHttp(link) || '#')}" target="_blank" rel="noopener" aria-label="네이버 ‘${esc(fn)}’ 열기">네이버 리스트 ↗</a>`;
 }
 
 function renderFood(root){
@@ -53,16 +49,16 @@ function renderFood(root){
   root.innerHTML = `
     <div class="food-hd"><b>${esc(f.title)}</b><span>${esc(f.memo || '')}</span>
       <small>${all.length}곳 · 네이버 리스트와 자동으로 맞춰져요${at ? ` · 갱신 ${at}` : ''}${failed ? ' · ⚠️ 새로 못 불러와 저장된 목록이에요' : ''}</small></div>
-    ${howTo('food', f.link)}${FT.ownerBox('food')}${FT.addForm('food')}
+    ${FT.ownerBox('food')}${FT.addForm('food', howTo('food', f.link))}
     <div class="food-chips" role="group" aria-label="지역">${areas.map(a=>`<button type="button" aria-pressed="${a === area}" data-area="${esc(a)}">${esc(a)} <small>${counts[a]}</small></button>`).join('')}</div>
     <div class="food-sort" role="group" aria-label="정렬"><button type="button" aria-pressed="${sort === 'near'}" data-sort="near">📍 학교에서 가까운 순</button><button type="button" aria-pressed="${sort === 'new'}" data-sort="new">🆕 최근 추가 순</button></div>
     ${list.map(i=>{ const km = dist(i), isNew = i.t && i.t > week, fresh = !i.by && seen.size && !seen.has(i.id), reg = i.by ? i : FT.regOf('food', i.id);
       const link = safeHttp(i.u) || (i.pid ? `https://map.naver.com/p/entry/place/${i.pid}` : `https://map.naver.com/p/search/${encodeURIComponent(i.n)}`);
-      return `<article class="card food-card${i.by ? ' app' : ''}"><div class="hd"><b>${esc(i.n)}</b>${i.c ? `<span class="tag">${esc(i.c)}</span>` : ''}${isNew || fresh ? '<span class="tag" style="background:var(--coral);color:#fff">NEW</span>' : ''}</div>
+      return `<article class="card food-card${i.by ? ' app' : ''}"><div class="hd"><b>${esc(i.n)}</b>${i.c && i.c !== '음식점' ? `<span class="tag">${esc(i.c)}</span>` : ''}${isNew || fresh ? '<span class="tag" style="background:var(--coral);color:#fff">NEW</span>' : ''}</div>
         ${reg ? FT.regLine(reg, !i.by) : ''}
         ${i.m && !i.by ? `<div class="food-memo">💬 ${esc(i.m)}</div>` : i.by && i.m ? `<div class="food-memo">🙋 ${esc(i.m)}</div>` : ''}
         <div class="meta">${esc(i.a)}${km < Infinity ? ` · 학교에서 <b>${km < 10 ? km.toFixed(1) : Math.round(km)}km</b>` : ''}</div>
-        <div class="acts"><a class="btn sm mint" href="${esc(link)}" target="_blank" rel="noopener">네이버지도에서 보기 ↗</a></div>${FT.block('food', i.id, !i.by && reg ? reg.id : '')}</article>`; }).join('') || '<div class="empty">이 지역에는 아직 없어요</div>'}`;
+        ${FT.block('food', i.id, !i.by && reg ? reg.id : '', `<a class="ft-b ft-map" href="${esc(link)}" target="_blank" rel="noopener">📍 지도 ↗</a>`)}</article>`; }).join('') || '<div class="empty">이 지역에는 아직 없어요</div>'}`;
   root.querySelectorAll('[data-area]').forEach(b=>b.onclick = ()=>{ area = b.dataset.area; render(true); });
   root.querySelectorAll('[data-sort]').forEach(b=>b.onclick = ()=>{ sort = b.dataset.sort; render(true); });
 }
@@ -87,12 +83,12 @@ function renderSpots(root){
       ${reg ? FT.regLine(reg, !i.by) : ''}
       ${i.m ? `<div class="food-memo">${i.by ? '🙋' : '💬'} ${esc(i.m)}</div>` : ''}
       <div class="meta">${i.a ? esc(i.a) + (k !== '' ? ' · ' : '') : ''}${k !== '' ? `학교에서 <b>${k}km</b>` : ''}</div>
-      <div class="acts"><a class="btn sm mint" href="${esc(safeHttp(i.u) || (i.pid ? `https://map.naver.com/p/entry/place/${i.pid}` : search(i.n)))}" target="_blank" rel="noopener">네이버지도에서 보기 ↗</a>
-        ${cam ? `<button type="button" class="btn sm blue" data-cam="${esc(cam[0])}">📹 지금 파도 보기</button>` : ''}</div>${FT.block('spot', i.id || ('cam-' + (cam?.[1] || '')), !i.by && reg ? reg.id : '')}</article>`; };
+      ${cam ? `<button type="button" class="btn sm blue sp-cam" data-cam="${esc(cam[0])}">📹 지금 파도 보기</button>` : ''}
+      ${FT.block('spot', i.id || ('cam-' + (cam?.[1] || '')), !i.by && reg ? reg.id : '', `<a class="ft-b ft-map" href="${esc(safeHttp(i.u) || (i.pid ? `https://map.naver.com/p/entry/place/${i.pid}` : search(i.n)))}" target="_blank" rel="noopener">📍 지도 ↗</a>`)}</article>`; };
   root.innerHTML = `
     <div class="food-hd"><b>${esc(f?.title || '🏄 양양 서핑 스팟')}</b><span>${esc(f?.memo || '학교에서 가까운 순 · 캠이 있는 곳은 바로 볼 수 있어요')}</span>
       ${f ? `<small>${all.length}곳 · 네이버지도 폴더와 자동으로 맞춰져요</small>` : ''}</div>
-    ${f ? howTo('spot', f.link) : ''}${FT.ownerBox('spot')}${FT.addForm('spot')}
+    ${FT.ownerBox('spot')}${FT.addForm('spot', f ? howTo('spot', f.link) : '')}
     ${areas.length > 1 ? `<div class="food-chips" role="group" aria-label="지역">${areas.map(a=>`<button type="button" aria-pressed="${a === sarea}" data-sarea="${esc(a)}">${esc(a)} <small>${counts[a]}</small></button>`).join('')}</div>` : ''}
     ${list.map(i=>card(i, true)).join('')}
     ${only.length && (sarea === '전체' || sarea === '양양') ? `<div class="pt" style="margin-top:16px;color:var(--paper);text-shadow:2px 2px 0 var(--ink)">캠으로 볼 수 있는 다른 해변</div>` + only.map(i=>card(i, false)).join('') : ''}

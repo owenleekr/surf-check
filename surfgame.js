@@ -29,6 +29,9 @@ const MODS = [
   { n:'균형 잡힌 바다', ic:'🌊', w:{} }, { n:'갈매기의 날', ic:'🐦', w:{ bird:2.4 } }, { n:'통나무의 날', ic:'🪵', w:{ log:2.6, double:1.6 } },
   { n:'해파리 떼의 날', ic:'🪼', w:{ jelly:2.6 } }, { n:'상어의 날', ic:'🦈', w:{ fin:2.3 } }, { n:'연속의 날', ic:'⛓️', w:{ double:2.4, stair:2.4 } } ];
 let mod = MODS[0];
+/* 쉬움 = 처음 버전(목숨 1·아이템·스테이지 없음·느린 속도), 어려움 = 지금 버전. 점수는 따로 쌓는다(best / hbest).
+   오늘의 챌린지는 모두가 하도록 쉬움으로 고정. 고른 모드는 이 기기에 기억한다. */
+let hard = false; try{ hard = localStorage.getItem('lineup.share.jmode') === 'hard'; }catch(e){}
 const hashStr = s => { let h = 2166136261; for(const c of s){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 
@@ -68,7 +71,7 @@ function mkMe(){
 function reset(){
   rnd = daily ? mulberry(hashStr('wave-' + today())) : Math.random;
   mod = daily ? MODS[hashStr('mod-' + today()) % MODS.length] : MODS[Math.floor(Math.random() * MODS.length)];
-  st = { t:0, zone:1, pts:0, lives:LIVES, lost:0, items:0, fx:{ star:0, magnet:0, slow:0, x2:0 }, nextItem:420, dist:0, speed:100, y:0, vy:0, air:false, buf:0, coyote:0, shells:0, shield:0, invuln:0, obs:[], pick:[], next:150, nextShell:260,
+  st = { t:0, zone:1, pts:0, lives:hard ? LIVES : 1, lost:0, items:0, fx:{ star:0, magnet:0, slow:0, x2:0 }, nextItem:hard ? 420 : Infinity, dist:0, speed:100, y:0, vy:0, air:false, buf:0, coyote:0, shells:0, shield:0, invuln:0, obs:[], pick:[], next:150, nextShell:260,
          dead:false, deadT:0, flash:0, shake:0, clouds:[{x:20,y:18,s:3},{x:100,y:34,s:5},{x:150,y:12,s:2}], pops:[] };
 }
 const score = () => Math.floor(st.pts);
@@ -78,6 +81,7 @@ const DIM = { rock:{ w:12, h:10, y:0 }, fin:{ w:14, h:17, y:0 }, jelly:{ w:10, h
 /* 구간이 올라갈수록 장애물 종류가 늘어난다. 뽑기는 rnd() 한 번 — 오늘의 챌린지에서 모두 같은 코스가 나오게 */
 function pickKind(){
   const z = st.zone, w = { rock:.45, fin:.33, jelly:.22 };
+  if(!hard){ const r = rnd(); return r < .45 ? 'rock' : r < .78 ? 'fin' : 'jelly'; }        // 쉬움: 처음 버전 그대로
   if(z >= 2) w.bird = .24;
   if(z >= 3){ w.log = .2; w.double = .16; }
   if(z >= 4){ w.stair = .18; }
@@ -90,7 +94,7 @@ function pickKind(){
 function spawn(){
   const sp = st.speed, z = st.zone, kind = pickKind();
   /* 간격은 '뜬 시간 × 속도'에 비례한다 — 구간이 올라갈수록 비율이 줄어 빡빡해진다(그래도 억울한 판은 없게: qa/gamefair.mjs 가 검증) */
-  const air = (2*JV/G) * sp, gap = air * [0.78, 0.74, 0.68, 0.64, 0.6][z - 1] + 30 + rnd() * (46 - 7 * Math.min(3, z - 1));
+  const air = (2*JV/G) * sp, gap = hard ? air * [0.78, 0.74, 0.68, 0.64, 0.6][z - 1] + 30 + rnd() * (46 - 7 * Math.min(3, z - 1)) : air * 0.78 + 34 + rnd() * 46;
   const parts = kind === 'double' ? [['rock', 0], ['rock', 22]] : kind === 'stair' ? [['rock', 0], ['fin', 46]] : [[kind, 0]];
   let end = 0;
   parts.forEach(([k, dx])=>{ const d = DIM[k]; st.obs.push({ k, w:d.w, h:d.h, y:d.y, x:W + 8 + dx }); end = Math.max(end, dx + d.w); });
@@ -122,8 +126,8 @@ function step(dt){
   const s = st; s.t += dt;
   if(s.dead){ s.deadT += dt; s.flash = Math.max(0, s.flash - dt*3); s.shake = Math.max(0, s.shake - dt*20); return; }
   for(const k in s.fx) s.fx[k] = Math.max(0, s.fx[k] - dt);
-  s.speed = Math.min(250, 100 + s.t * 4.2) * (s.fx.slow > 0 ? 0.62 : 1);
-  let zi = 1; ZONES.forEach((z, i)=>{ if(s.t >= z[0]) zi = i + 1; });
+  s.speed = hard ? Math.min(250, 100 + s.t * 4.2) * (s.fx.slow > 0 ? 0.62 : 1) : Math.min(210, 92 + s.t * 3.4);
+  let zi = 1; if(hard) ZONES.forEach((z, i)=>{ if(s.t >= z[0]) zi = i + 1; });
   if(zi > s.zone){ s.zone = zi; TH = THEMES[ZONES[zi - 1][2]];
     s.pops.push({ x:24, y:GY - 96, t:0, life:1.6, v:'STAGE ' + zi + ' · ' + ZONES[zi - 1][1] }); s.flash = 0.35; vib([10, 20, 10]); beep(440, 880, 0.18, 'triangle', 0.05); }
   s.dist += s.speed * dt; s.pts += s.speed * dt / 14 * mult();
@@ -160,7 +164,7 @@ function step(dt){
   for(const p of s.pick){
     if(!p.got && p.it && sx + sw + 4 > p.x && sx - 4 < p.x + 9 && sb < p.y + 9 && st_ > p.y){ p.got = true; s.items++; got(p.it); continue; }
     if(!p.it && !p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pts += 10 * mult(); s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+' + 10 * mult() }); vib(6); beep(880, 1320, 0.09, 'triangle', 0.06);
-      if(s.shells % 8 === 0 && !s.shield){ s.shield = 1; s.pops.push({ x:30, y:GY - 56, t:0, v:'🛟 구명튜브!' }); beep(660, 1320, 0.2, 'triangle', 0.07); } }
+      if(s.shells % (hard ? 8 : 5) === 0 && !s.shield){ s.shield = 1; s.pops.push({ x:30, y:GY - 56, t:0, v:'🛟 구명튜브!' }); beep(660, 1320, 0.2, 'triangle', 0.07); } }
   }
 }
 
@@ -185,7 +189,7 @@ function finish(){
   if(mode !== 'run') return;
   mode = 'over'; window._gameRun = false;
   const sc = score();
-  const r = typeof playGameDone === 'function' ? playGameDone(sc, daily, st.shells) : { gain:0, newBest:false, best:sc };
+  const r = typeof playGameDone === 'function' ? playGameDone(sc, daily, st.shells, hard) : { gain:0, newBest:false, best:sc };
   showOver(sc, r);
   if(typeof popNext === 'function') setTimeout(popNext, 400);
 }
@@ -200,7 +204,7 @@ function draw(){
   R(TH.sun, 138, 14, 16, 16); R(TH.sky[0], 138, 14, 2, 2); R(TH.sky[0], 152, 14, 2, 2); R(TH.sky[0], 138, 28, 2, 2); R(TH.sky[0], 152, 28, 2, 2);
   if(TH.aur) for(let i = 0; i < 3; i++){ ctx.globalAlpha = 0.35; for(let x = 0; x < W; x += 2) R(['#5BFFB0','#3FE0C8','#9B7BFF'][i], x, 22 + i * 12 + Math.round(Math.sin(x / 17 + s.t * (0.6 + i * 0.3) + i) * 6), 2, 4 + i); ctx.globalAlpha = 1; }
   s.clouds.forEach(c=>{ R(TH.cloud, c.x, c.y, 22, 5); R(TH.cloud, c.x + 4, c.y - 3, 12, 4); R(TH.cloud2, c.x, c.y + 4, 22, 1); });
-  deco(s);
+  if(hard) deco(s);
   // 먼 바다 → 가까운 바다. 줄마다 속도를 다르게 줘서 달리는 느낌을 만든다
   R(TH.far, 0, 118, W, 18); R(TH.mid, 0, 136, W, 20); R(TH.near, 0, 156, W, 12); R(TH.deep, 0, GY, W, H - GY);
   const wl = (y, spd, c, len, gap)=>{ const off = (s.t * spd) % (len + gap); for(let x = -off; x < W; x += len + gap) R(c, x, y + Math.round(Math.sin((x + s.t*20) / 11)), len, 1); };
@@ -246,7 +250,7 @@ function draw(){
   s.pops.forEach(p=>{ ctx.globalAlpha = Math.min(1, 1 - p.t / (p.life || 0.7) + 0.2); ctx.fillStyle = '#FFE27A'; ctx.fillText(p.v, Math.round(p.x - 2), Math.round(p.y - p.t * 20)); ctx.globalAlpha = 1; });
   if(s.zone === 4 && !s.dead){ ctx.globalAlpha = 0.16; R('#0B1E3F', 0, 0, W, H); ctx.globalAlpha = 0.5;
     for(let i = 0; i < 26; i++){ const rx = (i * 37 + s.t * 120) % (W + 20) - 10, ry = (i * 53 + s.t * 380) % H; R('#CFE6FF', W - rx, ry, 1, 5); } ctx.globalAlpha = 1; }
-  hud(s);
+  if(hard) hud(s); else if(s.shield){ ctx.font = '8px sans-serif'; ctx.textBaseline = 'top'; ctx.fillText('🛟', 4, 4); }
   if(s.flash > 0){ ctx.globalAlpha = s.flash * 0.55; R('#FFFFFF', 0, 0, W, H); ctx.globalAlpha = 1; }
   ctx.restore();
   $g('g-score').textContent = score();
@@ -288,8 +292,9 @@ function dailyRows(){
     .concat((ME.profile.play?.dbest?.day === day) ? [{ id:ME.id, name:ME.name, best:ME.profile.play.dbest.score }] : []).sort((a,b)=>b.best - a.best).slice(0, 3);
 }
 function myBestRows(){
-  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>({ id:x.id, name:x.name, best:(typeof peerPlay === 'function' ? peerPlay(x.profile?.play)?.best : 0) || 0 }))
-    .concat([{ id:ME.id, name:ME.name, best:ME.profile?.play?.best || 0 }]).filter(r=>r.best > 0).sort((a,b)=>b.best - a.best);
+  const k = hard ? 'hbest' : 'best';
+  const rows = (state.town||[]).filter(x=>x.id !== ME.id).map(x=>({ id:x.id, name:x.name, best:(typeof peerPlay === 'function' ? peerPlay(x.profile?.play)?.[k] : 0) || 0 }))
+    .concat([{ id:ME.id, name:ME.name, best:ME.profile?.play?.[k] || 0 }]).filter(r=>r.best > 0).sort((a,b)=>b.best - a.best);
   return rows.slice(0, 3);
 }
 function pause(){
@@ -300,24 +305,25 @@ function pause(){
   $g('g-resume').onclick = ()=>{ mode = 'run'; last = 0; $g('g-ov').hidden = true; };
 }
 function showStart(){
+  if(hardPref != null){ hard = hardPref; hardPref = null; }
   mode = 'idle'; window._gameRun = false; reset();
-  const p = ME.profile.play || {}, top = myBestRows();
-  mod = MODS[hashStr('mod-' + today()) % MODS.length];                                  // 시작 화면엔 오늘의 파도(챌린지와 같다)
+  const p = ME.profile.play || {}, top = myBestRows(), dsc = (p.dbest && p.dbest.day === today()) ? p.dbest.score : null;
   $g('g-ov').hidden = false;
   $g('g-ov').innerHTML = `<div class="go-card">
       <div class="go-t">🏄 파도 점프</div>
-      <div class="go-d">탭하면 점프 · 길게 누르면 더 높이 · 목숨 ❤️×3<br>🐦 갈매기는 <b>뛰지 말고</b> 아래로 · 🪵 통나무는 <b>높이</b><br>아이템 ⭐무적 🧲자석 🐢느리게 ✖️2점수 💎보석 🛟튜브 ❤️목숨</div>
-      <div class="go-b" style="margin:0 0 6px">${mod.ic} 오늘의 파도 <b>${esc(mod.n)}</b></div>
-      <div class="go-b">내 최고 <b>${p.best || 0}</b>점 · 🐚 보유 <b>${typeof shellBal === 'function' ? shellBal() : 0}</b></div>
-      ${top.length ? `<div class="go-r">${top.map((r,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(r.name)} ${r.best}</span>`).join('')}</div>` : ''}
-      <div class="go-b" style="margin:0 0 8px">📅 오늘의 챌린지 내 기록 <b>${(p.dbest && p.dbest.day === today()) ? p.dbest.score : '—'}</b></div>
-      <button class="btn blue" id="g-go" type="button" style="width:100%;min-height:52px;font-size:16px">📅 오늘의 챌린지 <small style="font-weight:700">모두 같은 코스</small></button>
-      <button class="btn ghost" id="g-free" type="button" style="width:100%;min-height:48px;margin-top:8px">자유 플레이</button></div>`;
+      <div class="go-mode" role="group" aria-label="난이도"><button type="button" data-jm="easy" aria-pressed="${!hard}">🙂 쉬움</button><button type="button" data-jm="hard" aria-pressed="${hard}">🔥 어려움</button></div>
+      <div class="go-d">${hard ? '목숨 ❤️×3 · 스테이지 5개 · 아이템 7가지<br>🐦 갈매기는 <b>뛰지 말고</b> · 🪵 통나무는 <b>높이</b>' : '탭하면 점프 · 길게 누르면 더 높이<br>바위·상어·해파리를 넘고 🐚을 모아요'}</div>
+      <div class="go-b">${hard ? '어려움' : '쉬움'} 내 최고 <b>${(hard ? p.hbest : p.best) || 0}</b>점${top.length ? ` · 1위 ${esc(top[0].name)} ${top[0].best}` : ''}</div>
+      <button class="btn blue" id="g-free" type="button" style="width:100%;min-height:52px;font-size:16px">▶ ${hard ? '어려움' : '쉬움'} 시작</button>
+      <button class="btn ghost" id="g-go" type="button" style="width:100%;min-height:46px;margin-top:8px">📅 오늘의 챌린지 <small style="font-weight:700">쉬움 · 모두 같은 코스 · 내 기록 ${dsc != null ? dsc : '—'}</small></button></div>`;
   $g('g-go').onclick = ()=>begin(true); $g('g-free').onclick = ()=>begin(false);
+  $g('g-ov').querySelectorAll('[data-jm]').forEach(b=>b.onclick = ()=>{ hard = b.dataset.jm === 'hard'; try{ localStorage.setItem('lineup.share.jmode', hard ? 'hard' : 'easy'); }catch(e){} showStart(); });
 }
+let hardPref = null;
 function begin(isDaily){
   daily = isDaily === true;
-  me = mkMe(); reset(); TH = THEMES[ZONES[0][2]]; mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false; acc = 0;
+  if(daily){ hardPref = hard; hard = false; } else if(hardPref != null){ hard = hardPref; hardPref = null; }   // 챌린지는 쉬움으로, 끝나면 고른 모드로
+  me = mkMe(); reset(); TH = hard ? THEMES[ZONES[0][2]] : themeNow(); mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false; acc = 0;
 }
 function showOver(sc, r){
   const p = ME.profile.play || {};
@@ -326,17 +332,17 @@ function showOver(sc, r){
   $g('g-ov').innerHTML = `<div class="go-card">
       <div class="go-t">${daily ? '📅 ' : ''}${r.newBest && sc > 0 ? '🎉 최고 기록!' : '🌊 와이프아웃'}</div>
       <div class="go-s">${sc}<small>점</small></div>
-      <div class="go-st"><span>사용한 목숨<b>${st.lost}/${LIVES}</b></span><span>스테이지<b>${st.zone}</b></span><span>아이템<b>${st.items}</b></span><span>조개<b>${st.shells}</b></span></div>
-      <div class="go-b" style="margin:0 0 4px">STAGE ${st.zone} · ${esc(ZONES[st.zone - 1][1])}${daily ? ' · ' + mod.ic + ' ' + esc(mod.n) : ''}</div>
-      <div class="go-b">🐚 +${st.shells} (보유 ${r.bal ?? '–'}) · 최고 <b>${p.best || sc}</b>점${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
+      ${hard ? `<div class="go-st"><span>사용한 목숨<b>${st.lost}/${LIVES}</b></span><span>스테이지<b>${st.zone}</b></span><span>아이템<b>${st.items}</b></span><span>조개<b>${st.shells}</b></span></div>` : ''}
+      <div class="go-b">${hard ? `🔥 어려움 · STAGE ${st.zone}` : daily ? '📅 오늘의 챌린지 · 쉬움' : '🙂 쉬움'} · 최고 <b>${(hard ? p.hbest : p.best) || sc}</b>점</div>
+      <div class="go-b">🐚 +${st.shells} (보유 ${r.bal ?? '–'})${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
       ${daily ? (()=>{ const rk = dailyRows(); return rk.length ? `<div class="go-r" style="margin-bottom:10px"><span style="color:var(--ink)">오늘의 챌린지 순위</span>${rk.map((q,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(q.name)} ${q.best}</span>`).join('')}</div>` : ''; })() : ''}
-      ${v ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
+      ${v && !hard ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
       <div style="display:flex;gap:8px"><button class="btn blue" id="g-again" type="button" style="flex:1;min-height:52px;font-size:16px">한 판 더</button>
         <button class="btn ghost" id="g-exit" type="button" style="min-height:52px">닫기</button></div>
       ${sc >= 100 && typeof sendChat === 'function' ? `<button class="btn ghost" id="g-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;
   $g('g-again').onclick = ()=>begin(daily); $g('g-exit').onclick = gameClose;
   if($g('g-brag')) $g('g-brag').onclick = async ()=>{ const b = $g('g-brag'); b.disabled = true;
-    await sendChat(`🎮 파도 점프 ${sc}점!${r.newBest ? ' (내 최고 기록 🎉)' : ''}`, true); b.textContent = '✅ 올렸어요'; };
+    await sendChat(`🎮 파도 점프${hard ? '(어려움)' : ''} ${sc}점!${r.newBest ? ' (내 최고 기록 🎉)' : ''}`, true); b.textContent = '✅ 올렸어요'; };
 }
 
 function gameOpen(){
@@ -374,5 +380,5 @@ document.addEventListener('DOMContentLoaded', wire);
 if(document.readyState !== 'loading') wire();
 
 window.gameOpen = gameOpen; window.gameClose = gameClose;
-window._game = { clone:()=>structuredClone(st), swap:s=>{ const o = st; st = s; return o; }, FIX, get mod(){ return mod; }, set mod(i){ mod = MODS[i]; }, MODS, get TH(){ return TH; }, setTheme:k=>{ TH = THEMES[k]; }, pause, get st(){ return st; }, get mode(){ return mode; }, step, jump, release, score, begin, reset: ()=>reset() };
+window._game = { get hard(){ return hard; }, set hard(v){ hard = !!v; }, clone:()=>structuredClone(st), swap:s=>{ const o = st; st = s; return o; }, FIX, get mod(){ return mod; }, set mod(i){ mod = MODS[i]; }, MODS, get TH(){ return TH; }, setTheme:k=>{ TH = THEMES[k]; }, pause, get st(){ return st; }, get mode(){ return mode; }, step, jump, release, score, begin, reset: ()=>reset() };
 })();

@@ -21,7 +21,7 @@ async function pullPeers(){
   if(typeof api !== 'function' || !hasMe()) return;
   try{ const rows = await api('surfers?select=id,name,cohort,play:profile->play&limit=300');
     peers = (rows || []).filter(x=>x && x.id !== ME.id && !(typeof isTest === 'function' && isTest(x.id))).map(x=>{
-      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat, sbest:pp.sbest, sbat:pp.sbat } : null; }).filter(Boolean);
+      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat, hbest:pp.hbest, hbat:pp.hbat, sbest:pp.sbest, sbat:pp.sbat } : null; }).filter(Boolean);
   }catch(e){}
   pulledAt = Date.now();
 }
@@ -30,6 +30,8 @@ function collect(){
   const out = [], now = Date.now(), tag = c => c === '6기' ? '6기' : '서퍼';
   peers.forEach(p=>{ if(p.best >= 100 && p.bat > now - 72 * 3600e3 && p.bat <= now + 6e4)
     out.push({ ts:p.bat, ic:'🏄', who:`${p.name}(${tag(p.cohort)})`, text:`님이 파도 점프 ${tierOf(p.best)}점 돌파! (${p.best}점)`, go:'game' });
+    if(p.hbest >= 100 && p.hbat > now - 72 * 3600e3 && p.hbat <= now + 6e4)
+      out.push({ ts:p.hbat, ic:'🔥', who:`${p.name}(${tag(p.cohort)})`, text:`님이 파도 점프 어려움 ${tierOf(p.hbest)}점 돌파! (${p.hbest}점)`, go:'game' });
     if(p.sbest >= 100 && p.sbat > now - 72 * 3600e3 && p.sbat <= now + 6e4)
       out.push({ ts:p.sbat, ic:'🌊', who:`${p.name}(${tag(p.cohort)})`, text:`님이 라인업 서핑 ${p.sbest}점 기록!`, go:'surf' }); });
   const wk = now - 14 * 864e5;

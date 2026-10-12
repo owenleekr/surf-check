@@ -22,7 +22,7 @@ const res = await t.S(()=>{
   };
   const run = (seedN, modIdx, strat)=>{
     const rnd0 = Math.random; Math.random = seeded(seedN * 7919 + 13);
-    g.begin(false); g.mod = modIdx; const s = g.st; let unavoid = 0, frames = 0, rel = -1, jf = -9;
+    g.hard = true; g.begin(false); g.mod = modIdx; const s = g.st; let unavoid = 0, frames = 0, rel = -1, jf = -9;
     while(!s.dead && s.t < 140){
       if(strat === 'oracle'){
         if(rel >= 0 && !s.air && frames > jf + 2) rel = -1;                        // 착지했으면 계획 끝 — 다시 내다본다

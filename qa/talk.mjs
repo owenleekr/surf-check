@@ -46,7 +46,7 @@ await t.S(()=>{ window.confirm=()=>true; document.querySelector('.ft-th [data-de
 console.log('지움', t.posts.length >= 0, await t.S(()=>document.querySelectorAll('.ft-th .ft-c.re').length));
 // 앱 등록
 await t.S(()=>window.scrollTo(0,0));
-console.log('등록 카드', await t.S(()=>[...document.querySelectorAll('.food-card.app')].map(c=>({ 이름:c.querySelector('b').textContent, 상태:c.querySelector('.ft-st')?.textContent, 링크:c.querySelector('.acts a').getAttribute('href').slice(0,40), 운영버튼:!!c.querySelector('a.ft-b') }))));
+console.log('등록 카드', await t.S(()=>[...document.querySelectorAll('.food-card.app')].map(c=>({ 이름:c.querySelector('b').textContent, 상태:c.querySelector('.ft-st')?.textContent, 링크:c.querySelector('a.ft-map').getAttribute('href').slice(0,40), 운영버튼:!!c.querySelector('.ft-by a.ft-b') }))));
 console.log('반영된 카드(네이버+등록자)', await t.S((n)=>{ const c=[...document.querySelectorAll('.food-card')].find(c=>c.querySelector('b').textContent===n); return c && { 상태:c.querySelector('.ft-st')?.textContent, 등록자:c.querySelector('.ft-by b')?.textContent, 한줄평:[...c.querySelectorAll('.food-memo')].map(m=>m.textContent.trim()) }; }, snap.folders[0].items[1].n));
 await t.S(()=>document.querySelector('[data-rqopen="food"]').click()); await t.sleep(200);
 const setRq=(k,v)=>t.S((k,v)=>{ const i=document.querySelector(`.ft-form [data-rq="${k}"]`); i.value=v; i.dispatchEvent(new Event('input',{bubbles:true})); },k,v);
