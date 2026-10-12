@@ -334,7 +334,7 @@ function showOver(sc, r){
       <div class="go-s">${sc}<small>점</small></div>
       ${hard ? `<div class="go-st"><span>사용한 목숨<b>${st.lost}/${LIVES}</b></span><span>스테이지<b>${st.zone}</b></span><span>아이템<b>${st.items}</b></span><span>조개<b>${st.shells}</b></span></div>` : ''}
       <div class="go-b">${hard ? `🔥 어려움 · STAGE ${st.zone}` : daily ? '📅 오늘의 챌린지 · 쉬움' : '🙂 쉬움'} · 최고 <b>${(hard ? p.hbest : p.best) || sc}</b>점</div>
-      <div class="go-b">🐚 +${st.shells} (보유 ${r.bal ?? '–'})${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>
+      ${window.JUMP_STANDALONE ? `<div class="go-b">🐚 조개 ${st.shells}개${r.rank ? ` · 🏆 ${r.rank}` : ''}</div>` : `<div class="go-b">🐚 +${st.shells} (보유 ${r.bal ?? '–'})${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>`}
       ${daily ? (()=>{ const rk = dailyRows(); return rk.length ? `<div class="go-r" style="margin-bottom:10px"><span style="color:var(--ink)">오늘의 챌린지 순위</span>${rk.map((q,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(q.name)} ${q.best}</span>`).join('')}</div>` : ''; })() : ''}
       ${v && !hard ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
       <div style="display:flex;gap:8px"><button class="btn blue" id="g-again" type="button" style="flex:1;min-height:52px;font-size:16px">한 판 더</button>
@@ -352,6 +352,7 @@ function gameOpen(){
   me = mkMe(); TH = themeNow(); sndBtn(); showStart(); last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
 function gameClose(){
+  if(window.JUMP_STANDALONE){ showStart(); return; }                              // /jump 단독 페이지 — 닫기 대신 시작 화면으로
   cancelAnimationFrame(raf); raf = 0; mode = 'idle'; window._gameRun = false;
   $g('game').hidden = true; document.body.classList.remove('game-on');
   if(typeof playTick === 'function') playTick();
@@ -367,6 +368,7 @@ function wire(){
   addEventListener('pointerup', release); addEventListener('pointercancel', release);
   addEventListener('keydown', e=>{
     if($g('game').hidden) return;
+    if(e.target && e.target.closest && e.target.closest('input, textarea')) return;      // 이름 칸에 띄어쓰기를 치면 게임이 시작되지 않게
     if(e.key === 'Escape'){ gameClose(); return; }
     if((e.code === 'Space' || e.key === 'ArrowUp' || e.key === 'w') && !e.repeat){ e.preventDefault(); if(mode === 'run') jump(); else if(mode === 'idle') begin(true); else if(mode === 'over') begin(daily); }
   });

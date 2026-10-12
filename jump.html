@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>파도 점프 — 양양 서핑 미니게임</title>
+<meta name="description" content="이름만 넣으면 바로 — 파도를 뛰어넘는 도트 서핑 게임. 오늘의 챌린지는 모두 같은 코스, 순위표로 겨뤄요.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="🏄 파도 점프 — 이름만 넣고 바로 한 판">
+<meta property="og:description" content="바위·상어·해파리를 뛰어넘고 조개를 모아요. 오늘의 챌린지는 모두 같은 코스!">
+<meta property="og:image" content="https://surf.owenai.xyz/og-share.png">
+<meta property="og:url" content="https://surf.owenai.xyz/jump">
+<meta name="theme-color" content="#0B2540">
+<link rel="icon" href="icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<!-- 파도 점프만 따로 — 로그인 없이 이름만 넣고 한다(SurfShare 계정과 무관).
+     게임 본체는 앱과 같은 surfgame.js 를 그대로 쓰고, 앱이 주던 것(내 정보·기록 저장·순위)은 아래 스크립트가 대신한다.
+     기록은 이 기기(localStorage) + 공개 순위표(jump_scores 표, 없으면 순위 없이 동작). -->
+<style>
+:root{ --paper:#FFF9E6; --ink:#1B1B2F; --sea:#2E6BFF; --sun:#FFD23F; --mint:#4DE1A5; --coral:#FF6B6B }
+*{ box-sizing:border-box } html,body{ margin:0; height:100% }
+body{ background:#0B2540; color:var(--ink); font-family:-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Noto Sans KR", sans-serif; overscroll-behavior:none }
+.btn{ border:4px solid var(--ink); background:var(--sun); color:var(--ink); padding:9px 14px; font-weight:700; font-size:14px; font-family:inherit; cursor:pointer; box-shadow:3px 3px 0 var(--ink) }
+.btn.sm{ padding:6px 10px; min-height:40px; font-size:13px; border-width:3px; box-shadow:2px 2px 0 var(--ink) }
+.btn.blue{ background:var(--sea); color:#fff } .btn.ghost{ background:#fff } .btn.mint{ background:var(--mint) }
+.btn:active{ transform:translate(3px,3px); box-shadow:none } .btn[disabled]{ opacity:.5 }
+.game{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:#0B2540 }
+.game-box{ display:flex; flex-direction:column; justify-content:center; height:100%; max-height:100dvh; width:min(100%, calc((100dvh - 150px - env(safe-area-inset-bottom)) * (180 / 220) + 28px)); padding:8px 6px calc(10px + env(safe-area-inset-bottom)) }
+.game-hd{ display:flex; align-items:center; gap:8px; color:#fff; padding:4px 2px 10px; font-size:15px }
+.game-hd > b{ flex:1; font-family:"Galmuri11",sans-serif; white-space:nowrap }
+.game-sc{ font-family:"Galmuri11",sans-serif; font-size:20px; color:#FFE27A } .game-sc small{ font-size:12px; color:#9FC4E4 }
+.game-stage{ position:relative; width:100%; border:4px solid var(--ink); background:#000; touch-action:none; -webkit-user-select:none; user-select:none }
+#g-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; touch-action:none; -webkit-touch-callout:none }
+#g-x{ display:none }
+.game-ov{ position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; padding:10px; background:rgba(11,37,64,.55); overflow:auto }
+.game-ov > .go-card{ margin:auto } .game-ov[hidden]{ display:none }
+.go-card{ width:100%; max-width:300px; background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:16px 14px; text-align:center }
+.go-t{ font-family:"Galmuri11",sans-serif; font-size:20px; font-weight:800 }
+.go-d{ font-size:13.5px; line-height:1.6; color:#5B6275; font-weight:700; margin:8px 0 }
+.go-s{ font-family:"Galmuri11",sans-serif; font-size:44px; color:#B45309; line-height:1.1; margin:6px 0 } .go-s small{ font-size:16px; margin-left:2px }
+.go-b{ font-size:14px; font-weight:700; margin:6px 0 10px } .go-b b{ color:#B45309 }
+.go-r{ display:flex; flex-direction:column; gap:2px; font-size:12.5px; font-weight:800; color:#5B6275; margin:0 0 12px }
+.go-mode{ display:flex; gap:6px; margin:8px 0 4px } .go-mode button{ flex:1; min-height:44px; font-family:inherit; font-size:14.5px; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer } .go-mode button[aria-pressed="true"]{ background:var(--ink); color:#fff }
+.go-st{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:4px 0 8px } .go-st span{ display:flex; flex-direction:column; font-size:11px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); padding:4px 2px } .go-st b{ font-family:"Galmuri11",sans-serif; font-size:15px; color:var(--ink) }
+.game-ft{ color:#9FC4E4; font-size:13px; font-weight:700; text-align:center; padding-top:10px }
+.game-ft a{ color:#9FC4E4 }
+/* 이름 · 순위 */
+.who{ display:flex; align-items:center; gap:4px; min-height:40px; padding:0 8px; font-family:inherit; font-weight:800; font-size:13px; color:var(--ink); background:#fff; border:3px solid var(--ink); cursor:pointer; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.name-in{ width:100%; min-height:50px; font-size:18px; font-weight:800; text-align:center; font-family:inherit; border:3px solid var(--ink); margin:8px 0 }
+.name-av{ display:block; width:96px; height:96px; margin:6px auto; image-rendering:pixelated; background:#8FD3FF; border:3px solid var(--ink) }
+.err{ color:#C2303A; font-size:13px; font-weight:700; min-height:18px }
+.lb{ position:fixed; inset:0; z-index:50; display:flex; align-items:flex-end; justify-content:center; background:rgba(11,37,64,.6) } .lb[hidden]{ display:none }
+.lb-in{ width:100%; max-width:480px; max-height:86dvh; overflow:auto; background:var(--paper); border:4px solid var(--ink); padding:14px 14px calc(14px + env(safe-area-inset-bottom)) }
+.lb-hd{ display:flex; align-items:center; gap:8px; margin-bottom:8px } .lb-hd b{ flex:1; font-family:"Galmuri11",sans-serif; font-size:18px }
+.lb-row{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-bottom:2px dashed rgba(27,27,47,.15); font-weight:700; font-size:14.5px } .lb-row i{ font-style:normal; width:30px; text-align:center; font-family:"Galmuri11",sans-serif } .lb-row span{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .lb-row b{ font-family:"Galmuri11",sans-serif; color:#B45309 }
+.lb-row.me{ background:#FFF3C4 } .lb-none{ padding:16px; text-align:center; color:#5B6275; font-weight:700; font-size:14px; line-height:1.6 }
+</style>
+</head>
+<body>
+<div class="game" id="game" role="main" aria-label="파도 점프 게임">
+  <div class="game-box">
+    <div class="game-hd"><b>🏄 파도 점프</b><span class="game-sc"><small>점수</small> <b id="g-score">0</b></span>
+      <button class="btn sm ghost" id="g-snd" type="button" aria-pressed="false" aria-label="소리 켜기">🔇</button>
+      <button class="btn sm ghost" id="lb-open" type="button" aria-label="순위표">🏆</button>
+      <button class="who" id="who" type="button" aria-label="이름 바꾸기"></button>
+      <button class="btn sm ghost" id="g-x" type="button" aria-label="닫기">✕</button></div>
+    <div class="game-stage">
+      <canvas id="g-cv" width="180" height="220" aria-label="게임 화면. 화면을 누르면 점프"></canvas>
+      <div class="game-ov" id="g-ov"></div>
+    </div>
+    <div class="game-ft">화면을 탭하면 점프 · 길게 누르면 더 높이 · 스페이스바도 돼요<br><small>만든 곳: 양양 서핑 앱 <a href="/guide" target="_blank" rel="noopener">SurfShare</a></small></div>
+  </div>
+</div>
+<div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="순위표">
+  <div class="lb-in">
+    <div class="lb-hd"><b>🏆 순위표</b><button class="btn sm ghost" id="lb-x" type="button">닫기</button></div>
+    <div class="go-mode" role="group" aria-label="순위 종류"><button type="button" data-lb="daily" aria-pressed="true">📅 오늘</button><button type="button" data-lb="easy" aria-pressed="false">🙂 쉬움</button><button type="button" data-lb="hard" aria-pressed="false">🔥 어려움</button></div>
+    <div id="lb-body"></div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="sprite.js"></script>
+<script>
+/* ── 앱이 주던 것들을 여기서 대신 ─────────────────────────────── */
+window.JUMP_STANDALONE = true;
+const KEY = 'jump.me', TB = 'jump_scores';
+const SUPA = { url:(window.SURF_CONFIG?.supabaseUrl || '').replace(/\/$/, ''), key:window.SURF_CONFIG?.supabaseKey || '' };
+const esc = s => String(s == null ? '' : s).replace(/[<>&"']/g, c=>({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&#39;' }[c]));
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const vib = p => { try{ navigator.vibrate?.(p); }catch(e){} };
+const peerPlay = pl => pl || null;
+const $ = id => document.getElementById(id);
+let ME = null; const state = { town:[] };
+let board = { easy:[], hard:[], daily:[] }, boardOk = null;
+
+function load(){ try{ const m = JSON.parse(localStorage.getItem(KEY) || 'null'); if(m && m.name){ ME = { id:'me', name:m.name, profile:{ gender:m.g || (m.name.length % 2 ? 'f' : 'm'), play:m.play || {} } }; } }catch(e){} }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify({ name:ME.name, g:ME.profile.gender, play:ME.profile.play })); }catch(e){} }
+const cleanName = s => String(s || '').replace(/[<>&"'`\\]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
+
+/* 순위표 — 이름마다 가장 높은 점수 하나만. 표가 없으면(404) 순위 없이 혼자 한다 */
+async function api(path, opt){
+  const r = await fetch(`${SUPA.url}/rest/v1/${path}`, { headers:{ apikey:SUPA.key, Authorization:'Bearer ' + SUPA.key, 'Content-Type':'application/json', Prefer:'return=minimal' }, ...opt });
+  if(r.status === 404) throw Object.assign(new Error('notable'), { code:'notable' });
+  if(!r.ok) throw new Error('http ' + r.status);
+  return r.status === 204 || r.status === 201 ? null : r.json();
+}
+const best = rows => { const m = new Map(); (rows || []).forEach(r=>{ const n = cleanName(r.name), sc = Math.max(0, Math.min(200000, Math.floor(+r.score) || 0)); if(n && (!m.has(n) || m.get(n) < sc)) m.set(n, sc); });
+  return [...m].map(([name, score])=>({ name, score })).sort((a,b)=>b.score - a.score); };
+async function pullBoard(){
+  if(!SUPA.url) return;
+  try{
+    const [eh, dl] = await Promise.all([ api(`${TB}?mode=in.(easy,hard)&select=name,mode,score&order=score.desc&limit=400`), api(`${TB}?mode=eq.daily&day=eq.${today()}&select=name,score&order=score.desc&limit=200`) ]);
+    board = { easy:best(eh.filter(r=>r.mode === 'easy')), hard:best(eh.filter(r=>r.mode === 'hard')), daily:best(dl) }; boardOk = true;
+  }catch(e){ boardOk = e.code === 'notable' ? false : boardOk; }
+  /* 게임의 시작·결과 화면이 쓰는 '동기 목록' 모양으로 맞춘다(나는 빼고) */
+  const names = new Set([...board.easy, ...board.hard, ...board.daily].map(r=>r.name));
+  state.town = [...names].filter(n=>!ME || n !== ME.name).map(n=>{ const d = board.daily.find(r=>r.name === n);
+    return { id:'n:' + n, name:n, profile:{ play:{ best:board.easy.find(r=>r.name === n)?.score || 0, hbest:board.hard.find(r=>r.name === n)?.score || 0, dbest:d ? { day:today(), score:d.score } : null } } }; });
+}
+async function submit(mode, score){
+  if(!SUPA.url || boardOk === false || !ME) return;
+  try{ await api(TB, { method:'POST', body:JSON.stringify({ name:ME.name, mode, day:today(), score }) }); }catch(e){}
+  pullBoard();
+}
+const rankOf = (mode, score) => { const L = board[mode] || []; const n = L.filter(r=>r.score > score && r.name !== ME.name).length + 1; return L.length ? `${mode === 'daily' ? '오늘' : mode === 'hard' ? '어려움' : '쉬움'} ${n}위` : ''; };
+
+/* 게임이 끝나면 부르는 함수(앱의 playGameDone 대신) — 내 최고를 넘었을 때만 순위표에 올린다 */
+window.playGameDone = (score, isDaily, shells, hard) => {
+  const p = ME.profile.play, day = today(), k = hard ? 'hbest' : 'best', sc = Math.max(0, Math.min(200000, Math.floor(score) || 0));
+  const newBest = sc > (p[k] || 0); if(newBest) p[k] = sc;
+  let dUp = false;
+  if(isDaily){ if(!p.dbest || p.dbest.day !== day) p.dbest = { day, score:0 }; if(sc > p.dbest.score){ p.dbest.score = sc; dUp = true; } }
+  p.gn = (p.gn || 0) + 1; save();
+  if(isDaily && dUp) submit('daily', sc); else if(!isDaily && newBest) submit(hard ? 'hard' : 'easy', sc);
+  return { gain:0, newBest, best:p[k], rank:rankOf(isDaily ? 'daily' : hard ? 'hard' : 'easy', sc) };
+};
+
+/* ── 이름 넣기 ── 이름으로 캐릭터 모습이 정해진다(같은 이름 = 같은 모습) */
+function nameCard(first){
+  $('g-ov').hidden = false;
+  $('g-ov').innerHTML = `<div class="go-card"><div class="go-t">🏄 파도 점프</div>
+    <div class="go-d">${first ? '이름만 넣으면 바로 시작해요.<br>순위표에 이 이름으로 올라가요.' : '이름을 바꾸면 캐릭터 모습도 바뀌어요.'}</div>
+    <canvas class="name-av" id="name-av"></canvas>
+    <input class="name-in" id="name-in" maxlength="12" placeholder="이름 (12자까지)" value="${esc(ME?.name || '')}" autocomplete="nickname" enterkeyhint="go">
+    <div class="err" id="name-err"></div>
+    <button class="btn blue" id="name-go" type="button" style="width:100%;min-height:52px;font-size:16px">${first ? '▶ 시작하기' : '확인'}</button></div>`;
+  const draw = ()=>{ const n = cleanName($('name-in').value) || '서퍼'; const q = withLook({ gender:n.length % 2 ? 'f' : 'm' }, n); drawSpr($('name-av'), avatarRows(q, false), avatarTintOf(q, 0)); };
+  draw(); $('name-in').addEventListener('input', draw);
+  const go = ()=>{ const n = cleanName($('name-in').value);
+    if(n.length < 1) return $('name-err').textContent = '이름을 적어 주세요';
+    const play = ME?.profile?.play || {};
+    ME = { id:'me', name:n, profile:{ gender:n.length % 2 ? 'f' : 'm', play } }; save(); paintWho();
+    pullBoard().finally(()=>window.gameOpen()); };
+  $('name-go').onclick = go; $('name-in').addEventListener('keydown', e=>{ if(e.key === 'Enter') go(); });
+  setTimeout(()=>$('name-in').focus(), 50);
+}
+function paintWho(){ $('who').textContent = ME ? '👤 ' + ME.name : '👤 이름'; }
+
+/* ── 순위표 시트 ── */
+let lbTab = 'daily';
+function renderLb(){
+  document.querySelectorAll('[data-lb]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.lb === lbTab)));
+  const L = (board[lbTab] || []).slice(0, 30), mine = ME ? (lbTab === 'daily' ? (ME.profile.play.dbest?.day === today() ? ME.profile.play.dbest.score : 0) : (lbTab === 'hard' ? ME.profile.play.hbest : ME.profile.play.best)) || 0 : 0;
+  $('lb-body').innerHTML = boardOk === false ? `<div class="lb-none">순위표를 준비 중이에요.<br>지금은 이 기기에만 기록돼요 — 내 최고 <b>${mine}</b>점</div>`
+    : L.length ? L.map((r, i)=>`<div class="lb-row${ME && r.name === ME.name ? ' me' : ''}"><i>${['🥇','🥈','🥉'][i] || i + 1}</i><span>${esc(r.name)}</span><b>${r.score}</b></div>`).join('') + (mine && ME && !L.some(r=>r.name === ME.name) ? `<div class="lb-row me"><i>·</i><span>${esc(ME.name)} (나)</span><b>${mine}</b></div>` : '')
+    : `<div class="lb-none">${lbTab === 'daily' ? '오늘 아직 아무도 안 했어요 — 1등 할 기회!' : '아직 기록이 없어요'}</div>`;
+}
+$('lb-open').onclick = ()=>{ $('lb').hidden = false; renderLb(); pullBoard().then(renderLb); };
+$('lb-x').onclick = ()=>{ $('lb').hidden = true; };
+$('lb').addEventListener('click', e=>{ if(e.target === $('lb')) $('lb').hidden = true; const b = e.target.closest('[data-lb]'); if(b){ lbTab = b.dataset.lb; renderLb(); } });
+$('who').onclick = ()=>{ if(window._gameRun) return; nameCard(false); };
+
+load(); paintWho();
+</script>
+<script src="surfgame.js"></script>
+<script>
+/* 게임을 띄운다 — 이름이 없으면 이름부터 */
+pullBoard();
+if(ME) window.gameOpen(); else { ME = { id:'me', name:'', profile:{ gender:'f', play:{} } }; window.gameOpen(); nameCard(true); }   // 이름 넣기 전엔 빈 손님으로 배경만
+</script>
+</body>
+</html>
