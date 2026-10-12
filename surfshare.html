@@ -417,7 +417,9 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .upd-it{ display:flex; align-items:center; gap:8px; padding:5px 0; font-size:13.5px; line-height:1.5 } .upd-it i{ font-style:normal; font-size:18px; font-family:sans-serif } .upd-it span{ flex:1; word-break:keep-all } .upd-it .btn{ flex:0 0 auto; min-height:36px }
 /* 홈 — 오늘 한 판 · 맛집 */
 .hsec{ font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:800; color:#fff; text-shadow:2px 2px 0 var(--ink); margin:14px 0 8px } .hsec small{ font-family:inherit; font-size:12px; text-shadow:1px 1px 0 var(--ink); margin-left:6px }
-.hgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px }
+.hgrid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px } .hgrid.two{ grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:8px }
+.hg.hg-main{ flex-direction:row; align-items:center; gap:12px; width:100%; min-height:84px; background:linear-gradient(#FFF3C4, #FFE9A8) } .hg-main .hg-ic{ font-size:38px } .hg-mm{ flex:1; display:flex; flex-direction:column; gap:2px } .hg-mm b{ font-family:"Galmuri11",sans-serif; font-size:17px }
+.hg-go{ font-size:18px; font-weight:800; width:40px; height:40px; display:flex; align-items:center; justify-content:center; background:var(--sea); color:#fff; border:3px solid var(--ink) }
 .hg{ display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:92px; padding:10px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
 .hg:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--ink) } .hg-ic{ font-size:26px; font-family:sans-serif; line-height:1.1 } .hg b{ font-size:13.5px; word-break:keep-all } .hg small{ font-size:11.5px; color:#5B6275; font-weight:700 }
 .hf{ display:flex; align-items:center; gap:10px; width:100%; margin-top:6px; padding:9px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); cursor:pointer }
@@ -500,6 +502,7 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .shop-pv{ position:relative; padding:0; background:#8FD3FF; border:2px solid var(--ink); cursor:pointer } .shop-pv canvas{ display:block; width:64px; height:64px; image-rendering:pixelated }
 .shop-pv em{ position:absolute; top:-8px; right:-8px; font-style:normal; font-size:10.5px; font-weight:800; padding:1px 5px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
 .hubcard.wide{ grid-column:1/-1; min-height:84px; background:#E6F6FF }
+.hubcard.main{ min-height:112px; background:linear-gradient(#FFF3C4, #FFE9A8) } .hubcard.main .hc-ic{ font-size:40px } .hubcard.main b{ font-size:18px; font-family:"Galmuri11",sans-serif }
 .hubcard:active{ transform:translate(3px,3px); box-shadow:1px 1px 0 var(--ink) }
 .hubcard .hc-ic{ font-size:30px; line-height:1.1; font-family:sans-serif } .hubcard b{ font-size:15px; margin-top:4px } .hubcard small{ font-size:12.5px; font-weight:700; color:#5B6275; line-height:1.4 }
 .hubcard em{ position:absolute; top:8px; right:8px; font-style:normal; font-size:12px; font-weight:800; padding:2px 7px; background:#C2303A; color:#fff; border:2px solid var(--ink) }
@@ -2538,7 +2541,7 @@ const ONB = [
   { tab:'food', at:'t-food', t:'🍜 맛집 · 🏄 서핑 스팟',
     d:'양서학 네이버 리스트가 자동으로 들어와요. 가 본 곳이 없으면 <b>➕ 등록하기</b>(네이버 링크 + 한줄평) — <b>바로 목록에 올라가요</b>.<br>카드마다 👍 추천 · 🙋 가봤어요 · 💬 댓글(내 기수가 같이 보여요).' },
   { tab:'play', at:'t-play', t:'🎮 놀이 — 게임과 훈련',
-    d:'🌊 <b>라인업 서핑</b>(패들·팝업·튜브·풀아웃) · 🛹 <b>서프스케이트 훈련</b>(땅에서 펌핑·바텀턴·컷백) · 🏄 파도 점프 · 코치 퀴즈 · 운세 · 스탬프 · 조개 상점.' },
+    d:'🏄 <b>파도 점프</b>(메인 게임 · 매일 📅 오늘의 챌린지) · 🌊 라인업 서핑 · 🛹 서프스케이트 훈련 · 코치 퀴즈 · 운세 · 스탬프 · 조개 상점.' },
   { tab:'bolt', at:'t-bolt', t:'⚡ 서핑번개',
     d:'시간과 바다만 정해 올리면 갈 사람이 <b>[나도 갈래요]</b>로 채워요. 정원은 없어요.' },
   { tab:'town', at:'t-town', t:'🏘 마을 — 한마디가 머리 위로',
@@ -2974,10 +2977,11 @@ function homeGames(){
   const p = ME.profile?.play || {}, day = today(), dsc = (p.dbest && p.dbest.day === day) ? p.dbest.score : null;
   const skDays = Object.keys(p.sk?.real || {}).length;
   const g = (id, ic, t, sub, fn) => `<button type="button" class="hg" data-hg="${id}"><span class="hg-ic">${ic}</span><b>${t}</b><small>${sub}</small></button>`;
-  el.innerHTML = `<div class="hsec">🎮 오늘 한 판 <small>게임·훈련으로 XP</small></div><div class="hgrid">
+  el.innerHTML = `<div class="hsec">🎮 오늘 한 판 <small>게임·훈련으로 XP</small></div>
+    <button type="button" class="hg hg-main" data-hg="game"><span class="hg-ic">🏄</span><span class="hg-mm"><b>파도 점프</b><small>${dsc != null ? `📅 오늘의 챌린지 ${dsc}점 · 다시 도전!` : '📅 오늘의 챌린지 — 모두 같은 코스'}</small><small>쉬움 최고 ${p.best || 0} · 어려움 ${p.hbest || 0}</small></span><span class="hg-go">▶</span></button>
+    <div class="hgrid two">
     ${g('surf', '🌊', '라인업 서핑', (p.sebest || p.sbest) ? `최고 ${Math.max(p.sebest || 0, p.sbest || 0)}` : '패들·튜브·풀아웃')}
-    ${g('skate', '🛹', '서프스케이트', skDays ? `${skDays}일 탐` : '땅에서 펌핑')}
-    ${g('game', '🏄', '파도 점프', dsc != null ? `오늘 ${dsc}` : '오늘의 챌린지')}</div>`;
+    ${g('skate', '🛹', '서프스케이트', skDays ? `${skDays}일 탐` : '땅에서 펌핑')}</div>`;
   el.querySelectorAll('[data-hg]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hg; (k === 'surf' ? window.surfOpen : k === 'skate' ? window.skateOpen : window.gameOpen)?.(); });
 }
 /* 홈 — 맛집·스팟: 최근에 올라온 3곳(네이버 리스트 + 앱 등록). 남이 쓴 이름·한줄평은 esc */

@@ -487,16 +487,15 @@ function renderHub(enter){
     ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-hq="${i}"><i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
     <div class="pt" style="margin-top:18px">놀이 메뉴</div>
     <div class="hubgrid">
-      ${card(0,'🌊','라인업 서핑', `진짜 서핑처럼 — 패들·팝업·튜브·풀아웃 · 쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, (p.sn || 0) ? '' : 'NEW', 'surf').replace('class="hubcard"', 'class="hubcard wide"')}
-      ${card(0,'🛹','서프스케이트 훈련', `땅에서 펌핑·바텀턴·컷백 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate').replace('class="hubcard"', 'class="hubcard wide"')}
-      ${card(0,'🏄','파도 점프', `쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0}`, dsc == null ? '챌린지' : '', 'game')}
+      ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
+      ${card(0,'🌊','라인업 서핑', `쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, (p.sn || 0) ? '' : 'NEW', 'surf')}
+      ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
       ${card(3,'📍','해변 스탬프', `${st}/${SEAS.length} 곳`, '', 'stamp')}
       ${card(4,'🎒','배지 도감', `${got}/${BADGES.length}개`, '', 'badge')}
       ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
       ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
-      ${card(7,'🥳','마을 이모트', '내 캐릭터를 눌러요', '', 'emote')}
     </div>
     <div class="pt" style="margin-top:18px">설정 · 공유</div>
     <div class="hubset">
