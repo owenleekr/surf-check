@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>og</title>
+<style>
+@font-face{ font-family:"Galmuri14"; src:url("https://cdn.jsdelivr.net/npm/galmuri@2.39.3/dist/Galmuri14.woff2") format("woff2") }
+html,body{ margin:0 } body{ width:1200px; height:630px; overflow:hidden; font-family:-apple-system,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+  background:linear-gradient(#CDEEFF 0 52%, #8FD3FF 52% 66%, #F3E2BE 66%) }
+.sun{ position:absolute; right:110px; top:58px; width:120px; height:120px; border-radius:50%; background:#FFD86B }
+.t{ position:absolute; left:70px; top:66px; font-family:"Galmuri14",sans-serif; font-size:104px; color:#12245F; letter-spacing:2px }
+.s{ position:absolute; left:74px; top:196px; font-size:38px; font-weight:800; color:#1B1B2F }
+.c{ position:absolute; left:70px; top:262px; display:flex; gap:12px; flex-wrap:wrap; width:600px }
+.c span{ padding:10px 18px; background:#fff; border:3px solid #1B1B2F; border-radius:999px; font-size:26px; font-weight:800; color:#1B1B2F }
+.tag{ position:absolute; right:70px; top:206px; padding:8px 18px; background:#FFD23F; border:3px solid #1B1B2F; border-radius:12px; font-size:28px; font-weight:800 }
+.crew{ position:absolute; left:476px; bottom:30px; display:flex; align-items:flex-end; gap:0 }
+.crew svg{ height:270px; width:auto; display:block; margin-left:-30px }
+.crew svg.p{ height:250px }
+.foam{ position:absolute; left:0; right:0; top:410px; height:10px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.85) 0 70px, transparent 70px 120px); border-radius:6px }
+</style></head><body>
+<div class="sun"></div><div class="foam"></div>
+<div class="t">SurfShare</div>
+<div class="s">양양 서퍼들의 앱</div>
+<div class="c"><span>🌊 이번주 파도</span><span>📒 서핑 일지</span><span>🚌 버스 빈자리</span><span>🍜 맛집·스팟</span><span>🎮 파도 점프</span></div>
+<div class="tag">양양 · 낙산</div>
+<div class="crew" id="crew"></div>
+<script src="../mochi.js"></script>
+<script>
+const P = [
+  { gender:'f', hair:'bob', hairc:'k', skin:'s', face:'smile', wear:'rash', top:'r', bottom:'b', boardc:'y', pet:'dog', petc:'y', petv:'1', petLv:1, hold:'coffee' },
+  { gender:'m', hair:'surf', hairc:'n', skin:'d', face:'happy', wear:'shorty', top:'b', boardc:'c', gear:'leash' },
+  { gender:'f', hair:'pony', hairc:'y', skin:'l', face:'wink', wear:'tee', top:'pink', bottom:'denim', boardc:'p', hat:'cap', hatc:'w' },
+];
+document.getElementById('crew').innerHTML = P.map((p, i)=>mochiSVG(p, { charm:2, pet:i === 0, uid:'o' + i }).replace('<svg ', `<svg class="${i === 0 ? 'p' : ''}" `)).join('');
+</script>
+</body></html>
