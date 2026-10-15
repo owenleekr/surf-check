@@ -1546,11 +1546,11 @@ $('gate-ok').onclick = async ()=>{
   }catch(err){ e.textContent = err.message==='Failed to fetch' ? '서버에 닿지 않아요' : '아직 준비 중이에요 (코치에게 문의)'; }
   finally{ btn.disabled = false; btn.textContent = '들어가기'; }
 };
-$('gate-code').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('gate-ok').click(); } });
+$('gate-code').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('gate-ok').click(); } });
 /* 가입 칸 — 엔터로 다음 칸 · 마지막 칸(비밀번호)에서 엔터 = 들어가기 */
-$('uname')?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('ubirth')?.focus(); } });
-$('ubirth')?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('upw')?.focus(); } });
-$('upw')?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('go')?.click(); } });
+$('uname')?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('ubirth')?.focus(); } });
+$('ubirth')?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('upw')?.focus(); } });
+$('upw')?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('go')?.click(); } });
 
 let mode = 'in';
 /* 6기 명단에서 고르게 한다 — 아무 이름이나 쓰면 차에 누가 타는지 알 수가 없다.
@@ -2667,7 +2667,7 @@ async function sendChat(text, noBubble){
   }catch(e){ toast(state.chatOk===false ? '채팅 표가 아직 없어요' : '보내지 못했어요 · 신호 확인'); }
 }
 $('chat-send').onclick = ()=>sendChat();
-$('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); sendChat(); } });
+$('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); sendChat(); } });
 $('chat-emo').innerHTML = ['🏄','👏','🔥','🌊','😂','💪','☕','🙏']
   .map(e=>`<button type="button" class="btn sm ghost" style="padding:5px 0;font-family:sans-serif">${e}</button>`).join('');
 $('chat-emo').querySelectorAll('button').forEach(b=>b.onclick = ()=>{ const i = $('chat-in'); i.value += b.textContent; i.focus(); });

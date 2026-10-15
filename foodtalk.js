@@ -214,7 +214,7 @@ function init(root, rerender, itemsFn){
     const q = e.target.closest?.('[data-rq]'); const k = q?.closest('[data-rqbox]')?.dataset.rqbox; if(q && k) draft[`rq-${q.dataset.rq}-${k}`] = q.value;
     if(q && k && q.dataset.rq === 'link') autofill(q.closest('[data-rqbox]'), k, q.value);
     const er = q?.closest('[data-rqbox]')?.querySelector('[data-rqerr]'); if(er) er.textContent = ''; });
-  root.addEventListener('keydown', e=>{ if(e.key === 'Enter' && e.target.matches?.('[data-draft]')){ e.preventDefault(); send(e.target.dataset.draft); } });
+  root.addEventListener('keydown', e=>{ if(e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && e.target.matches?.('[data-draft]')){ e.preventDefault(); send(e.target.dataset.draft); } });
   root.addEventListener('click', e=>{
     const b = e.target.closest('button'); if(!b || !root.contains(b)) return;
     if(b.dataset.rx){ toggleRx(b.dataset.rx, b.dataset.emo, b.dataset.to); return; }
