@@ -894,6 +894,8 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .bs-routes button[aria-pressed="true"] small{ color:var(--ink) }
 /* 닫기(✕) 버튼 — 32px 은 손가락으로 빗나갔다 → 40px. 보이는 크기는 그대로 두고 누르는 영역만 넓힌다 */
 .rec-x{ width:40px; height:40px } .upd-x{ min-width:40px; min-height:40px; right:4px; top:4px }
+/* 꾸미기 미리보기는 따라온다 — 선택지가 길어져 아래를 고르면 캐릭터가 화면 밖이었다 */
+.bld-pv{ position:sticky; top:6px; z-index:6; padding:8px 10px; box-shadow:0 6px 14px rgba(18,36,95,.18) }
 </style>
 </head>
 <body>
@@ -1169,9 +1171,9 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 
     <!-- 꾸미기 (홈 안에서 열린다) -->
     <div id="pane-me" hidden>
-      <div class="px white" style="text-align:center">
-        <canvas id="bld-av" style="height:170px;background:linear-gradient(#C9EAFF,#E6F5FF 78%,#F3E6C8 78%);border-radius:16px;padding:0 6px"></canvas>
-        <div class="note" style="margin-top:6px">여기서 만든 캐릭터가 <b>마을·채팅·차·숙소 글에 그대로 나와요.</b><br>📸 카드로 저장해 카톡·인스타에 자랑해요.</div>
+      <div class="px white bld-pv" style="text-align:center">
+        <canvas id="bld-av" style="height:150px;background:linear-gradient(#C9EAFF,#E6F5FF 78%,#F3E6C8 78%);border-radius:16px;padding:0 6px"></canvas>
+        <div class="note" style="margin-top:4px">마을·채팅·차·숙소 글에 이 모습으로 나와요 · 📸 카드로 자랑</div>
       </div>
       <div class="px" style="margin-top:10px"><div id="bld-opts"></div></div>
 
