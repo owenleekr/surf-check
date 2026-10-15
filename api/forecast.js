@@ -32,7 +32,34 @@ export function rate(h, p, wind, wdir){
   return { s:Math.max(0, Math.min(5, Math.round(s))), why };
 }
 
+/* 서핑 일지용 — 하루 · 한 구역의 오전/오후 파도(지난 7일 ~ 앞으로 6일). ?day=YYYY-MM-DD&r=north */
+async function oneDay(req, res){
+  const day = String(req.query.day), g = REG.find(x=>x.k === req.query.r) || REG[1];
+  const q = `latitude=${g.lat}&longitude=${g.lon}&past_days=7&forecast_days=7&timezone=Asia%2FSeoul`;
+  let M, W;
+  try{
+    [M, W] = await Promise.all([
+      fetch(`https://marine-api.open-meteo.com/v1/marine?${q}&hourly=wave_height,wave_period,wave_direction,sea_surface_temperature`, { signal:AbortSignal.timeout(8000) }).then(r=>{ if(!r.ok) throw 0; return r.json(); }),
+      fetch(`https://api.open-meteo.com/v1/forecast?${q}&hourly=wind_speed_10m,wind_direction_10m,weather_code,temperature_2m&wind_speed_unit=ms`, { signal:AbortSignal.timeout(8000) }).then(r=>{ if(!r.ok) throw 0; return r.json(); }) ]);
+  }catch(e){ res.setHeader('Cache-Control', 'no-store'); res.status(502).json({ error:'forecast' }); return; }
+  const part = (h0, h1)=>{
+    const P = { h:[], p:[], dir:[], sst:[], w:[], wd:[], tmp:[], code:[] };
+    (M.hourly?.time || []).forEach((t, i)=>{ if(t.slice(0, 10) !== day) return; const hr = +t.slice(11, 13); if(hr < h0 || hr >= h1) return;
+      P.h.push(M.hourly.wave_height?.[i]); P.p.push(M.hourly.wave_period?.[i]); P.dir.push(M.hourly.wave_direction?.[i]); P.sst.push(M.hourly.sea_surface_temperature?.[i]); });
+    (W.hourly?.time || []).forEach((t, i)=>{ if(t.slice(0, 10) !== day) return; const hr = +t.slice(11, 13); if(hr < h0 || hr >= h1) return;
+      P.w.push(W.hourly.wind_speed_10m?.[i]); P.wd.push(W.hourly.wind_direction_10m?.[i]); P.tmp.push(W.hourly.temperature_2m?.[i]); P.code.push(W.hourly.weather_code?.[i]); });
+    const h = avg(P.h); if(h == null) return null;
+    const p = avg(P.p), w = avg(P.w), wd = angAvg(P.wd), rt = rate(h, p, w, wd);
+    return { h:r1(h), p:r1(p), dir:Math.round(angAvg(P.dir) ?? -1), w:r1(w), wd:Math.round(wd ?? -1), tmp:r1(avg(P.tmp)), sst:r1(avg(P.sst)), code:Math.max(...P.code.filter(x=>x != null), 0), s:rt.s, why:rt.why };
+  };
+  const out = { day, r:g.k, rn:g.n, am:part(6, 12), pm:part(12, 18) };
+  const past = day < new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  res.setHeader('Cache-Control', out.am || out.pm ? `s-maxage=${past ? 21600 : 1800}, stale-while-revalidate=3600` : 'no-store');
+  res.status(200).json(out);
+}
+
 export default async function handler(req, res){
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(req.query?.day || ''))) return oneDay(req, res);
   const lat = REG.map(r=>r.lat).join(','), lon = REG.map(r=>r.lon).join(',');
   let mar, wx;
   try{

@@ -10,7 +10,17 @@ const todayS = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.get
 const num = (v, lo, hi) => { v = Math.round(+v); return isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
 const clean = e => e && typeof e === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(e.d)) ? {
   id:String(e.id || '').slice(0, 40), d:e.d, s:String(e.s || '').slice(0, 20), m:num(e.m, 10, 600), w:num(e.w, 0, 4), f:num(e.f, 0, 3),
-  t:String(e.t || '').slice(0, 60), h:e.h == null || !isFinite(+e.h) ? null : Math.max(0, Math.min(9, Math.round(+e.h * 10) / 10)) } : null;
+  t:String(e.t || '').slice(0, 60), h:e.h == null || !isFinite(+e.h) ? null : Math.max(0, Math.min(9, Math.round(+e.h * 10) / 10)),
+  tm:e.tm === 1 || e.tm === 0 ? e.tm : null, wx:cleanWx(e.wx) } : null;
+/* 그날 파도 — /api/forecast?day= 에서 받은 값. 남의 프로필에서도 오므로 숫자만, 범위 안으로 */
+function cleanWx(w){
+  if(!w || typeof w !== 'object') return null;
+  const n = (v, lo, hi, d)=>v == null || !isFinite(+v) ? null : Math.max(lo, Math.min(hi, Math.round(+v * (d || 10)) / (d || 10)));
+  const o = { h:n(w.h, 0, 9), p:n(w.p, 0, 30), dir:n(w.dir, -1, 360, 1), w:n(w.w, 0, 40), wd:n(w.wd, -1, 360, 1), sst:n(w.sst, -5, 35), tmp:n(w.tmp, -30, 45) };
+  return o.h == null ? null : o;
+}
+const COMP = d => d == null || d < 0 ? '' : ['북','북동','동','남동','남','남서','서','북서'][Math.round(d / 45) % 8];
+const wxLine = (w, tm) => w ? `${tm === 0 ? '오전 ' : tm === 1 ? '오후 ' : ''}${w.h}m${w.p ? ` · ${w.p}초` : ''}${COMP(w.dir) ? ` · ${COMP(w.dir)}쪽 파도` : ''}${w.w != null ? ` · 바람 ${COMP(w.wd)}${COMP(w.wd) ? '풍 ' : ''}${w.w}m/s` : ''}${w.sst != null ? ` · 수온 ${w.sst}°` : ''}` : '';
 const me = () => (typeof ME !== 'undefined' && ME) ? ME : null;      // ME 는 surfshare.html 의 전역 let — window 속성이 아니다
 const P = () => (typeof playP === 'function' && me()?.profile) ? playP() : null;
 const logs = () => { const p = P(); return p && Array.isArray(p.log) ? p.log.map(clean).filter(Boolean).sort((a, b)=>a.d < b.d ? 1 : a.d > b.d ? -1 : 0) : []; };
@@ -22,6 +32,14 @@ function spotNames(){
   const cnt = {}; logs().forEach(e=>{ cnt[e.s] = (cnt[e.s] || 0) + 1; });
   Object.keys(cnt).sort((a, b)=>cnt[b] - cnt[a]).concat(['낙산'], L).forEach(n=>{ if(n && !seen.has(n)){ seen.add(n); out.push(n); } });
   return out.slice(0, 10);
+}
+const regionOfSpot = name => { const it = (typeof window.foodItems === 'function' ? window.foodItems('spot') : []).find(i=>String(i.n || '').replace(/해수욕장|해변/g, '').trim() === name);
+  const lat = it?.lat ?? (/고성|아야진|천진|봉수대|삼포|송지호|공현진|가진/.test(name) ? 38.3 : /속초|설악|물치|낙산|정암|후진/.test(name) ? 38.12 : 38.0);
+  return lat >= 38.25 ? 'goseong' : lat >= 38.09 ? 'north' : 'south'; };
+const WXC = {};
+async function fetchWx(d, s){
+  const r = regionOfSpot(s), k = d + '|' + r; if(WXC[k]) return WXC[k];
+  try{ const res = await fetch(`/api/forecast?day=${encodeURIComponent(d)}&r=${r}`); if(!res.ok) throw 0; const j = await res.json(); WXC[k] = j; return j; }catch(e){ return null; }
 }
 function waveOf(d){
   const fc = window._wave?.fc; const day = fc?.days?.find(x=>x.day === d); if(!day) return null;
@@ -56,7 +74,7 @@ function render(){
 function row(e){
   const [y, m, d] = e.d.split('-'), dow = '일월화수목금토'[new Date(e.d + 'T00:00').getDay()];
   return `<button type="button" class="sl-row" data-slid="${esc(e.id)}"><span class="sl-d"><b>${+m}.${+d}</b><small>${dow}</small></span>
-    <span class="sl-m"><b>${esc(e.s || '어딘가')}</b><small>${e.m >= 60 ? (e.m / 60).toString().replace(/\.0$/, '') + '시간' : e.m + '분'} · 파도 ${WAVES[e.w]}${e.h != null ? ` · 예보 ${e.h}m` : ''}${e.t ? ' · ' + esc(e.t) : ''}</small></span><span class="sl-f">${FEEL[e.f].split(' ')[0]}</span></button>`;
+    <span class="sl-m"><b>${esc(e.s || '어딘가')}</b><small>${e.m >= 60 ? (e.m / 60).toString().replace(/\.0$/, '') + '시간' : e.m + '분'} · 파도 ${WAVES[e.w]}${e.wx ? ` · 🌊 ${e.wx.h}m${e.wx.p ? '·' + e.wx.p + '초' : ''}${e.wx.w != null ? '·바람 ' + e.wx.w : ''}` : e.h != null ? ` · 예보 ${e.h}m` : ''}${e.t ? ' · ' + esc(e.t) : ''}</small></span><span class="sl-f">${FEEL[e.f].split(' ')[0]}</span></button>`;
 }
 
 let cur = null;
@@ -74,20 +92,32 @@ function form(id, pre){
   cur = old ? { ...old } : { id:'', d:todayS(), s:spotNames()[0] || '낙산', m:60, w:2, f:2, t:'' };
   /* 체크인 → '나왔어요' 에서 열리면 그 해변과 머문 시간으로 미리 채운다 */
   if(!old && pre){ if(pre.s) cur.s = String(pre.s).replace(/해수욕장|해변/g, '').trim().slice(0, 20); if(pre.m){ const m = +pre.m; cur.m = MIN.reduce((b, x)=>Math.abs(x - m) < Math.abs(b - m) ? x : b, 60); } }
-  const sh = sheet(); $l('sl-t').textContent = old ? '📒 기록 고치기' : '📒 오늘 서핑 기록'; paintForm(!!old); sh.hidden = false;
+  if(cur.tm == null) cur.tm = new Date().getHours() < 13 ? 0 : 1;
+  const sh = sheet(); $l('sl-t').textContent = old ? '📒 기록 고치기' : '📒 오늘 서핑 기록'; paintForm(!!old); sh.hidden = false; loadWx();
 }
 function paintForm(edit){
   const names = spotNames(); if(cur.s && !names.includes(cur.s)) names.unshift(cur.s);
   const td = todayS(), y = new Date(Date.now() - 864e5); y.setMinutes(y.getMinutes() - y.getTimezoneOffset()); const yd = y.toISOString().slice(0, 10);
   $l('sl-body').innerHTML = `
-    <div class="sl-lb">언제</div>${chips('d', ['오늘', '어제'], cur.d === td ? 0 : cur.d === yd ? 1 : -1)}
+    ${voiceOK() ? `<button type="button" class="btn sm blue sl-mic" data-slmic>🎤 말로 기록하기</button><div class="sl-heard" id="sl-heard">예) "오늘 낙산에서 두 시간 탔고 파도 다섯 개, 최고였어"</div>` : ''}
+    <div class="sl-lb">언제</div>${chips('d', ['오늘', '어제'], cur.d === td ? 0 : cur.d === yd ? 1 : -1)}${chips('tm', ['오전', '오후'], cur.tm)}
     <div class="sl-lb">어디서</div><div class="food-chips sl-chips" role="group">${names.slice(0, 10).map(n=>`<button type="button" data-slspot="${esc(n)}" aria-pressed="${cur.s === n}">${esc(n)}</button>`).join('')}</div>
     <input data-slin="s" maxlength="20" placeholder="다른 곳이면 적어요" value="${cur.sOther ? esc(cur.s) : ''}" style="margin-top:6px">
+    <div class="sl-wx" id="sl-wx">${cur.wx ? '🌊 그날 파도 · ' + wxLine(cur.wx, cur.tm) : '🌊 그날 파도를 불러오는 중…'}</div>
     <div class="sl-lb">얼마나</div>${chips('m', MIN.map(m=>m >= 60 ? (m / 60) + '시간' : m + '분'), MIN.indexOf(cur.m))}
     <div class="sl-lb">탄 파도</div>${chips('w', WAVES, cur.w)}
     <div class="sl-lb">기분</div>${chips('f', FEEL, cur.f)}
     <div class="sl-lb">한줄 <small>(선택)</small></div><input data-slin="t" maxlength="60" placeholder="예) 첫 그린 웨이브! · 패들 힘들었다" value="${esc(cur.t)}">
     <div class="food-btns" style="margin-top:12px"><button type="button" class="btn blue" data-slsave>${edit ? '고치기' : '기록하기'}</button>${edit ? '<button type="button" class="btn sm ghost" data-sldel>지우기</button>' : ''}</div>`;
+}
+/* 날짜·스팟·오전/오후가 바뀌면 그날 파도를 다시 */
+let wxSeq = 0;
+async function loadWx(){
+  if(!cur) return; const my = ++wxSeq, d = cur.d, s0 = cur.s, tm = cur.tm;
+  const j = await fetchWx(d, s0); if(my !== wxSeq || !cur) return;
+  const el = $l('sl-wx'); const w = j ? cleanWx(tm === 0 ? (j.am || j.pm) : (j.pm || j.am)) : null;
+  cur.wx = w; if(w) cur.h = w.h;
+  if(el) el.innerHTML = w ? `🌊 그날 파도 · ${esc(wxLine(w, tm))}${j.rn ? ` <small>(${esc(j.rn)})</small>` : ''}` : '🌊 그날 파도를 못 불러왔어요 — 기록은 그대로 돼요';
 }
 function onClick(e){
   const sh = $l('sl-sheet');
@@ -96,16 +126,18 @@ function onClick(e){
   if(k){ const i = +k.dataset.slv, key = k.dataset.slk;
     if(key === 'd'){ const x = new Date(Date.now() - i * 864e5); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); cur.d = x.toISOString().slice(0, 10); }
     else if(key === 'm') cur.m = MIN[i]; else cur[key] = i;
-    k.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b === k)); return; }
+    k.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b === k));
+    if(key === 'd' || key === 'tm'){ cur.wx = null; cur.h = null; loadWx(); } return; }
   const sp = e.target.closest('[data-slspot]');
-  if(sp){ cur.s = sp.dataset.slspot; cur.sOther = 0; sp.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b === sp)); const inp = sh.querySelector('[data-slin="s"]'); if(inp) inp.value = ''; return; }
+  if(sp){ cur.s = sp.dataset.slspot; cur.sOther = 0; sp.parentNode.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b === sp)); const inp = sh.querySelector('[data-slin="s"]'); if(inp) inp.value = ''; cur.wx = null; loadWx(); return; }
+  if(e.target.closest('[data-slmic]')) return listen();
   if(e.target.closest('[data-slsave]')) return save();
   if(e.target.closest('[data-sldel]')){ if(!confirm('이 기록을 지울까요?')) return; const p = P(); if(p){ p.log = (p.log || []).filter(x=>x && x.id !== cur.id); (p.logdel ||= {})[cur.id] = 1; } sh.hidden = true; push(); render(); }
 }
 function save(){
   const p = P(); if(!p || !cur) return;
   if(!String(cur.s || '').trim()) return toast('어디서 탔는지 골라 주세요');
-  const e = clean({ ...cur, id:cur.id || `${Date.now().toString(36)}`, h:cur.h ?? waveOf(cur.d) }); if(!e) return;
+  const e = clean({ ...cur, id:cur.id || `${Date.now().toString(36)}`, h:cur.wx?.h ?? cur.h ?? waveOf(cur.d) }); if(!e) return;
   p.log = (p.log || []).filter(x=>x && x.id !== e.id); p.log.push(e); p.log = p.log.map(clean).filter(Boolean).sort((a, b)=>a.d < b.d ? 1 : -1).slice(0, 120);
   let msg = '📒 기록했어요';
   const lx = (p.logx ||= {});
@@ -131,6 +163,44 @@ function all(){
   sh.hidden = false;
   $l('sl-body').onclick = e=>{ const r = e.target.closest('[data-slid]'); if(r){ $l('sl-body').onclick = null; form(r.dataset.slid); } };
 }
+/* ── 🎤 말로 기록 ── 브라우저 음성 인식(크롬·사파리). 받아 적은 문장에서 날짜·스팟·시간·파도 수·기분을 골라 칸을 채운다 */
+const voiceOK = () => !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+const KN = { 한:1, 하나:1, 두:2, 둘:2, 세:3, 셋:3, 네:4, 넷:4, 다섯:5, 여섯:6, 일곱:7, 여덟:8, 아홉:9, 열:10, 스무:20, 스물:20 };
+function knum(t){ t = String(t); if(/^\d+$/.test(t)) return +t; let v = 0; const m = t.match(/^(열|스무|스물)?(한|하나|두|둘|세|셋|네|넷|다섯|여섯|일곱|여덟|아홉)?$/); if(!m) return null; if(m[1]) v += KN[m[1]]; if(m[2]) v += KN[m[2]]; return v || null; }
+const NUMW = '(\\d+|열|스무|스물|한|하나|두|둘|세|셋|네|넷|다섯|여섯|일곱|여덟|아홉|열한|열두|열세|열네|열다섯)';
+function parseSpeech(t){
+  const o = {}, s = String(t).replace(/\s+/g, ' ');
+  if(/어제/.test(s)) o.d = 1; else if(/오늘/.test(s)) o.d = 0;
+  if(/오전|아침|새벽/.test(s)) o.tm = 0; else if(/오후|저녁|낮/.test(s)) o.tm = 1;
+  const names = spotNames().concat((typeof window.foodItems === 'function' ? window.foodItems('spot') : []).map(i=>String(i.n || '').replace(/해수욕장|해변/g, '').trim()), ['죽도','인구','기사문','하조대','서피비치','남애','동호','중광정','갯마을','설악','물치','낙산','정암','후진','오산','송전','지경','주문진','사천','경포','금진','고성','삼포','송지호','공현진','아야진','봉수대','천진','교암']);
+  const hit = names.filter(Boolean).sort((a, b)=>b.length - a.length).find(n=>s.includes(n)); if(hit) o.s = hit;
+  let m = s.match(new RegExp(NUMW + '\\s*시간\\s*(반)?')); if(m){ const h = knum(m[1]); if(h) o.m = h * 60 + (m[2] ? 30 : 0); }
+  m = s.match(/(\d+)\s*분/); if(m && !o.m) o.m = +m[1];
+  m = s.match(new RegExp('파도\\s*' + NUMW + '\\s*개|' + NUMW + '\\s*개')); if(m){ const n = knum(m[1] || m[2]); if(n != null) o.w = n <= 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : n <= 10 ? 3 : 4; }
+  if(/못\s*탔|하나도|0\s*개|빵\s*개/.test(s)) o.w = 0;
+  if(/최고|대박|짱|완전 좋|너무 좋|미쳤/.test(s)) o.f = 3; else if(/힘들|별로|최악|어려웠|지쳤/.test(s)) o.f = 0; else if(/그럭저럭|보통|그냥|무난/.test(s)) o.f = 1; else if(/좋았|좋아|재밌|재미있/.test(s)) o.f = 2;
+  o.t = s.slice(0, 60);
+  return o;
+}
+let rec = null;
+function listen(){
+  const R = window.SpeechRecognition || window.webkitSpeechRecognition; if(!R) return toast('이 브라우저는 음성 인식을 못 해요 — 키보드의 🎤 를 써 주세요');
+  if(rec){ try{ rec.stop(); }catch(e){} rec = null; return; }
+  rec = new R(); rec.lang = 'ko-KR'; rec.interimResults = true; rec.maxAlternatives = 1;
+  const btn = document.querySelector('[data-slmic]'), heard = $l('sl-heard'); let last = '';
+  if(btn) btn.textContent = '🔴 듣는 중… (다시 누르면 멈춤)';
+  rec.onresult = ev=>{ last = [...ev.results].map(r=>r[0].transcript).join(' '); if(heard) heard.textContent = '🗣️ ' + last; };
+  rec.onerror = ev=>{ toast(ev.error === 'not-allowed' ? '마이크 권한을 허용해 주세요' : '잘 못 들었어요 — 다시 한 번'); };
+  rec.onend = ()=>{ rec = null; if(btn) btn.textContent = '🎤 말로 기록하기'; if(!last || !cur) return;
+    const o = parseSpeech(last);
+    if(o.d != null){ const x = new Date(Date.now() - o.d * 864e5); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); cur.d = x.toISOString().slice(0, 10); }
+    if(o.tm != null) cur.tm = o.tm; if(o.s){ cur.s = o.s; cur.sOther = 0; }
+    if(o.m) cur.m = MIN.reduce((b, x)=>Math.abs(x - o.m) < Math.abs(b - o.m) ? x : b, 60);
+    if(o.w != null) cur.w = o.w; if(o.f != null) cur.f = o.f; if(!cur.t) cur.t = o.t;
+    cur.wx = null; paintForm(!!cur.id); const h2 = $l('sl-heard'); if(h2) h2.textContent = '🗣️ ' + last + ' — 칸을 채웠어요. 확인하고 기록하기!'; loadWx(); };
+  try{ rec.start(); }catch(e){ rec = null; toast('음성 인식을 시작하지 못했어요'); }
+}
+window._slogParse = parseSpeech;
 window.surfLogRender = render; window.surfLogOpen = pre=>form(null, pre && typeof pre === 'object' ? pre : null);
 window._slog = { logs, clean, waveOf };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(render, 300)); else setTimeout(render, 300);
