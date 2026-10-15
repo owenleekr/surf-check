@@ -20,6 +20,13 @@ window.ask = function(msg, o){
   });
 };
 let uT = 0;
+/* 키보드 — 아래에서 올라온 창의 입력칸을 누르면 키보드가 칸을 가렸다.
+   칸을 화면 가운데로 끌어올리고, 키보드가 떠 있는 동안(body.kb-on)은 아래 탭을 숨기고 창을 키보드 위까지만 쓴다 */
+document.addEventListener('focusin', e=>{ const el = e.target; if(!el.matches || !el.matches('input:not([type=checkbox]):not([type=radio]), textarea, select')) return;
+  setTimeout(()=>{ if(document.activeElement === el) el.scrollIntoView({ block:'center', behavior:'smooth' }); }, 320); });
+if(window.visualViewport){ const vv = window.visualViewport;
+  const f = ()=>{ const kb = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)); document.documentElement.style.setProperty('--kb', kb + 'px'); document.body.classList.toggle('kb-on', kb > 120); };
+  vv.addEventListener('resize', f); vv.addEventListener('scroll', f); }
 window.undoToast = function(msg, onUndo, ms){
   let el = document.getElementById('undo-bar');
   if(!el){ el = document.createElement('div'); el.id = 'undo-bar'; el.className = 'undo-bar'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
