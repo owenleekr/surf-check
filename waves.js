@@ -74,7 +74,8 @@ function weekendLine(){
 
 function homeCard(){
   const el = $w('home-wave'); if(!el) return;
-  if(!fc?.days?.length){ el.hidden = true; load(); return; }
+  /* 불러오는 동안 자리를 잡아 둔다 — 늦게 끼어들면 아래가 밀려 누르려던 걸 놓쳤다. 실패했으면 접는다 */
+  if(!fc?.days?.length){ if(Date.now() - failAt < 5 * 60e3){ el.hidden = true; } else { el.hidden = false; el.innerHTML = '<div class="hsec">🌊 이번주의 파도 <small>예보 불러오는 중…</small></div><div class="wv-card"><div class="skel" aria-hidden="true"><i style="height:64px"></i><i style="height:70px;margin-top:8px"></i></div></div>'; } load().then(()=>{ if(!fc?.days?.length && Date.now() - failAt < 5 * 60e3) el.hidden = true; }); return; }
   el.hidden = false;
   /* 오늘 갈까? — 오늘 오전·오후 중 나은 쪽 한 줄 + 입을 것 + 해 뜸 */
   const d0 = fc.days[0], rN = d0.regions.find(r=>r.k === 'north'), b0 = rN ? ['am', 'pm'].map(p=>({ r:rN, p, x:rN[p] })).filter(o=>o.x).sort((a, b)=>b.x.s - a.x.s)[0] || best(d0) : best(d0), sst = typeof state !== 'undefined' ? state.cond?.sst : null;
