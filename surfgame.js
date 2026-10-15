@@ -199,14 +199,19 @@ function R(c, x, y, w, h){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.r
 function draw(){
   const s = st, sh = s.shake ? (Math.random() - .5) * s.shake : 0;
   ctx.save(); ctx.translate(Math.round(sh), 0);
-  for(let i = 0; i < 4; i++) R(TH.sky[i], 0, i*32, W, 32);
-  if(TH.stars) STARS.forEach((st, i)=>{ if(((s.t * 1.3 + i) | 0) % 5 !== 0) R('#FFFFFF', st.x, st.y, st.s, st.s); });      // 별은 가끔 깜빡인다
-  R(TH.sun, 138, 14, 16, 16); R(TH.sky[0], 138, 14, 2, 2); R(TH.sky[0], 152, 14, 2, 2); R(TH.sky[0], 138, 28, 2, 2); R(TH.sky[0], 152, 28, 2, 2);
+  // 뒷배경 — 스테이지마다 강원 마을 풍경 한 장(scenery.js). 달린 거리만큼 아주 천천히 옆으로 흘러 시차를 준다. 굽기 전엔 예전 하늘
+  const bg = bgOf(s), bgOk = !!(window.scenery && scenery.draw(ctx, bg[0], bg[1], { w:W, h:GY, hz:118, pan:Math.sin(s.dist / 2400), noFg:1, noVig:1 }));
+  if(!bgOk){
+    for(let i = 0; i < 4; i++) R(TH.sky[i], 0, i*32, W, 32);
+    if(TH.stars) STARS.forEach((st, i)=>{ if(((s.t * 1.3 + i) | 0) % 5 !== 0) R('#FFFFFF', st.x, st.y, st.s, st.s); });      // 별은 가끔 깜빡인다
+    R(TH.sun, 138, 14, 16, 16); R(TH.sky[0], 138, 14, 2, 2); R(TH.sky[0], 152, 14, 2, 2); R(TH.sky[0], 138, 28, 2, 2); R(TH.sky[0], 152, 28, 2, 2);
+  }
   if(TH.aur) for(let i = 0; i < 3; i++){ ctx.globalAlpha = 0.35; for(let x = 0; x < W; x += 2) R(['#5BFFB0','#3FE0C8','#9B7BFF'][i], x, 22 + i * 12 + Math.round(Math.sin(x / 17 + s.t * (0.6 + i * 0.3) + i) * 6), 2, 4 + i); ctx.globalAlpha = 1; }
   s.clouds.forEach(c=>{ R(TH.cloud, c.x, c.y, 22, 5); R(TH.cloud, c.x + 4, c.y - 3, 12, 4); R(TH.cloud2, c.x, c.y + 4, 22, 1); });
-  if(hard) deco(s);
+  if(hard) deco(s, bgOk);
   // 먼 바다 → 가까운 바다. 줄마다 속도를 다르게 줘서 달리는 느낌을 만든다
-  R(TH.far, 0, 118, W, 18); R(TH.mid, 0, 136, W, 20); R(TH.near, 0, 156, W, 12); R(TH.deep, 0, GY, W, H - GY);
+  if(bgOk){ ctx.globalAlpha = .18; R(TH.far, 0, 118, W, 18); ctx.globalAlpha = .4; R(TH.mid, 0, 136, W, 20); ctx.globalAlpha = .75; R(TH.near, 0, 156, W, 12); ctx.globalAlpha = 1; R(TH.deep, 0, GY, W, H - GY); }   // 먼 바다는 풍경이 비치게 옅게, 발밑은 진하게
+  else{ R(TH.far, 0, 118, W, 18); R(TH.mid, 0, 136, W, 20); R(TH.near, 0, 156, W, 12); R(TH.deep, 0, GY, W, H - GY); }
   const wl = (y, spd, c, len, gap)=>{ const off = (s.t * spd) % (len + gap); for(let x = -off; x < W; x += len + gap) R(c, x, y + Math.round(Math.sin((x + s.t*20) / 11)), len, 1); };
   wl(124, 14, TH.w[0], 8, 18); wl(142, 30, TH.w[1], 10, 14); wl(160, 70, TH.w[2], 12, 12);
   wl(180, s.speed * 0.9, TH.w[3], 14, 20); wl(196, s.speed * 1.1, TH.w[4], 18, 22); wl(210, s.speed * 1.3, TH.w[5], 22, 26);
@@ -257,12 +262,21 @@ function draw(){
 }
 
 /* 멀리 보이는 풍경 — 스테이지마다 다르다(천천히 지나간다) */
-function deco(s){
+/* 스테이지·시간대 → 풍경. 쉬움은 날짜마다 마을이 바뀐다(매일 같은 바다면 질린다) */
+const BG_HARD = { light:['낙산','morning'], island:['죽도','noon'], mount:['하조대','sunset'], storm:['망상','storm'], aurora:['장호항','stormnight'] };
+const BG_EASY = { day:[['죽도','day'],['아야진','morning'],['천진','day'],['속초','afternoon']], sunset:[['경포','sunset'],['하조대','golden']], night:[['주문진','night'],['정동진','dusk']], noon:[['죽도','noon']], aurora:[['장호항','stormnight']] };
+function bgOf(s){
+  if(hard) return BG_HARD[ZONES[Math.max(0, s.zone - 1)][3]];
+  const k = Object.keys(THEMES).find(n=>THEMES[n] === TH) || 'day', a = BG_EASY[k] || BG_EASY.day;
+  return a[new Date().getDate() % a.length];
+}
+function warmBg(){ if(!window.scenery) return; const o = { noFg:1, noVig:1 }; Object.values(BG_HARD).forEach(b=>scenery.bake(b[0], b[1], o)); Object.values(BG_EASY).forEach(a=>{ const b = a[new Date().getDate() % a.length]; scenery.bake(b[0], b[1], o); }); }
+function deco(s, bg){   // bg: 마을 풍경이 깔렸으면 섬·산 실루엣은 겹치므로 생략
   const k = ZONES[s.zone - 1][3], x0 = W - ((s.t * 5) % (W + 90)) + 20;
   if(k === 'light'){ R('#5B5368', x0 - 8, 112, 30, 6); R('#FFFFFF', x0, 86, 7, 26); R('#E84A5F', x0, 92, 7, 4); R('#E84A5F', x0, 102, 7, 4); R('#1B1B2F', x0 - 1, 82, 9, 4);
     if(((s.t * 2) | 0) % 2) R('#FFE27A', x0 + 1, 84, 5, 2); }
-  else if(k === 'island'){ for(let i = 0; i < 14; i++) R('#2E8B57', x0 - 20 + i * 2, 118 - Math.round(Math.sin(i / 13 * Math.PI) * 14), 2, 14); R('#1F6B43', x0 - 6, 108, 3, 10); R('#3FAE6A', x0 - 10, 104, 11, 4); }
-  else if(k === 'mount'){ for(let i = 0; i < 40; i++){ const h = 22 - Math.abs(i - 18) * 1.1 + (i % 5 === 0 ? 3 : 0); R('#5F4C9A', x0 - 40 + i * 2, 118 - h, 2, h); } }
+  else if(k === 'island' && !bg){ for(let i = 0; i < 14; i++) R('#2E8B57', x0 - 20 + i * 2, 118 - Math.round(Math.sin(i / 13 * Math.PI) * 14), 2, 14); R('#1F6B43', x0 - 6, 108, 3, 10); R('#3FAE6A', x0 - 10, 104, 11, 4); }
+  else if(k === 'mount' && !bg){ for(let i = 0; i < 40; i++){ const h = 22 - Math.abs(i - 18) * 1.1 + (i % 5 === 0 ? 3 : 0); R('#5F4C9A', x0 - 40 + i * 2, 118 - h, 2, h); } }
   else if(k === 'storm'){ if(((s.t * 0.7) % 3) < 0.07){ ctx.globalAlpha = 0.6; R('#FFFFFF', 0, 0, W, H); ctx.globalAlpha = 1; } R('#22304A', x0 - 30, 18, 60, 8); R('#22304A', x0 - 20, 12, 40, 7); }
 }
 /* 화면 위 — 목숨(하트)과 켜진 아이템 남은 시간 */
@@ -349,7 +363,7 @@ function gameOpen(){
   cv = $g('g-cv'); ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
   $g('game').hidden = false; document.body.classList.add('game-on');
   try{ snd = localStorage.getItem('lineup.share.snd') === '1'; }catch(e){}            // 놀이 메뉴 설정에서 바꿨을 수 있다
-  me = mkMe(); TH = themeNow(); sndBtn(); showStart(); last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  me = mkMe(); TH = themeNow(); warmBg(); sndBtn(); showStart(); last = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
 function gameClose(){
   if(window.JUMP_STANDALONE){ showStart(); return; }                              // /jump 단독 페이지 — 닫기 대신 시작 화면으로

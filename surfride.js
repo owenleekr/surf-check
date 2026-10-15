@@ -220,10 +220,15 @@ function ui(){
 function Rr(c, x, y, w, h){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
 const lipY = dx => dx < 0 ? 62 : Math.min(178, R.sz.lip + Math.max(0, dx - 150) * 0.15);
 function riderY(){ const ly = lipY(R.x - R.curl); return TR - R.h * (TR - ly) - (R.air ? R.ah * (TR - ly) : 0); }
+/* 다섯 파도 = 해돋이 정동진 → 아침 죽도 → 한낮 속초 → 해 질 녘 하조대 → 달 뜨는 경포 (예전 하늘색 순서 그대로) */
+const BGS = [['정동진','sunrise'], ['죽도','morning'], ['속초','day'], ['하조대','golden'], ['경포','dusk']];
 function draw(){
   const sky = SKY[Math.min(SKY.length - 1, S ? S.wave : 0)];
-  Rr(sky[0], 0, 0, W, 20); Rr(sky[1], 0, 20, W, 22); Rr(sky[2], 0, 42, W, 20);
-  Rr('#3A8FC9', 0, 62, W, 4); Rr('#2C7DB8', 0, 66, W, H - 66);
+  // 뒷배경 — 파도마다 다른 강원 마을의 수평선(scenery.js). 기다리는 동안엔 바다까지 넓게 보이고, 파도를 타면 수평선만 남는다
+  const wi = Math.min(BGS.length - 1, S ? S.wave : 0), lu = !S || !R || S.phase === 'lineup' || S.phase === 'missed' || S.phase === 'pop', bh = lu ? 144 : 66;
+  const bgOk = !!(window.scenery && scenery.draw(ctx, BGS[wi][0], BGS[wi][1], { w:W, h:bh, hz:62, s:1.12, pan:Math.sin((S ? S.t : 0) / 9) * .8, noFg:1, noVig:1, alt:1 }));
+  if(bgOk) Rr('#2C7DB8', 0, bh, W, H - bh);
+  else{ Rr(sky[0], 0, 0, W, 20); Rr(sky[1], 0, 20, W, 22); Rr(sky[2], 0, 42, W, 20); Rr('#3A8FC9', 0, 62, W, 4); Rr('#2C7DB8', 0, 66, W, H - 66); }
   if(!S || !R){ return; }
   const t = S.t;
   if(S.phase === 'lineup' || S.phase === 'missed' || S.phase === 'pop'){ drawLineup(t); hud(); pops(); return; }
@@ -337,6 +342,7 @@ function startCard(){
 }
 function surfOpen(){
   cv = $s('s-cv'); ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
+  if(window.scenery) BGS.forEach(b=>scenery.bake(b[0], b[1], { noFg:1, noVig:1, alt:1 }));   // 미리 구워 두면 첫 파도부터 풍경이 뜬다
   $s('surf').hidden = false; document.body.classList.add('game-on');
   me = mkMe(); S = null; R = null; held = false; startCard(); ui();
   last = 0; acc = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);

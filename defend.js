@@ -196,8 +196,10 @@ function draw(){
   c.setTransform(2, 0, 0, 2, 0, 0);
   if(S && S.shake > 0 && !RM) c.translate((Math.random() - .5) * 3, (Math.random() - .5) * 3);
   // 바다 → 모래
-  let g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#0E4C7A'); g.addColorStop(1, '#2C8CC4'); c.fillStyle = g; c.fillRect(-4, -4, W + 8, SH + 4);
-  c.fillStyle = '#F2DDA6'; c.fillRect(-4, SH, W + 8, H - SH + 4);
+  // 바다 깊이·갯바위·모래 결·파라솔·학교 건물을 한 번 그려 둔 지도(scenery.js) — 움직이는 물결선·거품만 위에 다시 그린다
+  const map = window.scenery && scenery.shore(W, H, SH);
+  if(map) c.drawImage(map, -4, -4, W + 8, H + 8);
+  else{ const g = c.createLinearGradient(0, 0, 0, SH); g.addColorStop(0, '#0E4C7A'); g.addColorStop(1, '#2C8CC4'); c.fillStyle = g; c.fillRect(-4, -4, W + 8, SH + 4); c.fillStyle = '#F2DDA6'; c.fillRect(-4, SH, W + 8, H - SH + 4); }
   c.fillStyle = '#FFFFFF'; c.globalAlpha = .7; c.beginPath(); c.moveTo(-4, SH);
   for(let x = -4; x <= W + 4; x += 6) c.lineTo(x, SH + Math.sin(x / 14 + (RM ? 0 : t * 1.6)) * 2.5);
   c.lineTo(W + 4, SH + 6); c.lineTo(-4, SH + 6); c.fill(); c.globalAlpha = 1;

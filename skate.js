@@ -107,9 +107,12 @@ function finish(stalled){
 function Rk(c, x, y, w, h){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
 const sy = s => PY - (s - G.s) * 1.0;                                                // 앞(진행 방향)이 화면 위
 function draw(){
-  Rk('#3D8FD0', 0, 0, 22, H); for(let y = 0; y < H; y += 12){ const yy = (y + (G ? G.s : 0)) % H; Rk('#7CC4F0', 4 + (y % 3) * 4, yy, 8, 1); }
-  Rk('#F2D7A0', 22, 0, 8, H); Rk('#8E8E99', 30, 0, 124, H); Rk('#7DBA5F', 154, 0, 26, H);
-  for(let y = 0; y < H + 40; y += 40){ const yy = ((y + (G ? G.s : 0)) % (H + 40)) - 20; Rk('#2E7D32', 160, yy, 14, 10); Rk('#8D6E63', 166, yy + 10, 3, 12); Rk('#A5A5AE', 90, yy + 4, 2, 14); }
+  // 바닷가 산책로 한 장(scenery.js) — 세로로 이어 붙여 달린 만큼 흘려 보낸다. 바다 물결·가운데 점선은 그 위에 그대로
+  const pm = window.scenery && scenery.promenade(W, H), off = Math.round((G ? G.s : 0) % H);
+  if(pm){ ctx.drawImage(pm, 0, off - H); ctx.drawImage(pm, 0, off); }
+  else{ Rk('#3D8FD0', 0, 0, 22, H); Rk('#F2D7A0', 22, 0, 8, H); Rk('#8E8E99', 30, 0, 124, H); Rk('#7DBA5F', 154, 0, 26, H); }
+  for(let y = 0; y < H; y += 12){ const yy = (y + (G ? G.s : 0)) % H; Rk('#7CC4F0', 4 + (y % 3) * 4, yy, 8, 1); }
+  for(let y = 0; y < H + 40; y += 40){ const yy = ((y + (G ? G.s : 0)) % (H + 40)) - 20; if(!pm){ Rk('#2E7D32', 160, yy, 14, 10); Rk('#8D6E63', 166, yy + 10, 3, 12); } Rk('#A5A5AE', 90, yy + 4, 2, 14); }
   if(!G){ return; }
   // 코스 — 앞으로 보이는 길. 누르는 칸은 노란 띠
   for(let s = Math.max(0, G.s - 60); s < G.s + PY + 10; s += 2){
