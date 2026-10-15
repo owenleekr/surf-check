@@ -29,6 +29,8 @@ export function rate(h, p, wind, wdir){
     else if(on && wind >= 5){ s -= 1.5; why += ' · 온쇼어(파도 흐트러짐)'; }
     else if(off && wind < 8){ s += 0.5; why += ' · 오프쇼어'; }
   }
+  if(h >= 1.2) s = Math.min(s, 3);                      // 입문~초중급 기준 — 큰 파도는 주기·바람이 좋아도 별 3개까지
+  if(h >= 2) s = Math.min(s, 1);
   return { s:Math.max(0, Math.min(5, Math.round(s))), why };
 }
 
