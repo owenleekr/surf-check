@@ -2655,8 +2655,11 @@ function renderChat(){
     }catch(err){ toast('지우지 못했어요 — supabase-chatdel.sql 을 돌려야 해요'); } });
   bindRx(box);
 }
+let chatBusy = false;                       // 연타하면 같은 말이 세 번 올라갔다
 async function sendChat(text, noBubble){
+  if(chatBusy) return;
   const t = (text ?? $('chat-in').value).trim(); if(!t) return;
+  chatBusy = true;
   const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, text:t.slice(0,200),
                 profile:pubRow(), created_at:new Date().toISOString() };
   try{ await api('chat', { method:'POST', body:JSON.stringify(row) });
@@ -2665,6 +2668,7 @@ async function sendChat(text, noBubble){
     if(text == null && !noBubble) saveMood(t, true);
     playTick();   /* 마을과 채팅은 한 곳 — 친 말이 머리 위로 뜬다 */
   }catch(e){ toast(state.chatOk===false ? '채팅 표가 아직 없어요' : '보내지 못했어요 · 신호 확인'); }
+  finally{ chatBusy = false; }
 }
 $('chat-send').onclick = ()=>sendChat();
 $('chat-in').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); sendChat(); } });
@@ -3628,6 +3632,7 @@ function bindReviews(box){
   });
   box.querySelectorAll('[data-good] button').forEach(b=>b.onclick = ()=>{ b.classList.toggle('on'); });
   box.querySelectorAll('[data-rvsave]').forEach(b=>b.onclick = async ()=>{
+    if(b.dataset.busy) return;
     const place = b.dataset.rvsave;
     const row = box.querySelector(`.starrow[data-for="${CSS.escape(place)}"]`);
     const v = +(row?.dataset.val || 0);
@@ -3638,11 +3643,12 @@ function bindReviews(box){
     const paidRaw = box.querySelector(`[data-rvpaid="${CSS.escape(place)}"]`)?.value.replace(/\D/g,'');
     const paid = paidRaw ? Math.min(2000000, +paidRaw) : null;
     b.disabled = true;
-    try{ await api('stay_reviews', { method:'POST', body:JSON.stringify({
+    b.dataset.busy = 1; try{ await api('stay_reviews', { method:'POST', body:JSON.stringify({
         id:`${stay?.id||place}|${ME.id}`, stay_id:stay?.id||'', place, user_id:ME.id, name:ME.name,
         profile:pubRow(), stars:v, good, text, paid }) });
       toast('고마워요'); await pullReviews(); renderStays(); renderMap(); }
     catch(e){ b.disabled = false; toast(e.code==='notable' ? '평가 표가 아직 없어요 (supabase-reviews.sql)' : '실패 · 신호 확인'); }
+    finally{ delete b.dataset.busy; }
   });
   box.querySelectorAll('[data-rvdel]').forEach(b=>b.onclick = async ()=>{
     if(!(window.ask ? await ask('내 평가를 지울까요?', { ok:'지우기', danger:true }) : confirm('내 평가를 지울까요?'))) return; b.disabled = true;

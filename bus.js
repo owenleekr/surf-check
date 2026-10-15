@@ -118,16 +118,18 @@ function wireReq(root){
     try{ await api(`place_talk?id=eq.${encodeURIComponent(b.dataset.rdel)}`, { method:'DELETE' }); reqs = reqs.filter(r=>r.id !== b.dataset.rdel); render(); }catch(e){ say('지우지 못했어요'); } });
 }
 const clean = v => String(v || '').replace(/[<>&"'`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
+let reqBusy = false;
 async function sendReq(){
-  if(typeof ME === 'undefined' || !ME) return;
+  if(typeof ME === 'undefined' || !ME || reqBusy) return;
   const from = clean($b('br-from')?.value), to = clean($b('br-to')?.value), note = String($b('br-note')?.value || '').trim().slice(0, 40), E = t => { const e = $b('br-err'); if(e) e.textContent = t; };
   if(!from || !to) return E('출발과 도착을 적어 주세요');
   if(from === to) return E('출발과 도착이 같아요');
   const title = `${from} → ${to}`, dup = (reqs || []).find(r=>r.title.replace(/\s/g, '') === title.replace(/\s/g, ''));
   if(dup){ if(!voted(dup.id)) await vote(dup.id, dup.user_id); reqOpen = false; render(); return say('이미 있는 요청이라 🙋 나도 필요에 한 표 넣었어요'); }
   const row = { id:`${ME.id}|${Date.now()}`, target:'req:bus', parent:null, user_id:ME.id, name:ME.name, cohort:ME.cohort || 'open', title, text:note || null, created_at:new Date().toISOString() };
-  try{ await api('place_talk', { method:'POST', body:JSON.stringify(row) }); reqs = [row, ...(reqs || [])]; reqOpen = false; render(); say('노선 요청을 남겼어요 🙌'); }
+  reqBusy = true; try{ await api('place_talk', { method:'POST', body:JSON.stringify(row) }); reqs = [row, ...(reqs || [])]; reqOpen = false; render(); say('노선 요청을 남겼어요 🙌'); }
   catch(e){ E('남기지 못했어요 · 신호 확인'); }
+  finally{ reqBusy = false; }
 }
 async function vote(id, to){
   if(typeof ME === 'undefined' || !ME) return;
