@@ -595,7 +595,10 @@ function renderPlayBits(){
   if(!ME?.profile?.play) return;
   if(typeof state !== 'undefined' && state.tab === 'play') renderHub();
   { const q = playQuests(ME.profile.play).filter(x=>!x.done).length, d = $('play-dot');
-    if(d){ d.textContent = q; d.hidden = !q || state.tab === 'play'; } }       // 안 한 퀘스트 수가 놀이 탭에 점으로 뜬다
+    /* 안 한 퀘스트 수 — 늘 떠 있으면 아무도 안 본다. 오늘 놀이 탭을 한 번 열면 그날은 숨긴다 */
+    let seen = ''; try{ seen = localStorage.getItem('lineup.share.playseen') || ''; }catch(e){}
+    if(state.tab === 'play'){ try{ localStorage.setItem('lineup.share.playseen', today()); }catch(e){} seen = today(); }
+    if(d){ d.textContent = q; d.hidden = !q || state.tab === 'play' || seen === today(); d.setAttribute('aria-label', `오늘 남은 퀘스트 ${q}개`); } }
   const p = ME.profile.play, xp = playXp(p), lv = lvOf(xp), cur = PLV[lv][0], nxt = PLV[lv+1]?.[0];
   const pct = nxt ? Math.max(4, Math.round((xp - cur) / (nxt - cur) * 100)) : 100;      // 0% 도 눈에 보이게 조금은 채운다
   if($('lv-chip')) $('lv-chip').textContent = `Lv.${lv+1} ${PLV[lv][1]} ${PLV[lv][2]}`;
