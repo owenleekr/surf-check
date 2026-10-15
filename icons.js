@@ -5,9 +5,22 @@ const ICONS = {"home": ["......kk......", ".....kRRk.....", "....kRRRRk....", ".
 const COL = { k:'#1B1B2F', R:'#FF6B6B', W:'#FFF9E6', B:'#2E6BFF', C:'#8FD3FF', Y:'#FFD23F', O:'#FF9F1C', P:'#9B6BFF', G:'#4DE1A5' };
 const uri = rows => { let r = ''; rows.forEach((row, y)=>[...row].forEach((c, x)=>{ if(c !== '.') r += `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${COL[c]}"/>`; }));
   return 'url("data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" shape-rendering="crispEdges">${r}</svg>`) + '")'; };
+/* 매끈한 아이콘(v148) — 캐릭터가 모찌 미니미로 바뀐 뒤 도트 아이콘만 결이 달랐다. 같은 색·같은 뜻으로 둥글게 */
+const L = '#1B1B2F', sv = b => 'url("data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="${L}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round">${b}</svg>`) + '")';
+const SMOOTH = {
+  home: '<path d="M5 10.5V20h14v-9.5L12 5z" fill="#FFF9E6"/><path d="M2.5 11.8 12 3.6l9.5 8.2-2 1.6L12 7l-7.5 6.4z" fill="#FF6B6B"/><rect x="10" y="14" width="4" height="6" rx="1" fill="#2E6BFF"/><rect x="15.5" y="12.5" width="2.5" height="2.5" rx=".6" fill="#8FD3FF"/>',
+  food: '<path d="M4 12h16a8 7 0 0 1-16 0z" fill="#FF9F1C"/><path d="M6 12c1-2 3-2 4 0s3 2 4 0 3-2 4 0" fill="none" stroke="#FFF9E6" stroke-width="1.6"/><path d="M15 3 9 11M19 4l-6 7" fill="none"/><path d="M9 19.5h6" fill="none"/>',
+  play: '<path d="M7 8h10a4.5 4.5 0 0 1 4.3 5.8l-1 3.3a2.4 2.4 0 0 1-4.1.9L14.5 16h-5L7.8 18a2.4 2.4 0 0 1-4.1-.9l-1-3.3A4.5 4.5 0 0 1 7 8z" fill="#9B6BFF"/><path d="M7.5 11v3M6 12.5h3" fill="none" stroke="#FFF9E6"/><circle cx="15.5" cy="11.5" r="1" fill="#FFD23F"/><circle cx="17.5" cy="13.5" r="1" fill="#4DE1A5"/>',
+  cam: '<rect x="3" y="7" width="18" height="13" rx="3" fill="#8FD3FF"/><path d="M8 7l1.5-2.5h5L16 7" fill="#2E6BFF"/><circle cx="12" cy="13.5" r="3.6" fill="#2E6BFF"/><circle cx="12" cy="13.5" r="1.4" fill="#FFF9E6" stroke="none"/><circle cx="18" cy="9.8" r=".9" fill="#FF6B6B" stroke="none"/>',
+  ride: '<rect x="4" y="3.5" width="16" height="15" rx="3.5" fill="#FFD23F"/><rect x="6" y="6" width="12" height="5.5" rx="1.5" fill="#8FD3FF"/><circle cx="8" cy="15" r="1.2" fill="#FFF9E6"/><circle cx="16" cy="15" r="1.2" fill="#FFF9E6"/><path d="M7 18.5v2M17 18.5v2" fill="none"/>',
+  more: '<rect x="4" y="5" width="16" height="3" rx="1.5" fill="#FF6B6B"/><rect x="4" y="10.5" width="16" height="3" rx="1.5" fill="#4DE1A5"/><rect x="4" y="16" width="16" height="3" rx="1.5" fill="#FFD23F"/>',
+  bolt: '<path d="M13.5 2.5 5 13.5h6l-1.5 8 9-11.5h-6z" fill="#FFD23F"/>',
+  stay: '<path d="M3 11 12 4l9 7" fill="#2E6BFF"/><path d="M5 10v10h14V10l-7-5.5z" fill="#FFF9E6"/><path d="M3 11 12 4l9 7" fill="none"/><path d="M8.5 20v-4.5a3.5 3.5 0 0 1 7 0V20" fill="#FF9F1C"/>',
+  town: '<path d="M6 21V4" fill="none"/><path d="M6 4.5h11l-2.5 3.5L17 11.5H6z" fill="#4DE1A5"/><path d="M3 21h18" fill="none"/>',
+};
 function apply(){
   Object.keys(ICONS).forEach(k=>{ const i = document.querySelector(`#t-${k} > i`); if(!i || i.dataset.px) return;
-    i.dataset.px = '1'; i.setAttribute('aria-hidden', 'true'); i.textContent = ''; i.classList.add('pxi'); i.style.backgroundImage = uri(ICONS[k]); });
+    i.dataset.px = '1'; i.setAttribute('aria-hidden', 'true'); i.textContent = ''; i.classList.add('pxi', 'smooth'); i.style.backgroundImage = SMOOTH[k] ? sv(SMOOTH[k]) : uri(ICONS[k]); });
 }
 window.pxIcon = k => ICONS[k] ? uri(ICONS[k]) : '';
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
