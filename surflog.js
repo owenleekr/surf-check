@@ -20,7 +20,7 @@ function cleanWx(w){
   return o.h == null ? null : o;
 }
 const COMP = d => d == null || d < 0 ? '' : ['북','북동','동','남동','남','남서','서','북서'][Math.round(d / 45) % 8];
-const wxLine = (w, tm) => w ? `${tm === 0 ? '오전 ' : tm === 1 ? '오후 ' : ''}${w.h}m${w.p ? ` · ${w.p}초` : ''}${COMP(w.dir) ? ` · ${COMP(w.dir)}쪽 파도` : ''}${w.w != null ? ` · 바람 ${COMP(w.wd)}${COMP(w.wd) ? '풍 ' : ''}${w.w}m/s` : ''}${w.sst != null ? ` · 수온 ${w.sst}°` : ''}` : '';
+const wxLine = (w, tm) => w ? `${tm === 0 ? '오전 ' : tm === 1 ? '오후 ' : ''}${w.h}m${w.p ? ` · ${w.p}초` : ''}${COMP(w.dir) ? ` · ${COMP(w.dir)}쪽 파도` : ''}${w.w != null ? ` · 바람 ${COMP(w.wd)}${COMP(w.wd) ? '풍 ' : ''}${w.w}m/s` : ''}${w.sst != null ? ` · 수온 ${w.sst}°${typeof suitOf === 'function' ? ` (${suitOf(w.sst)})` : ''}` : ''}` : '';
 const me = () => (typeof ME !== 'undefined' && ME) ? ME : null;      // ME 는 surfshare.html 의 전역 let — window 속성이 아니다
 const P = () => (typeof playP === 'function' && me()?.profile) ? playP() : null;
 const logs = () => { const p = P(); return p && Array.isArray(p.log) ? p.log.map(clean).filter(Boolean).sort((a, b)=>a.d < b.d ? 1 : a.d > b.d ? -1 : 0) : []; };
