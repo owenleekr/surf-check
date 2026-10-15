@@ -176,6 +176,8 @@ const lockOf = (key, v) => { if(key === 'boardc' && v === 'legend') return ME?.p
 /* 조건은 stats(s)와 저장값(p)만 본다. xp 는 받는 순간 한 번만 더해진다. */
 const BADGES = [
   { id:'drill1',  ic:'🏄', n:'첫 테이크오프',  d:'훈련을 처음 체크했어요',            t:s=>s.drillDays >= 1 },
+  { id:'log1',    ic:'📒', n:'첫 서핑 일지',   d:'바다에 다녀와 일지를 처음 남겼어요',  t:(s, p)=>(p.log || []).length >= 1 },
+  { id:'log10',   ic:'🌊', n:'바다 10번',      d:'서핑 일지를 10번 남겼어요',          t:(s, p)=>(p.log || []).length >= 10, xp:50 },
   { id:'streak3', ic:'🔥', n:'3일 연속',       d:'훈련을 3일 연속으로 했어요',        t:s=>s.bestStreak >= 3 },
   { id:'streak7', ic:'📅', n:'한 주 개근',     d:'훈련을 7일 연속으로 했어요',        t:s=>s.bestStreak >= 7, xp:40 },
   { id:'streak14',ic:'🌟', n:'2주 개근',       d:'훈련을 14일 연속으로 했어요',       t:s=>s.bestStreak >= 14, xp:60 },
@@ -273,6 +275,11 @@ function playMerge(remote){
   Object.keys(remote.stamps||{}).forEach(k=>{ const s = (p.stamps ||= {}); if(!s[k]){ s[k] = remote.stamps[k]; ch = true; } });
   ['base','bonus','best','bat','hbest','hbat','sbest','sbat','sebest','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
   Object.keys(remote.own||{}).forEach(k=>{ const o = (p.own ||= {}); if(!o[k]){ o[k] = 1; ch = true; } });
+  /* 서핑 일지 — id 로 합치고, 어느 기기에서든 지운 건 지운 채로 */
+  if(Array.isArray(remote.log) || remote.logdel){ const del = { ...(remote.logdel || {}), ...(p.logdel || {}) }; p.logdel = Object.fromEntries(Object.keys(del).slice(-200).map(k=>[k, 1]));
+    const ids = new Set((p.log || []).map(x=>x && x.id)); (remote.log || []).forEach(x=>{ if(x && x.id && !ids.has(x.id) && !del[x.id]){ (p.log ||= []).push(x); ch = true; } });
+    if(p.log) p.log = p.log.filter(x=>x && !del[x.id]).slice(-120); }
+  Object.keys(remote.logx||{}).forEach(k=>{ const o = (p.logx ||= {}); if(!o[k]){ o[k] = 1; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
     else Object.keys(remote.qd[d]).forEach(q=>{ if(!p.qd[d][q]){ p.qd[d][q] = 1; ch = true; } }); });

@@ -27,6 +27,7 @@ function list(){
   const scrollTo = id => ()=>{ setTab('home'); setTimeout(()=>{ const el = $r(id); if(el){ if(el.tagName === 'DETAILS') el.open = true; el.scrollIntoView({ block:'center', behavior:'smooth' }); } }, 120); };
   const bal = typeof shellBal === 'function' ? shellBal() : 0;
   return [
+    { id:'slog', ok:h >= 11 && !((p.log || []).some(e=>e && e.d === d)) && !used('slog'), ic:'📒', t:'오늘 바다 다녀왔어요?', d:'스팟·시간·탄 파도만 누르면 끝 — 이번 달 몇 번 탔는지 쌓여요 (+15 XP)', btn:'기록하기', go:()=>{ markUsed('slog'); window.surfLogOpen?.(); } },
     { id:'drill', ok:!drillDone && h >= 6, ic:'🏄', t:'오늘 테이크오프 연습했어요?', d:'땅에서 10번 — 하고 나서 체크하면 연속일수가 쌓여요', btn:'체크하러 가기', go:scrollTo('drill') },
     { id:'daily', ok:!(p.dbest && p.dbest.day === d), ic:'📅', t:'오늘의 챌린지 아직이에요', d:'파도 점프 — 모두 같은 코스, 오늘 순위에 이름 올리기', btn:'도전', go:()=>window.gameOpen?.() },
     { id:'quest', ok:!(ME.profile?.play?.qb) && !used('quest'), ic:'🗺️', t:'전설의 보드 원정 떠나 볼까요?', d:'낙산에서 독도까지 — 서퍼가 알아서 싸우는 자동 모험', btn:'출발', go:()=>{ markUsed('quest'); window.questOpen?.(); } },

@@ -5,6 +5,9 @@
 (function(){
 const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide';
 const UPDATES = [
+  { id:'u1015l', date:'10.15', t:'📒 서핑 일지가 생겼어요', items:[
+      ['📒', '바다 다녀오면 스팟·시간·탄 파도·기분만 눌러 10초 기록 — 그날 파도 예보도 같이 남아요', 'slog'],
+      ['📊', '이번 달 몇 번·몇 시간 탔는지, 자주 간 스팟이 홈에 쌓여요 · 날마다 첫 기록 +15 XP', 'slog'] ] },
   { id:'u1015k', date:'10.15', t:'👕 옷·색·친구 종류가 늘었어요', items:[
       ['🔍', '소품샵에서 물건 그림을 크게 — 뭘 사는지 바로 보여요', 'shop'],
       ['👕', '옷 8종 추가: 반팔 티·스프링슈트·멜빵·체크셔츠(무료) + 원피스·니트·후드집업·세일러(소품샵)', 'me'],
@@ -78,6 +81,7 @@ function go(k){
   else if(k === 'shop') window.shopOpen?.(); else if(k === 'food' || k === 'spot') window.foodOpen?.(k);
   else if(k === 'bus') window.busOpen?.();
   else if(k === 'quest') window.questOpen?.();
+  else if(k === 'slog') window.surfLogOpen?.();
   else if(k === 'guide') window.open('/guide', '_blank', 'noopener');
   else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $u('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
 }
