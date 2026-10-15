@@ -36,6 +36,14 @@ document.addEventListener('touchmove', e=>{ if(!drag) return; drag.dy = Math.max
 document.addEventListener('touchend', ()=>{ if(!drag) return; const { inn, dy } = drag; drag = null; inn.style.transition = 'transform .18s ease-out';
   if(dy > 90){ const btn = inn.querySelector('.sheet-hd button'); inn.style.transform = 'translateY(100%)'; setTimeout(()=>{ inn.style.transform = ''; inn.style.transition = ''; if(btn) btn.click(); else inn.closest('.sheet').hidden = true; }, 170); }
   else { inn.style.transform = ''; setTimeout(()=>{ inn.style.transition = ''; }, 200); } });
+/* 예상 못한 오류 — 눌러도 아무 반응이 없으면 '안 눌린다'로 느낀다. 우리 파일에서 난 오류만, 세션에 한 번 */
+let errShown = false;
+const ourErr = src => !src || src.startsWith(location.origin);
+function errBar(){ if(errShown || !document.body) return; errShown = true;
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'upd-bar err-bar'; b.innerHTML = '😵 문제가 생겼어요 · <b>눌러서 새로고침</b>';
+  b.onclick = ()=>location.reload(); document.body.appendChild(b); setTimeout(()=>b.remove(), 12000); }
+window.addEventListener('error', e=>{ if(e.message && /ResizeObserver loop|Script error/.test(e.message)) return; if(ourErr(e.filename)) errBar(); });
+window.addEventListener('unhandledrejection', e=>{ const m = String(e.reason?.stack || e.reason || ''); if(/TypeError|ReferenceError/.test(m) && (!/https?:\/\//.test(m) || m.includes(location.origin))) errBar(); });
 window.undoToast = function(msg, onUndo, ms){
   let el = document.getElementById('undo-bar');
   if(!el){ el = document.createElement('div'); el.id = 'undo-bar'; el.className = 'undo-bar'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
