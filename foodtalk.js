@@ -222,7 +222,7 @@ function init(root, rerender, itemsFn){
     if(b.dataset.send){ send(b.dataset.send); return; }
     if(b.dataset.reply){ replyTo[b.dataset.reply] = { top:b.dataset.top, name:b.dataset.rname }; open.add(b.dataset.reply); onChange(); setTimeout(()=>root.querySelector(`[data-draft="${CSS.escape(b.dataset.reply)}"]`)?.focus(), 30); return; }
     if(b.dataset.rcancel){ delete replyTo[b.dataset.rcancel]; onChange(); return; }
-    if(b.dataset.del){ if(confirm('이 글을 지울까요?')) del(b.dataset.del); return; }
+    if(b.dataset.del){ const id = b.dataset.del; (window.ask ? ask('이 글을 지울까요?', { ok:'지우기', danger:true }) : Promise.resolve(confirm('이 글을 지울까요?'))).then(ok=>{ if(ok) del(id); }); return; }
     if(b.dataset.rqopen){ const k = b.dataset.rqopen; addOpen[k] = !addOpen[k]; onChange(); if(addOpen[k]) setTimeout(()=>root.querySelector(`[data-rqbox="${CSS.escape(k)}"] [data-rq="title"]`)?.focus(), 30); return; }
     if(b.dataset.rqarea){ const k = b.closest('[data-rqbox]')?.dataset.rqbox; if(k){ draft[`rq-area-${k}`] = b.dataset.rqarea; b.parentElement.querySelectorAll('[data-rqarea]').forEach(x=>x.setAttribute('aria-pressed', String(x === b))); } return; }
     if(b.dataset.rqsend){ sendAdd(b.dataset.rqsend, b.closest('.ft-form')); }

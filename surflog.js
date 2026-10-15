@@ -133,7 +133,10 @@ function onClick(e){
   if(e.target.closest('[data-slmic]')) return listen();
   if(e.target.closest('[data-slcard]')){ const en = logs().find(x=>x.id === cur.id) || clean(cur); if(typeof window.charCardShare === 'function') window.charCardShare(en); return; }
   if(e.target.closest('[data-slsave]')) return save();
-  if(e.target.closest('[data-sldel]')){ if(!confirm('이 기록을 지울까요?')) return; const p = P(); if(p){ p.log = (p.log || []).filter(x=>x && x.id !== cur.id); (p.logdel ||= {})[cur.id] = 1; } sh.hidden = true; push(); render(); }
+  if(e.target.closest('[data-sldel]')){ const p = P(); if(!p) return; const gone = (p.log || []).find(x=>x && x.id === cur.id), id = cur.id;
+    p.log = (p.log || []).filter(x=>x && x.id !== id); (p.logdel ||= {})[id] = 1; sh.hidden = true; push(); render();
+    /* 확인창 대신 바로 지우고 5초 동안 되돌릴 수 있게 */
+    if(gone && window.undoToast) undoToast('📒 기록을 지웠어요', ()=>{ const q = P(); if(!q) return; delete (q.logdel || {})[id]; q.log = (q.log || []).filter(x=>x && x.id !== id).concat([gone]); push(); render(); }); }
 }
 function save(){
   const p = P(); if(!p || !cur) return;

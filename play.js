@@ -135,7 +135,7 @@ function shopOpen(){
   if(!sh){ sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'shop-sheet';
     sh.innerHTML = '<div class="sheet-dim" data-shclose></div><div class="sheet-in"><div class="sheet-hd"><span class="t">🛍️ 소품샵</span><button class="btn sm ghost" data-shclose>닫기</button></div><div id="shop-body"></div></div>';
     document.body.appendChild(sh);
-    sh.addEventListener('click', e=>{
+    sh.addEventListener('click', async e=>{
       if(e.target.closest('[data-shclose]')){ sh.hidden = true; shopTry = null; return; }
       const c = e.target.closest('[data-cat]'); if(c){ shopCat = c.dataset.cat; renderShop(); return; }
       const t = e.target.closest('[data-try]'); if(t){ const it = SHOP[+t.dataset.try]; shopTry = shopTry === it ? null : it; renderShop(); return; }
@@ -143,7 +143,7 @@ function shopOpen(){
         if(own){ ME.profile[it.key] = it.v; saveProfile?.(); toast(`${it.ic} ${it.n} 입었어요`); renderShop(); if(typeof renderBuilder === 'function') renderBuilder(); return; }
         const cost = priceOf(it);
         if(shellBal() < cost) return toast(`🐚 조개가 모자라요 — ${cost}개 필요 (보유 ${shellBal()}). 라인업 서핑·파도 점프·서프스케이트에서 모아요!`);
-        if(!confirm(`🐚 ${cost}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`)) return;
+        if(!(window.ask ? await ask(`🐚 ${cost}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`, { ok:'사기' }) : confirm(`🐚 ${cost}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`))) return;
         if(playBuy(it.key, it.v)){ ME.profile[it.key] = it.v; shopTry = null; saveProfile?.(); renderShop(); if(typeof renderBuilder === 'function') renderBuilder(); } }
     }); }
   sh.hidden = false; renderShop();

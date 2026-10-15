@@ -52,6 +52,7 @@ window.__bootFail = (files) => {
 </script>
 <script src="sprite.js"></script>
 <script src="mochi.js"></script>
+<script src="ui.js"></script>
 <script src="surflog.js" defer></script>
 <script src="charcard.js" defer></script>
 <script src="backnav.js" defer></script>
@@ -936,6 +937,10 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .wv-today b{ font-size:14.5px } .wv-today span{ font-size:13px; font-weight:700 } .wv-today small{ font-size:12px; color:#5B6275; font-weight:700 }
 .wv-today.s4, .wv-today.s5{ background:#E8FAF2 } .wv-today.s0, .wv-today.s1{ background:#FFF0F0 }
 .food-q{ width:100%; margin-top:10px; padding:10px 12px; border:2px solid var(--ink); border-radius:12px; font-size:16px; background:#fff }
+.ask{ z-index:2100 } .ask-card p{ margin:0 0 14px; font-size:15px; font-weight:700; line-height:1.55; word-break:keep-all } .ask-btns{ display:flex; gap:8px } .ask-btns .btn{ flex:1 }
+.undo-bar{ position:fixed; left:50%; bottom:calc(92px + env(safe-area-inset-bottom)); transform:translate(-50%, 12px); z-index:2050; display:flex; align-items:center; gap:12px; max-width:calc(100% - 32px);
+  padding:8px 8px 8px 14px; background:var(--ink); color:#fff; border-radius:12px; font-size:14px; font-weight:700; opacity:0; transition:opacity .2s, transform .2s }
+.undo-bar.on{ opacity:1; transform:translate(-50%, 0) } .undo-bar button{ min-height:36px; padding:0 12px; font-family:inherit; font-weight:800; color:var(--ink); background:var(--sun); border:0; border-radius:8px; cursor:pointer }
 </style>
 </head>
 <body>
@@ -1617,7 +1622,7 @@ $('go').onclick = async ()=>{
    경로가 곧바로 다시 들여보낸다. 화면이 깜빡이고 제자리로 돌아온다.
    학교 세션(surf.session)까지 지우면 학교 앱에서도 로그아웃되니 그건 건드리지 않고,
    "여기서는 나갔다"는 표시를 따로 남긴다. */
-$('out').onclick = ()=>{ if(!confirm('이 기기에서 로그아웃할까요?')) return; $('more-sheet').hidden = true;
+$('out').onclick = async ()=>{ if(!(window.ask ? await ask('이 기기에서 로그아웃할까요?', { ok:'로그아웃', danger:true }) : confirm('이 기기에서 로그아웃할까요?'))) return; $('more-sheet').hidden = true;
   try{ localStorage.removeItem('lineup.share.me'); localStorage.setItem('lineup.share.out','1'); }catch(e){}
   camStop(); location.reload(); };
 
@@ -1669,10 +1674,10 @@ function renderBuilder(){
       drawSpr($('bld-av'), avatarRows(q), avatarTintOf(q, 0)); if($('me-av')) drawSpr($('me-av'), avatarRows(q, false), avatarTintOf(q, 0)); } };
   paint();
   $('bld-opts').querySelectorAll('[data-bt]').forEach(b=>b.onclick=()=>{ bldTab=b.dataset.bt; renderBuilder(); });
-  $('bld-opts').querySelectorAll('[data-shop]').forEach(b=>b.onclick = ()=>{
+  $('bld-opts').querySelectorAll('[data-shop]').forEach(b=>b.onclick = async ()=>{
     const [key, v] = b.dataset.shop.split(':'), it = SHOP.find(x=>x.key === key && x.v === v); if(!it) return;
     if(shellBal() < priceOf(it)) return toast(`🐚 조개가 모자라요 — ${priceOf(it)}개 필요 (보유 ${shellBal()}). 게임에서 모아요!`);
-    if(!confirm(`🐚 ${priceOf(it)}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`)) return;
+    if(!(window.ask ? await ask(`🐚 ${priceOf(it)}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`, { ok:'사기' }) : confirm(`🐚 ${priceOf(it)}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`))) return;
     if(playBuy(key, v)){ ME.profile[key] = v; renderBuilder(); saveProfile(); } });
   $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(+b.dataset.lock === 98 ? '🔒 전설의 보드 원정에서 독도까지 가면 열려요' : `🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
   /* 랜덤이 잠긴 걸 뽑으면 레벨 보상이 의미가 없다 */
@@ -2183,7 +2188,7 @@ function renderBolts(){
     const b = bolts.find(x=>x.id===el.dataset.bout);
     patch(b.id, cur => cur.filter(x=>x.id!==ME.id)); });
   box.querySelectorAll('[data-bdel]').forEach(el=>el.onclick = async ()=>{
-    if(!confirm('이 번개를 지울까요?')) return; el.disabled = true;
+    if(!(window.ask ? await ask('이 번개를 지울까요?', { ok:'지우기', danger:true }) : confirm('이 번개를 지울까요?'))) return; el.disabled = true;
     try{ await api(`parties?id=eq.${encodeURIComponent(el.dataset.bdel)}`, { method:'DELETE' });
       await pullBolts(); toast('지웠어요');
     }catch(e){ el.disabled = false; toast('지우지 못했어요 — parties 에 삭제 권한이 없어요'); } });
@@ -3628,7 +3633,7 @@ function bindReviews(box){
     catch(e){ b.disabled = false; toast(e.code==='notable' ? '평가 표가 아직 없어요 (supabase-reviews.sql)' : '실패 · 신호 확인'); }
   });
   box.querySelectorAll('[data-rvdel]').forEach(b=>b.onclick = async ()=>{
-    if(!confirm('내 평가를 지울까요?')) return; b.disabled = true;
+    if(!(window.ask ? await ask('내 평가를 지울까요?', { ok:'지우기', danger:true }) : confirm('내 평가를 지울까요?'))) return; b.disabled = true;
     try{ await api(`stay_reviews?id=eq.${encodeURIComponent(b.dataset.rvdel)}`, { method:'DELETE' });
       await pullReviews(); renderStays(); renderMap(); }
     catch(e){ b.disabled = false; toast('실패'); }
@@ -3895,7 +3900,7 @@ function bindCards(box, kind){
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick = async ()=>{
     const r = rows.find(x=>x.id===b.dataset.del); if(!r) return;
     const n = (r[field]||[]).length;
-    if(!confirm(n ? `이미 ${n}명이 들어와 있어요. 정말 내릴까요?` : '내릴까요?')) return;
+    if(!(window.ask ? await ask((n ? `이미 ${n}명이 들어와 있어요. 정말 내릴까요?` : '내릴까요?'), { ok:'내리기', danger:true }) : confirm((n ? `이미 ${n}명이 들어와 있어요. 정말 내릴까요?` : '내릴까요?')))) return;
     b.disabled = true;
     try{ await api(`${table}?id=eq.${encodeURIComponent(r.id)}`, { method:'DELETE' }); toast('내렸어요');
       kind==='ride' ? pullRides() : pullStays(); }

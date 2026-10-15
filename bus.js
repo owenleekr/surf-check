@@ -114,7 +114,7 @@ function wireReq(root){
   $b('br-close')?.addEventListener('click', ()=>{ reqOpen = false; render(); });
   $b('br-go')?.addEventListener('click', sendReq);
   root.querySelectorAll('[data-rvote]').forEach(b=>b.onclick = ()=>vote(b.dataset.rvote, b.dataset.rto));
-  root.querySelectorAll('[data-rdel]').forEach(b=>b.onclick = async ()=>{ if(!confirm('이 요청을 지울까요?')) return;
+  root.querySelectorAll('[data-rdel]').forEach(b=>b.onclick = async ()=>{ if(!(window.ask ? await ask('이 요청을 지울까요?', { ok:'지우기', danger:true }) : confirm('이 요청을 지울까요?'))) return;
     try{ await api(`place_talk?id=eq.${encodeURIComponent(b.dataset.rdel)}`, { method:'DELETE' }); reqs = reqs.filter(r=>r.id !== b.dataset.rdel); render(); }catch(e){ say('지우지 못했어요'); } });
 }
 const clean = v => String(v || '').replace(/[<>&"'`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 12);
