@@ -963,6 +963,7 @@ html.big .wrap, html.big .sheet-in, html.big .pop-card{ zoom:1.12 } html.big .na
 html{ -webkit-tap-highlight-color:transparent }
 button:not(:disabled):active, [role="button"]:active, a.btn:active{ filter:brightness(.94) }
 button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focus-visible, select:focus-visible{ outline:3px solid var(--sea); outline-offset:2px }
+.upd-bar{ position:fixed; left:50%; top:calc(10px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:2200; padding:9px 16px; font-family:inherit; font-size:14px; font-weight:700; color:#fff; background:var(--sea); border:0; border-radius:999px; box-shadow:0 6px 18px rgba(18,36,95,.3); cursor:pointer; white-space:nowrap } .upd-bar b{ color:var(--sun) }
 </style>
 </head>
 <body>
@@ -3990,7 +3991,17 @@ function nextWeekend(plus){
 }
 /* 서비스워커 — 이 앱의 정문은 여기인데 등록이 라인업(school.html)에만 있었다. 그래서 바다 앞에서 신호가 끊기면 빈 화면이 떴다.
    sw.js 는 '네트워크 우선, 실패하면 캐시'라 평소엔 항상 최신이 뜨고, 끊겼을 때만 저장된 껍데기가 뜬다. */
-if('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') navigator.serviceWorker?.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator && location.protocol === 'https:' || location.hostname === 'localhost') navigator.serviceWorker?.register('sw.js').then(reg=>{
+  /* 홈 화면 앱을 며칠 켜 둔 채로 쓰면 새 버전이 안 들어왔다. 돌아올 때(10분 간격) 새 버전을 확인하고,
+     새 일꾼이 자리를 잡으면 '새로고침' 띠를 띄운다 — 쓰던 글이 날아가지 않게 자동으로 새로고침하지는 않는다 */
+  let lastChk = Date.now();
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible' && Date.now() - lastChk > 10 * 60e3){ lastChk = Date.now(); reg.update().catch(()=>{}); } });
+}).catch(()=>{});
+if(navigator.serviceWorker){ let had = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{ if(!had){ had = true; return; }
+    if(document.getElementById('upd-bar')) return;
+    const b = document.createElement('button'); b.type = 'button'; b.id = 'upd-bar'; b.className = 'upd-bar'; b.innerHTML = '✨ 새 버전이 있어요 · <b>눌러서 새로고침</b>';
+    b.onclick = ()=>location.reload(); document.body.appendChild(b); }); }
 { const off = ()=>{ const b = $('offbar'); if(b) b.hidden = navigator.onLine !== false; };
   addEventListener('offline', off);
   addEventListener('online', ()=>{ off(); if(ME){ pullRides(); pullStays(); pullBolts(); pullNow(); pullMail(true); pullDrills?.(); } });   // 신호가 돌아오면 사람이 새로고침하지 않아도 된다
