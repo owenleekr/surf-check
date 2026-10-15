@@ -77,6 +77,10 @@ const SHOP = [
   { key:'wear',   v:'aloha',  n:'알로하 셔츠',   ic:'🌺', cost:50, cat:'옷' },
   { key:'wear',   v:'vest',   n:'구명조끼',      ic:'🦺', cost:45, cat:'옷' },
   { key:'wear',   v:'poncho', n:'서핑 판초',     ic:'🧥', cost:70, cat:'옷' },
+  { key:'wear',   v:'dress',  n:'물방울 원피스', ic:'👗', cost:40, cat:'옷' },
+  { key:'wear',   v:'knit',   n:'꽈배기 니트',   ic:'🧶', cost:35, cat:'옷' },
+  { key:'wear',   v:'zipup',  n:'후드집업',      ic:'🧥', cost:45, cat:'옷' },
+  { key:'wear',   v:'sailor', n:'세일러 칼라',   ic:'⚓', cost:40, cat:'옷' },
   { key:'hat',    v:'sprout', n:'새싹',          ic:'🌱', cost:30, cat:'모자' },
   { key:'hat',    v:'flower', n:'꽃핀',          ic:'🌼', cost:25, cat:'모자' },
   { key:'hat',    v:'cat',    n:'고양이 귀',     ic:'🐱', cost:45, cat:'모자' },
@@ -149,12 +153,12 @@ function renderShop(){
   const own = ME.profile.play?.own || {}, deal = dealOf();
   const cats = ['전체', '서핑 용품', '소품', '옷', '모자', '머리', '보드', '친구'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
   const base = withLook(ME.profile || {}, ME.name), wear = shopTry ? { ...base, [shopTry.key]:shopTry.v } : base;
-  body.innerHTML = `<div class="shop-top"><canvas id="shop-me" data-anim></canvas><div><b>🐚 ${shellBal()}개</b><small>${shopTry ? `👀 ${esc(shopTry.n)} 입어 보는 중` : '물건을 누르면 내 캐릭터에 입혀 봐요'}</small>
+  body.innerHTML = `<div class="shop-top"><canvas id="shop-me" data-anim></canvas><div><b>🐚 ${shellBal()}개</b><small>${shopTry ? `👀 <b>${esc(shopTry.ic)} ${esc(shopTry.n)}</b> 입어 보는 중 — 왼쪽이 입은 모습` : '물건 그림을 누르면 내 캐릭터에 입혀 봐요'}</small>
       <small>조개는 🌊 라인업 서핑 · 🏄 파도 점프 · 🛹 서프스케이트에서 모여요</small></div></div>
     <div class="shop-deal">🏷️ 오늘의 할인 <b>${esc(deal.ic)} ${esc(deal.n)}</b> 🐚 <s>${deal.cost}</s> → <b>${priceOf(deal)}</b></div>
     <div class="food-chips" role="group" aria-label="종류">${cats.map(c=>`<button type="button" data-cat="${c}" aria-pressed="${c === shopCat}">${c}</button>`).join('')}</div>
     <div class="shop-grid">${list.map(({ it, i })=>{ const got = own[it.key + ':' + it.v], on = ME.profile[it.key] === it.v, sale = it === deal;
-      return `<div class="shop-it${shopTry === it ? ' try' : ''}${got ? ' got' : ''}"><button type="button" class="shop-pv" data-try="${i}" aria-label="${esc(it.n)} 입어 보기"><canvas data-pv="${i}"></canvas>${sale ? '<em>할인</em>' : ''}</button>
+      return `<div class="shop-it${shopTry === it ? ' try' : ''}${got ? ' got' : ''}"><button type="button" class="shop-pv" data-try="${i}" aria-label="${esc(it.n)} 입어 보기">${typeof mochiItem === 'function' ? `<img class="shop-zoom" alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(mochiItem(base, it.key, it.v))}">` : `<canvas data-pv="${i}"></canvas>`}${sale ? '<em>할인</em>' : ''}</button>
         <b>${esc(it.ic)} ${esc(it.n)}</b>
         <button type="button" class="btn sm ${got ? (on ? 'ghost' : 'mint') : 'blue'}" data-buy="${i}" ${got && on ? 'disabled' : ''}>${got ? (on ? '입는 중' : '입기') : `🐚 ${priceOf(it)}${sale ? ` <s>${it.cost}</s>` : ''}`}</button></div>`; }).join('')}</div>`;
   if(typeof drawSpr === 'function'){

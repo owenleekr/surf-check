@@ -12,8 +12,12 @@ const lt = (hex, t)=>'#' + hex.slice(1).match(/../g).map(h=>{ const v = parseInt
 
 const SKIN_ = { l:'#FFE3CC', s:'#FBD3B5', d:'#E2A57D', t:'#B5774D' };
 const HAIR_ = { k:'#2E2420', n:'#6B4A33', y:'#E8C46A', r:'#C4522F', b:'#3C6BB0', p:'#E07BB2', g:'#3FA36B', w:'#E9E3D8' };
-const TOP_ = { r:'#FF7A7A', b:'#3D6DF2', g:'#3FD49A', p:'#9B6BFF', y:'#FFD23F', k:'#2B2F45', w:'#FFFFFF', o:'#FF9F1C' };
-const BOT_ = { b:'#4F7BFF', k:'#2B2F45', r:'#FF6B6B', g:'#3FD49A', p:'#9B6BFF', t:'#E2B96A' };
+const TOP_ = { r:'#FF7A7A', b:'#3D6DF2', g:'#3FD49A', p:'#9B6BFF', y:'#FFD23F', k:'#2B2F45', w:'#FFFFFF', o:'#FF9F1C',
+  sky:'#8FD3FF', navy:'#2C3E73', beige:'#E9D8BC', lav:'#C9B6FF', pink:'#FFB3C8', khaki:'#8C9A5B', cream:'#FFF3D6', wine:'#9E3A55' };
+const TOP_KO_ = { sky:'하늘', navy:'네이비', beige:'베이지', lav:'라벤더', pink:'연핑크', khaki:'카키', cream:'크림', wine:'와인' };
+const BOT_ = { b:'#4F7BFF', k:'#2B2F45', r:'#FF6B6B', g:'#3FD49A', p:'#9B6BFF', t:'#E2B96A',
+  denim:'#5B7DB1', w:'#F4F6FA', khaki:'#8C9A5B', pink:'#FFB3C8', navy:'#2C3E73', sky:'#8FD3FF' };
+const BOT_KO_ = { denim:'데님', w:'화이트', khaki:'카키', pink:'연핑크', navy:'네이비', sky:'하늘' };
 const BRD_ = { y:'#FFD23F', w:'#FFFFFF', c:'#8FD3FF', g:'#A6F542', p:'#FF9BD2', o:'#FF9F1C' };
 const PETC_ = { p:'#FFC2D9', y:'#FFE3B0', w:'#F4F6F9', n:'#C98A5B', g:'#A8F0D8', k:'#7A748A' };
 const PETDEF_ = { otter:'n', turtle:'g' };
@@ -120,54 +124,97 @@ const HOLD_SVG = {
   flag:'<path d="M0,6 L0,-64" stroke="#8B6B4A" stroke-width="3.4" stroke-linecap="round"/><path d="M0,-64 L34,-55 L0,-44 Z" fill="#2E6BFF"/><path d="M5,-54 Q10,-59 15,-54 Q20,-49 25,-54" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>',
 };
 
-function petSVG(kind, c, lv, U){
-  /* 머리 큰 치비 펫 — 머리 반지름 36, 몸은 작게. 눈은 하이라이트 둘, 볼터치는 늘 살짝. 친밀도: 1 볼터치 진하게 · 2 리본 · 3 선글라스 */
-  const m = dk(c, .8), mm = dk(c, .66), E = '#2A1F2B', W = '#FFFFFF', CR = '#FFF6EA';
+function petSVG(kind, c, lv, U, pv){
+  /* 머리 큰 치비 펫 — 종마다 4가지(pv 0~3). 친밀도: 1 볼터치 진하게 · 2 리본 · 3 선글라스 */
+  pv = Math.max(0, Math.min(3, +pv || 0));
+  const E = '#2A1F2B', W = '#FFFFFF', CR = '#FFF6EA', PK = '#FFC2D2';
+  /* 종류가 색을 정하는 경우(턱시도·샴·아기 물범 등) */
+  if(kind === 'cat' && pv === 1) c = '#3A3646';
+  if(kind === 'cat' && pv === 3) c = '#F4E6D2';
+  if(kind === 'seal' && pv === 1) c = '#F7F9FB';
+  if(kind === 'seal' && pv === 3) c = '#8D93A3';
+  if(kind === 'otter' && pv === 2) c = '#7A5236';
+  if(kind === 'dog' && pv === 2) c = '#F6EBDD';
+  const m = dk(c, .8), mm = dk(c, .66);
   const gl = d=>`<path d="${d}" fill="url(#${U}gl)"/>`;
   const egl = (x, y, rx, ry)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#${U}gl)"/>`;
-  const eyes = (y, xs, k)=>xs.map(x=>`<ellipse cx="${x}" cy="${y}" rx="${6.6 * (k || 1)}" ry="${8 * (k || 1)}" fill="${E}"/><circle cx="${x + 2.4}" cy="${y - 3}" r="2.8" fill="#fff"/><circle cx="${x - 2}" cy="${y + 3.4}" r="1.3" fill="#fff" opacity=".85"/>`).join('');
+  const eyes = (y, xs, k, iris)=>xs.map(x=>`<ellipse cx="${x}" cy="${y}" rx="${6.6 * (k || 1)}" ry="${8 * (k || 1)}" fill="${iris || E}"/>${iris ? `<ellipse cx="${x}" cy="${y + 1}" rx="${3.4 * (k || 1)}" ry="${4.6 * (k || 1)}" fill="${E}"/>` : ''}<circle cx="${x + 2.4}" cy="${y - 3}" r="2.8" fill="#fff"/><circle cx="${x - 2}" cy="${y + 3.4}" r="1.3" fill="#fff" opacity=".85"/>`).join('');
   const mouthW = (x, y)=>`<path d="M${x - 6},${y} Q${x - 3},${y + 4} ${x},${y} Q${x + 3},${y + 4} ${x + 6},${y}" fill="none" stroke="${E}" stroke-width="2" stroke-linecap="round"/>`;
-  const whisk = (x, y)=>[-1, 1].map(sg=>[-3, 3].map(d=>`<path d="M${x + sg * 14},${y + d} L${x + sg * 28},${y + d * 1.8}" stroke="${E}" stroke-opacity=".4" stroke-width="1.4" stroke-linecap="round"/>`).join('')).join('');
+  const whisk = (x, y)=>[-1, 1].map(sg=>[-3, 3].map(d=>`<path d="M${x + sg * 14},${y + d} L${x + sg * 28},${y + d * 1.8}" stroke="${c === '#3A3646' ? '#fff' : E}" stroke-opacity=".45" stroke-width="1.4" stroke-linecap="round"/>`).join('')).join('');
   const body = 'M60,192 C86,192 94,212 92,229 C90,241 78,244 60,244 C42,244 30,241 28,229 C26,212 34,192 60,192 Z';
-  let o = `<ellipse cx="60" cy="244" rx="34" ry="5" fill="#12245F" opacity=".12"/>`, hy = 164, ex = [46, 74], blushY = 178, scarfY = 196;
+  let o = `<ellipse cx="60" cy="244" rx="34" ry="5" fill="#12245F" opacity=".12"/>`, hy = 164, ex = [46, 74], blushY = 178, scarfY = 196, k = 1;
   if(kind === 'penguin'){
     const bd = 'M60,128 C92,128 100,170 98,206 C96,234 82,244 60,244 C38,244 24,234 22,206 C20,170 28,128 60,128 Z';
     o += `<path d="M26,184 C12,194 10,214 18,224 C26,216 30,202 32,192 Z M94,184 C108,194 110,214 102,224 C94,216 90,202 88,192 Z" fill="${mm}"/>`;
     o += `<path d="${bd}" fill="${c}"/>${gl(bd)}<path d="M60,150 C38,140 30,164 36,178 C40,196 50,206 60,236 C70,206 80,196 84,178 C90,164 82,140 60,150 Z" fill="${W}"/>`;
+    if(pv === 1) o += `<path d="M34,178 C30,190 36,198 44,196 C42,188 40,182 34,178 Z M86,178 C90,190 84,198 76,196 C78,188 80,182 86,178 Z" fill="#FFC93C"/>`;
+    if(pv === 3) o += `<path d="M42,140 C30,128 26,118 36,120 C44,124 48,132 50,138 Z M78,140 C90,128 94,118 84,120 C76,124 72,132 70,138 Z" fill="#FFC93C"/>`;
     o += `<ellipse cx="48" cy="243" rx="10" ry="4.5" fill="#FF9F1C"/><ellipse cx="72" cy="243" rx="10" ry="4.5" fill="#FF9F1C"/>`;
-    hy = 160; ex = [48, 72]; o += eyes(hy, ex, .85) + `<path d="M53,171 Q60,166 67,171 Q60,180 53,171 Z" fill="#FF9F1C"/>`; blushY = 172; scarfY = 188;
+    hy = 160; ex = [48, 72]; k = .85;
+    if(pv === 2) o += ex.map(x=>`<circle cx="${x}" cy="${hy}" r="9.5" fill="#fff"/>`).join('');
+    o += eyes(hy, ex, k) + `<path d="M53,171 Q60,166 67,171 Q60,180 53,171 Z" fill="#FF9F1C"/>`; blushY = 172; scarfY = 188;
   } else if(kind === 'seal'){
     const bd = 'M18,240 C10,202 24,146 60,144 C96,146 110,202 102,240 Z';
-    o += `<path d="${bd}" fill="${c}"/>${gl(bd)}<path d="M12,222 C0,228 0,240 10,243 C18,238 22,232 24,226 Z M108,222 C120,228 120,240 110,243 C102,238 98,232 96,226 Z" fill="${mm}"/>`;
-    o += [[34,214,4],[86,206,3],[78,226,3.6],[40,232,2.6]].map(([x, y, r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${m}" opacity=".7"/>`).join('');
-    hy = 176; ex = [45, 75]; o += eyes(hy, ex) + `<ellipse cx="53" cy="192" rx="9" ry="7" fill="${CR}"/><ellipse cx="67" cy="192" rx="9" ry="7" fill="${CR}"/><ellipse cx="60" cy="186" rx="5" ry="3.6" fill="${E}"/>` + whisk(60, 192) + mouthW(60, 198);
+    o += `<path d="${bd}" fill="${c}"/>${gl(bd)}<path d="M12,222 C0,228 0,240 10,243 C18,238 22,232 24,226 Z M108,222 C120,228 120,240 110,243 C102,238 98,232 96,226 Z" fill="${pv === 1 ? '#E3E8EE' : mm}"/>`;
+    if(pv === 0) o += [[34,214,4],[86,206,3],[78,226,3.6],[40,232,2.6],[70,158,2.4]].map(([x, y, r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${m}" opacity=".7"/>`).join('');
+    if(pv === 1) o += [[26,190],[94,190],[60,148],[40,160],[80,160]].map(([x, y])=>`<circle cx="${x}" cy="${y}" r="7" fill="#fff"/>`).join('');
+    if(pv === 2) o += `<ellipse cx="34" cy="160" rx="4" ry="7" fill="${mm}" transform="rotate(-20 34 160)"/><ellipse cx="86" cy="160" rx="4" ry="7" fill="${mm}" transform="rotate(20 86 160)"/>`;
+    hy = 176; ex = [45, 75]; k = pv === 1 ? 1.2 : 1; o += eyes(hy, ex, k) + `<ellipse cx="53" cy="192" rx="9" ry="7" fill="${CR}"/><ellipse cx="67" cy="192" rx="9" ry="7" fill="${CR}"/><ellipse cx="60" cy="186" rx="5" ry="3.6" fill="${E}"/>` + whisk(60, 192) + mouthW(60, 198);
     blushY = 190; scarfY = 208;
   } else if(kind === 'turtle'){
-    const sh = 'M14,226 C14,186 34,166 60,166 C86,166 106,186 106,226 Z';
-    o += `<ellipse cx="24" cy="236" rx="10" ry="7" fill="#9BD98C"/><ellipse cx="96" cy="236" rx="10" ry="7" fill="#9BD98C"/>`;
-    o += `<path d="${sh}" fill="${c}"/>${gl(sh)}<path d="M60,176 L76,186 L76,206 L60,216 L44,206 L44,186 Z" fill="none" stroke="${m}" stroke-width="3" stroke-linejoin="round"/><path d="M44,186 L28,196 M76,186 L92,196 M44,206 L30,222 M76,206 L90,222 M60,176 L60,168 M60,216 L60,226" stroke="${m}" stroke-width="3" stroke-linecap="round"/>`;
-    o += `<path d="M12,226 Q60,234 108,226 L108,230 Q60,240 12,230 Z" fill="${mm}"/>`;
-    o += `<ellipse cx="60" cy="150" rx="26" ry="24" fill="#9BD98C"/>${egl(60, 150, 26, 24)}`;
-    hy = 150; ex = [50, 70]; o += eyes(hy, ex, .75) + mouthW(60, 162); blushY = 160; scarfY = 170;
+    const sea = pv === 1, baby = pv === 3, sc = sea ? '#5FB3A8' : c, sk = sea ? '#BFE8D8' : '#9BD98C';
+    const s0 = baby ? 'M24,230 C24,198 40,184 60,184 C80,184 96,198 96,230 Z' : 'M14,226 C14,186 34,166 60,166 C86,166 106,186 106,226 Z';
+    if(sea) o += `<path d="M10,222 C-6,214 -8,234 4,238 C10,236 14,230 16,226 Z M110,222 C126,214 128,234 116,238 C110,236 106,230 104,226 Z" fill="${sk}"/>`;
+    else o += `<ellipse cx="${baby ? 30 : 24}" cy="236" rx="10" ry="7" fill="${sk}"/><ellipse cx="${baby ? 90 : 96}" cy="236" rx="10" ry="7" fill="${sk}"/>`;
+    o += `<path d="${s0}" fill="${sc}"/>${gl(s0)}`;
+    if(pv === 2) o += [[60,196],[40,212],[80,212],[60,180]].map(([x, y])=>`<path d="M${x},${y - 7} L${x + 2},${y - 2} L${x + 7},${y} L${x + 2},${y + 2} L${x},${y + 7} L${x - 2},${y + 2} L${x - 7},${y} L${x - 2},${y - 2} Z" fill="#FFD23F"/>`).join('');
+    else if(!baby) o += `<path d="M60,176 L76,186 L76,206 L60,216 L44,206 L44,186 Z" fill="none" stroke="${dk(sc, .8)}" stroke-width="3" stroke-linejoin="round"/><path d="M44,186 L28,196 M76,186 L92,196 M44,206 L30,222 M76,206 L90,222" stroke="${dk(sc, .8)}" stroke-width="3" stroke-linecap="round"/>`;
+    o += `<path d="${baby ? 'M22,230 Q60,236 98,230 L98,233 Q60,240 22,233 Z' : 'M12,226 Q60,234 108,226 L108,230 Q60,240 12,230 Z'}" fill="${dk(sc, .66)}"/>`;
+    hy = baby ? 168 : 150; const hr = baby ? 22 : 26;
+    o += `<ellipse cx="60" cy="${hy}" rx="${hr}" ry="${hr - 2}" fill="${sk}"/>${egl(60, hy, hr, hr - 2)}`;
+    if(baby) o += `<path d="M44,150 L50,142 L56,150 L62,142 L68,150 L74,142 L76,152 Q60,146 44,152 Z" fill="#FFF8EC" stroke="#E8DCC6" stroke-width="1"/>`;
+    ex = [50, 70]; o += eyes(hy, ex, .75) + mouthW(60, hy + 12); blushY = hy + 10; scarfY = hy + 20;
   } else {
     /* 강아지·고양이·토끼·해달 — 앉은 몸 + 큰 머리 */
-    if(kind === 'dog') o += `<path d="M88,222 C104,214 108,198 100,190" fill="none" stroke="${m}" stroke-width="8" stroke-linecap="round"/>`;
-    if(kind === 'cat') o += `<path d="M88,230 C110,228 112,202 100,194 C96,190 92,196 96,200 C102,208 98,222 86,222" fill="${m}"/>`;
+    const baby = kind === 'otter' && pv === 3, S = baby ? .85 : 1;
+    if(kind === 'dog') o += pv === 1 ? `<path d="M90,214 C108,208 108,190 96,190 C88,192 92,202 98,202" fill="none" stroke="${m}" stroke-width="8" stroke-linecap="round"/>`
+                                     : `<path d="M88,222 C104,214 108,198 100,190" fill="none" stroke="${pv === 2 ? '#6B4A33' : m}" stroke-width="8" stroke-linecap="round"/>`;
+    if(kind === 'cat') o += `<path d="M88,230 C110,228 112,202 100,194 C96,190 92,196 96,200 C102,208 98,222 86,222" fill="${pv === 3 ? '#5A4032' : m}"/>` + (pv === 0 ? `<path d="M100,206 L108,204 M98,216 L106,216" stroke="${mm}" stroke-width="3"/>` : '');
     if(kind === 'rabbit') o += `<circle cx="92" cy="232" r="9" fill="${W}"/>`;
     if(kind === 'otter') o += `<path d="M86,238 C108,240 116,224 110,212" fill="none" stroke="${m}" stroke-width="10" stroke-linecap="round"/>`;
-    o += `<path d="${body}" fill="${c}"/>${gl(body)}<ellipse cx="60" cy="222" rx="17" ry="16" fill="${kind === 'otter' ? CR : W}" opacity="${kind === 'otter' ? 1 : .9}"/>`;
-    o += `<ellipse cx="45" cy="240" rx="10" ry="6" fill="${c}"/><ellipse cx="75" cy="240" rx="10" ry="6" fill="${c}"/>`;
-    if(kind === 'otter') o += `<g transform="translate(60 214)"><path d="M-11,2 C-11,-10 11,-10 11,2 Q0,8 -11,2 Z" fill="#F6E3C8"/><path d="M-6,-5 L-4,3 M0,-7 L0,4 M6,-5 L4,3" stroke="#D9BF9A" stroke-width="1.6"/></g><ellipse cx="46" cy="212" rx="7" ry="5.5" fill="${m}"/><ellipse cx="74" cy="212" rx="7" ry="5.5" fill="${m}"/>`;
+    if(kind === 'rabbit' && pv === 2) o += [...Array(10)].map((_, i)=>{ const a = Math.PI * 2 * i / 10; return `<circle cx="${60 + Math.cos(a) * 38}" cy="${164 + Math.sin(a) * 33}" r="11" fill="${W}"/>`; }).join('');
+    o += `<path d="${body}" fill="${c}"/>${gl(body)}`;
+    const belly = kind === 'otter' ? CR : (kind === 'cat' && pv === 2) ? W : W;
+    o += `<ellipse cx="60" cy="222" rx="17" ry="16" fill="${belly}" opacity="${kind === 'otter' ? 1 : .9}"/>`;
+    if(kind === 'dog' && pv === 2) o += `<ellipse cx="80" cy="212" rx="12" ry="10" fill="#6B4A33"/>`;
+    o += `<ellipse cx="45" cy="240" rx="10" ry="6" fill="${(kind === 'cat' && pv === 1) ? W : c}"/><ellipse cx="75" cy="240" rx="10" ry="6" fill="${(kind === 'cat' && pv === 1) ? W : c}"/>`;
+    if(kind === 'otter' && pv !== 2){ const st = pv === 1;
+      o += st ? `<g transform="translate(60 212)"><path d="M0,-12 L3,-4 L12,-4 L5,2 L8,11 L0,5 L-8,11 L-5,2 L-12,-4 L-3,-4 Z" fill="#FF9F5A"/><circle r="2" fill="#FFD9B0"/></g>`
+              : `<g transform="translate(60 214)"><path d="M-11,2 C-11,-10 11,-10 11,2 Q0,8 -11,2 Z" fill="#F6E3C8"/><path d="M-6,-5 L-4,3 M0,-7 L0,4 M6,-5 L4,3" stroke="#D9BF9A" stroke-width="1.6"/></g>`;
+      o += `<ellipse cx="46" cy="212" rx="7" ry="5.5" fill="${m}"/><ellipse cx="74" cy="212" rx="7" ry="5.5" fill="${m}"/>`; }
+    if(kind === 'otter' && pv === 2) o += `<ellipse cx="52" cy="210" rx="7" ry="5.5" fill="${m}"/><ellipse cx="68" cy="210" rx="7" ry="5.5" fill="${m}"/>`;
     /* 귀 */
-    if(kind === 'rabbit') o += `<g transform="rotate(-10 46 116)"><ellipse cx="46" cy="116" rx="10" ry="28" fill="${c}"/><ellipse cx="46" cy="118" rx="5" ry="19" fill="#FFC2D2"/></g><g transform="rotate(28 76 112)"><path d="M66,124 C64,98 72,86 80,90 C90,94 88,112 84,126 Z" fill="${c}"/><path d="M70,120 C70,102 74,94 79,96 C84,99 83,110 80,120 Z" fill="#FFC2D2"/></g>`;
-    if(kind === 'cat') o += `<path d="M24,152 L28,118 L54,138 Z M96,152 L92,118 L66,138 Z" fill="${c}"/><path d="M30,144 L32,126 L46,138 Z M90,144 L88,126 L74,138 Z" fill="#FFC2D2"/>`;
-    if(kind === 'otter') o += `<circle cx="30" cy="140" r="9" fill="${c}"/><circle cx="90" cy="140" r="9" fill="${c}"/><circle cx="30" cy="140" r="4.5" fill="${m}"/><circle cx="90" cy="140" r="4.5" fill="${m}"/>`;
-    o += `<ellipse cx="60" cy="${hy}" rx="38" ry="33" fill="${c}"/>${egl(60, hy, 38, 33)}`;
-    if(kind === 'dog') o += `<g transform="rotate(16 25 166)"><path d="M14,146 C10,166 14,184 24,190 C34,186 38,166 34,148 C30,140 18,140 14,146 Z" fill="${m}"/></g><g transform="rotate(-16 95 166)"><path d="M106,146 C110,166 106,184 96,190 C86,186 82,166 86,148 C90,140 102,140 106,146 Z" fill="${m}"/></g><ellipse cx="76" cy="160" rx="12" ry="11" fill="${m}" opacity=".55"/>`;
-    if(kind === 'cat') o += `<path d="M54,134 L56,144 M60,132 L60,143 M66,134 L64,144" stroke="${m}" stroke-width="3" stroke-linecap="round"/>`;
-    if(kind === 'otter') o += `<ellipse cx="60" cy="${hy + 10}" rx="26" ry="18" fill="${CR}"/>`;
+    if(kind === 'rabbit'){
+      if(pv === 1) o += `<g transform="rotate(14 26 172)"><ellipse cx="26" cy="176" rx="10" ry="26" fill="${c}"/><ellipse cx="26" cy="178" rx="5" ry="18" fill="${PK}"/></g><g transform="rotate(-14 94 172)"><ellipse cx="94" cy="176" rx="10" ry="26" fill="${c}"/><ellipse cx="94" cy="178" rx="5" ry="18" fill="${PK}"/></g>`;
+      else o += `<g transform="rotate(-10 46 116)"><ellipse cx="46" cy="116" rx="10" ry="28" fill="${pv === 3 ? '#6B4A33' : c}"/><ellipse cx="46" cy="118" rx="5" ry="19" fill="${PK}"/></g><g transform="rotate(28 76 112)"><path d="M66,124 C64,98 72,86 80,90 C90,94 88,112 84,126 Z" fill="${pv === 3 ? '#6B4A33' : c}"/><path d="M70,120 C70,102 74,94 79,96 C84,99 83,110 80,120 Z" fill="${PK}"/></g>`; }
+    if(kind === 'cat') o += `<path d="M24,152 L28,118 L54,138 Z M96,152 L92,118 L66,138 Z" fill="${pv === 3 ? '#5A4032' : c}"/><path d="M30,144 L32,126 L46,138 Z M90,144 L88,126 L74,138 Z" fill="${PK}"/>`;
+    if(kind === 'otter') o += `<circle cx="${60 - 30 * S}" cy="140" r="9" fill="${c}"/><circle cx="${60 + 30 * S}" cy="140" r="9" fill="${c}"/><circle cx="${60 - 30 * S}" cy="140" r="4.5" fill="${m}"/><circle cx="${60 + 30 * S}" cy="140" r="4.5" fill="${m}"/>`;
+    if(kind === 'dog' && pv === 1) o += `<path d="M26,148 L30,116 L52,136 Z M94,148 L90,116 L68,136 Z" fill="${c}"/><path d="M32,140 L34,124 L46,136 Z M88,140 L86,124 L74,136 Z" fill="${PK}" opacity=".8"/>`;
+    o += `<ellipse cx="60" cy="${hy}" rx="${38 * S}" ry="${33 * S}" fill="${c}"/>${egl(60, hy, 38 * S, 33 * S)}`;
+    if(kind === 'dog' && pv === 0) o += `<ellipse cx="76" cy="160" rx="12" ry="11" fill="${m}" opacity=".55"/>`;
+    if(kind === 'dog' && pv !== 1){ const ec = pv === 2 ? '#6B4A33' : m;
+      if(pv === 3) o += [[22,160],[24,178],[98,160],[96,178],[34,134],[50,128],[70,128],[86,134],[60,126]].map(([x, y])=>`<circle cx="${x}" cy="${y}" r="${x === 60 ? 13 : 11}" fill="${c}"/>`).join('') + [[22,160],[96,178],[50,128]].map(([x, y])=>`<circle cx="${x}" cy="${y}" r="11" fill="url(#${U}gl)"/>`).join('');
+      else o += `<g transform="rotate(16 25 166)"><path d="M14,146 C10,166 14,184 24,190 C34,186 38,166 34,148 C30,140 18,140 14,146 Z" fill="${ec}"/></g><g transform="rotate(-16 95 166)"><path d="M106,146 C110,166 106,184 96,190 C86,186 82,166 86,148 C90,140 102,140 106,146 Z" fill="${ec}"/></g>`;
+      if(pv === 2) o += `<path d="M54,132 C56,150 52,164 50,172 L70,172 C68,164 64,150 66,132 Z" fill="${W}"/><ellipse cx="40" cy="152" rx="14" ry="12" fill="#6B4A33" opacity=".9"/><ellipse cx="80" cy="152" rx="14" ry="12" fill="#6B4A33" opacity=".9"/>`; }
+    if(kind === 'dog' && pv === 1) o += `<path d="M30,170 C34,190 50,196 60,196 C70,196 86,190 90,170 C80,180 70,178 60,170 C50,178 40,180 30,170 Z" fill="${W}"/><ellipse cx="44" cy="146" rx="5" ry="3" fill="${W}" opacity=".9"/><ellipse cx="76" cy="146" rx="5" ry="3" fill="${W}" opacity=".9"/>`;
+    if(kind === 'cat' && pv === 0) o += `<path d="M54,134 L56,144 M60,132 L60,143 M66,134 L64,144" stroke="${m}" stroke-width="3" stroke-linecap="round"/>`;
+    if(kind === 'cat' && pv === 1) o += `<path d="M44,168 C48,188 56,196 60,196 C64,196 72,188 76,168 C70,174 64,172 60,166 C56,172 50,174 44,168 Z" fill="${W}"/>`;
+    if(kind === 'cat' && pv === 2) o += `<path d="M30,140 C40,132 54,134 54,146 C52,156 38,158 30,152 Z" fill="#F2A65A"/><path d="M90,138 C82,132 70,136 72,146 C74,154 86,154 92,148 Z" fill="#3A3646"/><path d="M82,214 C90,206 94,222 86,226 Z" fill="#F2A65A"/>`;
+    if(kind === 'cat' && pv === 3) o += `<ellipse cx="60" cy="176" rx="20" ry="16" fill="#8A6650" opacity=".75"/>`;
+    if(kind === 'rabbit' && pv === 3) o += `<path d="M24,160 C24,140 40,132 52,134 L54,172 C42,176 28,174 24,160 Z M96,160 C96,140 80,132 68,134 L66,172 C78,176 92,174 96,160 Z" fill="#6B4A33"/>`;
+    if(kind === 'otter') o += `<ellipse cx="60" cy="${hy + 10}" rx="${26 * S}" ry="${18 * S}" fill="${CR}"/>`;
     if(kind === 'rabbit') o += `<ellipse cx="34" cy="${hy + 12}" rx="7" ry="5" fill="${W}" opacity=".7"/><ellipse cx="86" cy="${hy + 12}" rx="7" ry="5" fill="${W}" opacity=".7"/>`;
-    o += eyes(hy, ex);
+    o += eyes(hy, ex, baby ? 1.15 : 1, kind === 'cat' && pv === 3 ? '#6FB7E8' : null);
     const ny = hy + 12;
     if(kind !== 'otter') o += `<ellipse cx="60" cy="${ny + 4}" rx="11" ry="8" fill="${W}" opacity=".95"/>`;
     o += `<ellipse cx="60" cy="${ny}" rx="${kind === 'rabbit' ? 3.6 : 5}" ry="${kind === 'rabbit' ? 2.8 : 3.6}" fill="${kind === 'rabbit' || kind === 'cat' ? '#FF8FA3' : E}"/>` + mouthW(60, ny + 5);
@@ -178,10 +225,14 @@ function petSVG(kind, c, lv, U){
   }
   o += ex.map(x=>`<ellipse cx="${x + (x < 60 ? -9 : 9)}" cy="${blushY}" rx="${lv >= 1 ? 7 : 6}" ry="4" fill="#FF8FA3" opacity="${lv >= 1 ? .7 : .4}"/>`).join('');
   if(lv >= 2) o += `<path d="M38,${scarfY} Q60,${scarfY + 9} 82,${scarfY} L82,${scarfY + 8} Q60,${scarfY + 17} 38,${scarfY + 8} Z" fill="#FF5A5A"/><path d="M66,${scarfY + 10} L72,${scarfY + 26} L80,${scarfY + 20} Z" fill="#E84848"/>`;
-  if(lv >= 3){ const y = (kind === 'penguin' ? 160 : kind === 'turtle' ? 150 : kind === 'seal' ? 176 : hy); o += ex.map(x=>`<rect x="${x - 10}" y="${y - 7}" width="20" height="14" rx="6" fill="#1B2440"/><path d="M${x - 6},${y - 3} L${x - 2},${y - 3}" stroke="#fff" stroke-opacity=".6" stroke-width="2.4" stroke-linecap="round"/>`).join('') + `<path d="M${ex[0] + 10},${y - 2} L${ex[1] - 10},${y - 2}" stroke="#1B2440" stroke-width="3"/>`; }
+  if(lv >= 3){ const y = (kind === 'penguin' ? 160 : kind === 'seal' ? 176 : hy); o += ex.map(x=>`<rect x="${x - 10}" y="${y - 7}" width="20" height="14" rx="6" fill="#1B2440"/><path d="M${x - 6},${y - 3} L${x - 2},${y - 3}" stroke="#fff" stroke-opacity=".6" stroke-width="2.4" stroke-linecap="round"/>`).join('') + `<path d="M${ex[0] + 10},${y - 2} L${ex[1] - 10},${y - 2}" stroke="#1B2440" stroke-width="3"/>`; }
   return o;
 }
 
+/* 소품샵 확대 — 산 물건이 있는 자리만 잘라 보여 준다 */
+const VIEWS = { head:'14 -8 172 178', torso:'46 134 108 94', hand:'92 116 112 104', feet:'56 196 88 54', board:'8 60 74 190', pet:'-6 100 132 150', leash:'14 184 118 66', tail:'10 186 72 62', wrist:'100 160 68 58' };
+const VIEW_OF = (key, v)=>({ hat:'head', hair:'head', acc:'head', eye:'head', brow:'head', fshape:'head', wear:'torso', hold:'hand', boardc:'board', bpat:'board', pet:'pet',
+  gear:{ leash:'leash', fins:'tail', towel:'torso', pouch:'torso', watch:'wrist', booties:'feet', helmet:'head' }[v] }[key] || null);
 let seq = 0;
 function mochiSVG(pr, opt){
   pr = pr || {}; opt = opt || {};
@@ -192,16 +243,17 @@ function mochiSVG(pr, opt){
   const face_ = ['smile','happy','cool','wow','wink','sleepy'].includes(pr.face) ? pr.face : 'smile';
   const hold = HOLDS.includes(pr.hold) ? pr.hold : 'none', gear = GEARS.includes(pr.gear) ? pr.gear : 'none';
   const HEAD = own(FSHAPE, pr.fshape) || FSHAPE.mochi, es = EYES.includes(pr.eye) ? pr.eye : 'sparkle', brow = BROWS.includes(pr.brow) ? pr.brow : 'none', acc = ACCS.includes(pr.acc) ? pr.acc : 'freckles';
-  const wear = ['rash','hood','tank','suit','bare','stripe','heart','aloha','vest','poncho'].includes(pr.wear) ? pr.wear : 'rash';
+  const wear = ['rash','hood','tank','suit','bare','stripe','heart','aloha','vest','poncho','tee','shorty','overall','check','dress','knit','zipup','sailor'].includes(pr.wear) ? pr.wear : 'rash';
+  const SHORT = ['tee','shorty','dress','sailor'].includes(wear), HC = own(TOP_, pr.hatc) || null;
   const hat = gear !== 'helmet' && (own(HATS, pr.hat) || own(HAT2, pr.hat)) ? pr.hat : null, cover = (hat && (HATS[hat] || HAT2[hat].cover) && !['cap','visor'].includes(hat)) || gear === 'helmet';
   const pet = opt.pet && ['dog','cat','rabbit','penguin','seal','otter','turtle'].includes(pr.pet) ? pr.pet : null;
   const holdBoard = charm >= 2 && opt.board !== false, wave = charm >= 1 && !holdBoard;
   const gl = d=>`<path d="${d}" fill="url(#${U}gl)"/>`;
-  const sleeve = wear === 'tank' || wear === 'bare' ? S : T;
+  const sleeve = wear === 'tank' || wear === 'bare' || SHORT ? S : T;
   let o = `<defs><radialGradient id="${U}gl" cx=".32" cy=".26" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity=".08"/><stop offset=".8" stop-color="#000030" stop-opacity=".05"/><stop offset="1" stop-color="#000030" stop-opacity=".22"/></radialGradient>
     <linearGradient id="${U}iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A1F2B" stop-opacity="0"/><stop offset="1" stop-color="#8A5A3E"/></linearGradient>
     <clipPath id="${U}hd"><path d="${HEAD}"/></clipPath></defs>`;
-  if(pet) o += `<g>${petSVG(pet, own(PETC_, pr.petc) || PETC_[PETDEF_[pet]] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U)}</g><g transform="translate(120 0)">`;
+  if(pet) o += `<g>${petSVG(pet, own(PETC_, pr.petc) || PETC_[PETDEF_[pet]] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U, pr.petv)}</g><g transform="translate(120 0)">`;
   o += `<ellipse cx="100" cy="242" rx="42" ry="6" fill="#12245F" opacity=".14"/>`;
   /* 옆에 낀 서핑보드(뒤) */
   if(holdBoard){ const bd = 'M24,112 C24,86 34,70 44,70 C54,70 64,86 64,112 L64,214 C64,232 54,242 44,242 C34,242 24,232 24,214 Z';
@@ -227,7 +279,7 @@ function mochiSVG(pr, opt){
   else [89, 111].forEach(x=>{ o += `<ellipse cx="${x}" cy="237" rx="12.5" ry="5" fill="${dk(BD, .92)}"/><ellipse cx="${x}" cy="233" rx="9" ry="5.5" fill="${S}"/><path d="M${x - 6},234 L${x},228 L${x + 6},234" fill="none" stroke="${dk(BD, .75)}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`; });
   /* 반바지 */
   if(wear !== 'suit'){ const sh = 'M71,192 Q100,201 129,192 L131,212 Q118,217 104,215 L100,207 L96,215 Q82,217 69,212 Z';
-    o += `<path d="${sh}" fill="${B}"/><path d="M73,200 L71,211 M127,200 L129,211" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>`;
+    o += `<path d="${sh}" fill="${wear === 'shorty' ? T : B}"/><path d="M73,200 L71,211 M127,200 L129,211" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>`;
     if(charm) o += [[80,204],[90,209],[112,209],[121,204]].map(([x, y])=>`<circle cx="${x}" cy="${y}" r="2" fill="#fff" opacity=".55"/>`).join(''); }
   /* 팔 — 왼팔은 내리거나 보드를 잡고, 오른팔은 손 흔들기 */
   const armL = holdBoard ? 'M80,158 C66,162 56,170 52,180 C50,188 58,192 63,186 C68,178 76,172 86,168 Z' : 'M80,158 C68,166 61,180 62,193 C63,201 73,202 75,195 C76,185 80,175 86,168 Z';
@@ -235,18 +287,29 @@ function mochiSVG(pr, opt){
   const armR = wave ? 'M118,157 C134,156 152,150 164,141 C170,135 179,141 175,148 C165,159 145,167 120,169 Z' : 'M120,158 C132,166 139,180 138,193 C137,201 127,202 125,195 C124,185 120,175 114,168 Z';   // 흔드는 손은 볼 옆으로 — 머리 뒤로 들면 가려졌다
   const handR = wave ? [172, 142] : [132, 196];
   if(wear !== 'poncho') o += `<path d="${armL}" fill="${sleeve}"/><path d="${armR}" fill="${sleeve}"/>`;
-  if(wear === 'hood') o += `<path d="M74,156 C76,144 124,144 126,156 C116,162 84,162 74,156 Z" fill="${dk(T, .82)}"/>`;
+  if(wear === 'hood' || wear === 'zipup') o += `<path d="M74,156 C76,144 124,144 126,156 C116,162 84,162 74,156 Z" fill="${dk(T, .82)}"/>`;
+  if(SHORT && wear !== 'poncho') o += `<circle cx="84" cy="161" r="10" fill="${wear === 'sailor' ? '#FFFFFF' : T}"/><circle cx="116" cy="161" r="10" fill="${wear === 'sailor' ? '#FFFFFF' : T}"/>`;
   /* 몸통 */
   const torso = 'M78,150 C74,168 71,186 72,200 Q100,208 128,200 C129,186 126,168 122,150 Z';
   const VEST = 'M80,152 L95,152 L97,200 Q88,203 74,199 C73,184 75,166 80,152 Z M120,152 L105,152 L103,200 Q112,203 126,199 C127,184 125,166 120,152 Z';
   if(wear === 'tank' || wear === 'bare') o += `<path d="${torso}" fill="${S}"/>`;
   if(wear === 'tank') o += `<path d="M84,158 L88,152 L112,152 L116,158 C120,172 124,188 124,200 Q100,207 76,200 C76,188 80,172 84,158 Z" fill="${T}"/>`;
-  else if(wear !== 'bare') o += `<path d="${torso}" fill="${T}"/>`;
+  else if(wear !== 'bare') o += `<path d="${torso}" fill="${wear === 'sailor' ? '#FFFFFF' : T}"/>`;
   o += gl(torso);
   if(wear === 'rash' && charm){ o += `<path d="M74,176 Q100,183 126,176 L126,183 Q100,190 74,183 Z" fill="#fff" opacity=".85"/><path d="M92,166 Q96,160 100,166 Q104,172 108,166" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`; }
   if(wear === 'hood') o += `<path d="M95,158 L94,172 M105,158 L106,172" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M84,186 Q100,192 116,186" fill="none" stroke="${dk(T, .75)}" stroke-width="2.4"/>`;
   if(wear === 'suit') o += `<path d="M100,152 L100,204" stroke="${dk(T, .7)}" stroke-width="2.4"/><path d="M74,176 L126,176" stroke="${lt(T, .35)}" stroke-width="3"/>`;
   if(wear === 'bare') o += `<circle cx="100" cy="188" r="1.8" fill="${dk(S, .75)}"/>`;
+  const TC = `<clipPath id="${U}tc"><path d="${torso}"/></clipPath>`;
+  if(wear === 'tee') o += `<rect x="106" y="164" width="11" height="10" rx="2" fill="none" stroke="${dk(T, .75)}" stroke-width="2"/><path d="M90,152 Q100,160 110,152" fill="none" stroke="${dk(T, .75)}" stroke-width="2.4"/>`;
+  if(wear === 'shorty') o += `<path d="M100,152 L100,204" stroke="${dk(T, .7)}" stroke-width="2.4"/><path d="M76,168 Q100,174 124,168 L124,176 Q100,182 76,176 Z" fill="${lt(T, .4)}"/><path d="M71,206 L76,196 M129,206 L124,196" stroke="${lt(T, .4)}" stroke-width="4"/>`;
+  if(wear === 'overall') o += `<path d="M84,170 L116,170 L119,200 Q100,207 81,200 Z" fill="${B}"/><path d="M86,171 L84,152 M114,171 L116,152" stroke="${B}" stroke-width="4.4" stroke-linecap="round"/><circle cx="86" cy="173" r="2.6" fill="#FFD23F"/><circle cx="114" cy="173" r="2.6" fill="#FFD23F"/><rect x="93" y="180" width="14" height="10" rx="2" fill="none" stroke="${dk(B, .75)}" stroke-width="2"/>`;
+  if(wear === 'check') o += `${TC}<g clip-path="url(#${U}tc)" stroke="#fff" stroke-opacity=".5" stroke-width="3">${[80,90,100,110,120].map(x=>`<path d="M${x},148 L${x},210"/>`).join('')}${[160,170,180,190,200].map(y=>`<path d="M68,${y} L132,${y}"/>`).join('')}</g><path d="M88,150 L100,162 L112,150" fill="${lt(T, .3)}" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>`;
+  if(wear === 'dress'){ const sk = 'M72,186 Q100,194 128,186 L141,214 Q100,225 59,214 Z';
+    o += `<path d="${sk}" fill="${T}"/>${gl(sk)}` + [[78,204],[96,210],[114,206],[128,212],[88,196],[106,198],[70,212]].map(([x, y])=>`<circle cx="${x}" cy="${y}" r="2.6" fill="#fff" opacity=".85"/>`).join('') + `<path d="M74,186 Q100,194 126,186" fill="none" stroke="${dk(T, .75)}" stroke-width="3"/><path d="M100,190 L92,184 L92,196 Z M100,190 L108,184 L108,196 Z" fill="#fff"/>`; }
+  if(wear === 'knit') o += `${TC}<g clip-path="url(#${U}tc)" fill="none" stroke="${dk(T, .82)}" stroke-width="2.4">${[86,100,114].map(x=>`<path d="M${x},154 Q${x + 4},160 ${x},166 Q${x - 4},172 ${x},178 Q${x + 4},184 ${x},190 Q${x - 4},196 ${x},202"/>`).join('')}</g><path d="M73,197 Q100,205 127,197" fill="none" stroke="${dk(T, .82)}" stroke-width="5"/><path d="M88,152 Q100,160 112,152" fill="none" stroke="${dk(T, .82)}" stroke-width="4"/>`;
+  if(wear === 'zipup') o += `<path d="M94,152 L106,152 L104,205 L96,205 Z" fill="#FFFFFF"/><path d="M94,152 L96,205 M106,152 L104,205" stroke="${dk(T, .7)}" stroke-width="2.2"/><path d="M92,158 L90,174 M108,158 L110,174" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><rect x="78" y="182" width="12" height="9" rx="2" fill="none" stroke="${dk(T, .75)}" stroke-width="2"/>`;
+  if(wear === 'sailor') o += `<path d="M78,151 L122,151 L115,170 L100,180 L85,170 Z" fill="${T}"/><path d="M82,156 L118,156 L112,168 L100,175 L88,168 Z" fill="none" stroke="#fff" stroke-width="2"/><path d="M100,178 L94,194 L100,190 L106,194 Z" fill="#E5484D"/>`;
   if(wear === 'stripe') o += `<clipPath id="${U}to"><path d="${torso}"/></clipPath><g clip-path="url(#${U}to)" fill="#fff" opacity=".9"><rect x="60" y="160" width="80" height="6"/><rect x="60" y="174" width="80" height="6"/><rect x="60" y="188" width="80" height="6"/></g>`;
   if(wear === 'heart') o += `<path d="M100,190 C86,180 84,170 90,166 C95,163 99,166 100,170 C101,166 105,163 110,166 C116,170 114,180 100,190 Z" fill="#fff"/>`;
   if(wear === 'aloha') o += `<path d="M90,152 L100,166 L110,152" fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round"/>` + [[86,176],[112,172],[96,192],[118,190]].map(([x, y], i)=>`<g transform="translate(${x} ${y})">${[0,72,144,216,288].map(a=>`<circle cx="${Math.cos(a * Math.PI / 180) * 3.6}" cy="${Math.sin(a * Math.PI / 180) * 3.6}" r="3.2" fill="${i % 2 ? '#FFD23F' : '#fff'}"/>`).join('')}<circle r="2.2" fill="#FF6B6B"/></g>`).join('');
@@ -298,18 +361,24 @@ function mochiSVG(pr, opt){
   if(gear === 'helmet'){ const hm = 'M27,94 C27,38 62,13 100,13 C138,13 173,38 173,94 Z';
     o += `<path d="M34,112 Q58,170 100,168 Q142,170 166,112" fill="none" stroke="#2B2F45" stroke-width="2.6"/><circle cx="32" cy="104" r="15" fill="#FFD23F"/><circle cx="168" cy="104" r="15" fill="#FFD23F"/><circle cx="32" cy="104" r="6" fill="#E0B21E"/><circle cx="168" cy="104" r="6" fill="#E0B21E"/>`;
     o += `<path d="${hm}" fill="#FFD23F"/>${gl(hm)}<path d="M27,90 Q100,76 173,90 L173,96 Q100,82 27,96 Z" fill="#E0B21E"/>` + [76, 100, 124].map(x=>`<ellipse cx="${x}" cy="34" rx="4" ry="8" fill="#2B2F45" opacity=".55"/>`).join(''); }
-  if(hat && HAT2[hat]) o += HAT2[hat].svg;
-  if(hat && HATS[hat]){ const X = HATS[hat], c = hat === 'cap' || hat === 'beanie' ? X.c : X.c;
+  if(hat && HAT2[hat]) o += HC && hat === 'wave' ? HAT2[hat].svg.split('#3D8BFF').join(HC) : HC && hat === 'straw' ? HAT2[hat].svg.split('#E5484D').join(HC) : HAT2[hat].svg;
+  if(hat && HATS[hat]){ const X = HATS[hat], c = HC || X.c;
     if(X.bill && hat === 'cap'){ o += `<path d="${X.d[0]}" fill="${c}"/>${gl(X.d[0])}<path d="${X.bill}" fill="${dk(c, .85)}"/><circle cx="${X.btn[0]}" cy="${X.btn[1]}" r="5.5" fill="${dk(c, .85)}"/>`; }
     if(hat === 'bucket'){ o += `<path d="${X.d[0]}" fill="${c}"/>${gl(X.d[0])}<ellipse cx="${X.brim[0]}" cy="${X.brim[1]}" rx="${X.brim[2]}" ry="${X.brim[3]}" fill="${c}"/><path d="${X.band}" fill="${dk(c, .8)}"/>`; }
-    if(hat === 'visor'){ o += `<path d="${X.d[0]}" fill="#fff"/><path d="${X.bill}" fill="#F0F4FA"/>`; }
+    if(hat === 'visor'){ o += `<path d="${X.d[0]}" fill="${c}"/><path d="${X.bill}" fill="${dk(c, .94)}"/>`; }
     if(hat === 'beanie'){ o += `<path d="${X.d[0]}" fill="${c}"/>${gl(X.d[0])}<rect x="${X.cuff[0]}" y="${X.cuff[1]}" width="${X.cuff[2]}" height="${X.cuff[3]}" rx="12" fill="#F7F3EA"/><circle cx="${X.pom[0]}" cy="${X.pom[1]}" r="11" fill="#F7F3EA"/>`; } }
   if(pet) o += '</g>';
-  const W = pet ? 320 : 200;
+  const W = pet ? 320 : 200, VB = opt.view && VIEWS[opt.view];
+  if(VB){ const [, , vw, vh] = VB.split(' ').map(Number); return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VB}" width="${vw * 2}" height="${vh * 2}">${o}</svg>`; }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 250" width="${W}" height="250">${o}</svg>`;
 }
 window.mochiSVG = mochiSVG;
 /* 꾸미기 목록에 얹기 — sprite.js(도트, 게임·라인업 앱과 공유)의 목록에 새 머리·펫을 더하고, 도트로 그릴 땐 가까운 모양을 빌려 쓴다 */
+const WEAR_NEW = { tee:'반팔 티', shorty:'스프링슈트', overall:'멜빵', check:'체크셔츠', dress:'원피스', knit:'니트', zipup:'후드집업', sailor:'세일러' };
+try{ if(typeof WEAR === 'object') Object.entries(WEAR_NEW).forEach(([k, ko])=>{ if(!WEAR[k]){ WEAR[k] = { ko, rows:WEAR.rash.rows }; WEAR_KO[k] = ko; } }); }catch(e){}
+try{ if(typeof TOPS === 'object') Object.entries(TOP_KO_).forEach(([k, ko])=>{ if(!TOPS[k]){ TOPS[k] = TOP_[k]; TOP_KO[k] = ko; } }); }catch(e){}
+try{ if(typeof BOTTOMS === 'object') Object.entries(BOT_KO_).forEach(([k, ko])=>{ if(!BOTTOMS[k]){ BOTTOMS[k] = BOT_[k]; BOTTOM_KO[k] = ko; } }); }catch(e){}
+window.mochiItem = (pr, key, v)=>{ const view = VIEW_OF(key, v); if(!view) return ''; return mochiSVG({ ...pr, [key]:v }, { charm:2, pet:key === 'pet', view, uid:'z' }); };
 const HAIR_NEW = { bun:['bob','똥머리'], halfup:['long','반묶음'], pixie:['short','숏컷'], perm:['wave','뽀글펌'], braid:['bob','땋은머리'], twoblock:['short','투블럭'], hime:['long','히메컷'] };
 try{ if(typeof HAIR === 'object') Object.entries(HAIR_NEW).forEach(([k, [fb, ko]])=>{ if(!HAIR[k]){ HAIR[k] = HAIR[fb]; HAIR_KO[k] = ko; } }); }catch(e){}
 try{ if(typeof PET === 'object'){ if(!PET.otter){ PET.otter = PET.seal; PET_ACC.otter = PET_ACC.seal; PET_KO.otter = '해달'; } if(!PET.turtle){ PET.turtle = PET.penguin; PET_ACC.turtle = PET_ACC.penguin; PET_KO.turtle = '거북이'; } } }catch(e){}
@@ -317,6 +386,8 @@ window.MOCHI_OPT = {
   fshape:{ mochi:'모찌', round:'동글', oval:'갸름', square:'각진', peach:'복숭아' },
   eye:{ sparkle:'반짝', dot:'점눈', cat:'고양이눈', droopy:'처진눈', star:'별눈', lash:'속눈썹' },
   brow:{ none:'없음', soft:'둥근', thick:'짙은', sad:'팔자' },
+  petv:{ dog:['리트리버','시바','비글','푸들'], cat:['치즈','턱시도','삼색','샴'], rabbit:['기본','롭이어','라이언헤드','더치'], penguin:['기본','황제','아델리','마카로니'],
+    seal:['점박이','아기 물범','바다사자','회색'], otter:['조개','불가사리','수달','아기 해달'], turtle:['육지','바다거북','별무늬','아기'] },
   hold:{ none:'없음', coffee:'아이스 아메리카노', coconut:'코코넛 음료', gopro:'액션캠', wax:'서프 왁스', shell:'소라', flag:'양서학 깃발' },
   gear:{ none:'없음', leash:'리쉬', booties:'서핑 부츠', helmet:'서핑 헬멧', towel:'비치타월', watch:'방수 시계', pouch:'방수 파우치', fins:'트라이 핀' },
   acc:{ freckles:'주근깨', none:'없음', zinc:'서퍼 선크림', bandaid:'반창고', glasses:'동그란 안경', star:'별 스티커', mole:'점' },

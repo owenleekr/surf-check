@@ -862,6 +862,7 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .shop-pv{ width:100%; display:flex; justify-content:center; background:linear-gradient(#C9EAFF,#E6F5FF 76%,#F3E6C8 76%); border-radius:12px; overflow:hidden }
 .shop-pv canvas{ width:auto; height:104px; image-rendering:auto }
 #shop-me{ width:auto; height:96px; image-rendering:auto; background:linear-gradient(#C9EAFF,#E6F5FF 76%,#F3E6C8 76%); border-radius:12px }
+.shop-zoom{ display:block; width:100%; height:104px; object-fit:contain }
 </style>
 </head>
 <body>
@@ -1552,7 +1553,7 @@ let bldTab = 'face';
 function renderBuilder(){
   if(typeof HAIR !== 'function' && typeof HAIR !== 'object') return;
   const pr = ME.profile || (ME.profile = freshProfile(ME.name));
-  const cur = { fshape:'mochi', eye:'sparkle', brow:'none', acc:'freckles', ...pr, hair: (typeof hairOf==='function' ? hairOf(pr) : pr.hair) };
+  const cur = { fshape:'mochi', eye:'sparkle', brow:'none', acc:'freckles', petv:'0', hold:'none', gear:'none', ...pr, hair: (typeof hairOf==='function' ? hairOf(pr) : pr.hair) };
   const MO = window.MOCHI_OPT, mo = (label, key) => MO ? opt(label, key, Object.entries(MO[key])) : '';
   const sw = map => (v,t)=>`<i style="display:inline-block;width:10px;height:10px;border:2px solid var(--ink);background:${map[v]};vertical-align:-1px;margin-right:3px"></i>${t}`;
   const opt = (label, key, items, render) => `<div style="margin-top:10px"><div class="note" style="margin:0 0 4px">${label}</div>
@@ -1572,12 +1573,14 @@ function renderBuilder(){
         + (cur.wear==='bare' ? '' : opt('상의 색', 'top', keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)))
         + opt('팬츠 · 웻수트', 'bottom', keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS))
         + opt('모자', 'hat', keys(HAT).map(k=>[k,HAT_KO[k]]))
+        + (['cap','beanie','bucket','visor','wave','straw'].includes(cur.hat) ? opt('모자 색', 'hatc', keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)) : '')
         + mo('손 소품', 'hold'),
     board: opt('보드', 'board', [['long','롱보드'],['fun','펀보드'],['short','숏보드']])
         + opt('보드 색', 'boardc', keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), sw(BOARDC))
         + (typeof BPAT === 'object' ? opt('보드 무늬', 'bpat', keys(BPAT).map(k=>[k,BPAT_KO[k]])) : '')
         + mo('서핑 용품', 'gear'),
     pet:  opt('같이 타는 친구', 'pet', keys(PET).map(k=>[k,PET_KO[k]]))
+        + (cur.pet==='none' || !window.MOCHI_OPT?.petv?.[cur.pet] ? '' : opt('종류', 'petv', MOCHI_OPT.petv[cur.pet].map((t, i)=>[String(i), t])))
         + (cur.pet==='none' ? '' : opt('친구 색', 'petc', keys(PETC).map(k=>[k,PETC_KO[k]]), sw(PETC))),
   };
   const TABS = [['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
