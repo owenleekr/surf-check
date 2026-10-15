@@ -303,7 +303,9 @@ function epx(src, w, h){
   return out;
 }
 function paint(cv, rows, tint, f){
-  if(rows && rows._pr && cv.isConnected && cv.dataset.raw == null && cv.clientHeight >= 22 && typeof cv.getContext === 'function'){ paintVec(cv, rows, tint, f); return; }
+  if(rows && rows._pr && cv.isConnected && cv.dataset.raw == null && cv.clientHeight >= 22 && typeof cv.getContext === 'function'){
+    if(typeof window.mochiSVG === 'function'){ paintMochi(cv, rows, f); return; }
+    paintVec(cv, rows, tint, f); return; }
   /* 숨은 탭에서 그려지면 높이가 0이라 도트로 남았다(홈 프로필) — 보이게 되는 순간 다시 그린다 */
   if(rows && rows._pr && cv.isConnected && cv.dataset.raw == null && !cv.clientHeight && !cv._ro && typeof ResizeObserver === 'function'){
     cv._ro = new ResizeObserver(()=>{ if(cv.clientHeight && cv._rows){ cv._ro.disconnect(); cv._ro = null; paint(cv, cv._rows, cv._tint, frame); } }); cv._ro.observe(cv); }
@@ -511,4 +513,21 @@ function paintVec(cv, rows, tint, f){
   if(!off){ off = document.createElement('canvas'); off.width = w; off.height = h; const o = off.getContext('2d');
     o.setTransform(U, 0, 0, U, pad * U, pad * U); drawAvatarVec(o, rows._pr, rows._pet, tint || {}, f); cv._vc[key] = off; }
   const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h); g.drawImage(off, 0, 0);
+}
+
+/* ═══════════ 모찌 미니미(mochi.js) ═══════════
+   캐릭터 생김새를 새로 그린 SVG 를 그림으로 바꿔 캔버스에 올린다. 같은 프로필이면 같은 SVG 문자열 → 그림을 다시 만들지 않는다.
+   data-anim 이면 550ms 마다 몸 전체가 살짝 떠오른다(보드·펫 포함 — 한 장 그림이라). */
+const _mImg = new Map();
+function paintMochi(cv, rows, f){
+  const svg = window.mochiSVG(rows._pr, { charm:2, pet:rows._pet, uid:'a' });
+  let im = _mImg.get(svg);
+  if(!im){ im = new Image(); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); _mImg.set(svg, im); if(_mImg.size > 400) _mImg.delete(_mImg.keys().next().value); }
+  const VW = rows._pet ? 320 : 200, ch = cv.clientHeight, dpr = Math.min(3, window.devicePixelRatio || 1);
+  const w = Math.round(ch * VW / 250 * dpr), h = Math.round(ch * dpr);
+  if(cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  cv.style.width = Math.round(ch * VW / 250) + 'px'; cv.style.imageRendering = 'auto';
+  const g = cv.getContext('2d');
+  const draw = ()=>{ if(cv._rows !== rows) return; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h); g.drawImage(im, 0, f && cv.dataset.anim != null ? -Math.round(h * .015) : 0, w, h); };
+  if(im.complete && im.naturalWidth) draw(); else im.addEventListener('load', draw, { once:true });
 }
