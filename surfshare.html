@@ -343,7 +343,7 @@ body.game-on{ overflow:hidden }
 /* 게임 화면은 기기 높이에 맞춰 최대한 크게 — 가로·세로 비율(--ar)을 지키며 화면을 꽉 채운다(폰은 가로폭, 태블릿·PC 는 높이가 한계) */
 .game .game-box{ max-width:none; width:min(100%, calc((100dvh - 150px - env(safe-area-inset-bottom)) * var(--ar, .82) + 28px)); padding-left:6px; padding-right:6px }
 #game{ --ar:calc(180 / 220) } #quest{ --ar:1 }
-#quest .game-box{ width:min(100%, calc((100dvh - 270px - env(safe-area-inset-bottom)) + 28px)) }
+#quest .game-box{ width:min(100%, calc((100dvh - 284px - env(safe-area-inset-bottom)) + 28px)) }
 /* 해변 수호 (defend.js) — 캔버스 240×360 세로. 멈춤·배속은 오른쪽 위, 큰 파도는 오른쪽 아래(엄지 스틱과 반대편), 정비 상점은 화면 아래에 겹쳐 띄운다 */
 #defend{ --ar:.6667 } #defend .game-box{ width:min(100%, calc((100dvh - 78px - env(safe-area-inset-bottom)) * .6667 + 12px)) }
 #d-cv{ display:block; width:100%; height:auto; touch-action:none; -webkit-touch-callout:none }
@@ -1120,6 +1120,54 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .sl-more2{ margin-top:12px; padding:8px 10px; background:#F4F8FC; border-radius:10px } .sl-more2 summary{ font-weight:800; font-size:14px; cursor:pointer; min-height:32px; display:flex; align-items:center; gap:6px } .sl-more2 summary small{ color:#5B6275; font-size:12px; font-weight:700 }
 .sl-more2 textarea{ width:100%; box-sizing:border-box; margin-top:4px; font-family:inherit; font-size:16px; resize:vertical }
 .sl-nt{ display:block; margin-top:2px; font-size:12.5px; color:#36405A; white-space:normal; word-break:keep-all; overflow-wrap:anywhere }
+/* 원정 연출 (quest.js) — 오프닝·엔딩 장면, 밤 빛 구멍, 지역 띠, 전투 위 AUTO·배속, 길동무 기술 카드, 컷인·결과 띠, 이정표 독백, 기록장 */
+#quest .game-stage{ flex:none; overflow:hidden }   /* 줄어들면 정사각 캔버스 윗줄이 잘린다 */ .qs-bg{ transform-origin:50% 50% }
+#q-ov .go-card{ max-height:100%; overflow-y:auto }   /* 보상 카드에 독백까지 붙으면 작은 폰에서 넘친다 — 카드 안에서 스크롤 */
+.qs-svg .qho{ animation:qho 3.4s ease-in-out infinite alternate; transform-box:fill-box; transform-origin:center } @keyframes qho{ from{ transform:scale(.86) } to{ transform:scale(1.1) } }
+#q-ov.qv-cine{ display:block; padding:0; overflow:hidden; cursor:pointer; background:linear-gradient(rgba(0,0,0,0) 55%,rgba(4,6,16,.55)) }
+#q-ov.qv-cine::before,#q-ov.qv-cine::after{ content:''; position:absolute; left:0; right:0; z-index:2; height:13%; background:#05060C; pointer-events:none } #q-ov.qv-cine::before{ top:0 } #q-ov.qv-cine::after{ bottom:0 }
+.qc-fx{ position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden }
+.qc-sub{ position:absolute; left:6%; right:6%; bottom:calc(13% + 8px); z-index:3; margin:0; min-height:2.9em; text-align:center; color:#FFF6DC; font-size:13.5px; font-weight:700; line-height:1.45; word-break:keep-all; text-shadow:0 1px 0 #000,0 0 8px rgba(0,0,0,.85) }
+.qc-dots{ position:absolute; top:calc(13% + 8px); left:10px; z-index:3; display:flex; gap:5px } .qc-dots b{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.3) } .qc-dots b.on{ background:#FFE9A8; box-shadow:0 0 6px #FFE9A8 }
+.qc-ctl{ position:absolute; top:5px; right:6px; z-index:4; display:flex; gap:6px } .qc-ctl .btn{ min-height:34px; padding:0 10px; font-size:12.5px; color:#fff; background:rgba(10,14,30,.6); border-color:rgba(255,255,255,.7) }
+.qc-ctl .btn:first-child{ animation:qcbl 1s ease-in-out 4 } @keyframes qcbl{ 50%{ opacity:.45 } }   /* 처음 4초만 깜빡여 조작을 알린다 */
+.qc-fd{ position:absolute; inset:0; z-index:5; background:#000; opacity:0; transition:opacity .4s; pointer-events:none } .qc-fd.on{ opacity:1 }
+.qc-yun,.qc-glow{ position:absolute; top:34%; animation:qcy 8.5s linear both } .qc-yun{ font-size:44px; font-family:sans-serif; filter:drop-shadow(0 0 10px #FFD36B) drop-shadow(0 0 3px #FFF3C4) }
+.qc-glow{ width:46%; aspect-ratio:1; margin:-18% 0 0 -16%; border-radius:50%; background:radial-gradient(rgba(255,226,140,.6),rgba(255,226,140,0) 65%); mix-blend-mode:screen }
+@keyframes qcy{ 0%{ left:4%; top:38% } 50%{ top:30% } 100%{ left:64%; top:36% } }
+.qc-lt{ position:absolute; left:50%; top:66%; width:8px; height:8px; margin:-4px; border-radius:50%; background:#FFE9A8; box-shadow:0 0 10px 3px rgba(255,220,120,.85); opacity:0; animation:qclt 2.6s cubic-bezier(.2,.7,.3,1) var(--d) both }
+@keyframes qclt{ 0%{ opacity:0; transform:translate(0,0) scale(.4) } 15%{ opacity:1 } 100%{ opacity:1; transform:translate(var(--x),var(--y)) scale(1) } }
+.qc-me{ position:absolute; left:50%; bottom:13%; width:40%; transform:translateX(-50%); animation:qcme 1.6s .8s ease-out both } @keyframes qcme{ from{ opacity:0; transform:translate(-50%,14px) } }
+.qc-gl{ position:absolute; top:24%; left:-10%; font-size:22px; font-family:sans-serif; animation:qcgl 7.5s linear both } @keyframes qcgl{ to{ left:100%; top:14% } }
+.qc-tm{ position:absolute; left:0; right:0; bottom:26%; text-align:center; font-size:28px; font-family:sans-serif; letter-spacing:.2em; animation:qfade 1s 1.2s ease-out both }
+.q-reg{ position:absolute; top:13%; left:0; right:0; z-index:2; padding:7px 12px; text-align:center; color:#1F2A44; background:linear-gradient(90deg,rgba(255,233,168,0),#FFE9A8 18%,#FFE9A8 82%,rgba(255,233,168,0)); font:800 14px "Galmuri11",sans-serif; letter-spacing:.08em; transform-origin:50% 0; animation:qreg 2.3s cubic-bezier(.215,.61,.355,1) both; pointer-events:none }
+@keyframes qreg{ 0%{ transform:scaleY(0); opacity:0 } 18%{ transform:none; opacity:1 } 82%{ opacity:1 } 100%{ opacity:0 } }
+.q-top{ position:absolute; top:10%; right:4px; z-index:3; display:flex; gap:4px } .q-top[hidden]{ display:none }
+.q-top .btn{ min-width:44px; min-height:34px; padding:0 8px; font-size:12.5px; font-weight:800; color:#fff; background:rgba(11,24,48,.72); border-color:rgba(255,255,255,.85) } .q-top .btn.on{ color:#1F2A44; background:#F4C430 }
+.q-sks{ display:flex; gap:6px; margin-top:8px; min-height:56px }
+.q-skc{ position:relative; flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; padding:4px 2px 8px; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:10px; overflow:hidden; cursor:pointer; line-height:1.15 }
+.q-skc i{ font-style:normal; font-size:18px; font-family:sans-serif } .q-skc b,.q-skc small{ max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .q-skc b{ font-size:11px } .q-skc small{ font-size:9.5px; font-weight:700; color:#5B6275 }
+.q-skc::after{ content:''; position:absolute; left:0; bottom:0; height:5px; width:calc(var(--p,0) * 100%); background:var(--c,#F4C430) }
+.q-skc.rdy{ background:#FFF3C4 } .q-skc.rdy:not(.au){ animation:qrdy 1s ease-in-out infinite } .q-skc[aria-disabled="true"]{ cursor:default } @keyframes qrdy{ 50%{ transform:translateY(-2px); box-shadow:0 3px 0 var(--ink) } }
+.q-sks-t{ flex:1; display:flex; align-items:center; justify-content:center; gap:4px; padding:0 8px; font-size:12.5px; font-weight:700; color:#5B6275; text-align:center; background:#F4F8FC; border-radius:10px; word-break:keep-all }
+.q-fx{ position:absolute; inset:0; z-index:3; pointer-events:none; overflow:hidden }
+.q-cut{ position:absolute; left:0; right:0; top:32%; display:flex; align-items:center; gap:8px; padding:6px 14px; color:#fff; background:linear-gradient(90deg,var(--c) 0,var(--c) 68%,rgba(0,0,0,0)); font:800 16px "Galmuri11",sans-serif; text-shadow:0 2px 0 rgba(0,0,0,.35); animation:qcut .95s cubic-bezier(.2,.8,.3,1) both }
+.q-cut i{ font-style:normal; font-size:30px; font-family:sans-serif } .q-cut small{ display:block; font-size:11px; opacity:.85 }
+@keyframes qcut{ 0%{ transform:translateX(-105%) } 25%,75%{ transform:none; opacity:1 } 100%{ transform:translateX(12%); opacity:0 } }
+.q-ban{ position:absolute; left:0; right:0; top:42%; padding:8px; text-align:center; color:#1F2A44; background:rgba(255,233,168,.94); font:800 17px "Galmuri11",sans-serif; animation:qreg 1.5s cubic-bezier(.215,.61,.355,1) both } .q-ban.bad{ color:#fff; background:rgba(40,44,60,.92) } .q-ban.boss{ color:#FFD6F0; background:rgba(90,20,70,.92) }
+.q-mono{ display:flex; gap:8px; align-items:flex-start; margin:0 0 8px; padding:8px 10px; text-align:left; color:#FFF6DC; background:#1F2A44; border-radius:10px; animation:qfade .6s .5s ease-out both }
+.q-mono i{ font-style:normal; font-size:24px; font-family:sans-serif } .q-mono b{ display:block; font-size:12px; color:#FFE27A } .q-mono span{ font-size:12.5px; font-weight:700; line-height:1.5; word-break:keep-all }
+.qm-bt{ display:flex; gap:4px; margin-left:auto } .qm-bt .btn{ min-height:32px; padding:0 8px; font-size:12px }
+.qm-rt{ stroke-dasharray:1 1; stroke-dashoffset:1; animation:qmrt 1.4s .3s ease-in-out forwards } @keyframes qmrt{ to{ stroke-dashoffset:0 } }
+.qm-me.mv{ animation:qfade .5s 1.5s ease-out both, qbob 1.6s 2s ease-in-out infinite }
+#q-ov.qv-cdx{ display:block; padding:0; overflow:auto; background:#FFF7E3 }
+.qx{ padding:0 10px 14px } .qx-hd{ position:sticky; top:0; z-index:1; display:flex; align-items:center; gap:8px; padding:10px 0 8px; background:#FFF7E3; font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:800 } .qx-hd span{ margin-left:auto; font-size:12px; color:#5B6275 }
+.qx h4{ margin:8px 0 6px; font-size:13px; color:#5B6275 }
+.qx-g{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px } .qx-l{ display:flex; flex-direction:column; gap:6px }
+.qx-it{ display:flex; align-items:center; gap:6px; min-width:0; padding:6px 8px; background:#fff; border:2px solid var(--ink); border-radius:10px } .qx-it>i{ flex:none; font-style:normal; font-size:22px; font-family:sans-serif } .qx-it>span{ flex:1; min-width:0 }
+.qx-it b{ display:block; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .qx-it small{ display:block; font-size:10.5px; font-weight:700; color:#5B6275; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.qx-it.lk{ color:#8A93A6; background:#EEF0F4; border-style:dashed } .qx-it .btn{ flex:none; min-height:34px; padding:0 10px; font-size:12px }
+@media (prefers-reduced-motion:reduce){ .qho,.qc-yun,.qc-glow,.qc-lt,.qc-me,.qc-gl,.qc-tm,.qc-ctl .btn,.q-reg,.q-cut,.q-ban,.q-mono,.qm-rt,.qm-me.mv,.q-skc{ animation:none !important } .qc-lt{ opacity:1; transform:translate(var(--x),var(--y)) } .qm-rt{ stroke-dashoffset:0 } .qc-fd{ transition:none } }
 </style>
 </head>
 <body>
@@ -1445,9 +1493,11 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
     <div class="game-stage">
       <div class="qs-bg" id="q-bg" aria-hidden="true"></div>
       <canvas id="q-cv" width="240" height="240" aria-label="원정 화면 — 서퍼가 알아서 싸워요"></canvas>
+      <div class="q-fx" id="q-fx" aria-hidden="true"></div>
+      <div class="q-top" id="q-top" hidden><button class="btn sm" id="q-auto" type="button" aria-pressed="true">AUTO 켬</button><button class="btn sm" id="q-speed" type="button" aria-label="배속 1배">×1</button></div>
       <div class="game-ov" id="q-ov"></div>
     </div>
-    <div class="q-ctl"><button class="btn sm ghost" id="q-speed" type="button">⏩ 1배</button><button class="btn sm ghost" id="q-auto" type="button" aria-pressed="true">🤖 자동 고르기 켜짐</button></div>
+    <div class="q-sks" id="q-sks" aria-label="길동무 기술"></div>
     <div class="q-log" id="q-log" aria-live="polite"></div>
   </div>
 </div>
