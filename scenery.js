@@ -278,10 +278,11 @@ function shore(W, H, SH){
     for(let i = 0; i < 8; i++){ c.fillStyle = cols[i % 2]; c.beginPath(); c.moveTo(x, y); c.arc(x, y, 8, i * .785, (i + 1) * .785); c.fill(); } c.fillStyle = '#6B5045'; c.beginPath(); c.arc(x, y, 1.2, 0, 7); c.fill(); });
   c.fillStyle = '#F4C430'; c.fillRect(214, 182, 14, 7); c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(214, 184, 14, 1);
   [['#F4C430', 228, 226], ['#5BB5E0', 234, 230]].forEach(([col, x, y])=>{ c.fillStyle = 'rgba(80,60,30,.25)'; c.fillRect(x + 2, y + 2, 3, 14); c.fillStyle = col; c.beginPath(); c.ellipse(x, y + 7, 2, 8, 0, 0, 7); c.fill(); });   // 모래에 꽂은 보드
-  // 서핑학교 건물 — 이름표(게임이 그리는 주황 간판)를 정면에 단다
+  // 서핑학교 건물 — 이름표(게임이 그리는 주황 간판)를 정면에 단다. 화면이 300보다 길면 그만큼 내려 바닥에 붙인다
+  c.save(); c.translate(0, H - 300);
   c.fillStyle = 'rgba(80,60,30,.25)'; c.fillRect(92, 268, 62, 34); c.fillStyle = '#F6F1E8'; c.fillRect(88, 266, 64, 34); c.fillStyle = '#2F6F9A'; c.fillRect(86, 262, 68, 6); c.fillStyle = '#245A80'; c.fillRect(86, 267, 68, 1.5);
   [94, 104, 136, 146].forEach(x=>{ c.fillStyle = '#9FD6F0'; c.fillRect(x - 2, 271, 6, 5); });
-  pineTop(c, 14, 290, 10); pineTop(c, 228, 292, 10); pineTop(c, 220, 128, 6);
+  pineTop(c, 14, 290, 10); pineTop(c, 228, 292, 10); c.restore(); pineTop(c, 220, 128, 6);
   return TD[key] = cv;
 }
 

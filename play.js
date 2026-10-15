@@ -429,7 +429,7 @@ function playQuestDone(stage, win, shells, cleared){
 function playDefendDone(wave, win, shells, diff){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today(), d = (p.df ||= { best:0, clears:0 });
-  const w = _num(wave, 12); if(w > _num(d.best, 12)) d.best = w;
+  const w = _num(wave, 15); if(w > _num(d.best, 12)) d.best = w;
   if(win){ d.clears = _num(d.clears, 9999) + 1; const h = _num(diff, 2) + 1; if(h > _num(d.hd, 3)) d.hd = h; }
   p.shells = (p.shells || 0) + _num(shells, 60);
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
@@ -557,7 +557,7 @@ function renderHub(enter){
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
       ${card(0,'🗺️','전설의 보드 원정', p.qb ? `봉인 조각 ${_num(p.qb.ch, 11)}/11${p.qb.clears ? ` · 완주 ${p.qb.clears}` : ''}` : '강원 해안 11마을 이야기', p.qb && p.qb.ch != null ? '' : 'NEW', 'quest')}
-      ${card(0,'🛡️','해변 수호', p.df ? `최고 ${_num(p.df.best, 12)}/12 파도${_num(p.df.clears, 9999) ? ` · 수호 ${_num(p.df.clears, 9999)}` : ''}` : '바다 골칫거리를 막아요', p.df ? '' : 'NEW', 'defend')}
+      ${card(0,'🛡️','해변 수호', p.df ? `최고 ${_num(p.df.best, 15)}/15 라운드${_num(p.df.clears, 9999) ? ` · 수호 ${_num(p.df.clears, 9999)}` : ''}` : '바다 골칫거리를 막아요', p.df ? '' : 'NEW', 'defend')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}

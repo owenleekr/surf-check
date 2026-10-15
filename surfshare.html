@@ -344,14 +344,22 @@ body.game-on{ overflow:hidden }
 .game .game-box{ max-width:none; width:min(100%, calc((100dvh - 150px - env(safe-area-inset-bottom)) * var(--ar, .82) + 28px)); padding-left:6px; padding-right:6px }
 #game{ --ar:calc(180 / 220) } #quest{ --ar:1 }
 #quest .game-box{ width:min(100%, calc((100dvh - 270px - env(safe-area-inset-bottom)) + 28px)) }
-/* 해변 수호 (defend.js) — 캔버스 240×300, 아래 막대는 높이를 고정해 탭 위치가 흔들리지 않게 */
-#defend{ --ar:.8 } #defend .game-box{ width:min(100%, calc((100dvh - 250px - env(safe-area-inset-bottom)) * .8 + 28px)) }
+/* 해변 수호 (defend.js) — 캔버스 240×360 세로. 멈춤·배속은 오른쪽 위, 큰 파도는 오른쪽 아래(엄지 스틱과 반대편), 정비 상점은 화면 아래에 겹쳐 띄운다 */
+#defend{ --ar:.6667 } #defend .game-box{ width:min(100%, calc((100dvh - 78px - env(safe-area-inset-bottom)) * .6667 + 12px)) }
 #d-cv{ display:block; width:100%; height:auto; touch-action:none; -webkit-touch-callout:none }
-.d-bar{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:6px; min-height:64px }
-.d-b{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:64px; padding:4px 2px; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); cursor:pointer; line-height:1.2 } .d-b:disabled{ opacity:.45; cursor:default }
-.d-b i, .d-info i{ font-style:normal; font-size:20px; font-family:sans-serif } .d-b b{ font-size:12.5px } .d-b small{ font-size:10.5px; color:#5B6275; font-weight:700; word-break:keep-all; text-align:center }
-.d-info{ grid-column:span 2; display:flex; flex-direction:column; justify-content:center; padding:4px 8px; background:#E6FBEF; border:2px solid var(--ink); color:var(--ink) } .d-info b{ font-size:13px } .d-info small{ font-size:11px; color:#5B6275; font-weight:700 }
-.d-tip{ grid-column:1/-1; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px; color:#9FC4E4; font-size:12.5px; font-weight:700; word-break:keep-all }
+#defend .game-ov{ z-index:5 }
+.d-top{ position:absolute; top:6px; right:6px; z-index:2; display:flex; gap:6px }
+.d-top .btn{ min-width:44px; min-height:40px; padding:0 8px; font-size:15px; background:rgba(11,37,64,.78); color:#fff; border-color:#fff }
+.d-ult{ position:absolute; right:10px; bottom:26px; z-index:2; width:64px; height:64px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; font-family:inherit; color:#fff; background:radial-gradient(circle at 35% 30%, #7FD3FF, #1F6FB8); border:3px solid #fff; box-shadow:0 3px 0 rgba(11,37,64,.5); cursor:pointer }
+.d-ult b{ font-size:22px; line-height:1; font-family:sans-serif } .d-ult small{ font-size:10.5px; font-weight:800 } .d-ult:disabled{ filter:grayscale(.8); opacity:.55; cursor:default } .d-ult:not(:disabled):active{ transform:translateY(2px) }
+.d-bar{ position:absolute; left:6px; right:6px; bottom:6px; z-index:3; padding:8px; background:rgba(11,37,64,.93); border:2px solid #fff; color:#fff } .d-bar[hidden]{ display:none }
+.d-sh{ display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px } .d-sh b{ font-weight:800 }
+.d-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px }
+.d-card{ display:flex; flex-direction:column; align-items:center; gap:1px; min-height:112px; padding:6px 3px; font-family:inherit; color:var(--ink); background:#FFF8E6; border:2px solid var(--ink); cursor:pointer; line-height:1.25; text-align:center }
+.d-card i{ font-style:normal; font-size:22px; font-family:sans-serif } .d-card b{ font-size:12.5px; word-break:keep-all } .d-card small{ font-size:10.5px; color:#5B6275; font-weight:700; word-break:keep-all; flex:1 }
+.d-card em{ font-style:normal; font-size:10.5px; font-weight:800; color:#1F6FB8 } .d-card u{ text-decoration:none; font-size:12.5px; font-weight:800; margin-top:2px }
+.d-card:disabled{ opacity:.5; cursor:default } .d-card.on{ background:#E6FBEF; opacity:.8 }
+.d-row{ display:flex; gap:6px; margin-top:8px } .d-row .btn{ flex:1; min-height:42px }
 #q-cv{ display:block; width:100%; height:auto; image-rendering:pixelated }
 .q-ctl{ display:flex; gap:8px; margin-top:8px } .q-ctl .btn{ flex:1; min-height:42px }
 .q-log{ margin-top:8px; min-height:96px; padding:8px 10px; background:#0E2A4A; border:2px solid var(--ink); color:#EAF6FF; font-size:13px; font-weight:700; line-height:1.55 }
@@ -1406,11 +1414,12 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
   <div class="game-box">
     <div class="game-hd"><b>🛡️ 해변 수호</b><span class="game-sc" id="d-hud" style="font-size:14px"></span><button class="btn sm ghost" id="d-x" type="button" aria-label="해변 수호 닫기">✕</button></div>
     <div class="game-stage">
-      <canvas id="d-cv" width="480" height="600" aria-label="해변 수호 화면 — 빈 자리를 눌러 수호대를 놓아요"></canvas>
+      <canvas id="d-cv" width="480" height="720" aria-label="해변 수호 화면 — 눌러서 끌면 스틱으로 움직이고, 가까운 적을 자동으로 공격해요"></canvas>
+      <div class="d-top"><button class="btn sm" id="d-pause" type="button" aria-label="멈추기">⏸</button><button class="btn sm" id="d-speed" type="button" aria-label="배속 1배">×1</button></div>
+      <button class="d-ult" id="d-act" type="button" aria-label="큰 파도 — 한 판에 한 번, 화면의 적을 쓸어 내요"><b>🌊</b><small>큰 파도</small></button>
+      <div class="d-bar" id="d-bar" hidden aria-live="polite"></div>
       <div class="game-ov" id="d-ov"></div>
     </div>
-    <div class="d-bar" id="d-bar" aria-live="polite"></div>
-    <div class="q-ctl"><button class="btn sm ghost" id="d-pause" type="button">⏸ 멈춤</button><button class="btn sm ghost" id="d-speed" type="button">⏩ 1배</button><button class="btn sm" id="d-act" type="button" style="flex:1.6">🌊 큰 파도</button></div>
   </div>
 </div>
 
