@@ -55,6 +55,7 @@ window.__bootFail = (files) => {
 <script src="play.js"></script>
 <script src="surfride.js" defer></script>
 <script src="skate.js" defer></script>
+<script src="quest.js" defer></script>
 <script src="surfgame.js" defer></script>
 <script src="quiz.js" defer></script>
 <script src="foodtalk.js" defer></script>
@@ -323,7 +324,12 @@ body.game-on{ overflow:hidden }
 .game-box{ width:100%; max-width:440px; height:100%; max-height:100dvh; display:flex; flex-direction:column; justify-content:center; padding:10px 10px calc(10px + env(safe-area-inset-bottom)) }
 /* 게임 화면은 기기 높이에 맞춰 최대한 크게 — 가로·세로 비율(--ar)을 지키며 화면을 꽉 채운다(폰은 가로폭, 태블릿·PC 는 높이가 한계) */
 .game .game-box{ max-width:none; width:min(100%, calc((100dvh - 150px - env(safe-area-inset-bottom)) * var(--ar, .82) + 28px)); padding-left:6px; padding-right:6px }
-#game{ --ar:calc(180 / 220) } #surf{ --ar:1 } #skate{ --ar:calc(180 / 240) }
+#game{ --ar:calc(180 / 220) } #quest{ --ar:1 }
+#quest .game-box{ width:min(100%, calc((100dvh - 270px - env(safe-area-inset-bottom)) + 28px)) }
+#q-cv{ display:block; width:100%; height:auto; image-rendering:pixelated }
+.q-ctl{ display:flex; gap:8px; margin-top:8px } .q-ctl .btn{ flex:1; min-height:42px }
+.q-log{ margin-top:8px; min-height:96px; padding:8px 10px; background:#0E2A4A; border:3px solid var(--ink); color:#EAF6FF; font-size:13px; font-weight:700; line-height:1.55 }
+.q-pick{ display:flex; flex-direction:column; gap:6px; margin-top:8px } .q-b{ display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:8px; align-items:center; padding:8px 10px; text-align:left; font-family:inherit; color:var(--ink); background:#fff; border:3px solid var(--ink); cursor:pointer } .q-b i{ grid-row:1/3; font-style:normal; font-size:24px; font-family:sans-serif } .q-b b{ font-size:14px } .q-b small{ font-size:12px; color:#5B6275; font-weight:700 } #surf{ --ar:1 } #skate{ --ar:calc(180 / 240) }
 #surf .game-box{ width:min(100%, calc((100dvh - 210px - env(safe-area-inset-bottom)) * var(--ar) + 28px)) }
 .game-hd{ display:flex; align-items:center; gap:10px; color:#fff; padding:4px 2px 10px; font-size:15px }
 .game-hd > b{ flex:1; font-family:"Galmuri11",sans-serif }
@@ -1125,6 +1131,19 @@ body.onb-on .wrap{ padding-bottom:230px }
   <button type="button" id="t-town" hidden aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
 </nav>
 <button type="button" class="mailfab" id="mail" aria-label="쪽지">✉️<span class="dot" id="mail-dot" hidden>0</span></button>
+<!-- 전설의 보드 원정 (quest.js) -->
+<div class="game" id="quest" hidden role="dialog" aria-modal="true" aria-label="전설의 보드 원정">
+  <div class="game-box">
+    <div class="game-hd"><b>🗺️ 전설의 보드 원정</b><span class="game-sc" id="q-hp" style="font-size:14px"></span><button class="btn sm ghost" id="q-x" type="button" aria-label="원정 닫기">✕</button></div>
+    <div class="game-stage">
+      <canvas id="q-cv" width="240" height="240" aria-label="원정 화면 — 서퍼가 알아서 싸워요"></canvas>
+      <div class="game-ov" id="q-ov"></div>
+    </div>
+    <div class="q-ctl"><button class="btn sm ghost" id="q-speed" type="button">⏩ 1배</button><button class="btn sm ghost" id="q-auto" type="button" aria-pressed="true">🤖 자동 고르기 켜짐</button></div>
+    <div class="q-log" id="q-log" aria-live="polite"></div>
+  </div>
+</div>
+
 <!-- 서프스케이트 훈련 (skate.js) -->
 <div class="game" id="skate" hidden role="dialog" aria-modal="true" aria-label="서프스케이트 훈련">
   <div class="game-box">
@@ -1495,7 +1514,7 @@ function renderBuilder(){
   const opt = (label, key, items, render) => `<div style="margin-top:10px"><div class="note" style="margin:0 0 4px">${label}</div>
     <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>{ const lk = typeof lockOf === 'function' ? lockOf(key, v) : null;
       const sp = typeof shopOf === 'function' ? shopOf(key, v) : null;
-      return lk != null ? `<button type="button" class="perk lock" data-lock="${lk}" aria-label="${t} (Lv.${lk+1}에서 열려요)">🔒 ${t}</button>`
+      return lk != null ? `<button type="button" class="perk lock" data-lock="${lk}" aria-label="${t} (${lk === 98 ? '원정 보상' : `Lv.${lk+1}에서 열려요`})">🔒 ${t}</button>`
         : sp ? `<button type="button" class="perk lock shop" data-shop="${key}:${v}" aria-label="${t} — 조개 ${priceOf(sp)}개로 사기">🐚 ${priceOf(sp)} · ${t}</button>`
         : `<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}">${render?render(v,t):t}</button>`; }).join('')}</div></div>`;
   const keys = o => Object.keys(o);
@@ -1528,7 +1547,7 @@ function renderBuilder(){
     if(shellBal() < priceOf(it)) return toast(`🐚 조개가 모자라요 — ${priceOf(it)}개 필요 (보유 ${shellBal()}). 게임에서 모아요!`);
     if(!confirm(`🐚 ${priceOf(it)}개로 ${it.n}을(를) 살까요?\n(보유 ${shellBal()}개)`)) return;
     if(playBuy(key, v)){ ME.profile[key] = v; renderBuilder(); saveProfile(); } });
-  $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(`🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
+  $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(+b.dataset.lock === 98 ? '🔒 전설의 보드 원정에서 독도까지 가면 열려요' : `🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
   /* 랜덤이 잠긴 걸 뽑으면 레벨 보상이 의미가 없다 */
   $('bld-rand').onclick = ()=>{ const pick = (o, key) => { const ks = Object.keys(o).filter(k=>key == null || (lockOf(key, k) == null && !(typeof shopOf === 'function' && shopOf(key, k)))); return ks[Math.floor(Math.random()*ks.length)]; };
     Object.assign(ME.profile, { hair:pick(HAIR), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
@@ -3063,7 +3082,7 @@ function homeGames(){
   el.innerHTML = `<div class="hsec">🎮 오늘 한 판 <small>게임·훈련으로 XP</small></div>
     <button type="button" class="hg hg-main" data-hg="game"><span class="hg-ic">🏄</span><span class="hg-mm"><b>파도 점프</b><small>${dsc != null ? `📅 오늘의 챌린지 ${dsc}점 · 다시 도전!` : '📅 오늘의 챌린지 — 모두 같은 코스'}</small><small>쉬움 최고 ${p.best || 0} · 어려움 ${p.hbest || 0}</small></span><span class="hg-go">▶</span></button>
     <div class="hgrid two">
-    ${g('quest', '🗺️', '전설의 보드 원정', '자동 모험 · 곧 열려요')}
+    ${g('quest', '🗺️', '전설의 보드 원정', p.qb?.best != null ? `최고 ${p.qb.best + 1}/10${p.qb.legend ? ' · 🏄' : ''}` : '자동 모험 · 독도까지')}
     ${g('skate', '🛹', '서프스케이트', skDays ? `${skDays}일 탐` : '땅에서 펌핑')}</div>`;
   el.querySelectorAll('[data-hg]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hg; (k === 'surf' ? window.surfOpen : k === 'skate' ? window.skateOpen : k === 'quest' ? (window.questOpen || (()=>toast('🗺️ 전설의 보드 원정 — 곧 열려요!'))) : window.gameOpen)?.(); });
 }

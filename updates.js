@@ -5,6 +5,9 @@
 (function(){
 const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide';
 const UPDATES = [
+  { id:'u1015e', date:'10.15', t:'🗺️ 새 게임 — 전설의 보드 원정', items:[
+      ['🗺️', '낙산 → 주문진 → 경포 → 정동진 → 묵호항 → 울릉도 → 독도, 서퍼가 알아서 싸우는 자동 모험', 'quest'],
+      ['🐬', '해파리·상어·성난 파도·대왕문어를 막고, 돌고래·바다거북·물개·고래가 도와줘요 — 완주하면 보드 색 「전설」', 'quest'] ] },
   { id:'u1015d', date:'10.15', t:'🚌 서울경부 · 인천 버스도', items:[
       ['🚌', '양양↔서울경부 · 양양↔인천 고속버스 남은 좌석 추가(동서울은 시외버스)', 'bus'],
       ['🏷️', '우등 · 프리미엄 · 심야우등 · 일반 등급 표시 · 노선별 예매 사이트 바로 가기', 'bus'] ] },
@@ -50,6 +53,7 @@ function go(k){
   if(k === 'surf') window.surfOpen?.(); else if(k === 'skate') window.skateOpen?.(); else if(k === 'game') window.gameOpen?.();
   else if(k === 'shop') window.shopOpen?.(); else if(k === 'food' || k === 'spot') window.foodOpen?.(k);
   else if(k === 'bus') window.busOpen?.();
+  else if(k === 'quest') window.questOpen?.();
   else if(k === 'guide') window.open('/guide', '_blank', 'noopener');
   else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $u('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
 }

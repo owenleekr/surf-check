@@ -34,6 +34,7 @@ BOARDC.sunset = '#FF7A59'; BOARDC_KO.sunset = '노을';
 BOARDC.violet = '#8E5BFF'; BOARDC_KO.violet = '바이올렛';
 BOARDC.gold = '#E8B923'; BOARDC_KO.gold = '골드';
 BOARDC.neon = '#3DFFE0'; BOARDC_KO.neon = '네온';
+BOARDC.legend = '#F4C430'; BOARDC_KO.legend = '전설';                 // 전설의 보드 원정을 깨면 열린다
 /* ── 조개 상점 전용 옷·모자·보드 무늬 ── sprite.js(라인업 앱과 공유)는 건드리지 않고 여기서 목록에 얹는다.
    상의는 가슴(x9~14, 위 4줄)만 무늬를 바꿔 끼운다 — 실루엣은 래시가드 그대로라 어떤 머리·모자와도 맞는다. */
 const _chest = pat => WEAR.rash.rows.map((r,i)=> i < 4 && pat[i] ? r.slice(0, 9) + pat[i] + r.slice(15) : r);
@@ -142,7 +143,8 @@ window.shopOpen = shopOpen;
 
 const myLv = () => lvOf(playXp(ME?.profile?.play || { base:0, bonus:0 }));
 /* 잠겨 있으면 필요한 레벨(0부터)을, 열려 있으면 null */
-const lockOf = (key, v) => { const u = UNLOCKS.find(x=>x.key === key && x.v === v); return u && myLv() < u.lv ? u.lv : null; };
+const lockOf = (key, v) => { if(key === 'boardc' && v === 'legend') return ME?.profile?.play?.qb?.legend ? null : 98;     // 98 = 원정 보상
+  const u = UNLOCKS.find(x=>x.key === key && x.v === v); return u && myLv() < u.lv ? u.lv : null; };
 
 /* 조건은 stats(s)와 저장값(p)만 본다. xp 는 받는 순간 한 번만 더해진다. */
 const BADGES = [
@@ -250,6 +252,7 @@ function playMerge(remote){
   Object.keys(remote.gn||{}).forEach(d=>{ if((remote.gn[d]||0) > (p.gn[d]||0)){ p.gn[d] = remote.gn[d]; ch = true; } });
   Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
   if(remote.dbest && remote.dbest.day && (!p.dbest || remote.dbest.day > p.dbest.day || (remote.dbest.day === p.dbest.day && remote.dbest.score > p.dbest.score))){ p.dbest = remote.dbest; ch = true; }
+  if(remote.qb && typeof remote.qb === 'object'){ const q = (p.qb ||= { best:-1, clears:0 }); if((remote.qb.best ?? -1) > (q.best ?? -1)){ q.best = remote.qb.best; ch = true; } if((remote.qb.clears || 0) > (q.clears || 0)){ q.clears = remote.qb.clears; ch = true; } if(remote.qb.legend && !q.legend){ q.legend = 1; ch = true; } }
   if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
     Object.keys(remote.sk.best || {}).forEach(k=>{ if((remote.sk.best[k] || 0) > (sk.best[k] || 0)){ sk.best[k] = remote.sk.best[k]; ch = true; } });
     Object.keys(remote.sk.real || {}).forEach(d=>{ if(!sk.real[d]){ sk.real[d] = 1; ch = true; } });
@@ -366,6 +369,19 @@ function playSkateReal(){
   sk.real[day] = 1; p.bonus += 5;
   const keys = Object.keys(sk.real).sort(); if(keys.length > 60) delete sk.real[keys[0]];               // 프로필이 끝없이 커지지 않게
   playTick(); playPush(); return true;
+}
+
+/* 전설의 보드 원정 — 가장 멀리 간 장소(best, 0부터)·완주 횟수·전설의 보드. 조개는 지갑에, XP 는 하루 상한 공유 */
+function playQuestDone(stage, win, shells){
+  if(!ME.profile.play){ playReady.force = true; playTick(); }
+  const p = playP(), day = today(), q = (p.qb ||= { best:-1, clears:0 });
+  const st = _num(stage, 20); if(st > (q.best ?? -1)) q.best = st;
+  if(win){ q.clears = (q.clears || 0) + 1; if(!q.legend){ q.legend = 1; _popQ.push({ ic:'🏄', t:'전설의 보드를 찾았어요!', d:'캐릭터 꾸미기 → 보드 색 「전설」이 열렸어요', up:true }); } }
+  p.shells = (p.shells || 0) + _num(shells, 300);
+  if(p.gday !== day){ p.gday = day; p.gxp = 0; }
+  const gain = Math.max(0, Math.min(st + (win ? 5 : 0), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
+  playTick(); playPush();
+  return { best:q.best, gain };
 }
 
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
@@ -488,6 +504,7 @@ function renderHub(enter){
     <div class="pt" style="margin-top:18px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
+      ${card(0,'🗺️','전설의 보드 원정', p.qb?.best != null ? `최고 ${p.qb.best + 1}/10 · 완주 ${p.qb.clears || 0}` : '자동 모험 · 독도까지', p.qb ? '' : 'NEW', 'quest')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
@@ -524,7 +541,7 @@ function renderHub(enter){
       try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });
   root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
   root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
-    if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'skate') skateOpen(); else if(k === 'quiz') quizOpen();
+    if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'skate') skateOpen(); else if(k === 'quest') questOpen(); else if(k === 'quiz') quizOpen();
     else if(k === 'fort'){ if(!fortOpen) playFortune(); _hubFort = !_hubFort || !fortOpen ? true : false; renderHub(); setTimeout(()=>root.querySelector('.fort')?.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');

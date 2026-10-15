@@ -29,6 +29,7 @@ function list(){
   return [
     { id:'drill', ok:!drillDone && h >= 6, ic:'🏄', t:'오늘 테이크오프 연습했어요?', d:'땅에서 10번 — 하고 나서 체크하면 연속일수가 쌓여요', btn:'체크하러 가기', go:scrollTo('drill') },
     { id:'daily', ok:!(p.dbest && p.dbest.day === d), ic:'📅', t:'오늘의 챌린지 아직이에요', d:'파도 점프 — 모두 같은 코스, 오늘 순위에 이름 올리기', btn:'도전', go:()=>window.gameOpen?.() },
+    { id:'quest', ok:!(ME.profile?.play?.qb) && !used('quest'), ic:'🗺️', t:'전설의 보드 원정 떠나 볼까요?', d:'낙산에서 독도까지 — 서퍼가 알아서 싸우는 자동 모험', btn:'출발', go:()=>{ markUsed('quest'); window.questOpen?.(); } },
     { id:'skate', ok:!(p.sk?.n > 0) && !used('skate'), ic:'🛹', t:'서프스케이트 훈련 3분', d:'펌핑 리듬을 익히면 바다에서 속도가 붙어요', btn:'해 보기', go:()=>window.skateOpen?.() },
     { id:'food', ok:!used('tab:food'), ic:'🍜', t:'양서학 찐맛집 봤어요?', d:'서퍼들이 가 본 곳 · 👍 추천 · 💬 댓글', btn:'보기', go:()=>window.foodOpen?.('food') },
     { id:'spot', ok:!used('spot'), ic:'🏄', t:'서핑 스팟 리스트', d:'고성·속초·양양 포인트 · 📹 캠 바로 보기', btn:'보기', go:()=>window.foodOpen?.('spot') },
