@@ -290,7 +290,7 @@ function playMerge(remote){
   Object.keys(remote.gn||{}).forEach(d=>{ if((remote.gn[d]||0) > (p.gn[d]||0)){ p.gn[d] = remote.gn[d]; ch = true; } });
   Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
   if(remote.dbest && remote.dbest.day && (!p.dbest || remote.dbest.day > p.dbest.day || (remote.dbest.day === p.dbest.day && remote.dbest.score > p.dbest.score))){ p.dbest = remote.dbest; ch = true; }
-  if(remote.qb && typeof remote.qb === 'object'){ const q = (p.qb ||= { best:-1, clears:0 }); if((remote.qb.best ?? -1) > (q.best ?? -1)){ q.best = remote.qb.best; ch = true; } if((remote.qb.clears || 0) > (q.clears || 0)){ q.clears = remote.qb.clears; ch = true; } if(remote.qb.legend && !q.legend){ q.legend = 1; ch = true; } }
+  if(remote.qb && typeof remote.qb === 'object'){ const q = (p.qb ||= { best:-1, clears:0 }); if((remote.qb.best ?? -1) > (q.best ?? -1)){ q.best = remote.qb.best; ch = true; } if((remote.qb.clears || 0) > (q.clears || 0)){ q.clears = remote.qb.clears; ch = true; } if(remote.qb.legend && !q.legend){ q.legend = 1; ch = true; } const rc = _num(remote.qb.ch, 11); if(rc > _num(q.ch, 11)){ q.ch = rc; ch = true; } }
   if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
     Object.keys(remote.sk.best || {}).forEach(k=>{ if((remote.sk.best[k] || 0) > (sk.best[k] || 0)){ sk.best[k] = remote.sk.best[k]; ch = true; } });
     Object.keys(remote.sk.real || {}).forEach(d=>{ if(!sk.real[d]){ sk.real[d] = 1; ch = true; } });
@@ -409,11 +409,13 @@ function playSkateReal(){
   playTick(); playPush(); return true;
 }
 
-/* 전설의 보드 원정 — 가장 멀리 간 장소(best, 0부터)·완주 횟수·전설의 보드. 조개는 지갑에, XP 는 하루 상한 공유 */
-function playQuestDone(stage, win, shells){
+/* 전설의 보드 원정 — 가장 멀리 간 장(best, 0부터)·모은 봉인 조각(ch, 깬 장 수)·완주 횟수·전설의 보드.
+   cleared 는 그 장을 깼는지 — 조각은 순서대로만 늘어난다(앞 장을 건너뛰고 뒷장 조각이 생기지 않게). 조개는 지갑에, XP 는 하루 상한 공유 */
+function playQuestDone(stage, win, shells, cleared){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today(), q = (p.qb ||= { best:-1, clears:0 });
   const st = _num(stage, 20); if(st > (q.best ?? -1)) q.best = st;
+  if(cleared && st === _num(q.ch, 11)) q.ch = Math.min(11, st + 1);
   if(win){ q.clears = (q.clears || 0) + 1; if(!q.legend){ q.legend = 1; _popQ.push({ ic:'🏄', t:'전설의 보드를 찾았어요!', d:'캐릭터 꾸미기 → 보드 색 「전설」이 열렸어요', up:true }); } }
   p.shells = (p.shells || 0) + _num(shells, 300);
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
@@ -540,7 +542,7 @@ function renderHub(enter){
     <div class="pt" style="margin-top:16px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
-      ${card(0,'🗺️','전설의 보드 원정', p.qb?.best != null ? `최고 ${p.qb.best + 1}/10 · 완주 ${p.qb.clears || 0}` : '자동 모험 · 독도까지', p.qb ? '' : 'NEW', 'quest')}
+      ${card(0,'🗺️','전설의 보드 원정', p.qb ? `봉인 조각 ${_num(p.qb.ch, 11)}/11${p.qb.clears ? ` · 완주 ${p.qb.clears}` : ''}` : '강원 해안 11마을 이야기', p.qb && p.qb.ch != null ? '' : 'NEW', 'quest')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}

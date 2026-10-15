@@ -966,6 +966,41 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .upd-bar{ position:fixed; left:50%; top:calc(10px + env(safe-area-inset-top)); transform:translateX(-50%); z-index:2200; padding:9px 16px; font-family:inherit; font-size:14px; font-weight:700; color:#fff; background:var(--sea); border:0; border-radius:999px; box-shadow:0 6px 18px rgba(18,36,95,.3); cursor:pointer; white-space:nowrap } .upd-bar b{ color:var(--sun) }
 .err-bar{ background:#C2303A }
 .sl-date{ width:100%; margin-top:6px }
+/* 전설의 보드 원정 — 지도·대화·장 제목 (quest.js). 덮개 하나를 모드(qv-*)만 바꿔 쓴다 */
+#q-ov.qv-map{ display:block; padding:0; background:#FFF7E3 }
+.qm{ position:relative; min-height:100%; padding:10px 30px 0 10px; color:var(--ink) }
+.qm::after{ content:''; position:absolute; top:0; right:0; bottom:0; width:20px; background:repeating-linear-gradient(180deg,#2E7FC0 0 9px,#5AA6DE 9px 11px) }   /* 동쪽 바다 — 지도는 북(위)→남(아래) */
+.qm-hd{ display:flex; justify-content:space-between; align-items:center; gap:8px; font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:800 }
+.qm-bar{ height:10px; margin:6px 0; background:#fff; border:2px solid var(--ink); border-radius:6px; overflow:hidden } .qm-bar i{ display:block; height:100%; background:#F4C430 }
+.qm-tip{ margin:0 0 8px; font-size:12.5px; font-weight:700; line-height:1.5; color:#5B6275; word-break:keep-all } .qm-tip b{ color:var(--ink) }
+.qm-ls{ position:relative; list-style:none; margin:0; padding:0 }
+.qm-ls::before{ content:''; position:absolute; left:17px; top:18px; bottom:18px; border-left:3px dashed #C9A86A }   /* 해안길 */
+.qm-n{ position:relative; display:flex; align-items:center; gap:8px; width:100%; min-height:46px; margin:0 0 2px; padding:4px 4px 4px 2px; font-family:inherit; color:inherit; text-align:left; background:none; border:2px solid transparent; border-radius:10px; cursor:pointer }
+.qm-n.sel{ background:#fff; border-color:var(--ink) } .qm-n:disabled{ cursor:default; opacity:.5 }
+.qm-d{ flex:none; display:grid; place-items:center; width:32px; height:32px; font-size:13px; font-weight:800; background:#fff; border:2px solid var(--ink); border-radius:50%; z-index:1 }
+.qm-n.done .qm-d{ background:#BBF7D0 } .qm-n.now .qm-d{ background:#F4C430; box-shadow:0 0 0 4px rgba(244,196,48,.35) } .qm-n:disabled .qm-d{ background:#E5E7EB }
+.qm-t{ flex:1; min-width:0 } .qm-t b{ display:block; font-size:14px } .qm-t small{ display:block; font-size:11.5px; font-weight:700; color:#5B6275; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.qm-me{ flex:none; width:36px; height:36px; margin:-6px 0; font-size:24px; animation:qbob 1.6s ease-in-out infinite }
+.qm-ft{ position:sticky; bottom:0; margin:0 -30px 0 -10px; padding:8px 30px 10px 10px; background:linear-gradient(rgba(255,247,227,0),#FFF7E3 30%) } .qm-ft .btn{ width:100%; min-height:50px; font-size:15px }
+#q-ov.qv-title{ align-items:center; background:radial-gradient(circle at 50% 40%,rgba(14,42,74,.72),rgba(5,12,28,.94)); cursor:pointer }
+.qtt{ margin:auto; padding:10px; text-align:center; color:#fff; animation:qfade .7s ease-out both; word-break:keep-all }
+.qtt small{ display:block; font-size:12px; font-weight:800; letter-spacing:.3em; color:#FFE27A }
+.qtt b{ display:block; margin:8px 0 6px; font-family:"Galmuri11",sans-serif; font-size:24px }
+.qtt span{ display:block; font-size:15px; font-weight:800 } .qtt p{ margin:8px 0 0; font-size:12.5px; font-weight:700; color:#BFD7EE }
+#q-ov.qv-talk{ align-items:flex-end; padding:8px; background:linear-gradient(rgba(11,37,64,0) 40%,rgba(11,37,64,.35)) }
+.qt{ position:relative; display:flex; align-items:flex-start; gap:8px; width:100%; padding:8px 8px 14px; background:#FFFDF6; border:2px solid var(--ink); border-radius:10px; box-shadow:0 3px 0 var(--ink); cursor:pointer }
+.qt:focus{ outline:none } .qt:focus-visible{ outline:3px solid #F4C430; outline-offset:2px }   /* 대사 상자는 열릴 때 초점을 받는다 — 터치에선 테두리를 띄우지 않는다 */
+.qt.nar{ background:rgba(14,42,74,.94); color:#EAF6FF; border-color:#9EC5E8 } .qt.nar .qt-x{ color:#EAF6FF; font-style:italic }
+.qt-pt{ flex:none; display:grid; place-items:center; width:54px; height:54px; overflow:hidden; font-size:32px; background:#CFE9F7; border:2px solid var(--ink); border-radius:8px } .qt-pt img{ width:100%; height:100%; object-fit:contain }
+.qt-bd{ flex:1; min-width:0 } .qt-n{ display:inline-block; padding:1px 8px; font-size:12px; font-weight:800; color:#fff; background:var(--ink); border-radius:6px }
+.qt-x{ margin:4px 0 0; min-height:4.5em; font-size:14px; font-weight:700; line-height:1.5; color:var(--ink); word-break:keep-all }
+.qt-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+.qt-nx{ position:absolute; right:10px; bottom:3px; font-size:11px; font-style:normal; animation:qblink 1s steps(2) infinite }
+.qt-sk{ position:absolute; top:8px; right:8px; background:rgba(255,255,255,.85) }
+.qpc{ font-size:44px; line-height:1.1; animation:qpop .5s ease-out both } .q-leg{ display:block; width:96px; height:96px; margin:0 auto 4px; animation:qpop .6s ease-out both }
+.q-gift{ display:flex; align-items:center; gap:8px; margin:0 0 8px; padding:8px 10px; text-align:left; background:#FFF3C4; border:2px solid var(--ink); border-radius:10px } .q-gift i{ font-size:26px; font-style:normal } .q-gift b{ display:block; font-size:13.5px } .q-gift small{ display:block; font-size:12px; font-weight:700; color:#5B6275 }
+@keyframes qfade{ from{ opacity:0; transform:translateY(8px) } } @keyframes qblink{ 50%{ opacity:0 } } @keyframes qbob{ 50%{ transform:translateY(-3px) } } @keyframes qpop{ from{ transform:scale(.4); opacity:0 } }
+@media (prefers-reduced-motion:reduce){ .qtt,.qt-nx,.qm-me,.qpc,.q-leg{ animation:none } }
 </style>
 </head>
 <body>
