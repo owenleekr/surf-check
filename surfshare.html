@@ -472,6 +472,16 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .gd-tip{ margin-top:10px; padding:10px 12px; background:#E6FBEF; border:3px solid var(--ink); font-size:13.5px; line-height:1.65; word-break:keep-all } .gd-tip ul{ margin:4px 0 0; padding-left:18px } .gd-tip li{ margin-bottom:5px }
 #pane-ride[data-view="bus"] > :not(#ride-seg):not(#bus-view){ display:none }
 #pane-ride:not([data-view="bus"]) #bus-view{ display:none }
+.bs-dir{ margin:12px 0 0 } .bs-days{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; margin-top:8px }
+.bs-days button{ display:flex; flex-direction:column; align-items:center; padding:5px 0; min-height:48px; font-family:inherit; background:#fff; border:3px solid var(--ink); cursor:pointer } .bs-days small{ font-size:11px; font-weight:800; color:#5B6275 } .bs-days b{ font-family:"Galmuri11",sans-serif; font-size:16px }
+.bs-days button[aria-pressed="true"]{ background:var(--ink); color:#fff } .bs-days button[aria-pressed="true"] small{ color:#CFE6FF }
+.bs-watching{ margin-top:10px; padding:8px 10px; background:#FFF3C4; border:3px solid var(--ink); font-size:13px; font-weight:800; display:flex; flex-wrap:wrap; align-items:center; gap:6px }
+.bs-list{ margin-top:10px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
+.bs-row{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:2px dashed rgba(27,27,47,.15) } .bs-row:last-child{ border-bottom:0 } .bs-row.sold{ background:#FFF0F0 }
+.bs-t{ font-family:"Galmuri11",sans-serif; font-size:18px; font-weight:800; min-width:54px } .bs-m{ flex:1; min-width:0; display:flex; flex-direction:column } .bs-m b{ font-size:14px } .bs-m small{ font-size:12px; color:#5B6275; font-weight:700 }
+.bs-tag{ flex:0 0 auto; min-width:54px; text-align:center; font-weight:800; font-size:14px; padding:4px 6px; border:2px solid var(--ink) } .bs-tag small{ font-size:10.5px; opacity:.75 }
+.bs-tag.green{ background:var(--mint) } .bs-tag.orange{ background:#FFC266 } .bs-tag.red{ background:var(--coral); color:#fff } .bs-tag.gray{ background:#E3E6EE; color:#5B6275 }
+.bs-bell{ flex:0 0 40px; height:40px; font-size:18px; font-family:sans-serif; background:#fff; border:3px solid var(--ink); cursor:pointer } .bs-bell.on{ background:var(--sun) } .bs-bell-sp{ flex:0 0 40px }
 .bus-hd{ padding:12px 14px; background:#FFF9E6; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); display:flex; flex-direction:column; gap:6px; align-items:flex-start }
 .bus-hd b{ font-family:"Galmuri11",sans-serif; font-size:15px } .bus-hd small{ font-size:12.5px; line-height:1.6; color:#5B6275; font-weight:700 }
 .bus-watch{ margin-top:12px; padding:12px 14px; background:#E6FBEF; border:4px solid var(--ink); display:flex; flex-direction:column; gap:8px }
@@ -923,7 +933,7 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 차량 -->
     <div id="pane-ride" data-view="car">
-      <div class="seg" id="ride-seg" role="group" aria-label="카풀과 버스"><button type="button" data-view="car" aria-pressed="true">🚗 카풀</button><button type="button" data-view="bus" aria-pressed="false">🚌 버스 자리 <em id="bus-new" hidden></em></button></div>
+      <div class="seg" id="ride-seg" role="group" aria-label="카풀과 버스"><button type="button" data-view="car" aria-pressed="true">🚗 카풀</button><button type="button" data-view="bus" aria-pressed="false">🚌 버스 빈자리</button></div>
       <div id="bus-view"></div>
       <details class="px sand fold"><summary>🚗 차량 쉐어 올리기</summary>
         <div class="grid2" style="margin-top:8px">

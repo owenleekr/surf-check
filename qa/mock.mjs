@@ -13,6 +13,7 @@ export async function open(data, me, opts={}){
   await p.setViewport({width:opts.width||390,height:opts.height||844,deviceScaleFactor:2,isMobile:true,hasTouch:true});
   await p.setRequestInterception(true);
   p.on('request', r=>{ const u=r.url(), m=r.method(), J=(st,o)=>r.respond({status:st,headers:CORS,contentType:'application/json',body:JSON.stringify(o)});
+    if(u.includes('/api/bus-seats')) return data.__bus ? J(200, typeof data.__bus === 'function' ? data.__bus(u) : data.__bus) : J(502, { error:'upstream' });
     if(u.includes('/api/naver-list?resolve=')) return J(200, data.__resolve || { pid:null });
     if(u.includes('/api/naver-list')) return data.__naver ? J(200,data.__naver) : J(502,{error:'naver'});
     if(m==='OPTIONS' && u.includes('supabase')) return r.respond({status:204,headers:CORS,body:''});

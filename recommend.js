@@ -38,6 +38,7 @@ function list(){
     { id:'quiz', ok:!p.vis?.[d]?.quiz, ic:'🧠', t:'코치님 퀴즈 한 판', d:'누가 한 말일까요? · 맞히면 XP', btn:'풀기', go:()=>window.quizOpen?.() },
     { id:'dress', ok:!ME.profile?.dressed, ic:'🙂', t:'내 캐릭터 꾸미기', d:'머리·표정·옷·보드 — 마을에서 이 모습으로 보여요', btn:'꾸미기', go:scrollTo('bld-fold') },
     { id:'shop', ok:bal >= 20 && !Object.keys(p.own || {}).length, ic:'🛍️', t:`조개 ${bal}개 — 옷 사러 가요`, d:'알로하 셔츠·밀짚모자·보드 무늬 · 입어 보고 사요', btn:'상점', go:()=>window.shopOpen?.() },
+    { id:'bus', ok:!used('bus'), ic:'🚌', t:'서울 가는 버스, 몇 석 남았나', d:'양양↔동서울 시외버스 남은 좌석 · 매진 차는 자리 나면 알림', btn:'보기', go:()=>{ markUsed('bus'); window.busOpen?.(); } },
     { id:'town', ok:!used('tab:town'), ic:'🏘', t:'마을에 한마디 남겨요', d:'친 말이 내 캐릭터 머리 위 말풍선으로 떠요', btn:'마을로', go:()=>setTab('town') },
     { id:'bolt', ok:!used('tab:bolt'), ic:'⚡', t:'서핑번개 — 같이 들어갈 사람', d:'시간과 바다만 정해서 올리면 돼요', btn:'보기', go:()=>setTab('bolt') },
     { id:'cam', ok:!p.vis?.[d]?.cam && h >= 5 && h < 13, ic:'📹', t:'지금 파도 캠으로 볼까요?', d:'나가기 전에 해변을 눈으로 확인', btn:'캠 보기', go:()=>setTab('cam') },

@@ -1,91 +1,117 @@
-/* ── 🚌 버스 자리 제보 ───────────────────────────────────────────────
-   양양↔동서울 시외버스 빈자리는 예매 사이트(버스타고·티머니)만 알고, 두 사이트 모두 robots.txt 로 자동 조회를 막아 둔다.
-   그래서 서버가 대신 긁어오지 않는다 — 자리가 난 걸 *본 사람이 올리고*, 찾는 사람에게 앱이 알려 준다.
-   새 서버 설정 없이 rides 표를 쓴다(dir 'bus_out'=양양→서울, 'bus_in'=서울→양양). pullRides 가 카풀과 갈라 준다. */
+/* ── 🚌 양양 ↔ 동서울 시외버스 남은 좌석 ──────────────────────────────────
+   서버(/api/bus-seats)가 티머니 배차 조회를 대신 읽어 '몇 석 남았나'를 보여준다(2분 엣지 캐시). 예매는 공식 사이트에서.
+   🔔 매진·몇 석 안 남은 차에 '자리 나면 알려줘'를 걸면, 앱이 열려 있는 동안 3분마다 다시 보고 자리가 나면
+   알림(진동 + 화면 알림 + 허락했다면 휴대폰 알림)을 준다. 앱을 닫으면 멈춘다 — 닫혀 있을 때 푸시는 아직 없다.
+   (예전 '자리 제보' 게시판은 쓰는 사람이 없어 없앴다.) */
 (function(){
 const $b = id => document.getElementById(id);
-const WK = 'lineup.share.busw', SK = 'lineup.share.busseen';
-const NAMES = { bus_out:['양양','동서울'], bus_in:['동서울','양양'] };
-const BOOK = [['🚌 버스타고(전국 시외버스 예매) ↗','https://www.bustago.or.kr/'], ['티머니 시외버스 예매 ↗','https://txbus.t-money.co.kr/']];
-let view = 'car', open = false;
-const read = k => { try{ return JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){ return null; } };
+const WK = 'lineup.share.buswatch', PK = 'lineup.share.buspref';
+const BOOK = 'https://txbus.t-money.co.kr/main.do';
+const read = (k, d) => { try{ return JSON.parse(localStorage.getItem(k) || 'null') || d; }catch(e){ return d; } };
 const write = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
-const when = r => new Date(`${r.date}T${r.depart_at || '23:59'}:00`).getTime();
-const alive = r => when(r) > Date.now();                                   // 이미 떠난 버스의 제보는 의미가 없다
-const dlabel = r => `${typeof dShort === 'function' ? dShort(r.date) : r.date} ${typeof hLabel === 'function' ? hLabel(r.depart_at) : r.depart_at}`;
-const list = () => (state.bus || []).filter(alive).sort((a,b)=>when(a) - when(b));
+const ymd = off => { const d = new Date(Date.now() + off * 864e5); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const DOW = ['일','월','화','수','목','금','토'];
+let view = 'car', pref = read(PK, { dir:'out', day:0 }), cache = {}, loading = false, err = '', poll = 0;
+const key = (dir, date) => `${dir}|${date}`;
+const watches = () => read(WK, []).filter(w=>w.date >= ymd(0));                       // 지난 날짜는 버린다
+const isWatched = (dir, date, t) => watches().some(w=>w.dir === dir && w.date === date && w.t === t);
+const say = m => { if(typeof toast === 'function') toast(m); };
+
+async function fetchDay(dir, date, force){
+  const k = key(dir, date), c = cache[k];
+  if(!force && c && Date.now() - c.at < 110e3) return c.data;
+  const r = await fetch(`/api/bus-seats?dir=${dir}&date=${date.replace(/-/g, '')}`);
+  if(!r.ok) throw new Error(r.status === 503 ? 'blocked' : 'upstream');
+  const j = await r.json(); cache[k] = { at:Date.now(), data:j }; return j;
+}
 
 function setView(v){
   view = v; const pane = $b('pane-ride'); pane.dataset.view = v;
   $b('ride-seg')?.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.view === v)));
-  if(v === 'bus'){ render(); const s = new Set((state.bus || []).map(r=>r.id)); write(SK, [...s]); const d = $b('bus-new'); if(d) d.hidden = true; }
+  if(v === 'bus') load(false);
 }
 
+async function load(force){
+  const date = ymd(pref.day); loading = true; err = ''; render();
+  try{ await fetchDay(pref.dir, date, force); }catch(e){ err = e.message === 'blocked' ? '지금은 예매 사이트가 조회를 받지 않아요. 잠시 뒤에 다시 볼게요.' : '좌석 정보를 못 불러왔어요 · 신호 확인'; }
+  loading = false; render();
+}
+
+function seatTag(b){
+  if(b.left == null) return `<span class="bs-tag gray">${b.shut ? '마감' : '?'}</span>`;
+  if(b.left === 0) return '<span class="bs-tag red">매진</span>';
+  return `<span class="bs-tag ${b.left <= 3 ? 'orange' : 'green'}">${b.left}석${b.total ? `<small>/${b.total}</small>` : ''}</span>`;
+}
 function render(){
-  const root = $b('bus-view'); if(!root) return;
-  const w = read(WK) || { dir:'bus_out', on:false }, rows = list();
+  const root = $b('bus-view'); if(!root || view !== 'bus') return;
+  const date = ymd(pref.day), c = cache[key(pref.dir, date)], d = c?.data, nowHM = new Date().toTimeString().slice(0, 5);
+  const list = (d?.buses || []).filter(b=>pref.day > 0 || b.t > nowHM);
+  const [a, z] = pref.dir === 'out' ? ['양양', '동서울'] : ['동서울', '양양'];
+  const ago = d ? Math.max(0, Math.round((Date.now() - new Date(d.fetched).getTime()) / 6e4)) : null;
+  const W = watches();
   root.innerHTML = `
-    <div class="bus-hd"><b>🚌 양양 ↔ 동서울 시외버스 빈자리</b>
-      <small>예매 사이트가 자동 조회를 막아 두어, <b>자리가 난 걸 본 사람이 올리면</b> 찾는 사람에게 알려줘요. 예매·결제는 공식 사이트에서만 돼요.</small>
-      <div class="food-btns">${BOOK.map(([t,u])=>`<a class="btn sm blue" href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>`).join('')}</div></div>
-    <div class="bus-watch"><label class="bw"><input type="checkbox" id="bw-on" ${w.on ? 'checked' : ''}> <b>🔔 자리 나면 알려주세요</b></label>
-      <div class="bw-opts"><button type="button" data-bw="bus_out" aria-pressed="${w.dir === 'bus_out'}">양양 → 동서울</button><button type="button" data-bw="bus_in" aria-pressed="${w.dir === 'bus_in'}">동서울 → 양양</button><button type="button" data-bw="any" aria-pressed="${w.dir === 'any'}">둘 다</button></div>
-      <small>앱을 열어 둔 동안 새 제보가 오면 알려요 (앱이 닫혀 있으면 열 때 보여요)</small></div>
-    <details class="px sand fold" id="bus-form" ${open ? 'open' : ''}><summary>➕ 자리 났어요 — 제보하기</summary>
-      <div class="grid2" style="margin-top:8px">
-        <div><label for="bs-dir">방향</label><select id="bs-dir"><option value="bus_out">양양 → 동서울</option><option value="bus_in">동서울 → 양양</option></select></div>
-        <div><label for="bs-seats">남은 자리</label><input id="bs-seats" type="number" min="1" max="45" value="2"></div>
-        <div><label for="bs-date">날짜</label><input id="bs-date" type="date"></div>
-        <div><label for="bs-time">출발 시각</label><input id="bs-time" type="time"></div></div>
-      <label for="bs-note">한마디 (선택)</label><input id="bs-note" maxlength="40" placeholder="예) 우등 · 예매 사이트 취소표">
-      <div class="err" id="bs-err"></div><button class="btn mint" id="bs-save" style="width:100%;margin-top:6px">제보하기</button></details>
-    ${rows.length ? rows.map(r=>{ const [a,b] = NAMES[r.dir] || ['', ''], full = !(r.seats > 0), mins = Math.max(0, Math.round((Date.now() - new Date(r.created_at || Date.now())) / 6e4));
-      return `<article class="card bus-card${full ? ' full' : ''}"><div class="hd"><span class="tag" style="background:${r.dir === 'bus_out' ? 'var(--mint)' : 'var(--sun)'}">${esc(a)} → ${esc(b)}</span><b>${esc(dlabel(r))}</b></div>
-        <div class="meta">${full ? '<b>다 찼대요</b>' : `남은 자리 <b>${+r.seats || 0}석</b>`} · ${esc(r.name)} 님 제보 · <b>${mins < 2 ? '방금' : mins < 60 ? mins + '분 전' : Math.round(mins/60) + '시간 전'}</b>${r.note ? ` · ${esc(r.note)}` : ''}</div>
-        <div class="acts"><a class="btn sm mint" href="https://www.bustago.or.kr/" target="_blank" rel="noopener">예매하러 가기 ↗</a>
-          ${full ? '' : `<button type="button" class="btn sm ghost" data-full="${esc(r.id)}">✋ 다 찼어요</button>`}</div></article>`; }).join('')
-      : `<div class="empty">지금 올라온 제보가 없어요.<br>예매 사이트에서 자리를 보셨다면 위에서 제보해 주세요</div>`}
-    <div class="note">제보는 출발 시각이 지나면 자동으로 사라져요. 확인되지 않은 정보이니 예매 사이트에서 꼭 다시 확인하세요.</div>`;
-  const dt = $b('bs-date'); if(dt && !dt.value) dt.value = (typeof today === 'function') ? today() : '';
-  $b('bus-form')?.addEventListener('toggle', e=>{ open = e.target.open; });
-  $b('bw-on').onchange = e=>{ write(WK, { ...(read(WK) || { dir:'bus_out' }), on:e.target.checked }); if(e.target.checked) toast('🔔 새 제보가 오면 알려드릴게요'); };
-  root.querySelectorAll('[data-bw]').forEach(b=>b.onclick = ()=>{ write(WK, { ...(read(WK) || {}), dir:b.dataset.bw }); render(); });
-  root.querySelectorAll('[data-full]').forEach(b=>b.onclick = async ()=>{ b.disabled = true;
-    try{ await api(`rides?id=eq.${encodeURIComponent(b.dataset.full)}`, { method:'PATCH', body:JSON.stringify({ seats:0 }) }); toast('다 찼다고 표시했어요'); pullRides(); }
-    catch(e){ b.disabled = false; toast('실패 · 신호 확인'); } });
-  $b('bs-save').onclick = save;
+    <div class="bus-hd"><b>🚌 시외버스 남은 좌석</b>
+      <small>티머니 시외버스 예매 화면의 좌석 수예요${ago != null ? ` · ${ago ? ago + '분 전' : '방금'} 기준` : ''}. 매진 차에 🔕 를 누르면 자리 날 때 알려 드려요. 예매는 공식 사이트·앱에서.</small></div>
+    <div class="go-mode bs-dir" role="group" aria-label="방향"><button type="button" data-bdir="out" aria-pressed="${pref.dir === 'out'}">양양 → 동서울</button><button type="button" data-bdir="in" aria-pressed="${pref.dir === 'in'}">동서울 → 양양</button></div>
+    <div class="bs-days" role="group" aria-label="날짜">${Array.from({ length:7 }, (_, i)=>{ const dd = new Date(ymd(i) + 'T00:00'); return `<button type="button" data-bday="${i}" aria-pressed="${pref.day === i}"><small>${i === 0 ? '오늘' : i === 1 ? '내일' : DOW[dd.getDay()]}</small><b>${dd.getDate()}</b></button>`; }).join('')}</div>
+    ${W.length ? `<div class="bs-watching">🔔 알림 거는 중 ${W.length}편 · 앱이 열려 있는 동안 3분마다 확인해요${typeof Notification !== 'undefined' && Notification.permission !== 'granted' ? ' <button type="button" class="btn sm ghost" id="bs-perm">휴대폰 알림 켜기</button>' : ''}</div>` : ''}
+    ${loading && !d ? '<div class="skel" aria-hidden="true"><i></i><i></i><i></i></div>' : ''}
+    ${err ? `<div class="empty">${err}<br><button type="button" class="btn sm mint" id="bs-retry" style="margin-top:8px">다시 불러오기</button></div>` : ''}
+    ${d ? (list.length ? `<div class="bs-list">${list.map(b=>{ const w = isWatched(pref.dir, date, b.t), want = b.left === 0 || (b.left != null && b.left <= 3);
+        return `<div class="bs-row${b.left === 0 ? ' sold' : ''}"><span class="bs-t">${b.t}</span><span class="bs-m"><b>${esc(b.co)}</b><small>${esc(b.grade)}${b.dur ? ` · ${esc(b.dur)} 소요` : ''}${b.fare ? ` · ${Number(b.fare).toLocaleString()}원` : ''}</small></span>
+          ${seatTag(b)}${want || w ? `<button type="button" class="bs-bell${w ? ' on' : ''}" data-bell="${esc(b.t)}" aria-pressed="${w}" aria-label="${esc(b.t)} 자리 나면 알림">${w ? '🔔' : '🔕'}</button>` : '<span class="bs-bell-sp"></span>'}</div>`; }).join('')}</div>`
+      : `<div class="empty">${pref.day === 0 ? '오늘은 더 떠날 버스가 없어요' : '이날은 배차가 없어요'}</div>`) : ''}
+    <div class="food-btns" style="margin-top:12px"><a class="btn sm blue" href="${BOOK}" target="_blank" rel="noopener">🎫 티머니에서 예매하기 ↗</a><button type="button" class="btn sm ghost" id="bs-refresh">↻ 새로 보기</button></div>
+    <div class="note" style="margin-top:6px">출처: 티머니 시외버스 통합예매 · ${a} → ${z} · 좌석 수는 몇 분 늦을 수 있어요</div>`;
+  root.querySelectorAll('[data-bdir]').forEach(b=>b.onclick = ()=>{ pref.dir = b.dataset.bdir; write(PK, pref); load(false); });
+  root.querySelectorAll('[data-bday]').forEach(b=>b.onclick = ()=>{ pref.day = +b.dataset.bday; write(PK, pref); load(false); });
+  root.querySelectorAll('[data-bell]').forEach(b=>b.onclick = ()=>toggleWatch(pref.dir, date, b.dataset.bell));
+  $b('bs-retry')?.addEventListener('click', ()=>load(true));
+  $b('bs-refresh')?.addEventListener('click', ()=>load(true));
+  $b('bs-perm')?.addEventListener('click', askPerm);
 }
 
-async function save(){
-  const e = $b('bs-err'), btn = $b('bs-save'); e.textContent = '';
-  const dir = $b('bs-dir').value, date = $b('bs-date').value, time = $b('bs-time').value, seats = Math.max(1, Math.min(45, +$b('bs-seats').value || 1));
-  if(!date || !time) return e.textContent = '날짜와 출발 시각을 골라주세요';
-  if(date < today() || (date === today() && time < nowHM())) return e.textContent = '이미 떠난 시각이에요 — 앞으로의 버스만 제보할 수 있어요';
-  if(btn.disabled) return; const [a, b] = NAMES[dir];
-  const row = { id:`${ME.id}|${Date.now()}`, user_id:ME.id, name:ME.name, cohort:ME.cohort, profile:pubRow(), date, dir, depart_at:time,
-    from_place:a, to_place:b, seats, riders:[], note:$b('bs-note').value.trim().slice(0, 40) || null, created_at:new Date().toISOString() };
-  btn.disabled = true;
-  try{ await api('rides', { method:'POST', body:JSON.stringify(row) }); toast('제보했어요 — 고마워요!'); $b('bs-note').value = ''; open = false; await pullRides(); }
-  catch(err){ e.textContent = err.code === 'notable' ? '서버에 표가 아직 없어요' : '올리지 못했어요 · 신호 확인'; }
-  finally{ btn.disabled = false; }
+function askPerm(){ try{ Notification.requestPermission().then(()=>render()); }catch(e){} }
+function toggleWatch(dir, date, t){
+  let W = read(WK, []); const on = W.some(w=>w.dir === dir && w.date === date && w.t === t);
+  if(on) W = W.filter(w=>!(w.dir === dir && w.date === date && w.t === t));
+  else{ const b = (cache[key(dir, date)]?.data?.buses || []).find(x=>x.t === t);
+    W.push({ dir, date, t, at:Date.now(), last:b?.left ?? null }); say('🔔 자리 나면 알려 드릴게요 (앱이 열려 있는 동안)');
+    if(typeof Notification !== 'undefined' && Notification.permission === 'default') askPerm(); }
+  write(WK, W.filter(w=>w.date >= ymd(0)).slice(-12)); render(); startPoll();
 }
 
-/* pullRides 가 끝날 때마다 불린다 — 새 제보가 알림 조건에 맞으면 한 번 알려준다 */
-function check(){
-  const w = read(WK); const seen = new Set(read(SK) || []);
-  const fresh = (state.bus || []).filter(r=>alive(r) && r.seats > 0 && r.user_id !== ME.id && !seen.has(r.id));
-  const d = $b('bus-new'); if(d){ d.hidden = !(fresh.length && view !== 'bus'); d.textContent = fresh.length ? `NEW ${fresh.length}` : ''; }
+/* 알림 확인 — 걸어 둔 차의 남은 좌석이 걸 때(마지막으로 본 때)보다 늘고 1석 이상이면 알린다 */
+async function check(){
+  const W = watches(); if(!W.length || document.hidden) return;
+  const groups = [...new Set(W.map(w=>key(w.dir, w.date)))];
+  for(const g of groups){
+    const [dir, date] = g.split('|'); let d;
+    try{ d = await fetchDay(dir, date, false); }catch(e){ continue; }
+    for(const w of W.filter(x=>x.dir === dir && x.date === date)){
+      const b = (d.buses || []).find(x=>x.t === w.t); if(!b || b.left == null) continue;
+      if(w.last != null && b.left > w.last && b.left > 0){
+        const [a, z] = dir === 'out' ? ['양양', '동서울'] : ['동서울', '양양'];
+        const msg = `🚌 ${a}→${z} ${date.slice(5).replace('-', '.')} ${w.t} 자리 ${b.left}석 났어요!`;
+        say(msg); navigator.vibrate?.([40, 60, 40, 60, 80]);
+        try{ if(typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('SurfShare 버스 자리', { body:msg, icon:'icon-192.png', tag:'bus-' + g + w.t }); }catch(e){}
+      }
+      w.last = b.left;
+    }
+  }
+  const all = read(WK, []); all.forEach(x=>{ const n = W.find(y=>y.dir === x.dir && y.date === x.date && y.t === x.t); if(n) x.last = n.last; }); write(WK, all);
   if(view === 'bus') render();
-  if(!w || !w.on) return;
-  const hit = fresh.filter(r=>w.dir === 'any' || r.dir === w.dir);
-  const notified = new Set(read('lineup.share.busnote') || []); const todo = hit.filter(r=>!notified.has(r.id));
-  if(!todo.length) return;
-  const r = todo[0], [a, b] = NAMES[r.dir] || ['', ''];
-  toast(`🚌 ${a}→${b} ${dlabel(r)} 자리 ${r.seats}석 났대요!${todo.length > 1 ? ` (외 ${todo.length - 1}건)` : ''}`); navigator.vibrate?.([30, 40, 30]);
-  write('lineup.share.busnote', [...notified, ...todo.map(x=>x.id)].slice(-50));
 }
+function startPoll(){ clearInterval(poll); if(watches().length){ poll = setInterval(check, 180e3); } }
 
-function wire(){ $b('ride-seg')?.querySelectorAll('[data-view]').forEach(b=>b.onclick = ()=>setView(b.dataset.view)); }
-window.busCheck = check; window.busRender = ()=>{ if(view === 'bus') render(); };
+function wire(){
+  $b('ride-seg')?.querySelectorAll('[data-view]').forEach(b=>b.onclick = ()=>setView(b.dataset.view));
+  startPoll(); if(watches().length) setTimeout(check, 4000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && watches().length) check(); });
+}
+window.busCheck = ()=>{};                                        // 예전 제보 게시판이 부르던 자리 — 남겨 둔다
+window.busRender = ()=>{ if(view === 'bus') render(); };
+window.busOpen = ()=>{ if(typeof setTab === 'function') setTab('ride'); setView('bus'); };
+window._bus = { check, toggleWatch, watches, fetchDay, get cache(){ return cache; } };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 })();

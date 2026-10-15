@@ -5,6 +5,10 @@
 (function(){
 const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide';
 const UPDATES = [
+  { id:'u1015a', date:'10.15', t:'🚌 버스 빈자리 조회', items:[
+      ['🚌', '양양↔동서울 시외버스 남은 좌석을 바로 — 차량 탭 → 🚌 버스 빈자리', 'bus'],
+      ['🔔', '매진 차에 🔕 누르면 자리 날 때 알려 드려요(앱이 열려 있는 동안)', 'bus'],
+      ['🍜', '맛집 등록 — 네이버 공유 글을 붙이면 이름·지역 자동, 막히면 이유가 칸 안에', 'food'] ] },
   { id:'u1012b', date:'10.12', t:'💡 오늘의 추천', items:[
       ['🏄', '홈에 「오늘 테이크오프 연습했어요?」처럼 오늘 할 일·아직 안 해 본 기능을 하나씩 권해요', null],
       ['✕', '필요 없으면 ✕ — 그 추천은 오늘 하루 숨어요', null] ] },
@@ -36,6 +40,7 @@ function go(k){
   const sh = $u('upd-sheet'); if(sh) sh.hidden = true;
   if(k === 'surf') window.surfOpen?.(); else if(k === 'skate') window.skateOpen?.(); else if(k === 'game') window.gameOpen?.();
   else if(k === 'shop') window.shopOpen?.(); else if(k === 'food' || k === 'spot') window.foodOpen?.(k);
+  else if(k === 'bus') window.busOpen?.();
   else if(k === 'guide') window.open('/guide', '_blank', 'noopener');
   else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $u('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
 }
