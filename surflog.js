@@ -77,7 +77,7 @@ function row(e){
     <span class="sl-m"><b>${esc(e.s || '어딘가')}</b><small>${e.m >= 60 ? (e.m / 60).toString().replace(/\.0$/, '') + '시간' : e.m + '분'} · 파도 ${WAVES[e.w]}${e.wx ? ` · 🌊 ${e.wx.h}m${e.wx.p ? '·' + e.wx.p + '초' : ''}${e.wx.w != null ? '·바람 ' + e.wx.w : ''}` : e.h != null ? ` · 예보 ${e.h}m` : ''}${e.t ? ' · ' + esc(e.t) : ''}</small></span><span class="sl-f">${FEEL[e.f].split(' ')[0]}</span></button>`;
 }
 
-let cur = null;
+let cur = null, slDraft = null;
 function sheet(){
   let sh = $l('sl-sheet');
   if(!sh){ sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'sl-sheet'; sh.hidden = true;
@@ -89,11 +89,12 @@ function sheet(){
 function chips(key, items, val){ return `<div class="food-chips sl-chips" role="group">${items.map((t, i)=>`<button type="button" data-slk="${key}" data-slv="${i}" aria-pressed="${val === i}">${t}</button>`).join('')}</div>`; }
 function form(id, pre){
   const old = id ? logs().find(e=>e.id === id) : null;
-  cur = old ? { ...old } : { id:'', d:todayS(), s:spotNames()[0] || '낙산', m:60, w:2, f:2, t:'' };
+  cur = old ? { ...old } : (slDraft && slDraft.d === todayS() && !pre) ? { ...slDraft } : { id:'', d:todayS(), s:spotNames()[0] || '낙산', m:60, w:2, f:2, t:'' };
+  const resumed = !old && !pre && slDraft && cur.d === slDraft.d && cur.t === slDraft.t;
   /* 체크인 → '나왔어요' 에서 열리면 그 해변과 머문 시간으로 미리 채운다 */
   if(!old && pre){ if(pre.s) cur.s = String(pre.s).replace(/해수욕장|해변/g, '').trim().slice(0, 20); if(pre.m){ const m = +pre.m; cur.m = MIN.reduce((b, x)=>Math.abs(x - m) < Math.abs(b - m) ? x : b, 60); } }
   if(cur.tm == null) cur.tm = new Date().getHours() < 13 ? 0 : 1;
-  const sh = sheet(); $l('sl-t').textContent = old ? '📒 기록 고치기' : '📒 오늘 서핑 기록'; paintForm(!!old); sh.hidden = false; loadWx();
+  const sh = sheet(); $l('sl-t').textContent = old ? '📒 기록 고치기' : resumed ? '📒 쓰던 기록 이어서' : '📒 오늘 서핑 기록'; paintForm(!!old); sh.hidden = false; loadWx();
 }
 function paintForm(edit){
   const names = spotNames(); if(cur.s && !names.includes(cur.s)) names.unshift(cur.s);
@@ -121,7 +122,8 @@ async function loadWx(){
 }
 function onClick(e){
   const sh = $l('sl-sheet');
-  if(e.target.closest('[data-slclose]')){ sh.hidden = true; return; }
+  if(e.target.closest('[data-slclose]')){ if(cur && !cur.id) slDraft = { ...cur };   // 저장 안 하고 닫으면 임시 저장(끌어 닫기·뒤로가기 실수)
+    sh.hidden = true; return; }
   const k = e.target.closest('[data-slk]');
   if(k){ const i = +k.dataset.slv, key = k.dataset.slk;
     if(key === 'd'){ const x = new Date(Date.now() - i * 864e5); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); cur.d = x.toISOString().slice(0, 10); }
@@ -146,7 +148,7 @@ function save(){
   let msg = '📒 기록했어요 · 기록을 누르면 📸 카드로 공유';
   const lx = (p.logx ||= {});
   if(!lx[e.d]){ lx[e.d] = 1; p.bonus = (p.bonus || 0) + 15; msg = '📒 기록했어요 · +15 XP · 기록을 누르면 📸 카드 공유'; Object.keys(lx).sort().slice(0, -60).forEach(k=>delete lx[k]); }
-  $l('sl-sheet').hidden = true; push(); render(); window.waveHome?.(); toast(msg); navigator.vibrate?.(15);
+  slDraft = null; $l('sl-sheet').hidden = true; push(); render(); window.waveHome?.(); toast(msg); navigator.vibrate?.(15);
   if(typeof playTick === 'function') playTick();
 }
 function push(){ if(typeof playPush === 'function') playPush(); }
