@@ -2851,7 +2851,9 @@ function layoutHead(){
 }
 $('nowbar').onclick = ()=>{ nowOpen = !nowOpen; layoutHead(); if(nowOpen) renderNow(); };
 
-const setTab = t => { const prevTab = state.tab; state.tab = t;
+/* 탭마다 보던 위치 — 맛집을 내려 보다 캠을 잠깐 보고 오면 처음부터 다시 내려야 했다 */
+const TABY = {};
+const setTab = t => { const prevTab = state.tab; if(prevTab && prevTab !== t) TABY[prevTab] = window.scrollY; state.tab = t;
   ['home','ride','stay','food','bolt','town','play','cam','me'].forEach(k=>{
     const btn = $('t-'+k); if(btn) btn.setAttribute('aria-pressed', String(t===k));
     $('t-more')?.setAttribute('aria-pressed', String(['bolt','stay','town'].includes(t)));
@@ -2875,7 +2877,9 @@ const setTab = t => { const prevTab = state.tab; state.tab = t;
   if(prevTab && prevTab !== t && !matchMedia('(prefers-reduced-motion: reduce)').matches){
     const el = $('pane-' + t), dx = (TABS.indexOf(t) >= TABS.indexOf(prevTab) ? 1 : -1) * 18;
     if(el){ el.style.setProperty('--dx', dx + 'px'); el.classList.remove('tin'); void el.offsetWidth; el.classList.add('tin'); } }
-  window.scrollTo({ top:0, behavior:'instant' });
+  /* 같은 탭을 또 누르면 맨 위로, 다른 탭이면 거기서 보던 자리로 */
+  if(prevTab === t) window.scrollTo({ top:0, behavior:'smooth' });
+  else { const y = TABY[t] || 0; window.scrollTo({ top:0, behavior:'instant' }); if(y) requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({ top:Math.min(y, document.documentElement.scrollHeight), behavior:'instant' }))); }
 };
 TABS.forEach(k=>$('t-'+k).onclick = ()=>setTab(k));
 /* ── 당겨서 새로고침 ──
