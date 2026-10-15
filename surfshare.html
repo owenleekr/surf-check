@@ -1670,7 +1670,7 @@ $('out').onclick = async ()=>{ if(!(window.ask ? await ask('이 기기에서 로
 
 /* ── 꾸미기 ───────────────────────────────────────────────
    앱의 빌더와 같은 도트·같은 옵션을 쓴다(sprite.js 공유). 저장은 서버 프로필에. */
-let bldTab = 'face';
+let bldTab = 'hair';
 function renderBuilder(){
   if(typeof HAIR !== 'function' && typeof HAIR !== 'object') return;
   const pr = ME.profile || (ME.profile = freshProfile(ME.name));
@@ -1685,9 +1685,9 @@ function renderBuilder(){
         : `<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}">${render?render(v,t):t}</button>`; }).join('')}</div></div>`;
   const keys = o => Object.keys(o);
   const G = {
-    face: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k]]))
-        + opt('머리 색', 'hairc', keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), sw(HAIRC))
-        + opt('피부 톤', 'skin', keys(SKIN).map(k=>[k,SKIN_KO[k]]), sw(SKIN))
+    hair: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k]]))
+        + opt('머리 색', 'hairc', keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), sw(HAIRC)),
+    face: opt('피부 톤', 'skin', keys(SKIN).map(k=>[k,SKIN_KO[k]]), sw(SKIN))
         + opt('표정', 'face', keys(FACE).map(k=>[k,FACE_KO[k]]))
         + mo('얼굴형', 'fshape') + mo('눈', 'eye') + mo('눈썹', 'brow') + mo('얼굴 소품', 'acc'),
     wear: opt('상의', 'wear', keys(WEAR).map(k=>[k,WEAR_KO[k]]))
@@ -1704,7 +1704,7 @@ function renderBuilder(){
         + (cur.pet==='none' || !window.MOCHI_OPT?.petv?.[cur.pet] ? '' : opt('종류', 'petv', MOCHI_OPT.petv[cur.pet].map((t, i)=>[String(i), t])))
         + (cur.pet==='none' ? '' : opt('친구 색', 'petc', keys(PETC).map(k=>[k,PETC_KO[k]]), sw(PETC))),
   };
-  const TABS = [['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
+  const TABS = [['hair','머리'],['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
   $('bld-opts').innerHTML = `<div style="display:flex;gap:4px;flex-wrap:wrap">${TABS.map(([k,t])=>
       `<button type="button" class="btn sm ${bldTab===k?'blue':'ghost'}" data-bt="${k}">${t}</button>`).join('')}
       <button type="button" class="btn sm mint" id="bld-shop" style="margin-left:auto">🛍️ 소품샵</button><button type="button" class="btn sm ghost" id="bld-card">📸 카드</button><button type="button" class="btn sm ghost" id="bld-rand">🎲 랜덤</button></div>
