@@ -528,7 +528,7 @@ function renderHub(enter){
   { const d = $('play-dot'); if(d) d.hidden = true; }                 // 놀이 탭에 있으면 점은 필요 없다
   root.innerHTML = `
     <div class="hubhero">
-      <div class="hh-em">${PLV[lv][2]}</div>
+      <button type="button" class="hh-em hh-av" data-hub="me" aria-label="내 캐릭터 꾸미기"><canvas id="hh-av"></canvas><i>${PLV[lv][2]}</i></button>
       <div class="hh-t"><b>Lv.${lv+1} ${PLV[lv][1]}</b><span><i class="cu" data-to="${xp}">${enter ? 0 : xp}</i> XP${nxt ? ` · 다음 ${nxt[1]}까지 ${nxt[0] - xp}` : ' · 최고 레벨'}</span></div>
       <div class="hh-chips"><span>${stk ? `🔥 ${stk}일` : '🔥 —'}</span><span>🐚 ${shellBal()}</span><span>🏅 ${got}/${BADGES.length}</span></div>
       <div class="xpbar big" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${enter ? 0 : pct}%" data-w="${pct}"></i></div>
@@ -573,6 +573,7 @@ function renderHub(enter){
     else if(k === 'a2hs'){ if(typeof a2hsOpen === 'function') a2hsOpen(); }
     else if(k === 'share'){ const data = { title:'SurfShare', text:'양양 낙산 서핑 — 차 같이 타고, 숙소 같이 쓰고. 비밀번호는 단톡방에서 받아요.', url:'https://surf.owenai.xyz/' };
       try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });
+  { const hc = root.querySelector('#hh-av'); if(hc && typeof drawSpr === 'function'){ const q = withLook(ME.profile || {}, ME.name); requestAnimationFrame(()=>drawSpr(hc, avatarRows(q, false), avatarTintOf(q, 0))); } }
   root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
   root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
     if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'skate') skateOpen(); else if(k === 'quest') questOpen(); else if(k === 'quiz') quizOpen();
@@ -580,6 +581,7 @@ function renderHub(enter){
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');
     else if(k === 'shop') shopOpen();
+    else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
     else if(k === 'emote' || k === 'town'){ setTab('town'); } });
 }
 
