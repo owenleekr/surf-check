@@ -76,8 +76,14 @@ function homeCard(){
   const el = $w('home-wave'); if(!el) return;
   if(!fc?.days?.length){ el.hidden = true; load(); return; }
   el.hidden = false;
+  /* 오늘 갈까? — 오늘 오전·오후 중 나은 쪽 한 줄 + 입을 것 + 해 뜸 */
+  const d0 = fc.days[0], rN = d0.regions.find(r=>r.k === 'north'), b0 = rN ? ['am', 'pm'].map(p=>({ r:rN, p, x:rN[p] })).filter(o=>o.x).sort((a, b)=>b.x.s - a.x.s)[0] || best(d0) : best(d0), sst = typeof state !== 'undefined' ? state.cond?.sst : null;
+  const suit = typeof suitOf === 'function' && sst != null ? suitOf(+sst) : '';
+  const today = b0 ? `<button type="button" class="wv-today s${b0.x.s}" data-wvday="0"><b>오늘 ${b0.p === 'am' ? '오전' : '오후'}이 나아요 ${stars(b0.x.s)}</b>
+      <span>${esc(b0.r.n)} ${b0.x.h}m · ${b0.x.p}초 — ${esc(b0.x.why)}</span>
+      <small>${suit ? `🩱 ${esc(suit)}` : ''}${suit && d0.sun?.rise ? ' · ' : ''}${d0.sun?.rise && /^\d{2}:\d{2}$/.test(d0.sun.rise) ? `🌅 ${d0.sun.rise}` : ''}</small></button>` : '';
   el.innerHTML = `<div class="hsec">🌊 이번주의 파도 <small>예보 · 누르면 자세히</small></div>
-    <div class="wv-card">${strip()}${myRange() ? `<div class="wv-mynote">💛 = 내가 즐긴 파도 높이(${myRange().map(x=>Math.max(0, Math.round(x * 10) / 10)).join('~')}m)와 맞는 날 · 서핑 일지 기준</div>` : ''}<div class="wv-wks">${weekendLine()}</div></div>`;
+    <div class="wv-card">${today}${strip()}${myRange() ? `<div class="wv-mynote">💛 = 내가 즐긴 파도 높이(${myRange().map(x=>Math.max(0, Math.round(x * 10) / 10)).join('~')}m)와 맞는 날 · 서핑 일지 기준</div>` : ''}<div class="wv-wks">${weekendLine()}</div></div>`;
   wire(el);
   if(!fresh()) load();
 }
