@@ -4,6 +4,10 @@
    남이 쓴 글(한줄평·이름·주소)은 모두 esc, 링크는 http(s) 만(safeHttp). 서버가 안 닿으면 마지막으로 받은 목록을 보여준다. */
 (function(){
 const KEY = 'lineup.share.food', SEEN = 'lineup.share.foodseen', FRESH = 5 * 60e3;
+let fq = { food:'', spot:'' };
+const norm = x => String(x || '').toLowerCase().replace(/\s+/g, '');
+const qbox = k => `<input type="search" class="food-q" data-fq="${k}" value="${esc(fq[k])}" placeholder="🔎 ${k === 'spot' ? '스팟 이름·지역' : '가게 이름·메뉴·지역'}으로 찾기" aria-label="찾기" enterkeyhint="search">`;
+const noHit = k => fq[k] ? `<div class="empty">‘${esc(fq[k])}’에 맞는 곳이 없어요 — 다른 말로 찾아보세요</div>` : '';
 let data = null, view = 'food', area = '전체', sort = 'near', busy = false, failed = false, fcat = '전체';
 /* 세부 분류·사진·블로그 후기 — /api/place-info(네이버 공식 검색 API). 가게 이름별로 이 기기에 7일 저장, 서버 키가 없으면 조용히 안 보인다 */
 const PIK = 'lineup.share.pi', PI = (()=>{ try{ return JSON.parse(localStorage.getItem(PIK) || '{}'); }catch(e){ return {}; } })();
@@ -85,12 +89,14 @@ function renderFood(root){
   const catOfI = i => piOf(i)?.cat || guessCat(i);
   const cc = {}; all.forEach(i=>{ const c = catOfI(i); if(c) cc[c] = (cc[c] || 0) + 1; });
   const cats = Object.keys(cc).sort((a,b)=>cc[b] - cc[a]); if(fcat !== '전체' && !cc[fcat]) fcat = '전체';
-  const list = all.filter(i=>(area === '전체' || areaOf(i.a) === area) && (fcat === '전체' || catOfI(i) === fcat)).sort((a,b)=> sort === 'new' ? (b.t - a.t) : (dist(a) - dist(b)) || (b.t - a.t));
+  const q = norm(fq.food), hit = i => !q || norm(`${i.n} ${i.m || ''} ${i.a || ''} ${catOfI(i)}`).includes(q);
+  const list = all.filter(i=>hit(i) && (area === '전체' || areaOf(i.a) === area) && (fcat === '전체' || catOfI(i) === fcat)).sort((a,b)=> sort === 'new' ? (b.t - a.t) : (dist(a) - dist(b)) || (b.t - a.t));
   const at = (()=>{ try{ const t = JSON.parse(localStorage.getItem(KEY) || 'null')?.at; return t ? new Date(t).toTimeString().slice(0,5) : ''; }catch(e){ return ''; } })();
   root.innerHTML = `
     <div class="food-hd"><b>${esc(f.title)}</b><span>${esc(f.memo || '')}</span>
       <small>${all.length}곳 · 네이버 리스트와 자동으로 맞춰져요${at ? ` · 갱신 ${at}` : ''}${failed ? ' · ⚠️ 새로 못 불러와 저장된 목록이에요' : ''}</small></div>
     ${FT.ownerBox('food')}${FT.addForm('food', howTo('food', f.link))}
+    ${qbox('food')}
     <div class="food-chips" role="group" aria-label="지역">${areas.map(a=>`<button type="button" aria-pressed="${a === area}" data-area="${esc(a)}">${esc(a)} <small>${counts[a]}</small></button>`).join('')}</div>
     ${cats.length >= 2 ? `<div class="food-chips fc-cat" role="group" aria-label="종류"><button type="button" aria-pressed="${fcat === '전체'}" data-fcat="전체">모든 종류</button>${cats.map(c=>`<button type="button" aria-pressed="${c === fcat}" data-fcat="${esc(c)}">${CAT_IC[c] || ''} ${esc(c)} <small>${cc[c]}</small></button>`).join('')}</div>` : ''}
     <div class="food-sort" role="group" aria-label="정렬"><button type="button" aria-pressed="${sort === 'near'}" data-sort="near">📍 학교에서 가까운 순</button><button type="button" aria-pressed="${sort === 'new'}" data-sort="new">🆕 최근 추가 순</button></div>
@@ -102,7 +108,7 @@ function renderFood(root){
         <div class="meta">${esc(i.a)}${km < Infinity ? ` · 학교에서 <b>${km < 10 ? km.toFixed(1) : Math.round(km)}km</b>` : ''}</div>
         <div class="pi" data-pi="${esc(i.id)}">${piHTML(i)}</div>
         ${FT.preview ? FT.preview('food', i.id, !i.by && reg ? reg.id : '') : ''}
-        ${FT.block('food', i.id, !i.by && reg ? reg.id : '', `<a class="ft-b ft-map" href="${esc(link)}" target="_blank" rel="noopener">📍 지도 ↗</a>`)}</article>`; }).join('') || '<div class="empty">이 지역에는 아직 없어요</div>'}`;
+        ${FT.block('food', i.id, !i.by && reg ? reg.id : '', `<a class="ft-b ft-map" href="${esc(link)}" target="_blank" rel="noopener">📍 지도 ↗</a>`)}</article>`; }).join('') || noHit('food') || '<div class="empty">이 지역에는 아직 없어요</div>'}`;
   root.querySelectorAll('[data-area]').forEach(b=>b.onclick = ()=>{ area = b.dataset.area; render(true); });
   root.querySelectorAll('[data-sort]').forEach(b=>b.onclick = ()=>{ sort = b.dataset.sort; render(true); });
   root.querySelectorAll('[data-fcat]').forEach(b=>b.onclick = ()=>{ fcat = b.dataset.fcat; render(true); });
@@ -122,7 +128,8 @@ function renderSpots(root){
   const counts = { 전체:all.length }; all.forEach(i=>{ const a = areaOf(i.a); counts[a] = (counts[a] || 0) + 1; });
   const areas = ['전체', '고성', '속초', '양양', '강릉', '기타'].filter(a=>counts[a]);
   if(!areas.includes(sarea)) sarea = '전체';
-  const list = all.filter(i=>sarea === '전체' || areaOf(i.a) === sarea).sort((a,b)=>(dist(a) - dist(b)) || (b.t - a.t));
+  const q = norm(fq.spot), hit = i => !q || norm(`${i.n} ${i.m || ''} ${i.a || ''}`).includes(q);
+  const list = all.filter(i=>hit(i) && (sarea === '전체' || areaOf(i.a) === sarea)).sort((a,b)=>(dist(a) - dist(b)) || (b.t - a.t));
   const km = i => { const d = dist(i); return d === Infinity ? '' : d < 10 ? d.toFixed(1) : Math.round(d); };
   const card = (i, fromFolder) => { const cam = camOf(i.n) || (i.cam ? [i.n] : null), reg = i.by ? i : (fromFolder ? FT.regOf('spot', i.id) : null), k = km(i);
     return `<article class="card food-card${i.by ? ' app' : ''}"><div class="hd"><b>${esc(i.n)}</b>${cam ? '<span class="tag" style="background:var(--mint)">📹 캠</span>' : ''}</div>
@@ -136,8 +143,9 @@ function renderSpots(root){
       ${f ? `<small>${all.length}곳 · 네이버지도 폴더와 자동으로 맞춰져요</small>` : ''}</div>
     ${window.waveSpotHTML ? window.waveSpotHTML() : ''}
     ${FT.ownerBox('spot')}${FT.addForm('spot', f ? howTo('spot', f.link) : '')}
+    ${qbox('spot')}
     ${areas.length > 1 ? `<div class="food-chips" role="group" aria-label="지역">${areas.map(a=>`<button type="button" aria-pressed="${a === sarea}" data-sarea="${esc(a)}">${esc(a)} <small>${counts[a]}</small></button>`).join('')}</div>` : ''}
-    ${list.map(i=>card(i, true)).join('')}
+    ${list.map(i=>card(i, true)).join('') || noHit('spot')}
     ${only.length && (sarea === '전체' || sarea === '양양') ? `<div class="pt" style="margin-top:16px;color:var(--paper);text-shadow:2px 2px 0 var(--ink)">캠으로 볼 수 있는 다른 해변</div>` + only.map(i=>card(i, false)).join('') : ''}
     ${!f && !all.length ? '<div class="empty">스팟 목록을 아직 못 불러왔어요</div>' : ''}
 `;
@@ -146,6 +154,10 @@ function renderSpots(root){
   root.querySelectorAll('[data-sarea]').forEach(b=>b.onclick = ()=>{ sarea = b.dataset.sarea; render(true); });
 }
 
+let fqT = 0;
+document.addEventListener('input', e=>{ const el = e.target.closest?.('[data-fq]'); if(!el) return; fq[el.dataset.fq] = el.value.slice(0, 30);
+  clearTimeout(fqT); fqT = setTimeout(()=>{ const k = el.dataset.fq, pos = el.selectionStart; render(true);
+    const n = document.querySelector(`[data-fq="${k}"]`); if(n){ n.focus({ preventScroll:true }); try{ n.setSelectionRange(pos, pos); }catch(_){} } }, 160); });
 function render(force){
   const root = $f('food-body'); if(!root || state.tab !== 'food') return;
   const ae = document.activeElement; if(force !== true && ae && root.contains(ae) && ae.matches('input')) return;   // 글 쓰는 중에 배경 갱신이 칸을 날리지 않게
