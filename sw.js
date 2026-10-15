@@ -1,6 +1,6 @@
 // 네트워크 우선, 실패 시 캐시 — 바다 앞 신호 약할 때 앱 껍데기가 뜨게
 // '/' 는 /surfshare 로 넘어가므로 캐시 키로 쓰지 않는다. 대신 화면 이동은 아래에서 받아낸다.
-const C = 'surf-v184', FILES = ['./surfshare.html', './guide.html', './school.html', './sprite.js', './mochi.js', './ui.js', './surflog.js', './charcard.js', './backnav.js', './homeedit.js', './roster.js', './play.js', './surfgame.js', './surfride.js', './skate.js', './quest.js', './install.js', './updates.js', './icons.js', './recommend.js', './waves.js', './quiz.js', './food.js', './foodtalk.js', './feed.js', './bus.js', './config.js', './lex.js', './manifest.webmanifest', './school.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './icon-512-maskable.png', './icon2-180.png', './icon2-192.png', './icon2-512.png', './icon2-512-maskable.png', './attendance-seed.json'];
+const C = 'surf-v185', FILES = ['./surfshare.html', './guide.html', './school.html', './sprite.js', './mochi.js', './ui.js', './surflog.js', './charcard.js', './backnav.js', './homeedit.js', './roster.js', './play.js', './surfgame.js', './surfride.js', './skate.js', './quest.js', './install.js', './updates.js', './icons.js', './recommend.js', './waves.js', './quiz.js', './food.js', './foodtalk.js', './feed.js', './bus.js', './config.js', './lex.js', './manifest.webmanifest', './school.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './icon-512-maskable.png', './icon2-180.png', './icon2-192.png', './icon2-512.png', './icon2-512-maskable.png', './attendance-seed.json'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(C).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== C).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
@@ -21,4 +21,14 @@ self.addEventListener('fetch', e => {
       }
       return Response.error();
     }));
+});
+/* 알림을 누르면 — 열린 앱이 있으면 그 창을 앞으로, 없으면 새로 열고 바로 그 화면으로(?go=) */
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const go = (e.notification.data && e.notification.data.go) || '';
+  const url = '/surfshare' + (go ? '?go=' + encodeURIComponent(go) : '');
+  e.waitUntil(self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(cs => {
+    const c = cs.find(x => x.url.includes('/surfshare')); if(c){ c.focus(); return c.navigate ? c.navigate(url).catch(()=>{}) : null; }
+    return self.clients.openWindow(url);
+  }));
 });

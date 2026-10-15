@@ -193,7 +193,11 @@ async function check(){
         const rn = (ROUTES[to] || ROUTES.ds).n, [a, z] = dir === 'out' ? ['양양', rn] : [rn, '양양'];
         const msg = `🚌 ${a}→${z} ${date.slice(5).replace('-', '.')} ${w.t} 자리 ${b.left}석 났어요!`;
         say(msg); navigator.vibrate?.([40, 60, 40, 60, 80]);
-        try{ if(typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('SurfShare 버스 자리', { body:msg, icon:'icon-192.png', tag:'bus-' + g + w.t }); }catch(e){}
+        /* 안드로이드 크롬은 new Notification() 이 막혀 있다(조용히 실패했다) — 서비스워커로 띄우고, 안 되면 그때 기본 방식 */
+        if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
+          const opt = { body:msg, icon:'icon2-192.png', badge:'icon2-192.png', tag:'bus-' + g + w.t, data:{ go:'bus' }, vibrate:[40, 60, 40] };
+          (navigator.serviceWorker?.ready || Promise.reject()).then(reg=>reg.showNotification('SurfShare 버스 자리', opt))
+            .catch(()=>{ try{ new Notification('SurfShare 버스 자리', opt); }catch(e){} }); }
       }
       w.last = b.left;
     }
