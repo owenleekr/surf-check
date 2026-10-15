@@ -93,6 +93,20 @@ const SHOP = [
   { key:'acc',    v:'glasses',n:'동그란 안경',   ic:'👓', cost:25, cat:'머리' },
   { key:'acc',    v:'star',   n:'별 스티커',     ic:'🌟', cost:15, cat:'머리' },
   { key:'pet',    v:'turtle', n:'거북이 친구',   ic:'🐢', cost:60, cat:'친구' },
+  /* 소품(손에 드는 것) · 서핑 용품 — mochi.js 가 그린다 */
+  { key:'hold',   v:'coffee', n:'아이스 아메리카노', ic:'🧋', cost:15, cat:'소품' },
+  { key:'hold',   v:'coconut',n:'코코넛 음료',   ic:'🥥', cost:20, cat:'소품' },
+  { key:'hold',   v:'shell',  n:'소라',          ic:'🐚', cost:20, cat:'소품' },
+  { key:'hold',   v:'wax',    n:'서프 왁스',     ic:'🧼', cost:25, cat:'소품' },
+  { key:'hold',   v:'gopro',  n:'액션캠 셀카봉', ic:'📷', cost:45, cat:'소품' },
+  { key:'hold',   v:'flag',   n:'양서학 깃발',   ic:'🚩', cost:35, cat:'소품' },
+  { key:'gear',   v:'leash',  n:'리쉬',          ic:'🪢', cost:20, cat:'서핑 용품' },
+  { key:'gear',   v:'fins',   n:'트라이 핀',     ic:'🦈', cost:30, cat:'서핑 용품' },
+  { key:'gear',   v:'towel',  n:'비치타월',      ic:'🏖️', cost:25, cat:'서핑 용품' },
+  { key:'gear',   v:'watch',  n:'방수 시계',     ic:'⌚', cost:35, cat:'서핑 용품' },
+  { key:'gear',   v:'pouch',  n:'방수 파우치',   ic:'👝', cost:30, cat:'서핑 용품' },
+  { key:'gear',   v:'booties',n:'서핑 부츠',     ic:'🥾', cost:45, cat:'서핑 용품' },
+  { key:'gear',   v:'helmet', n:'서핑 헬멧',     ic:'⛑️', cost:55, cat:'서핑 용품' },
 ];
 /* 오늘의 할인 — 날짜로 하나를 골라 30% 싸게(모두 같은 물건) */
 const dealOf = () => { const d = typeof today === 'function' ? today() : ''; let h = 7; for(const c of d) h = (h * 31 + c.charCodeAt(0)) >>> 0; return SHOP[h % SHOP.length]; };
@@ -115,7 +129,7 @@ let shopCat = '전체', shopTry = null;
 function shopOpen(){
   let sh = $('shop-sheet');
   if(!sh){ sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'shop-sheet';
-    sh.innerHTML = '<div class="sheet-dim" data-shclose></div><div class="sheet-in"><div class="sheet-hd"><span class="t">🛍️ 조개 상점</span><button class="btn sm ghost" data-shclose>닫기</button></div><div id="shop-body"></div></div>';
+    sh.innerHTML = '<div class="sheet-dim" data-shclose></div><div class="sheet-in"><div class="sheet-hd"><span class="t">🛍️ 소품샵</span><button class="btn sm ghost" data-shclose>닫기</button></div><div id="shop-body"></div></div>';
     document.body.appendChild(sh);
     sh.addEventListener('click', e=>{
       if(e.target.closest('[data-shclose]')){ sh.hidden = true; shopTry = null; return; }
@@ -133,7 +147,7 @@ function shopOpen(){
 function renderShop(){
   const body = $('shop-body'); if(!body) return;
   const own = ME.profile.play?.own || {}, deal = dealOf();
-  const cats = ['전체', '옷', '모자', '머리', '보드', '친구'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
+  const cats = ['전체', '서핑 용품', '소품', '옷', '모자', '머리', '보드', '친구'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
   const base = withLook(ME.profile || {}, ME.name), wear = shopTry ? { ...base, [shopTry.key]:shopTry.v } : base;
   body.innerHTML = `<div class="shop-top"><canvas id="shop-me" data-anim></canvas><div><b>🐚 ${shellBal()}개</b><small>${shopTry ? `👀 ${esc(shopTry.n)} 입어 보는 중` : '물건을 누르면 내 캐릭터에 입혀 봐요'}</small>
       <small>조개는 🌊 라인업 서핑 · 🏄 파도 점프 · 🛹 서프스케이트에서 모여요</small></div></div>
@@ -519,7 +533,7 @@ function renderHub(enter){
       ${card(4,'🎒','배지 도감', `${got}/${BADGES.length}개`, '', 'badge')}
       ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
       ${card(7,'🏘','마을 · 채팅', '캐릭터들이 모인 곳 · 한마디', '', 'town')}
-      ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
+      ${card(6,'🛍️','소품샵', `🐚 ${shellBal()} 보유`, '', 'shop')}
       ${card(8,'🌊','라인업 서핑', `쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, '', 'surf')}
     </div>
     <div class="pt" style="margin-top:18px">오늘의 퀘스트 <small>${done}/${qs.length}${done === qs.length ? ' · 모두 완료 🎉' : ' · 모두 하면 +20 XP'}</small></div>

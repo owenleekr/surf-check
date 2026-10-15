@@ -858,6 +858,10 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 /* 상단 한 줄 요약(나우바) 바로 밑 카드가 붙어 겹쳐 보였다 — 탭 내용 첫 상자와 간격 */
 .nowbar{ margin-bottom:12px } #play-hub > :first-child{ margin-top:0 }
 .prof .me-av{ width:58px; height:58px; border-radius:12px }   /* ❓·↩ 버튼을 ☰기타로 옮긴 자리만큼 캐릭터를 크게 */
+/* 소품샵 — 모찌 캐릭터는 세로로 길어 64px 정사각에선 소품이 안 보였다 → 미리보기를 키우고 배경을 바다·모래로 */
+.shop-pv{ width:100%; display:flex; justify-content:center; background:linear-gradient(#C9EAFF,#E6F5FF 76%,#F3E6C8 76%); border-radius:12px; overflow:hidden }
+.shop-pv canvas{ width:auto; height:104px; image-rendering:auto }
+#shop-me{ width:auto; height:96px; image-rendering:auto; background:linear-gradient(#C9EAFF,#E6F5FF 76%,#F3E6C8 76%); border-radius:12px }
 </style>
 </head>
 <body>
@@ -1001,7 +1005,7 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
         <span class="vt" id="voice-t"></span>
         <span class="vw" id="voice-w"></span>
       </button>
-      <details class="px sand fold" id="bld-fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기</summary>
+      <details class="px sand fold" id="bld-fold" style="margin-top:12px"><summary>🙂 내 캐릭터 꾸미기 · 🛍️ 소품샵</summary>
         <div id="bld-home" style="margin-top:8px"></div>
       </details>
     </div>
@@ -1257,6 +1261,7 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
       <button type="button" class="more-it" data-more="car"><i>🚗</i><b>카풀</b><small>같이 타고 내려가기</small></button>
       <button type="button" class="more-it" data-more="town"><i>🏘</i><b>마을 · 채팅</b><small>캐릭터들이 모인 곳</small></button>
       <button type="button" class="more-it" data-more="guide"><i>📖</i><b>사용 가이드</b><small>맛집·스팟 등록하는 법</small></button>
+      <button type="button" class="more-it" data-more="shop"><i>🛍️</i><b>소품샵</b><small>서핑 용품 · 소품 · 옷</small></button>
       <button type="button" class="more-it" data-more="a2hs"><i>📲</i><b>홈 화면에 추가</b><small>아이콘으로 바로 열기</small></button>
       <button type="button" class="more-it" data-more="help" id="help"><i>💡</i><b>처음 안내 다시 보기</b><small>탭마다 뭐가 있는지</small></button>
       <button type="button" class="more-it" id="out"><i>🚪</i><b>로그아웃</b><small>이 기기에서 나가기</small></button>
@@ -1566,17 +1571,19 @@ function renderBuilder(){
     wear: opt('상의', 'wear', keys(WEAR).map(k=>[k,WEAR_KO[k]]))
         + (cur.wear==='bare' ? '' : opt('상의 색', 'top', keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)))
         + opt('팬츠 · 웻수트', 'bottom', keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS))
-        + opt('모자', 'hat', keys(HAT).map(k=>[k,HAT_KO[k]])),
+        + opt('모자', 'hat', keys(HAT).map(k=>[k,HAT_KO[k]]))
+        + mo('손 소품', 'hold'),
     board: opt('보드', 'board', [['long','롱보드'],['fun','펀보드'],['short','숏보드']])
         + opt('보드 색', 'boardc', keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), sw(BOARDC))
-        + (typeof BPAT === 'object' ? opt('보드 무늬', 'bpat', keys(BPAT).map(k=>[k,BPAT_KO[k]])) : ''),
+        + (typeof BPAT === 'object' ? opt('보드 무늬', 'bpat', keys(BPAT).map(k=>[k,BPAT_KO[k]])) : '')
+        + mo('서핑 용품', 'gear'),
     pet:  opt('같이 타는 친구', 'pet', keys(PET).map(k=>[k,PET_KO[k]]))
         + (cur.pet==='none' ? '' : opt('친구 색', 'petc', keys(PETC).map(k=>[k,PETC_KO[k]]), sw(PETC))),
   };
   const TABS = [['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
   $('bld-opts').innerHTML = `<div style="display:flex;gap:4px;flex-wrap:wrap">${TABS.map(([k,t])=>
       `<button type="button" class="btn sm ${bldTab===k?'blue':'ghost'}" data-bt="${k}">${t}</button>`).join('')}
-      <button type="button" class="btn sm ghost" id="bld-rand" style="margin-left:auto">🎲 랜덤</button></div>
+      <button type="button" class="btn sm mint" id="bld-shop" style="margin-left:auto">🛍️ 소품샵</button><button type="button" class="btn sm ghost" id="bld-rand">🎲 랜덤</button></div>
     ${G[bldTab]}`;
   const paint = () => { if(typeof drawSpr==='function'){ const q = withLook(ME.profile, ME.name);
       drawSpr($('bld-av'), avatarRows(q), avatarTintOf(q, 0)); if($('me-av')) drawSpr($('me-av'), avatarRows(q, false), avatarTintOf(q, 0)); } };
@@ -1589,6 +1596,7 @@ function renderBuilder(){
     if(playBuy(key, v)){ ME.profile[key] = v; renderBuilder(); saveProfile(); } });
   $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(+b.dataset.lock === 98 ? '🔒 전설의 보드 원정에서 독도까지 가면 열려요' : `🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
   /* 랜덤이 잠긴 걸 뽑으면 레벨 보상이 의미가 없다 */
+  $('bld-shop').onclick = ()=>{ if(typeof shopOpen === 'function') shopOpen(); };
   $('bld-rand').onclick = ()=>{ const pick = (o, key) => { const ks = Object.keys(o).filter(k=>key == null || (lockOf(key, k) == null && !(typeof shopOf === 'function' && shopOf(key, k)))); return ks[Math.floor(Math.random()*ks.length)]; };
     if(window.MOCHI_OPT) Object.assign(ME.profile, { fshape:pick(MOCHI_OPT.fshape), eye:pick(MOCHI_OPT.eye, 'eye'), brow:pick(MOCHI_OPT.brow), acc:pick(MOCHI_OPT.acc, 'acc') });
     Object.assign(ME.profile, { hair:pick(HAIR, 'hair'), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
@@ -2718,7 +2726,7 @@ $('t-more').onclick = ()=>{ moreDots(); $('more-sheet').hidden = false; };
 $('more-sheet').addEventListener('click', e=>{
   if(e.target.closest('[data-moreclose]')){ $('more-sheet').hidden = true; return; }
   const b = e.target.closest('[data-more]'); if(!b) return; const k = b.dataset.more; $('more-sheet').hidden = true;
-  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
+  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'shop') window.shopOpen?.(); else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
 });
 
 /* ── 탭 ─────────────────────────────────────────────────── */

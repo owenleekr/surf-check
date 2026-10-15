@@ -5,6 +5,7 @@
    좌표: 사람 200×250, 펫이 있으면 왼쪽에 120 을 더 붙여 320×250.
    남의 프로필 값은 전부 아래 표(HAIR·HAT·…)의 키로만 쓰고, 색은 #RRGGBB 만 받는다 — SVG 안에 문자열이 그대로 들어가지 않게. */
 (function(){
+const own = (o, k) => Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined;   // 'constructor' 같은 키로 프로토타입 값이 새어 나오지 않게
 const HEXOK = c => /^#[0-9a-f]{6}$/i.test(String(c || '')) ? c : null;
 const dk = (hex, f)=>'#' + hex.slice(1).match(/../g).map(h=>Math.max(0, Math.min(255, Math.round(parseInt(h, 16) * f))).toString(16).padStart(2, '0')).join('');
 const lt = (hex, t)=>'#' + hex.slice(1).match(/../g).map(h=>{ const v = parseInt(h, 16); return Math.round(v + (255 - v) * t).toString(16).padStart(2, '0'); }).join('');
@@ -108,6 +109,17 @@ function face(F, U, charm, es, H){
   return o;
 }
 
+/* ── 소품샵 · 서핑 용품 ── 손 소품(hold)은 오른손에, 서핑 용품(gear)은 몸·보드에. 조개 상점(play.js)에서 산다 */
+const HOLDS = ['none','coffee','coconut','gopro','wax','shell','flag'], GEARS = ['none','leash','booties','helmet','towel','watch','pouch','fins'];
+const HOLD_SVG = {
+  coffee:'<path d="M-9,-27 L15,-27 L12,4 L-6,4 Z" fill="#EAF3FF" fill-opacity=".9" stroke="#B8C4D8" stroke-width="1.6"/><path d="M-7.6,-16 L13.6,-16 L12,4 L-6,4 Z" fill="#6B4A2F"/><rect x="-4" y="-22" width="6" height="6" rx="1.5" fill="#fff" opacity=".8"/><rect x="4" y="-20" width="6" height="6" rx="1.5" fill="#fff" opacity=".8"/><path d="M-11,-30 L17,-30 L15,-25 L-9,-25 Z" fill="#fff" stroke="#B8C4D8" stroke-width="1.2"/><path d="M6,-30 L10,-46" stroke="#3FD49A" stroke-width="3.2" stroke-linecap="round"/>',
+  coconut:'<circle cx="4" cy="-12" r="14" fill="#7A4E2D"/><path d="M-6,-20 Q4,-30 14,-20" fill="none" stroke="#5E3A20" stroke-width="2"/><ellipse cx="4" cy="-24" rx="9" ry="3.2" fill="#F6F0E0"/><path d="M6,-24 L13,-42" stroke="#FF6B9A" stroke-width="2.8" stroke-linecap="round"/><path d="M3,-41 Q13,-52 23,-41 Z" fill="#FFD23F"/>',
+  gopro:'<path d="M0,0 L16,-50" stroke="#5B6275" stroke-width="4.4" stroke-linecap="round"/><rect x="8" y="-66" width="20" height="16" rx="3.5" fill="#25262B"/><circle cx="18" cy="-58" r="5" fill="#5A6B8C"/><circle cx="19.6" cy="-59.6" r="1.6" fill="#fff"/><rect x="10" y="-64" width="5" height="3" rx="1" fill="#FF4B4B"/>',
+  wax:'<ellipse cx="4" cy="-6" rx="13" ry="7" fill="#E9D27A"/><rect x="-9" y="-14" width="26" height="8" fill="#F7E9A0"/><ellipse cx="4" cy="-14" rx="13" ry="6" fill="#FFF6C9"/><path d="M-4,-14 Q4,-18 12,-14" fill="none" stroke="#FF6B9A" stroke-width="2"/>',
+  shell:'<path d="M-8,-2 C-12,-22 8,-38 22,-24 C26,-16 18,-4 6,0 Z" fill="#FFC9B9"/><path d="M-4,-8 C0,-20 12,-26 18,-20 M0,-4 C6,-14 14,-16 16,-12" fill="none" stroke="#E89A86" stroke-width="2"/><circle cx="-6" cy="-1" r="3" fill="#F7A994"/>',
+  flag:'<path d="M0,6 L0,-64" stroke="#8B6B4A" stroke-width="3.4" stroke-linecap="round"/><path d="M0,-64 L34,-55 L0,-44 Z" fill="#2E6BFF"/><path d="M5,-54 Q10,-59 15,-54 Q20,-49 25,-54" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>',
+};
+
 function petSVG(kind, c, lv, U){
   /* 머리 큰 치비 펫 — 머리 반지름 36, 몸은 작게. 눈은 하이라이트 둘, 볼터치는 늘 살짝. 친밀도: 1 볼터치 진하게 · 2 리본 · 3 선글라스 */
   const m = dk(c, .8), mm = dk(c, .66), E = '#2A1F2B', W = '#FFFFFF', CR = '#FFF6EA';
@@ -174,13 +186,14 @@ let seq = 0;
 function mochiSVG(pr, opt){
   pr = pr || {}; opt = opt || {};
   const charm = opt.charm == null ? 2 : opt.charm, U = opt.uid || 'm' + (seq++).toString(36);
-  const S = SKIN_[pr.skin] || SKIN_.s, H = HAIR_[pr.hairc] || HAIR_.k, T = TOP_[pr.top] || TOP_.r, B = BOT_[pr.bottom] || BOT_.b;
-  const BD = BRD_[pr.boardc] || (typeof BOARDC === 'object' && Object.prototype.hasOwnProperty.call(BOARDC, pr.boardc) && HEXOK(BOARDC[pr.boardc])) || BRD_.y;
-  const hk = HAIRS[pr.hair] ? pr.hair : (pr.gender === 'm' ? 'short' : 'bob'), h = HAIRS[hk];
-  const wear = ['rash','hood','tank','suit','bare','stripe','heart','aloha','vest','poncho'].includes(pr.wear) ? pr.wear : 'rash';
-  const hat = HATS[pr.hat] || HAT2[pr.hat] ? pr.hat : null, cover = hat && (HATS[hat] || HAT2[hat].cover) && !['cap','visor'].includes(hat);
+  const S = own(SKIN_, pr.skin) || SKIN_.s, H = own(HAIR_, pr.hairc) || HAIR_.k, T = own(TOP_, pr.top) || TOP_.r, B = own(BOT_, pr.bottom) || BOT_.b;
+  const BD = own(BRD_, pr.boardc) || (typeof BOARDC === 'object' && Object.prototype.hasOwnProperty.call(BOARDC, pr.boardc) && HEXOK(BOARDC[pr.boardc])) || BRD_.y;
+  const hk = own(HAIRS, pr.hair) ? pr.hair : (pr.gender === 'm' ? 'short' : 'bob'), h = HAIRS[hk];
   const face_ = ['smile','happy','cool','wow','wink','sleepy'].includes(pr.face) ? pr.face : 'smile';
-  const HEAD = FSHAPE[pr.fshape] || FSHAPE.mochi, es = EYES.includes(pr.eye) ? pr.eye : 'sparkle', brow = BROWS.includes(pr.brow) ? pr.brow : 'none', acc = ACCS.includes(pr.acc) ? pr.acc : 'freckles';
+  const hold = HOLDS.includes(pr.hold) ? pr.hold : 'none', gear = GEARS.includes(pr.gear) ? pr.gear : 'none';
+  const HEAD = own(FSHAPE, pr.fshape) || FSHAPE.mochi, es = EYES.includes(pr.eye) ? pr.eye : 'sparkle', brow = BROWS.includes(pr.brow) ? pr.brow : 'none', acc = ACCS.includes(pr.acc) ? pr.acc : 'freckles';
+  const wear = ['rash','hood','tank','suit','bare','stripe','heart','aloha','vest','poncho'].includes(pr.wear) ? pr.wear : 'rash';
+  const hat = gear !== 'helmet' && (own(HATS, pr.hat) || own(HAT2, pr.hat)) ? pr.hat : null, cover = (hat && (HATS[hat] || HAT2[hat].cover) && !['cap','visor'].includes(hat)) || gear === 'helmet';
   const pet = opt.pet && ['dog','cat','rabbit','penguin','seal','otter','turtle'].includes(pr.pet) ? pr.pet : null;
   const holdBoard = charm >= 2 && opt.board !== false, wave = charm >= 1 && !holdBoard;
   const gl = d=>`<path d="${d}" fill="url(#${U}gl)"/>`;
@@ -188,7 +201,7 @@ function mochiSVG(pr, opt){
   let o = `<defs><radialGradient id="${U}gl" cx=".32" cy=".26" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity=".08"/><stop offset=".8" stop-color="#000030" stop-opacity=".05"/><stop offset="1" stop-color="#000030" stop-opacity=".22"/></radialGradient>
     <linearGradient id="${U}iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A1F2B" stop-opacity="0"/><stop offset="1" stop-color="#8A5A3E"/></linearGradient>
     <clipPath id="${U}hd"><path d="${HEAD}"/></clipPath></defs>`;
-  if(pet) o += `<g>${petSVG(pet, PETC_[pr.petc] || PETC_[PETDEF_[pet]] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U)}</g><g transform="translate(120 0)">`;
+  if(pet) o += `<g>${petSVG(pet, own(PETC_, pr.petc) || PETC_[PETDEF_[pet]] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U)}</g><g transform="translate(120 0)">`;
   o += `<ellipse cx="100" cy="242" rx="42" ry="6" fill="#12245F" opacity=".14"/>`;
   /* 옆에 낀 서핑보드(뒤) */
   if(holdBoard){ const bd = 'M24,112 C24,86 34,70 44,70 C54,70 64,86 64,112 L64,214 C64,232 54,242 44,242 C34,242 24,232 24,214 Z';
@@ -198,7 +211,7 @@ function mochiSVG(pr, opt){
     if(pat === 'flower') o += [[36,100],[52,128],[34,160],[54,190],[38,214]].map(([x, y], i)=>`<g transform="translate(${x} ${y})">${[0,72,144,216,288].map(a=>`<circle cx="${Math.cos(a * Math.PI / 180) * 4}" cy="${Math.sin(a * Math.PI / 180) * 4}" r="3.6" fill="${i % 2 ? '#FF8FB8' : '#fff'}"/>`).join('')}<circle r="2.6" fill="#FFD23F"/></g>`).join('');
     if(pat === 'flame') o += `<path d="M20,246 L20,200 Q28,214 32,196 Q36,176 42,190 Q46,170 50,186 Q56,168 58,192 Q62,182 68,198 L68,246 Z" fill="#FF9F1C"/><path d="M20,246 L20,218 Q30,226 34,212 Q40,200 46,214 Q52,202 56,216 Q62,208 68,220 L68,246 Z" fill="#FF4B4B"/>`;
     if(pr.boardc === 'legend') o += [[34,96],[54,140],[36,186]].map(([x, y])=>`<path d="M${x},${y - 7} L${x + 2},${y - 2} L${x + 7},${y} L${x + 2},${y + 2} L${x},${y + 7} L${x - 2},${y + 2} L${x - 7},${y} L${x - 2},${y - 2} Z" fill="#fff" opacity=".85"/>`).join('');
-    o += `</g>${gl(bd)}<path d="M44,74 L44,238" stroke="${pat === 'stringer' ? '#fff' : dk(BD, .78)}" stroke-width="${pat === 'stringer' ? 4 : 2.4}"/><path d="M38,226 L44,240 L50,226 Z" fill="${dk(BD, .7)}"/>`; }
+    o += `</g>${gl(bd)}<path d="M44,74 L44,238" stroke="${pat === 'stringer' ? '#fff' : dk(BD, .78)}" stroke-width="${pat === 'stringer' ? 4 : 2.4}"/>${gear === 'fins' ? `<path d="M31,222 L34,236 L39,222 Z M41,228 L44,242 L47,228 Z M49,222 L54,236 L57,222 Z" fill="#2B2F45"/>` : `<path d="M38,226 L44,240 L50,226 Z" fill="${dk(BD, .7)}"/>`}`; }
   /* 뒷머리 · 꽁지 */
   const curls = (pts, r)=>pts.map(([x, y])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
   const PERM_B = [...Array(14)].map((_, i)=>{ const a = Math.PI * (0.92 + i / 13 * 1.16) ; return [100 + Math.cos(a) * 72, 100 + Math.sin(a) * 66]; }).concat([[34,140],[166,140],[44,160],[156,160]]);
@@ -210,7 +223,8 @@ function mochiSVG(pr, opt){
   /* 다리 · 쪼리 */
   const legC = wear === 'suit' ? T : S;
   o += `<rect x="83" y="206" width="14" height="26" rx="7" fill="${legC}"/><rect x="103" y="206" width="14" height="26" rx="7" fill="${legC}"/>`;
-  [89, 111].forEach(x=>{ o += `<ellipse cx="${x}" cy="237" rx="12.5" ry="5" fill="${dk(BD, .92)}"/><ellipse cx="${x}" cy="233" rx="9" ry="5.5" fill="${S}"/><path d="M${x - 6},234 L${x},228 L${x + 6},234" fill="none" stroke="${dk(BD, .75)}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`; });
+  if(gear === 'booties') [89, 111].forEach(x=>{ o += `<path d="M${x - 9},220 L${x + 8},220 L${x + 9},234 Q${x + 13},239 ${x + 5},241 L${x - 11},241 Q${x - 14},238 ${x - 11},233 Z" fill="#22262F"/><path d="M${x - 11},238 L${x + 10},238" stroke="#3A3F4D" stroke-width="2"/>`; });
+  else [89, 111].forEach(x=>{ o += `<ellipse cx="${x}" cy="237" rx="12.5" ry="5" fill="${dk(BD, .92)}"/><ellipse cx="${x}" cy="233" rx="9" ry="5.5" fill="${S}"/><path d="M${x - 6},234 L${x},228 L${x + 6},234" fill="none" stroke="${dk(BD, .75)}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`; });
   /* 반바지 */
   if(wear !== 'suit'){ const sh = 'M71,192 Q100,201 129,192 L131,212 Q118,217 104,215 L100,207 L96,215 Q82,217 69,212 Z';
     o += `<path d="${sh}" fill="${B}"/><path d="M73,200 L71,211 M127,200 L129,211" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>`;
@@ -240,9 +254,16 @@ function mochiSVG(pr, opt){
   if(wear === 'poncho'){ const pc = 'M58,206 C60,180 66,156 84,148 Q100,142 116,148 C134,156 140,180 142,206 Q100,214 58,206 Z';
     o += `<path d="${pc}" fill="${T}"/>${gl(pc)}<path d="M62,188 L72,180 L82,188 L92,180 L102,188 L112,180 L122,188 L132,180 L140,188" fill="none" stroke="#fff" stroke-width="3.4" stroke-linejoin="round"/>`; }
   if(pr.role === 'coach' && pr.vest !== false && wear !== 'vest' && wear !== 'poncho') o += `<path d="M80,154 L92,154 L96,198 Q88,200 76,198 C75,184 77,166 80,154 Z M120,154 L108,154 L104,198 Q112,200 124,198 C125,184 123,166 120,154 Z" fill="#FF9F1C"/><path d="M76,180 L96,180 M104,180 L124,180" stroke="#FFF4D6" stroke-width="4"/>`;
+  if(gear === 'towel') o += `<path d="M75,150 Q100,167 125,150 L129,164 Q100,181 71,164 Z" fill="#FF7A7A"/><path d="M76,156 Q100,172 124,156" fill="none" stroke="#fff" stroke-width="3"/><rect x="74" y="160" width="13" height="32" rx="4" fill="#FF7A7A"/><path d="M74,170 L87,170 M74,180 L87,180" stroke="#fff" stroke-width="3"/>`;
+  if(gear === 'pouch') o += `<path d="M84,152 L121,192" stroke="#2B2F45" stroke-width="2.6" stroke-linecap="round"/><rect x="111" y="184" width="24" height="18" rx="5" fill="#3FD49A"/><path d="M111,191 L135,191" stroke="#2BAA7A" stroke-width="2"/><rect x="111" y="184" width="24" height="18" rx="5" fill="url(#${U}gl)"/>`;
+  if(gear === 'leash'){ o += `<rect x="103" y="219" width="16" height="7" rx="3" fill="#2B2F45"/>`;
+    if(holdBoard) o += `<path d="M44,238 C50,250 57,232 63,244 C69,254 75,234 81,246 C87,254 93,236 99,244 C103,249 106,236 108,226" fill="none" stroke="#2B2F45" stroke-width="2.4" stroke-linecap="round"/>`; }
+  const hR = wear === 'poncho' ? [134, 204] : handR;
+  if(hold !== 'none') o += `<g transform="translate(${hR[0]} ${hR[1]})">${HOLD_SVG[hold]}</g>`;
   if(wear === 'poncho') o += `<circle cx="66" cy="204" r="8" fill="${S}"/><circle cx="134" cy="204" r="8" fill="${S}"/>`;
   else o += `<circle cx="${handL[0]}" cy="${handL[1]}" r="8.5" fill="${S}"/><circle cx="${handR[0]}" cy="${handR[1]}" r="8.5" fill="${S}"/>`;
-  if(charm >= 2) o += `<path d="M86,151 Q100,163 114,151" fill="none" stroke="#8B6B4A" stroke-width="1.8"/><path d="M96,158 L100,168 L104,158 Z" fill="#FFF8EC" stroke="#D9C6A8" stroke-width="1"/>`;
+  if(gear === 'watch') o += `<rect x="${hR[0] - 8}" y="${hR[1] - 15}" width="16" height="7" rx="3" fill="#2B2F45"/><circle cx="${hR[0]}" cy="${hR[1] - 11.5}" r="4.4" fill="#8FD3FF" stroke="#2B2F45" stroke-width="1.6"/>`;
+  if(charm >= 2 && gear !== 'towel') o += `<path d="M86,151 Q100,163 114,151" fill="none" stroke="#8B6B4A" stroke-width="1.8"/><path d="M96,158 L100,168 L104,158 Z" fill="#FFF8EC" stroke="#D9C6A8" stroke-width="1"/>`;
   /* 귀 · 얼굴 */
   if(h.ears && !cover) o += `<circle cx="32" cy="110" r="11" fill="${S}"/><circle cx="168" cy="110" r="11" fill="${S}"/><circle cx="33" cy="111" r="5" fill="${dk(S, .9)}"/><circle cx="167" cy="111" r="5" fill="${dk(S, .9)}"/>`;
   o += `<path d="${HEAD}" fill="${S}"/>${gl(HEAD)}`;
@@ -274,6 +295,9 @@ function mochiSVG(pr, opt){
   /* 선글라스를 머리에(소품) */
   if(charm >= 2 && !hat && face_ !== 'cool' && (hk === 'short' || hk === 'surf' || hk === 'buzz')) o += `<path d="M58,58 Q60,50 70,50 L88,52 Q94,54 92,62 L88,68 Q84,72 74,71 Q62,70 58,58 Z M142,58 Q140,50 130,50 L112,52 Q106,54 108,62 L112,68 Q116,72 126,71 Q138,70 142,58 Z" fill="#1B2440"/><path d="M92,58 Q100,54 108,58" fill="none" stroke="#1B2440" stroke-width="3"/>`;
   /* 모자 */
+  if(gear === 'helmet'){ const hm = 'M27,94 C27,38 62,13 100,13 C138,13 173,38 173,94 Z';
+    o += `<path d="M34,112 Q58,170 100,168 Q142,170 166,112" fill="none" stroke="#2B2F45" stroke-width="2.6"/><circle cx="32" cy="104" r="15" fill="#FFD23F"/><circle cx="168" cy="104" r="15" fill="#FFD23F"/><circle cx="32" cy="104" r="6" fill="#E0B21E"/><circle cx="168" cy="104" r="6" fill="#E0B21E"/>`;
+    o += `<path d="${hm}" fill="#FFD23F"/>${gl(hm)}<path d="M27,90 Q100,76 173,90 L173,96 Q100,82 27,96 Z" fill="#E0B21E"/>` + [76, 100, 124].map(x=>`<ellipse cx="${x}" cy="34" rx="4" ry="8" fill="#2B2F45" opacity=".55"/>`).join(''); }
   if(hat && HAT2[hat]) o += HAT2[hat].svg;
   if(hat && HATS[hat]){ const X = HATS[hat], c = hat === 'cap' || hat === 'beanie' ? X.c : X.c;
     if(X.bill && hat === 'cap'){ o += `<path d="${X.d[0]}" fill="${c}"/>${gl(X.d[0])}<path d="${X.bill}" fill="${dk(c, .85)}"/><circle cx="${X.btn[0]}" cy="${X.btn[1]}" r="5.5" fill="${dk(c, .85)}"/>`; }
@@ -293,6 +317,8 @@ window.MOCHI_OPT = {
   fshape:{ mochi:'모찌', round:'동글', oval:'갸름', square:'각진', peach:'복숭아' },
   eye:{ sparkle:'반짝', dot:'점눈', cat:'고양이눈', droopy:'처진눈', star:'별눈', lash:'속눈썹' },
   brow:{ none:'없음', soft:'둥근', thick:'짙은', sad:'팔자' },
+  hold:{ none:'없음', coffee:'아이스 아메리카노', coconut:'코코넛 음료', gopro:'액션캠', wax:'서프 왁스', shell:'소라', flag:'양서학 깃발' },
+  gear:{ none:'없음', leash:'리쉬', booties:'서핑 부츠', helmet:'서핑 헬멧', towel:'비치타월', watch:'방수 시계', pouch:'방수 파우치', fins:'트라이 핀' },
   acc:{ freckles:'주근깨', none:'없음', zinc:'서퍼 선크림', bandaid:'반창고', glasses:'동그란 안경', star:'별 스티커', mole:'점' },
 };
 })();
