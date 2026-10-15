@@ -863,6 +863,12 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .shop-pv canvas{ width:auto; height:104px; image-rendering:auto }
 #shop-me{ width:auto; height:96px; image-rendering:auto; background:linear-gradient(#C9EAFF,#E6F5FF 76%,#F3E6C8 76%); border-radius:12px }
 .shop-zoom{ display:block; width:100%; height:104px; object-fit:contain }
+/* ── 위쪽 압축(v128) ── 소식줄·바다 요약이 두 줄씩 접혀 탭마다 150px 을 먹었다 → 한 줄 + 말줄임 */
+.feed{ min-height:40px; padding:5px 10px; margin-top:8px } .feed-t{ display:block; white-space:nowrap; text-overflow:ellipsis; -webkit-line-clamp:unset }
+.nowbar{ min-height:40px; padding:8px 12px; margin-top:8px } .nowbar span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0 }
+/* 맛집·스팟 머리 카드 — 제목·곳 수만 한 줄로 */
+.food-hd{ flex-direction:row; flex-wrap:wrap; align-items:baseline; gap:2px 8px; padding:8px 12px } .food-hd b{ font-size:15px } .food-hd span{ font-size:12.5px; color:#5B6275 } .food-hd small{ flex-basis:100%; font-size:11.5px }
+.ft-req.compact{ padding:8px 10px } .ft-req.compact .ft-links{ margin:0 }
 </style>
 </head>
 <body>

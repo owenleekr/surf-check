@@ -136,6 +136,8 @@ function ownerBox(kind){
 function addForm(kind, links){
   const lbl = kind === 'spot' ? '스팟' : '맛집', k = kind, d = n => esc(draft[`rq-${n}-${k}`] || ''), ar = draft[`rq-area-${k}`] || '';
   if(talkOk === false) return '';
+  /* 닫혀 있을 땐 버튼 한 줄만 — 설명 상자가 목록을 화면 아래로 밀어냈다 */
+  if(!addOpen[k]) return `<div class="ft-req compact" data-rqbox="${esc(k)}"><div class="ft-links"><button type="button" class="btn sm mint" data-rqopen="${esc(k)}">➕ ${lbl} 등록</button>${links || ''}</div></div>`;
   return `<div class="ft-req" data-rqbox="${esc(k)}"><div class="ft-rh"><b>➕ ${lbl} 등록하기</b>
       <small>네이버지도 링크 + 한줄평이면 <b>바로 올라가요</b> · 운영자가 리스트에 넣으면 ❌ → ⭕</small></div>
     ${addOpen[k] ? `<div class="ft-form">

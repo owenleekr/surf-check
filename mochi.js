@@ -20,7 +20,7 @@ const BOT_ = { b:'#4F7BFF', k:'#2B2F45', r:'#FF6B6B', g:'#3FD49A', p:'#9B6BFF', 
 const BOT_KO_ = { denim:'데님', w:'화이트', khaki:'카키', pink:'연핑크', navy:'네이비', sky:'하늘' };
 const BRD_ = { y:'#FFD23F', w:'#FFFFFF', c:'#8FD3FF', g:'#A6F542', p:'#FF9BD2', o:'#FF9F1C' };
 const PETC_ = { p:'#FFC2D9', y:'#FFE3B0', w:'#F4F6F9', n:'#C98A5B', g:'#A8F0D8', k:'#7A748A' };
-const PETDEF_ = { otter:'n', turtle:'g' };
+const PETDEF_ = { otter:'n', turtle:'g', penguin:'k' };
 
 /* ── 머리 — [뒷머리, 앞머리, 옆머리(좌), 귀 보임] ── */
 const HAIRS = {
