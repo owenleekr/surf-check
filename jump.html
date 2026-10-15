@@ -31,7 +31,7 @@ body{ background:#0B2540; color:var(--ink); font-family:-apple-system, BlinkMacS
 .game-hd > b{ flex:1; font-family:"Galmuri11",sans-serif; white-space:nowrap }
 .game-sc{ font-family:"Galmuri11",sans-serif; font-size:20px; color:#FFE27A } .game-sc small{ font-size:12px; color:#9FC4E4 }
 .game-stage{ position:relative; width:100%; border:4px solid var(--ink); background:#000; touch-action:none; -webkit-user-select:none; user-select:none }
-#g-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; touch-action:none; -webkit-touch-callout:none }
+#g-cv{ display:block; width:100%; height:auto; touch-action:none; -webkit-touch-callout:none }
 #g-x{ display:none }
 .game-ov{ position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; padding:10px; background:rgba(11,37,64,.55); overflow:auto }
 .game-ov > .go-card{ margin:auto } .game-ov[hidden]{ display:none }
@@ -45,6 +45,49 @@ body{ background:#0B2540; color:var(--ink); font-family:-apple-system, BlinkMacS
 .go-st{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:4px 0 8px } .go-st span{ display:flex; flex-direction:column; font-size:11px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); padding:4px 2px } .go-st b{ font-family:"Galmuri11",sans-serif; font-size:15px; color:var(--ink) }
 .game-ft{ color:#9FC4E4; font-size:13px; font-weight:700; text-align:center; padding-top:10px }
 .game-ft a{ color:#9FC4E4 }
+/* 파도 점프 새 단장 — 도트 대신 원정처럼 둥근 카드·부드러운 글꼴(그림은 캔버스가 기기 해상도로 그린다) */
+#game.game{ background:radial-gradient(120% 80% at 50% 0%, #1F5487, #0B2540 70%) }
+#game .game-hd > b, #game .game-sc{ font-family:inherit; font-weight:900; letter-spacing:-.01em }
+#game .game-sc{ display:none }
+#game .game-hd .btn, #game .game-hd .who{ border:0; border-radius:12px; box-shadow:none; background:rgba(255,255,255,.14); color:#fff }
+#game .game-stage{ border:0; border-radius:20px; overflow:hidden; background:#0B2540; box-shadow:0 10px 30px rgba(0,0,0,.35), 0 0 0 1.5px rgba(255,255,255,.14) }
+#game .game-ov{ background:linear-gradient(180deg, rgba(8,24,46,.25), rgba(8,24,46,.62)) }
+#game .go-card{ border:0; border-radius:22px; background:#FFFDF7; box-shadow:0 14px 34px rgba(8,24,46,.38); padding:18px 16px 16px; animation:jpIn .34s cubic-bezier(.2,1.3,.4,1) }
+@keyframes jpIn{ from{ transform:translateY(14px) scale(.96); opacity:0 } }
+@keyframes jpPop{ from{ transform:scale(.6); opacity:0 } }
+#game .go-t{ font-family:inherit; font-size:22px; font-weight:900; letter-spacing:-.02em; color:#14304F }
+#game .go-d{ font-size:13px; color:#5B6275; margin:10px 0 }
+#game .go-s{ font-family:inherit; font-size:54px; font-weight:900; letter-spacing:-.04em; line-height:1.05; color:#F07A26; animation:jpPop .5s .08s both cubic-bezier(.2,1.6,.4,1) }
+#game .go-s small{ font-size:17px; letter-spacing:0 }
+#game .go-b{ font-size:13px; color:#5B6275; margin:8px 0 } #game .go-b b{ color:#E0701E }
+#game .go-mode{ background:#EDF2F8; border-radius:14px; padding:4px; gap:4px; margin:14px 0 4px }
+#game .go-mode button{ border:0; border-radius:11px; background:transparent; color:#5B6275; min-height:42px; font-size:14px }
+#game .go-mode button[aria-pressed="true"]{ background:#fff; color:#14304F; box-shadow:0 2px 8px rgba(20,48,79,.16) }
+#game .go-st{ gap:6px; margin:12px 0 8px } #game .go-st span{ border:0; border-radius:12px; background:#F0F4F9; padding:8px 2px; font-size:11px; color:#5B6275 }
+#game .go-st b{ font-family:inherit; font-weight:900; font-size:16px; color:#14304F }
+#game .go-r{ background:#F0F4F9; border-radius:12px; padding:8px 10px; text-align:left } #game .go-r .jp-rh{ color:#14304F }
+#game .go-v{ background:#F7F2E6; border-radius:12px; padding:8px 10px }
+#game .go-card .btn{ border:0; border-radius:14px; min-height:50px; font-size:15.5px; font-weight:900; box-shadow:0 4px 0 rgba(20,48,79,.16) }
+#game .go-card .btn.blue{ background:linear-gradient(180deg,#43A3FF,#1F6FE0); color:#fff; box-shadow:0 4px 0 #1550A8 }
+#game .go-card .btn.ghost{ background:#EDF2F8; color:#14304F; box-shadow:none }
+#game .go-card .btn:active{ transform:translateY(2px); box-shadow:none }
+.jp-logo{ display:flex; align-items:center; gap:12px; text-align:left }
+.jp-logo img{ width:64px; height:72px; object-fit:contain; flex:0 0 auto; padding:4px; border-radius:18px; background:radial-gradient(circle at 50% 70%, #FFE9B8, #A9DAFF 75%) }
+.jp-logo small{ display:block; color:#5B6275; font-size:12.5px; font-weight:700; margin-top:3px }
+#game .jp-logo .go-t{ font-size:27px; color:#1F6FE0 }
+.jp-best{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:4px 0 2px }
+.jp-best span{ display:flex; flex-direction:column; padding:8px; border-radius:12px; background:#F0F4F9; font-size:11.5px; font-weight:800; color:#5B6275 }
+.jp-best b{ font-size:19px; font-weight:900; color:#14304F } .jp-best span.on{ background:#FFF3DA; box-shadow:inset 0 0 0 2px #FFC46B }
+.jp-wide{ width:100%; margin-top:8px }
+.jp-daily{ display:flex; align-items:center; gap:10px; width:100%; margin-top:10px; padding:10px 12px; text-align:left; font-family:inherit; color:#14304F; background:linear-gradient(135deg,#FFF1D6,#FFE1EC); border:0; border-radius:16px; cursor:pointer; box-shadow:0 3px 0 rgba(20,48,79,.1) }
+.jp-daily i{ font-style:normal; font-size:24px } .jp-daily span{ flex:1; display:flex; flex-direction:column } .jp-daily b{ font-size:14.5px } .jp-daily small{ font-size:11.5px; color:#6B5B70; font-weight:700 }
+.jp-daily em{ font-style:normal; display:flex; flex-direction:column; align-items:flex-end; color:#B4531E } .jp-daily em b{ font-size:18px; font-weight:900 }
+.jp-rib{ display:inline-block; padding:3px 10px; border-radius:999px; background:#EDF2F8; color:#3B5878; font-size:12px; font-weight:800; margin-bottom:6px }
+.jp-nb .jp-rib{ background:#FFF3DA; color:#B4531E }
+.jp-row{ display:flex; gap:8px; margin-top:10px } .jp-row .btn{ padding:0 16px }
+.jp-pause{ position:absolute; z-index:2; top:8px; right:8px; width:38px; height:38px; border-radius:50%; border:0; background:rgba(8,24,46,.45); color:#fff; font-size:14px; cursor:pointer }
+.jp-pause[hidden]{ display:none }
+@media (prefers-reduced-motion: reduce){ #game .go-card, #game .go-s{ animation:none } }
 /* 이름 · 순위 */
 .who{ display:flex; align-items:center; gap:4px; min-height:40px; padding:0 8px; font-family:inherit; font-weight:800; font-size:13px; color:var(--ink); background:#fff; border:3px solid var(--ink); cursor:pointer; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .name-in{ width:100%; min-height:50px; font-size:18px; font-weight:800; text-align:center; font-family:inherit; border:3px solid var(--ink); margin:8px 0 }
