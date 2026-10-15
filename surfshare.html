@@ -953,6 +953,9 @@ body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
 /* 글씨 크게(설정) — px 로 짠 화면이라 글자만 키우면 깨진다. 본문 열과 창·탭을 통째로 키운다 */
 html.big .wrap, html.big .sheet-in, html.big .pop-card{ zoom:1.12 } html.big .nav button{ font-size:12px } html.big .nav button i.pxi{ width:28px; height:28px }
 @keyframes flashy{ 0%,100%{ box-shadow:0 0 0 0 rgba(46,107,255,0) } 30%{ box-shadow:0 0 0 6px rgba(46,107,255,.45) } } .hubset.flash{ animation:flashy 1.4s ease-out; border-radius:12px }
+/* 끌어 닫기 손잡이 */
+.sheet-in > .sheet-hd{ position:relative; touch-action:none } .sheet-in > .sheet-hd::before{ content:""; position:absolute; left:50%; top:-8px; width:40px; height:4px; margin-left:-20px; border-radius:2px; background:rgba(27,27,47,.22) }
+@media(min-width:560px){ .sheet-in > .sheet-hd::before{ display:none } }
 </style>
 </head>
 <body>
