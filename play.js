@@ -488,7 +488,6 @@ function renderHub(enter){
     <div class="pt" style="margin-top:18px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
-      ${card(0,'🌊','라인업 서핑', `쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, (p.sn || 0) ? '' : 'NEW', 'surf')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
@@ -497,6 +496,7 @@ function renderHub(enter){
       ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
       ${card(7,'🏘','마을 · 채팅', '캐릭터들이 모인 곳 · 한마디', '', 'town')}
       ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
+      ${card(8,'🌊','라인업 서핑', `쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, (p.sn || 0) ? '' : 'NEW', 'surf')}
     </div>
     <div class="pt" style="margin-top:18px">설정 · 공유</div>
     <div class="hubset">

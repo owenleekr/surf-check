@@ -123,6 +123,7 @@ function renderSpots(root){
   root.innerHTML = `
     <div class="food-hd"><b>${esc(f?.title || '🏄 양양 서핑 스팟')}</b><span>${esc(f?.memo || '학교에서 가까운 순 · 캠이 있는 곳은 바로 볼 수 있어요')}</span>
       ${f ? `<small>${all.length}곳 · 네이버지도 폴더와 자동으로 맞춰져요</small>` : ''}</div>
+    ${window.waveSpotHTML ? window.waveSpotHTML() : ''}
     ${FT.ownerBox('spot')}${FT.addForm('spot', f ? howTo('spot', f.link) : '')}
     ${areas.length > 1 ? `<div class="food-chips" role="group" aria-label="지역">${areas.map(a=>`<button type="button" aria-pressed="${a === sarea}" data-sarea="${esc(a)}">${esc(a)} <small>${counts[a]}</small></button>`).join('')}</div>` : ''}
     ${list.map(i=>card(i, true)).join('')}
@@ -130,6 +131,7 @@ function renderSpots(root){
     ${!f && !all.length ? '<div class="empty">스팟 목록을 아직 못 불러왔어요</div>' : ''}
 `;
   root.querySelectorAll('[data-cam]').forEach(b=>b.onclick = ()=>{ setSea(b.dataset.cam); setTab('cam'); });
+  const ws = root.querySelector('.wv-spot'); if(ws && window.waveWire) window.waveWire(ws);
   root.querySelectorAll('[data-sarea]').forEach(b=>b.onclick = ()=>{ sarea = b.dataset.sarea; render(true); });
 }
 

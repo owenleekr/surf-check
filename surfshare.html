@@ -64,6 +64,7 @@ window.__bootFail = (files) => {
 <script src="updates.js" defer></script>
 <script src="icons.js" defer></script>
 <script src="recommend.js" defer></script>
+<script src="waves.js" defer></script>
 <script src="bus.js" defer></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
@@ -417,6 +418,22 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .more-it{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:88px; padding:10px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
 .more-it i{ font-style:normal; font-size:26px; font-family:sans-serif } .more-it b{ font-size:15px } .more-it small{ font-size:12px; color:#5B6275; font-weight:700 }
 .more-it em{ position:absolute; top:8px; right:8px; font-style:normal; font-size:11px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
+/* 이번주의 파도 */
+.wv-card{ padding:10px; background:#E6F6FF; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) }
+.wv-strip{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px }
+.wv-d{ display:flex; flex-direction:column; align-items:center; gap:1px; padding:6px 2px; min-height:96px; font-family:inherit; color:var(--ink); background:#fff; border:3px solid var(--ink); cursor:pointer }
+.wv-d.wk{ background:#FFF3C4 } .wv-d small{ font-size:11px; font-weight:800; color:#5B6275 } .wv-d b{ font-family:"Galmuri11",sans-serif; font-size:16px } .wv-h{ font-size:12px; font-weight:800 }
+.wv-d em{ font-style:normal; font-size:10px; font-weight:800; color:#1F5FA8; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.wv-s{ font-size:11.5px; font-weight:800; padding:0 4px; border:2px solid var(--ink) } .wv-s.s5,.wv-s.s4{ background:var(--mint) } .wv-s.s3{ background:#FFE27A } .wv-s.s2,.wv-s.s1,.wv-s.s0{ background:#E3E6EE }
+.wv-wks{ display:flex; flex-direction:column; gap:6px; margin-top:8px }
+.wv-wk{ display:flex; flex-direction:column; gap:2px; padding:8px 10px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); cursor:pointer } .wv-wk b{ font-size:13.5px } .wv-wk span{ font-size:12.5px; font-weight:700 } .wv-wk small{ font-size:12px; color:#1F5FA8; font-weight:800 }
+.wv-spot{ margin-top:12px; padding:10px; background:#E6F6FF; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) } .wv-spot-h{ display:flex; flex-direction:column; margin-bottom:8px } .wv-spot-h b{ font-family:"Galmuri11",sans-serif; font-size:15px } .wv-spot-h small{ font-size:12px; color:#5B6275; font-weight:700 }
+.wv-rec{ padding:10px; background:#E6FBEF; border:3px solid var(--ink) } .wv-rec > b{ font-size:14.5px }
+.wv-rs{ display:flex; align-items:center; gap:8px; padding:7px 0; border-bottom:2px dashed rgba(27,27,47,.12) } .wv-rs:last-child{ border-bottom:0 } .wv-rk{ font-family:"Galmuri11",sans-serif; font-size:16px; width:20px; text-align:center }
+.wv-rm{ flex:1; min-width:0; display:flex; flex-direction:column } .wv-rm b{ font-size:14.5px } .wv-rm small{ font-size:12px; color:#4B4A6B; font-weight:700; line-height:1.45 }
+.wv-reg{ margin-top:10px } .wv-reg h4{ margin:0 0 4px; font-size:14px } .wv-r{ display:flex; align-items:center; gap:8px; padding:6px 8px; background:#fff; border:2px solid var(--ink) } .wv-rl{ font-weight:800; font-size:13px; width:32px } .wv-rv{ flex:1; font-size:13px; line-height:1.45 } .wv-rv small{ color:#5B6275; font-weight:700 }
+.wv-why{ font-size:12px; color:#5B6275; font-weight:700; margin:2px 0 6px 2px }
+.wv-days{ display:flex; flex-wrap:wrap; gap:4px; margin-top:10px } .wv-days button{ min-height:36px; padding:0 8px; font-family:inherit; font-weight:800; font-size:12.5px; background:#fff; border:2px solid var(--ink); cursor:pointer } .wv-days button.wk{ background:#FFF3C4 } .wv-days button[aria-pressed="true"]{ background:var(--ink); color:#fff }
 /* 홈 — 안 써 본 기능 추천 */
 #home-rec{ padding:10px 12px; background:#E6FBEF; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink) }
 .rec{ display:flex; align-items:flex-start; gap:10px } .rec-ic{ font-size:30px; font-family:sans-serif; line-height:1.1 }
@@ -906,6 +923,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <span class="qs-ic" id="qs-ic"></span>
         <span class="qs-m"><b id="qs-t"></b><small id="qs-s"></small></span><b class="qs-go">›</b>
       </button>
+      <section class="hwave" id="home-wave" aria-label="이번주의 파도" hidden></section>
       <section class="drill" id="drill" aria-label="테이크오프 훈련" hidden>
         <h3>🏄 테이크오프 훈련</h3>
         <div class="dsub" id="drill-sub"></div>
@@ -3042,9 +3060,9 @@ function homeGames(){
   el.innerHTML = `<div class="hsec">🎮 오늘 한 판 <small>게임·훈련으로 XP</small></div>
     <button type="button" class="hg hg-main" data-hg="game"><span class="hg-ic">🏄</span><span class="hg-mm"><b>파도 점프</b><small>${dsc != null ? `📅 오늘의 챌린지 ${dsc}점 · 다시 도전!` : '📅 오늘의 챌린지 — 모두 같은 코스'}</small><small>쉬움 최고 ${p.best || 0} · 어려움 ${p.hbest || 0}</small></span><span class="hg-go">▶</span></button>
     <div class="hgrid two">
-    ${g('surf', '🌊', '라인업 서핑', (p.sebest || p.sbest) ? `최고 ${Math.max(p.sebest || 0, p.sbest || 0)}` : '패들·튜브·풀아웃')}
+    ${g('quest', '🗺️', '전설의 보드 원정', '자동 모험 · 곧 열려요')}
     ${g('skate', '🛹', '서프스케이트', skDays ? `${skDays}일 탐` : '땅에서 펌핑')}</div>`;
-  el.querySelectorAll('[data-hg]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hg; (k === 'surf' ? window.surfOpen : k === 'skate' ? window.skateOpen : window.gameOpen)?.(); });
+  el.querySelectorAll('[data-hg]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hg; (k === 'surf' ? window.surfOpen : k === 'skate' ? window.skateOpen : k === 'quest' ? (window.questOpen || (()=>toast('🗺️ 전설의 보드 원정 — 곧 열려요!'))) : window.gameOpen)?.(); });
 }
 /* 홈 — 맛집·스팟: 최근에 올라온 3곳(네이버 리스트 + 앱 등록). 남이 쓴 이름·한줄평은 esc */
 function homeFood(){
@@ -3081,7 +3099,7 @@ function renderHome(){
   if(bs.length)    rows.push(line('⚡','번개', bs.length, 'bolt', `${dShort(bs[0].date)} ${hLabel(bs[0].time)} · ${esc(bs[0].beach)} · ${(bs[0].joins||[]).length}명`));
   if(rides.length) rows.push(line('🚗','차량', rides.length, 'ride', `${dShort(rides[0].date)} ${hLabel(rides[0].depart_at)} · ${esc(rides[0].from_place)} → ${esc(rides[0].to_place)} · 빈자리 ${Math.max(0,(rides[0].seats||0)-(rides[0].riders||[]).length)}`));
   if(stays.length) rows.push(line('🏠','숙소', stays.length, 'stay', `${dShort(stays[0].date_from)} ~ ${dShort(stays[0].date_to)} · ${esc(stays[0].place)} · ${(stays[0].guests||[]).length}/${stays[0].capacity}명`));
-  homeGames(); homeFood(); window.recCard?.();
+  homeGames(); homeFood(); window.recCard?.(); window.waveHome?.();
   box.innerHTML = rows.join('') || `<div class="hsub dim" style="padding:2px 0 8px">아직 올라온 글이 없어요. 먼저 열어볼까요?</div>
       <div class="hq"><button type="button" class="btn sm mint" data-go="bolt">⚡ 번개</button>
       <button type="button" class="btn sm mint" data-go="ride">🚗 차량</button>
