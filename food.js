@@ -9,6 +9,13 @@ let data = null, view = 'food', area = '전체', sort = 'near', busy = false, fa
 const PIK = 'lineup.share.pi', PI = (()=>{ try{ return JSON.parse(localStorage.getItem(PIK) || '{}'); }catch(e){ return {}; } })();
 let piOff = false, piBusy = 0;
 const piKey = i => String(i.n || '').slice(0, 40);
+/* 종류 — 검색 API 키가 없어도 가게 이름·한줄평으로 어림한다(키가 생기면 API 분류가 이긴다) */
+const CAT_RULE = [[/곱창|막창|대창/, '곱창'], [/양꼬치/, '양꼬치'], [/갈비|삼겹|고기|정육|한우|숯불|생구이|돼지|소고기|목살/, '고기'], [/순대|국밥|감자탕|해장|찌개|전골|탕\b/, '국밥·찌개'],
+  [/물회|횟집|수산|대게|조개|해물|회센터|생선|오징어/, '횟집·해산물'], [/막국수|메밀|국수|냉면|칼국수|라멘|우동|면\b/, '면'], [/스시|초밥|돈가스|돈까스|히모노|이자카야|일식/, '일식'],
+  [/카레|파스타|피자|버거|브런치|스테이크/, '양식'], [/카페|커피|토스트|베이커리|빵|디저트|도넛|아이스크림/, '카페·디저트'], [/포차|호프|주점|맥주|술집|니가쏴라/, '술집'],
+  [/짜장|짬뽕|중식|중국/, '중식'], [/분식|떡볶이|김밥/, '분식'], [/쌈밥|백반|한정식|식당|밥집|한식/, '한식']];
+const CAT_IC = { '고기':'🥩', '곱창':'🍖', '양꼬치':'🍢', '국밥·찌개':'🍲', '횟집·해산물':'🐟', '면':'🍜', '일식':'🍣', '양식':'🍝', '카페·디저트':'☕', '술집':'🍺', '중식':'🥟', '분식':'🍙', '한식':'🍚' };
+const guessCat = i => { const t = `${i.n || ''} ${i.m || ''}`; for(const [re, c] of CAT_RULE) if(re.test(t)) return c; return ''; };
 const piOf = i => { const x = PI[piKey(i)]; return x && Date.now() - x.at < 7 * 864e5 ? x.info : null; };
 function piHTML(i){
   const x = piOf(i); if(!x || !x.enabled) return '';
@@ -72,7 +79,7 @@ function renderFood(root){
   const all = items('food').concat(FT.added('food')), counts = { 전체:all.length }; all.forEach(i=>{ const a = areaOf(i.a); counts[a] = (counts[a] || 0) + 1; });
   const areas = ['전체', '양양', '속초', '고성', '강릉', '기타'].filter(a=>counts[a]);
   const seen = seenSet(), week = Date.now() - 7 * 864e5, dist = i => i.lat == null ? Infinity : distKm(i.lat, i.lon);
-  const catOfI = i => piOf(i)?.cat || '';
+  const catOfI = i => piOf(i)?.cat || guessCat(i);
   const cc = {}; all.forEach(i=>{ const c = catOfI(i); if(c) cc[c] = (cc[c] || 0) + 1; });
   const cats = Object.keys(cc).sort((a,b)=>cc[b] - cc[a]); if(fcat !== '전체' && !cc[fcat]) fcat = '전체';
   const list = all.filter(i=>(area === '전체' || areaOf(i.a) === area) && (fcat === '전체' || catOfI(i) === fcat)).sort((a,b)=> sort === 'new' ? (b.t - a.t) : (dist(a) - dist(b)) || (b.t - a.t));
@@ -82,15 +89,16 @@ function renderFood(root){
       <small>${all.length}곳 · 네이버 리스트와 자동으로 맞춰져요${at ? ` · 갱신 ${at}` : ''}${failed ? ' · ⚠️ 새로 못 불러와 저장된 목록이에요' : ''}</small></div>
     ${FT.ownerBox('food')}${FT.addForm('food', howTo('food', f.link))}
     <div class="food-chips" role="group" aria-label="지역">${areas.map(a=>`<button type="button" aria-pressed="${a === area}" data-area="${esc(a)}">${esc(a)} <small>${counts[a]}</small></button>`).join('')}</div>
-    ${cats.length >= 2 ? `<div class="food-chips fc-cat" role="group" aria-label="종류"><button type="button" aria-pressed="${fcat === '전체'}" data-fcat="전체">모든 종류</button>${cats.map(c=>`<button type="button" aria-pressed="${c === fcat}" data-fcat="${esc(c)}">${esc(c)} <small>${cc[c]}</small></button>`).join('')}</div>` : ''}
+    ${cats.length >= 2 ? `<div class="food-chips fc-cat" role="group" aria-label="종류"><button type="button" aria-pressed="${fcat === '전체'}" data-fcat="전체">모든 종류</button>${cats.map(c=>`<button type="button" aria-pressed="${c === fcat}" data-fcat="${esc(c)}">${CAT_IC[c] || ''} ${esc(c)} <small>${cc[c]}</small></button>`).join('')}</div>` : ''}
     <div class="food-sort" role="group" aria-label="정렬"><button type="button" aria-pressed="${sort === 'near'}" data-sort="near">📍 학교에서 가까운 순</button><button type="button" aria-pressed="${sort === 'new'}" data-sort="new">🆕 최근 추가 순</button></div>
     ${list.map(i=>{ const km = dist(i), isNew = i.t && i.t > week, fresh = !i.by && seen.size && !seen.has(i.id), reg = i.by ? i : FT.regOf('food', i.id);
       const link = safeHttp(i.u) || (i.pid ? `https://map.naver.com/p/entry/place/${i.pid}` : `https://map.naver.com/p/search/${encodeURIComponent(i.n)}`);
-      return `<article class="card food-card${i.by ? ' app' : ''}"><div class="hd"><b>${esc(i.n)}</b><span class="tag pi-cat" data-pic="${esc(i.id)}"${catOfI(i) ? '' : ' hidden'}>${esc(catOfI(i))}</span>${isNew || fresh ? '<span class="tag" style="background:var(--coral);color:#fff">NEW</span>' : ''}</div>
+      return `<article class="card food-card${i.by ? ' app' : ''}"><div class="hd"><span class="fc-ic" aria-hidden="true">${CAT_IC[catOfI(i)] || '🍴'}</span><b>${esc(i.n)}</b><span class="tag pi-cat" data-pic="${esc(i.id)}"${catOfI(i) ? '' : ' hidden'}>${esc(catOfI(i))}</span>${isNew || fresh ? '<span class="tag" style="background:var(--coral);color:#fff">NEW</span>' : ''}</div>
         ${reg ? FT.regLine(reg, !i.by) : ''}
         ${i.m && !i.by ? `<div class="food-memo">💬 ${esc(i.m)}</div>` : i.by && i.m ? `<div class="food-memo">🙋 ${esc(i.m)}</div>` : ''}
         <div class="meta">${esc(i.a)}${km < Infinity ? ` · 학교에서 <b>${km < 10 ? km.toFixed(1) : Math.round(km)}km</b>` : ''}</div>
         <div class="pi" data-pi="${esc(i.id)}">${piHTML(i)}</div>
+        ${FT.preview ? FT.preview('food', i.id, !i.by && reg ? reg.id : '') : ''}
         ${FT.block('food', i.id, !i.by && reg ? reg.id : '', `<a class="ft-b ft-map" href="${esc(link)}" target="_blank" rel="noopener">📍 지도 ↗</a>`)}</article>`; }).join('') || '<div class="empty">이 지역에는 아직 없어요</div>'}`;
   root.querySelectorAll('[data-area]').forEach(b=>b.onclick = ()=>{ area = b.dataset.area; render(true); });
   root.querySelectorAll('[data-sort]').forEach(b=>b.onclick = ()=>{ sort = b.dataset.sort; render(true); });

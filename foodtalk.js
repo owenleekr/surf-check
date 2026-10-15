@@ -86,6 +86,15 @@ function block(kind, id, altId, extra){
   return `<div class="ft"><div class="ft-bar">${bar}${extra || ''}</div>${open.has(T) && talkOk !== false ? thread(T, A) : ''}</div>`;
 }
 
+/* 카드에 미리 보이는 '최근 한마디' — 댓글을 펼치지 않아도 사람들이 뭐라고 했는지 */
+function preview(kind, id, altId){
+  if(!ok(id) || talkOk === false) return '';
+  const T = tTarget(kind, id), A = altId && ok(altId) ? tTarget(kind, altId) : null;
+  const rows = (talk || []).filter(t=>(t.target === T || (A && t.target === A)) && t.text);
+  const last = rows[rows.length - 1]; if(!last || open.has(T)) return '';
+  return `<button type="button" class="ft-pv" data-tg="${esc(T)}"><b>${esc(last.name)}</b><span class="tag ft-co${last.cohort === '6기' ? ' six' : ''}">${esc(tag(last.cohort))}</span><span class="ft-pvt">${esc(last.text)}</span>${rows.length > 1 ? `<small>+${rows.length - 1}</small>` : ''}</button>`;
+}
+
 /* ── 앱에서 등록 → 운영자가 네이버 리스트에 반영 ──────────────────────────
    네이버 '양서학' 리스트는 만든 사람(오웬)만 고칠 수 있다. 그래서:
    ① 누구나 네이버지도 링크 + 이름 + 지역 + 한줄평으로 등록 → 앱 목록에 바로 뜬다 (양서학 리스트 ❌)
@@ -231,5 +240,5 @@ function events(nameOf){
   }).filter(Boolean);
 }
 
-window.FT = { pull, block, addForm, added, regOf, regLine, ownerBox, init, events, ok };
+window.FT = { pull, block, preview, addForm, added, regOf, regLine, ownerBox, init, events, ok };
 })();
