@@ -1973,11 +1973,15 @@ async function pullCond(){
     if(state.tab === 'town') layoutTown();
   }catch(e){ box.innerHTML = '<span class="src">바다 상태를 못 읽었어요 · 신호 확인</span>'; }
 }
+/* 수온 → 웻수트 두께(입문자 기준, 바람·체질 따라 한 단계 위아래) */
+const suitOf = t => t == null || isNaN(t) ? '' : t >= 24 ? '래시가드·보드숏' : t >= 21 ? '스프링슈트(2mm)' : t >= 18 ? '3/2mm 풀슈트' : t >= 15 ? '4/3mm 풀슈트' : t >= 12 ? '5/4mm + 부츠' : '5/4mm + 부츠·장갑·후드';
 function paintCond(v){
   const num = (x, d=1) => (x==null || isNaN(x)) ? '–' : (+x).toFixed(d);
+  const suit = suitOf(+v.sst);
   const body = `<b>${num(v.temp)}°</b> ${WX[v.wx] || ''} · 수온 <b>${num(v.sst)}°</b>`
     + ` · 파도 <b>${num(v.h)}m</b> / <b>${num(v.p)}초</b>`
-    + (v.tide ? `<br>🌙 물 <b>${v.tide.dir}</b> · 다음 <b>${v.tide.type} ${hLabel(v.tide.at)}</b>` : '');
+    + (v.tide ? `<br>🌙 물 <b>${v.tide.dir}</b> · 다음 <b>${v.tide.type} ${hLabel(v.tide.at)}</b>` : '')
+    + (suit ? `<br>🩱 오늘 입을 것 <b>${suit}</b>` : '');
   const src = `<span class="src">추정값(Open-Meteo) · 물때 오차 10~30분</span>`;
   if($('cond')) $('cond').innerHTML = body + src;
   /* 캠에서는 어느 바다 값인지가 헷갈리기 쉽다 — 해변 이름을 같이 적는다 */
@@ -1985,7 +1989,8 @@ function paintCond(v){
     `<span class="bn">🌊 지금 ${esc(mySea())}</span>`
     + `기온 <b>${num(v.temp)}°</b> · ${WX[v.wx] || '–'} · 수온 <b>${num(v.sst)}°</b><br>`
     + `파고 <b>${num(v.h)}m</b> · 파도 간격 <b>${num(v.p)}초</b>`
-    + (v.tide ? `<br>물때 <b>${v.tide.dir}</b> · 다음 <b>${v.tide.type}</b> ${hLabel(v.tide.at)}` : '') + src;
+    + (v.tide ? `<br>물때 <b>${v.tide.dir}</b> · 다음 <b>${v.tide.type}</b> ${hLabel(v.tide.at)}` : '')
+    + (suit ? `<br>🩱 수온 ${num(v.sst)}° → <b>${suit}</b>` : '') + src;
 }
 
 $('now-btn').onclick = async ()=>{
