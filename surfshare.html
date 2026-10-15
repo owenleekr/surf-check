@@ -708,7 +708,7 @@ body.has-nav .wrap{ padding-bottom:124px }   /* 하단 탭 + 쪽지 버튼이 �
 .village{ position:relative; border:2px solid var(--ink); box-shadow:0 2px 6px rgba(18,36,95,.14); overflow:hidden;
           background:#CFEDFF; padding:10px 6px 16px; min-height:230px;
           margin-inline:-10px; width:calc(100% + 20px) }
-#vbg{ position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; z-index:0 }
+#vbg{ position:absolute; inset:0; width:100%; height:100%; z-index:0 }
 .vgrid{ z-index:1 }
 
 /* 줄 세워 놓으니 단체사진이 됐다. 바다엔 타는 사람, 모래엔 쉬는 사람을 따로 세운다 —
@@ -905,6 +905,10 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .wv-mynote{ margin-top:6px; font-size:12px; font-weight:700; color:#5B6275 }
 .sl-mic{ width:100% } .sl-heard{ margin-top:6px; padding:8px 10px; background:#F4F8FC; border-radius:10px; font-size:12.5px; color:#5B6275; font-weight:700 }
 .sl-wx{ margin-top:10px; padding:8px 10px; background:#EAF6FF; border-radius:10px; font-size:13px; font-weight:700 } .sl-wx small{ color:#5B6275 }
+/* 마을 이름표·레벨 — 모찌 캐릭터와 결 맞추기 */
+.vp .nm{ border-radius:999px !important; padding-inline:8px !important; font-family:inherit !important; border-width:1.5px !important }
+.vp .vlv{ border-radius:999px; font-family:inherit; border-width:1.5px } .vp .vok{ border-radius:50%; border-width:1.5px }
+.vp canvas{ image-rendering:auto }
 </style>
 </head>
 <body>
@@ -2469,65 +2473,49 @@ function drawVillage(t){
   const dark = wx>=95;
 
   const shore = VB.shore + VB.pad, yard = VB.yard + VB.pad;
-  /* 하늘 — 흐리면 회색기가 돈다 */
-  R(0, 0, W, shore, dark ? '#7E8CA0' : cloudy ? '#BFD4E4' : '#CFEDFF');
-  /* 해 · 구름 */
-  if(!cloudy && typeof SPR !== 'undefined'){
-    const sx = W-46, sy = 12;
-    SPR.sun.forEach((row,yy)=>[...row].forEach((ch,xx)=>{ if(ch!=='.') R(sx+xx*3, sy+yy*3, 3, 3, '#FFD23F'); }));
-  } else {
-    for(let k=0;k<3;k++){
-      const cx = ((t/(9000+k*3400) * W) % (W+90)) - 45, cy = 10 + k*13;
-      const col = dark ? '#5E6B7D' : '#FFFFFF';
-      R(cx, cy, 34, 8, col); R(cx+7, cy-5, 20, 6, col); R(cx+16, cy-9, 12, 5, col);
-    }
+  /* ── 모찌 캐릭터와 결을 맞춘 매끈한 풍경(v147) — 날씨·파고 반영은 그대로 ── */
+  const lg = (y0, y1, a, b)=>{ const q = g.createLinearGradient(0, y0, 0, y1); q.addColorStop(0, a); q.addColorStop(1, b); return q; };
+  const rr = (x, y, w, h, r)=>{ g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
+  /* 하늘 */
+  g.fillStyle = lg(0, shore, dark ? '#6E7C92' : cloudy ? '#C7D9E8' : '#BFE6FF', dark ? '#8A98AC' : cloudy ? '#DCE7F0' : '#E6F6FF'); g.fillRect(0, 0, W, shore);
+  if(!cloudy){ g.fillStyle = '#FFD86B'; g.beginPath(); g.arc(W - 30, 24, 14, 0, Math.PI * 2); g.fill(); g.fillStyle = 'rgba(255,216,107,.25)'; g.beginPath(); g.arc(W - 30, 24, 22, 0, Math.PI * 2); g.fill(); }
+  for(let k = 0; k < (cloudy ? 3 : 2); k++){
+    const cx = ((t / (9000 + k * 3400) * W) % (W + 90)) - 45, cy = 12 + k * 13;
+    g.fillStyle = dark ? 'rgba(80,92,110,.9)' : 'rgba(255,255,255,.92)';
+    g.beginPath(); g.ellipse(cx + 14, cy + 2, 16, 6, 0, 0, Math.PI * 2); g.ellipse(cx + 24, cy - 2, 10, 7, 0, 0, Math.PI * 2); g.ellipse(cx + 6, cy, 8, 5, 0, 0, Math.PI * 2); g.fill();
   }
-  if(rain) for(let k=0;k<46;k++){
-    const x = (k*37 + Math.floor(t/26)) % W, y = ((k*53 + Math.floor(t/3.2)) % shore);
-    R(x, y, 1, 6, 'rgba(180,215,240,.7)');
-  }
-  if(snow) for(let k=0;k<34;k++){
-    const x = (k*41 + Math.sin(t/900+k)*9) % W, y = ((k*61 + Math.floor(t/11)) % shore);
-    R(x, y, 2, 2, 'rgba(255,255,255,.9)');
-  }
+  if(rain){ g.strokeStyle = 'rgba(180,215,240,.75)'; g.lineWidth = 1.2; g.lineCap = 'round'; g.beginPath();
+    for(let k = 0; k < 46; k++){ const x = (k * 37 + Math.floor(t / 26)) % W, y = ((k * 53 + Math.floor(t / 3.2)) % shore); g.moveTo(x, y); g.lineTo(x - 1.5, y + 6); } g.stroke(); }
+  if(snow){ g.fillStyle = 'rgba(255,255,255,.95)'; for(let k = 0; k < 34; k++){ const x = (k * 41 + Math.sin(t / 900 + k) * 9) % W, y = ((k * 61 + Math.floor(t / 11)) % shore); g.beginPath(); g.arc(x, y, 1.6, 0, Math.PI * 2); g.fill(); } }
 
-  /* 바다 — 파고가 크면 물결도 크게 */
-  R(0, shore-1, W, 2, dark ? '#2B4A6B' : '#3E8FD0');
+  /* 바다 — 먼바다는 진하게, 물가로 갈수록 밝게. 파고가 크면 물결도 크게 */
   const amp = Math.min(5, 1.4 + (c.h || 0.8) * 2.2);
-  const seaTop = 0;
-  R(0, VB.pad, W, shore-VB.pad, dark ? '#2E5E86' : '#4FA8EE');
-  R(0, VB.pad, W, 10, dark ? '#27527A' : '#3E96E0');                       // 먼바다는 조금 어둡게
-  for(let k=0;k<4;k++){
-    const y0 = VB.pad + 16 + k*Math.max(14, (shore-VB.pad-20)/4);
-    if(y0 > shore-6) break;
-    for(let x=0;x<W;x++){
-      const y = y0 + Math.sin(x/17 + t/(900+k*220) + k)*amp;
-      R(x, y, 1, 2, 'rgba(255,255,255,.4)');
-    }
+  g.fillStyle = lg(VB.pad, shore, dark ? '#24507A' : '#3E96E0', dark ? '#3B6E99' : '#7CC8F5'); g.fillRect(0, VB.pad, W, shore - VB.pad);
+  g.strokeStyle = 'rgba(255,255,255,.45)'; g.lineWidth = 1.6; g.lineCap = 'round';
+  for(let k = 0; k < 4; k++){
+    const y0 = VB.pad + 16 + k * Math.max(14, (shore - VB.pad - 20) / 4); if(y0 > shore - 6) break;
+    g.beginPath(); for(let x = 0; x <= W; x += 4){ const y = y0 + Math.sin(x / 17 + t / (900 + k * 220) + k) * amp; x ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke();
   }
-  /* 물가 거품 */
-  for(let x=0;x<W;x++) R(x, shore - 4 + Math.sin(x/13 - t/700)*2.2, 1, 3, 'rgba(255,255,255,.75)');
+  /* 물가 거품 — 부드러운 띠 */
+  g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.moveTo(0, shore + 2);
+  for(let x = 0; x <= W; x += 4) g.lineTo(x, shore - 4 + Math.sin(x / 13 - t / 700) * 2.2);
+  g.lineTo(W, shore + 2); g.closePath(); g.fill();
 
   /* 모래 · 학교 앞마당 */
-  R(0, shore, W, H-shore, '#F2E3B8');
-  R(0, yard, W, H-yard, '#EAD9A6');
-  R(0, yard, W, 1, 'rgba(27,27,47,.12)');
+  g.fillStyle = lg(shore, H, '#F6E8C4', '#EBD7A8'); g.fillRect(0, shore + 1, W, H - shore);
+  g.fillStyle = 'rgba(27,27,47,.05)'; g.fillRect(0, yard, W, H - yard);
+  g.fillStyle = 'rgba(255,255,255,.5)'; for(let k = 0; k < 14; k++){ const x = (k * 53) % W, y = shore + 8 + (k * 29) % Math.max(10, H - shore - 12); g.beginPath(); g.arc(x, y, 1.2, 0, Math.PI * 2); g.fill(); }
 
-  /* 학교 — 사람 뒤에 선다. 지붕을 위로 올리면 해변 줄의 이름표를 덮으니
-     앞마당 안에서만 그린다. 간판은 지붕이 아니라 벽에 붙인다. */
-  /* 사람은 왼쪽 62%에 세웠으니 건물은 오른쪽에 붙인다. 겹치면 간판이 안 읽힌다. */
-  const bw = Math.min(150, W*0.40), bx = W - bw - 6, by = yard + 20, bh = Math.min(70, H - by - 4);
+  /* 학교 — 사람은 왼쪽 62%에 세웠으니 건물은 오른쪽. 둥근 상자 + 빨간 지붕 + 간판 */
+  const bw = Math.min(150, W * 0.40), bx = W - bw - 8, by = yard + 18, bh = Math.min(70, H - by - 6);
   if(bh > 26){
-    for(let i=0;i<8;i++) R(bx + 8 - i, by + i, bw - 16 + i*2, 1, i===0 ? '#1B1B2F' : '#E05555');
-    R(bx, by+8, bw, bh-8, '#FFF6DE');
-    R(bx, by+8, bw, 1, '#1B1B2F'); R(bx, by+bh-1, bw, 1, '#1B1B2F');
-    R(bx, by+8, 1, bh-8, '#1B1B2F'); R(bx+bw-1, by+8, 1, bh-8, '#1B1B2F');
-    R(bx+6, by+12, bw-12, 11, '#1B1B2F'); R(bx+7, by+13, bw-14, 9, '#FFD23F');   // 간판
-    g.fillStyle = '#1B1B2F'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.font = `700 9px "Galmuri11",sans-serif`;
-    g.fillText('양양서핑학교', bx + bw/2, by + 18);
-    for(let k=0;k<2;k++){ const wx2 = bx + 12 + k*(bw-34);
-      R(wx2, by+28, 13, 11, '#1B1B2F'); R(wx2+1, by+29, 11, 9, '#9FD8FF'); }
+    g.fillStyle = 'rgba(18,36,95,.12)'; rr(bx + 3, by + 12, bw, bh - 8, 10); g.fill();
+    g.fillStyle = '#FFF6DE'; rr(bx, by + 8, bw, bh - 8, 10); g.fill();
+    g.fillStyle = '#E86A6A'; g.beginPath(); g.moveTo(bx - 4, by + 12); g.quadraticCurveTo(bx + bw / 2, by - 6, bx + bw + 4, by + 12); g.lineTo(bx + bw - 2, by + 14); g.lineTo(bx + 2, by + 14); g.closePath(); g.fill();
+    g.fillStyle = '#FFD23F'; rr(bx + 8, by + 18, bw - 16, 12, 6); g.fill();
+    g.fillStyle = '#1B1B2F'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `800 9px -apple-system,"Apple SD Gothic Neo",sans-serif`;
+    g.fillText('양양서핑학교', bx + bw / 2, by + 24.5);
+    for(let k = 0; k < 2; k++){ const wx2 = bx + 14 + k * (bw - 40); g.fillStyle = '#9FD8FF'; rr(wx2, by + 36, 12, 10, 3); g.fill(); g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(wx2 + 2, by + 38, 3, 4); }
   }
 }
 addEventListener('resize', ()=>{ if(state.tab==='town') layoutTown(); });
