@@ -30,6 +30,8 @@ new MutationObserver(()=>{ if(!busy){ busy = true; queueMicrotask(sync); } })
 addEventListener('popstate', ()=>{
   if(skip){ skip--; return; }
   if(depth > 0){ depth--; if(!closeTop()) depth++; return; }
+  /* 마을 사람 카드(창이 아니라 그림 위 카드)도 뒤로가기로 닫는다 */
+  const vc = document.querySelector('.vcard'); if(vc){ vc.remove(); if(tabBase) history.pushState({ tab:1 }, ''); return; }
   /* 창이 없으면 — 다른 탭이었다면 홈으로 */
   if(tabBase){ tabBase = false; if(!document.body.classList.contains('on-home')) toHome(); }
 });

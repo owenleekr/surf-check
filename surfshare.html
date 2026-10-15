@@ -2426,6 +2426,9 @@ function renderTown(){
     $('village').appendChild(c);
     { const vc = c.querySelector('[data-vcav]'); if(vc && typeof drawSpr === 'function'){ const q = withLook(x.profile, x.name); requestAnimationFrame(()=>drawSpr(vc, avatarRows(q), avatarTintOf(q, 0))); } } bindRx(c);
     c.querySelector('[data-close]').onclick = ()=>c.remove();
+    /* 카드 바깥(마을 그림)을 누르면 닫힌다 — 다른 사람을 누르면 그 사람 카드로 바뀐다 */
+    setTimeout(()=>{ const off = ev=>{ if(!c.isConnected){ document.removeEventListener('click', off, true); return; }
+      if(!c.contains(ev.target) && !ev.target.closest('.vp')){ c.remove(); document.removeEventListener('click', off, true); } }; document.addEventListener('click', off, true); }, 0);
     c.querySelector('[data-unbub]')?.addEventListener('click', ()=>{ c.remove(); saveMood(''); });
     c.querySelectorAll('[data-emote]').forEach(b=>b.addEventListener('click', ()=>{ c.remove(); sendEmote(b.dataset.emote); }));
     c.querySelectorAll('[data-cheer]').forEach(b=>b.addEventListener('click', async ()=>{
