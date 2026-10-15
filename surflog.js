@@ -69,9 +69,11 @@ function sheet(){
   return sh;
 }
 function chips(key, items, val){ return `<div class="food-chips sl-chips" role="group">${items.map((t, i)=>`<button type="button" data-slk="${key}" data-slv="${i}" aria-pressed="${val === i}">${t}</button>`).join('')}</div>`; }
-function form(id){
+function form(id, pre){
   const old = id ? logs().find(e=>e.id === id) : null;
   cur = old ? { ...old } : { id:'', d:todayS(), s:spotNames()[0] || '낙산', m:60, w:2, f:2, t:'' };
+  /* 체크인 → '나왔어요' 에서 열리면 그 해변과 머문 시간으로 미리 채운다 */
+  if(!old && pre){ if(pre.s) cur.s = String(pre.s).replace(/해수욕장|해변/g, '').trim().slice(0, 20); if(pre.m){ const m = +pre.m; cur.m = MIN.reduce((b, x)=>Math.abs(x - m) < Math.abs(b - m) ? x : b, 60); } }
   const sh = sheet(); $l('sl-t').textContent = old ? '📒 기록 고치기' : '📒 오늘 서핑 기록'; paintForm(!!old); sh.hidden = false;
 }
 function paintForm(edit){
@@ -120,7 +122,7 @@ function all(){
   sh.hidden = false;
   $l('sl-body').onclick = e=>{ const r = e.target.closest('[data-slid]'); if(r){ $l('sl-body').onclick = null; form(r.dataset.slid); } };
 }
-window.surfLogRender = render; window.surfLogOpen = ()=>form();
+window.surfLogRender = render; window.surfLogOpen = pre=>form(null, pre && typeof pre === 'object' ? pre : null);
 window._slog = { logs, clean, waveOf };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=>setTimeout(render, 300)); else setTimeout(render, 300);
 })();
