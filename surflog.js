@@ -117,7 +117,16 @@ function push(){ if(typeof playPush === 'function') playPush(); }
 function all(){
   const sh = sheet(); $l('sl-t').textContent = '📒 내 서핑 기록';
   const L = logs(), by = {}; L.forEach(e=>{ (by[e.d.slice(0, 7)] ||= []).push(e); });
-  $l('sl-body').innerHTML = Object.keys(by).map(m=>{ const a = by[m], h = Math.round(a.reduce((s, e)=>s + e.m, 0) / 6) / 10;
+  /* 나만의 통계 — 기분이 좋았던 날의 예보 파고, 스팟별 횟수, 월별 막대 */
+  const good = L.filter(e=>e.f >= 2 && e.h != null), avgH = good.length ? Math.round(good.reduce((t, e)=>t + e.h, 0) / good.length * 10) / 10 : null;
+  const hs = good.map(e=>e.h).sort((a, b)=>a - b), rng = hs.length >= 3 ? `${hs[Math.floor(hs.length * .2)]}~${hs[Math.ceil(hs.length * .8) - 1]}m` : null;
+  const sc = {}; L.forEach(e=>{ sc[e.s] = (sc[e.s] || 0) + 1; }); const spots = Object.entries(sc).sort((a, b)=>b[1] - a[1]).slice(0, 5);
+  const months = Object.keys(by).sort().slice(-6), mx = Math.max(1, ...months.map(m=>by[m].length));
+  const stat = L.length >= 2 ? `<div class="sl-stat">
+      ${avgH != null ? `<div class="sl-ins">🌊 기분 좋았던 날 예보 평균 <b>${avgH}m</b>${rng ? ` · 보통 <b>${rng}</b>` : ''}<small>이 높이 예보가 뜨면 나가 볼 만해요</small></div>` : ''}
+      <div class="sl-bars">${months.map(m=>`<div><i style="height:${Math.round(by[m].length / mx * 100)}%"></i><b>${by[m].length}</b><small>${+m.slice(5)}월</small></div>`).join('')}</div>
+      <div class="sl-frs">${spots.map(([n, c])=>`<span><b>${esc(n)}</b> ${c}번</span>`).join('')}</div></div>` : '';
+  $l('sl-body').innerHTML = stat + Object.keys(by).map(m=>{ const a = by[m], h = Math.round(a.reduce((s, e)=>s + e.m, 0) / 6) / 10;
     return `<div class="sl-lb">${+m.slice(5)}월 · ${a.length}번 · ${h}시간</div><div class="sl-list">${a.map(row).join('')}</div>`; }).join('') || '<div class="note">아직 기록이 없어요.</div>';
   sh.hidden = false;
   $l('sl-body').onclick = e=>{ const r = e.target.closest('[data-slid]'); if(r){ $l('sl-body').onclick = null; form(r.dataset.slid); } };
