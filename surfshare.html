@@ -956,6 +956,9 @@ html.big .wrap, html.big .sheet-in, html.big .pop-card{ zoom:1.12 } html.big .na
 /* 끌어 닫기 손잡이 */
 .sheet-in > .sheet-hd{ position:relative; touch-action:none } .sheet-in > .sheet-hd::before{ content:""; position:absolute; left:50%; top:-8px; width:40px; height:4px; margin-left:-20px; border-radius:2px; background:rgba(27,27,47,.22) }
 @media(min-width:560px){ .sheet-in > .sheet-hd::before{ display:none } }
+.qact{ display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:10px }
+.qact button{ display:flex; flex-direction:column; align-items:center; gap:2px; min-height:58px; padding:6px 2px; font-family:inherit; font-size:12.5px; font-weight:800; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:12px; cursor:pointer }
+.qact i{ font-style:normal; font-size:20px; font-family:sans-serif; line-height:1.1 } .qact button:active{ transform:translateY(1px) }
 </style>
 </head>
 <body>
@@ -1060,6 +1063,11 @@ html.big .wrap, html.big .sheet-in, html.big .pop-card{ zoom:1.12 } html.big .na
           <span class="xpbar"><i id="xp-fill"></i></span>
           <small id="xp-txt"></small>
         </button>
+      </div>
+      <!-- 빠른 실행 — 매일 하는 네 가지를 한 번에 -->
+      <div class="qact" role="group" aria-label="빠른 실행">
+        <button type="button" data-qa="checkin"><i>📍</i>체크인</button><button type="button" data-qa="cam"><i>📹</i>캠</button>
+        <button type="button" data-qa="slog"><i>📒</i>일지 쓰기</button><button type="button" data-qa="bus"><i>🚌</i>버스 좌석</button>
       </div>
       <!-- 오늘 갈까? 가 홈의 첫 정보 — 추천·소식 카드보다 위 -->
       <section class="hwave" id="home-wave" aria-label="이번주의 파도" hidden></section>
@@ -2881,6 +2889,9 @@ function layoutHead(){
   $('nowbar').classList.toggle('open', nowOpen);
 }
 $('nowbar').onclick = ()=>{ nowOpen = !nowOpen; layoutHead(); if(nowOpen) renderNow(); };
+document.querySelector('.qact')?.addEventListener('click', e=>{ const b = e.target.closest('[data-qa]'); if(!b) return; const k = b.dataset.qa;
+  if(k === 'cam') setTab('cam'); else if(k === 'bus') setTab('ride'); else if(k === 'slog') window.surfLogOpen?.();
+  else if(k === 'checkin'){ if(!nowOpen && !$('nowbar').hidden){ nowOpen = true; layoutHead(); renderNow(); } const n = $('now'); if(n){ n.scrollIntoView({ block:'center', behavior:'smooth' }); setTimeout(()=>$('now-btn')?.focus({ preventScroll:true }), 400); } } });
 
 /* 탭마다 보던 위치 — 맛집을 내려 보다 캠을 잠깐 보고 오면 처음부터 다시 내려야 했다 */
 const TABY = {};
