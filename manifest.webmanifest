@@ -1,8 +1,8 @@
 {
  "id": "/surfshare",
- "name": "SurfShare — 차 같이 타고, 숙소 같이 쓰고",
+ "name": "SurfShare — 양양 서퍼들의 앱",
  "short_name": "SurfShare",
- "description": "양양 낙산 서핑 — 차·숙소·맛집·게임",
+ "description": "이번주 파도 · 서핑 일지 · 버스 빈자리 · 맛집·스팟 · 파도 점프",
  "start_url": "/surfshare",
  "scope": "/",
  "display": "standalone",
@@ -33,6 +33,52 @@
    "sizes": "512x512",
    "type": "image/png",
    "purpose": "maskable"
+  }
+ ],
+ "shortcuts": [
+  {
+   "name": "서핑 일지 쓰기",
+   "short_name": "일지 쓰기",
+   "url": "/surfshare?go=slog",
+   "icons": [
+    {
+     "src": "icon2-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "버스 빈자리",
+   "short_name": "버스",
+   "url": "/surfshare?go=bus",
+   "icons": [
+    {
+     "src": "icon2-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "라이브캠",
+   "short_name": "캠",
+   "url": "/surfshare?go=cam",
+   "icons": [
+    {
+     "src": "icon2-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "파도 점프",
+   "short_name": "게임",
+   "url": "/surfshare?go=game",
+   "icons": [
+    {
+     "src": "icon2-192.png",
+     "sizes": "192x192"
+    }
+   ]
   }
  ]
 }

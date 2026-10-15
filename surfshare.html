@@ -3965,9 +3965,14 @@ async function syncMe(){
   catch(e){}
 }
 
+/* 앱 아이콘 길게 누르기 바로가기(manifest shortcuts) — /surfshare?go=slog|bus|cam|game|food */
+function goFromUrl(){ const g = new URLSearchParams(location.search).get('go'); if(!g) return;
+  try{ history.replaceState(history.state, '', location.pathname); }catch(e){}
+  if(g === 'slog') window.surfLogOpen?.(); else if(g === 'bus') setTab('ride'); else if(g === 'cam') setTab('cam'); else if(g === 'game') window.gameOpen?.(); else if(g === 'food') setTab('food'); }
 function start(){
   $('login').hidden = true; $('main').hidden = false; $('foot').hidden = true; sceneOff();
   $('nav').hidden = false; document.body.classList.add('has-nav');
+  setTimeout(goFromUrl, 700);
   $('who').textContent = ME.name;
   if(typeof drawSpr === 'function'){ const pr = withLook(ME.profile||{}, ME.name); drawSpr($('me-av'), avatarRows(pr, false), avatarTintOf(pr, 0)); }
   $('cohort-tag').textContent = ME.cohort === '6기' ? '6기' : '서퍼';
