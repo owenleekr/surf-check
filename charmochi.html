@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>모찌 미니미</title>
+<style>
+:root{ --ink:#1B1B2F; --sub:#5B6275; --bg:#F3F6FA; --line:#DDE5EF }
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; line-height:1.55 }
+.wrap{ max-width:820px; margin:0 auto; padding:20px 16px 70px }
+h1{ font-size:22px; margin:0 0 6px } .lead{ color:var(--sub); font-size:14px; margin:0 }
+h2{ font-size:17px; margin:24px 0 2px } h2 small{ font-size:12.5px; color:var(--sub); font-weight:600 }
+.row{ display:flex; gap:6px; overflow-x:auto; padding:10px 2px 6px; scrollbar-width:none } .row::-webkit-scrollbar{ display:none }
+.cell{ flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 6px 6px; border-radius:16px; background:linear-gradient(#C9EAFF,#E6F5FF 78%,#F3E6C8 78%) }
+.cell .av{ height:150px; display:flex; align-items:flex-end } .cell .av svg{ height:150px; width:auto; display:block } .cell small{ font-size:11px; color:var(--sub); font-weight:700 }
+.tiny{ display:flex; gap:10px; align-items:flex-end; padding:10px 12px; border-radius:12px; background:#fff; border:1px solid var(--line); margin-top:8px; font-size:12px; color:var(--sub); font-weight:700; flex-wrap:wrap }
+.tiny svg{ height:62px; width:auto } .tiny .chat{ display:flex; align-items:center; gap:6px; background:#F4F8FC; border-radius:12px; padding:2px 10px 2px 2px; color:var(--ink) } .tiny .chat svg{ height:32px }
+.pick{ margin-top:22px; padding:14px 16px; border-radius:14px; background:var(--ink); color:#fff; font-size:14px } .pick b{ color:#FFD23F }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🍡 모찌 미니미 — 매력 다듬기</h1>
+  <p class="lead">고르신 1번 얼굴을 바탕으로 <b>매력 요소</b>를 단계별로 더했어요. ① 기본 → ② 반짝 눈매·속눈썹 꼬리·볼 빗금·앞머리 그림자·바보털·손 흔들기 → ③ 서퍼 소품(옆에 낀 보드·조개 목걸이·주근깨·머리 위 선글라스·쪼리).</p>
+  <div id="out"></div>
+  <div class="pick">"③ 좋다", "② 에 보드만" 처럼 알려 주세요. 정해지면 앱 전체(홈·마을·채팅·꾸미기)를 이 캐릭터로 바꿔요.</div>
+</div>
+<script src="mochi.js"></script>
+<script>
+const P = [
+  { gender:'f', hair:'bob',  hairc:'k', skin:'s', face:'smile', wear:'rash', top:'r', bottom:'b', boardc:'y', pet:'dog', petc:'y', petLv:1 },
+  { gender:'m', hair:'short',hairc:'n', skin:'d', face:'happy', wear:'hood', top:'b', bottom:'k', boardc:'c' },
+  { gender:'f', hair:'long', hairc:'y', skin:'l', face:'wink',  wear:'tank', top:'g', bottom:'p', boardc:'p' },
+  { gender:'m', hair:'surf', hairc:'k', skin:'t', face:'cool',  wear:'suit', top:'k', boardc:'o', hat:'cap' },
+  { gender:'f', hair:'twin', hairc:'r', skin:'s', face:'wow',   wear:'rash', top:'p', bottom:'b', boardc:'g', pet:'cat', petc:'w', petLv:2 },
+  { gender:'m', hair:'wave', hairc:'n', skin:'l', face:'sleepy',wear:'bare', top:'o', bottom:'r', boardc:'w', hat:'bucket', role:'coach' },
+];
+const L = ['단발·강아지', '짧은머리·후디', '장발·민소매', '서퍼컷·캡', '양갈래·고양이', '웨이브·코치'];
+const cell = (svg, t)=>`<div class="cell"><div class="av">${svg}</div><small>${t}</small></div>`;
+let h = '';
+[[0, '① 기본', '고르신 1번 그대로'], [1, '② 매력', '눈매·볼 빗금·앞머리 그림자·바보털·손 흔들기'], [2, '③ 서퍼 소품', '②에 보드·조개 목걸이·주근깨·선글라스·쪼리']].forEach(([c, t, s])=>{
+  h += `<h2>${t} <small>${s}</small></h2><div class="row">${P.map((p, i)=>cell(mochiSVG(p, { charm:c, pet:1 }), L[i])).join('')}</div>
+    <div class="tiny">${mochiSVG(P[0], { charm:c, pet:1 })}${mochiSVG(P[1], { charm:c })}${mochiSVG(P[2], { charm:c })}<span>마을 크기</span><span class="chat">${mochiSVG(P[4], { charm:c })}오늘 파도 좋다!</span></div>`;
+});
+const base = { gender:'f', hair:'bob', hairc:'n', skin:'s', wear:'rash', top:'b', bottom:'b', boardc:'y' };
+h += `<h2>표정 6종 <small>③ 기준</small></h2><div class="row">${['smile','happy','cool','wow','wink','sleepy'].map(f=>cell(mochiSVG({ ...base, face:f }), { smile:'미소', happy:'신남', cool:'선글라스', wow:'놀람', wink:'윙크', sleepy:'졸림' }[f])).join('')}</div>`;
+h += `<h2>머리 8종</h2><div class="row">${['buzz','short','bob','long','pony','twin','wave','surf'].map((k, i)=>cell(mochiSVG({ ...base, hair:k, hairc:'knyrbpgw'[i] }), { buzz:'스포츠', short:'짧은머리', bob:'단발', long:'장발', pony:'포니테일', twin:'양갈래', wave:'웨이브', surf:'서퍼컷' }[k])).join('')}</div>`;
+h += `<h2>옷 5종 · 모자 4종</h2><div class="row">${['rash','hood','tank','suit','bare'].map(w=>cell(mochiSVG({ ...base, gender:'m', hair:'short', wear:w, top:'r' }), { rash:'래시가드', hood:'후디', tank:'민소매', suit:'풀슈트', bare:'맨몸' }[w])).join('')}${['bucket','cap','visor','beanie'].map(t=>cell(mochiSVG({ ...base, hat:t }), { bucket:'서프햇', cap:'캡', visor:'바이저', beanie:'비니' }[t])).join('')}</div>`;
+h += `<h2>펫 5종 <small>친밀도 0~3단계</small></h2><div class="row">${['dog','cat','rabbit','penguin','seal'].map((k, i)=>cell(mochiSVG({ ...base, pet:k, petc:'ywpkn'[i], petLv:i % 4 }, { pet:1 }), { dog:'강아지', cat:'고양이', rabbit:'토끼', penguin:'펭귄', seal:'물개' }[k])).join('')}</div>`;
+document.getElementById('out').innerHTML = h;
+</script>
+</body>
+</html>
