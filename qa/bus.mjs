@@ -6,6 +6,8 @@ const bus = u => /map=/.test(u) ? { rows:[[{n:1,free:true},{n:2,free:false},{n:3
   buses:[{ t:'23:50', co:'금강고속', dur:'2:40', grade:'일반', fare:21600, left, total:41, shut:false, k:'RT1~3~20261016' }, { t:'23:55', co:'동해상사고속', dur:'1:45', grade:'우등', fare:19900, left:12, total:28, shut:false }, { t:'23:58', co:'<b>x</b>', grade:'', left:2, total:28 }] });
 const data = { surfers:[{ id:'u4', name:'이성현', cohort:'6기', profile:{} }], __bus:bus };
 const t = await open(data, { id:'u4', name:'이성현', profile:{ gender:'f', birth:'1', dressed:1 } }, { wait:2500 });
+/* 가짜 버스 시간이 밤 11시대라, 그 뒤에 돌리면 '이미 출발한 차'로 빠져 테스트가 깨졌다 — 지금을 아침 6시로 고정 */
+await t.S(()=>{ Date.prototype.toTimeString = function(){ return '06:00:00 GMT+0900'; }; });
 await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); localStorage.removeItem('lineup.share.buswatch'); busOpen(); }); await t.sleep(700);
 console.log('목록', await t.S(()=>[...document.querySelectorAll('.bs-row')].map(r=>r.textContent.replace(/\s+/g,' ').trim())), '| 주입', await t.S(()=>document.querySelectorAll('.bs-row b b').length));
 await t.S(()=>document.querySelector('.bs-row.tap').click()); await t.sleep(400);
