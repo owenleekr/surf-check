@@ -16,7 +16,7 @@ function piHTML(i){
   if(!img.length && !bl.length) return '';
   return `${img.length ? `<div class="pi-imgs">${img.map(m=>`<a href="${esc(safeHttp(m.link) || safeHttp(m.thumb))}" target="_blank" rel="noopener"><img src="${esc(safeHttp(m.thumb))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></a>`).join('')}</div>` : ''}
     ${bl.length ? `<details class="pi-blog"><summary>📝 블로그 후기 ${bl.length}개</summary>${bl.map(b=>`<a class="pi-b" href="${esc(safeHttp(b.link))}" target="_blank" rel="noopener"><b>${esc(b.t)}</b><span>${esc(b.d)}</span><small>${esc(b.by)}${b.date ? ' · ' + esc(b.date.slice(0, 4) + '.' + b.date.slice(4, 6) + '.' + b.date.slice(6)) : ''} ↗</small></a>`).join('')}</details>` : ''}
-    <small class="pi-src">사진·후기: 네이버 검색 결과 · 누르면 원문</small>`;
+    <small class="pi-src">사진·후기: ${esc(x.src || '검색 결과')} · 누르면 원문</small>`;
 }
 async function piLoad(list){
   if(piOff) return;
