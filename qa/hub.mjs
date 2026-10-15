@@ -11,7 +11,7 @@ for(const W of [390,320]){
   if(W===390){
     fs.writeFileSync('/tmp/hub.png', await t.p.screenshot({fullPage:true}));
     // 라우팅
-    const go=async(k)=>{ await t.S(()=>setTab('play')); await t.sleep(300); await t.S(k=>document.querySelector(`[data-hub="${k}"]`).click(), k); await t.sleep(500); return t.S(()=>({ 시트:!document.getElementById('play-sheet').hidden, 시트탭:document.getElementById('play-body').dataset.tab, 게임:!document.getElementById('game').hidden, 퀴즈:!document.getElementById('quiz-sheet').hidden, 탭:state.tab, 꾸미기열림:document.getElementById('bld-fold').open })); };
+    const go=async(k)=>{ await t.S(()=>setTab('play')); await t.sleep(300); const has = await t.S(k=>{ const el = document.querySelector(`[data-hub="${k}"]`); if(el) el.click(); return !!el; }, k); if(!has) return '카드 없음(메뉴에서 빠짐)'; await t.sleep(500); return t.S(()=>({ 시트:!document.getElementById('play-sheet').hidden, 시트탭:document.getElementById('play-body').dataset.tab, 게임:!document.getElementById('game').hidden, 퀴즈:!document.getElementById('quiz-sheet').hidden, 탭:state.tab, 꾸미기열림:document.getElementById('bld-fold').open })); };
     for(const k of ['game','quiz','stamp','rank','shop','emote']){ console.log(' 카드', k, JSON.stringify(await go(k))); await t.S(()=>{ gameClose(); quizClose(); closePlay(); }); }
     await t.S(()=>setTab('play')); await t.sleep(300); await t.S(()=>document.querySelector('[data-hub="fort"]').click()); await t.sleep(500);
     console.log(' 운세 열기', await t.S(()=>({ 운세:!!document.querySelector('#play-hub .fort'), xp:ME.profile.play.xp })));
