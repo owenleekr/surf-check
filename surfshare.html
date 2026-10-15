@@ -54,6 +54,15 @@ window.__bootFail = (files) => {
 <script src="mochi.js"></script>
 <script src="surflog.js" defer></script>
 <script src="charcard.js" defer></script>
+<script>
+/* 가입 화면 장면 — mochi.js 로 세 명 + 강아지(320px 폭에도 들어가게) */
+(function(){ const draw = ()=>{ const el = document.getElementById('gate-hero'); if(!el || el.dataset.ok || typeof mochiSVG !== 'function') return; el.dataset.ok = 1;
+  const P = [{ gender:'f', hair:'bob', hairc:'k', skin:'s', face:'smile', wear:'rash', top:'r', bottom:'b', boardc:'y', pet:'dog', petc:'y', petv:'1', hold:'coffee' },
+    { gender:'m', hair:'surf', hairc:'n', skin:'d', face:'happy', wear:'shorty', top:'b', boardc:'c', gear:'leash' },
+    { gender:'f', hair:'pony', hairc:'y', skin:'l', face:'wink', wear:'tee', top:'pink', bottom:'denim', boardc:'p', hat:'cap', hatc:'w' }];
+  el.innerHTML = '<div class="gate-crew">' + P.map((p, i)=>mochiSVG(p, { charm:2, pet:i === 0, uid:'g' + i })).join('') + '</div>'; };
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', draw); else draw(); })();
+</script>
 <script src="roster.js"></script>
 <script src="play.js"></script>
 <script src="surfride.js" defer></script>
@@ -911,6 +920,14 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .vp canvas{ image-rendering:auto }
 .nav button i.pxi.smooth{ image-rendering:auto; width:26px; height:26px }
 .nav .dot{ border-radius:999px; padding:0 4px }
+.gate-hero{ position:relative; height:176px; border:2px solid var(--ink); border-radius:16px; overflow:hidden;
+  background:linear-gradient(#BFE6FF 0 50%, #6FC0F2 50% 66%, #F3E2BE 66%) }
+.gate-hero::before{ content:""; position:absolute; right:22px; top:16px; width:46px; height:46px; border-radius:50%; background:#FFD86B }
+.gate-hero::after{ content:""; position:absolute; left:0; right:0; top:112px; height:6px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.85) 0 40px, transparent 40px 70px) }
+.gate-crew{ position:absolute; left:50%; bottom:6px; transform:translateX(-50%); display:flex; align-items:flex-end; z-index:1 }
+.gate-crew svg{ height:118px; width:auto; display:block; margin-left:-16px } .gate-crew svg:first-child{ margin-left:0; height:108px }
+@media (prefers-reduced-motion:no-preference){ .gate-crew svg{ animation:gbob 2.4s ease-in-out infinite } .gate-crew svg:nth-child(2){ animation-delay:.4s } .gate-crew svg:nth-child(3){ animation-delay:.8s } .gate-crew svg:nth-child(4){ animation-delay:1.2s } }
+@keyframes gbob{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-4px) } }
 </style>
 </head>
 <body>
@@ -920,8 +937,10 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 
   <!-- 장면이 먼저다. 문 앞에 선 사람은 설명을 안 읽는다 — 그림이 먼저 말하게 한다 -->
   <div class="scene-wrap" id="scene-wrap" hidden>
-    <canvas id="scene" role="img" aria-label="서울에서 양양으로 가는 차, 같이 묵는 집, 불 위의 냄비, 그리고 바다"></canvas>
-    <div class="scene-cap">🚗 같이 내려오고 · 🏠 한 집에 묵고 · 🍲 같이 해 먹고 · 🌊 같이 들어가고</div>
+    <!-- 모찌 캐릭터 장면(v149) — 예전 도트 도로 장면(#scene)은 그리지 않는다 -->
+    <div class="gate-hero" id="gate-hero" role="img" aria-label="양양 바다 앞에 보드를 들고 선 서퍼들과 강아지"></div>
+    <canvas id="scene" hidden></canvas>
+    <div class="scene-cap">🌊 파도 보고 · 🏄 같이 타고 · 📒 기록하고 · 🍜 맛집 가고</div>
   </div>
 
   <!-- 입장 문 — 앱과 다른 비번이다. 한 곳이 새도 다른 한 곳은 안 열리게 -->
