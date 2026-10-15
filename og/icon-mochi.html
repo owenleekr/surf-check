@@ -1,0 +1,19 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>icon</title>
+<style>
+html,body{ margin:0 } body{ width:512px; height:512px; overflow:hidden; background:linear-gradient(#BFE8FF 0 58%, #6FC0F2 58% 72%, #F3E2BE 72%) }
+.foam{ position:absolute; left:0; right:0; top:360px; height:8px; background:repeating-linear-gradient(90deg, rgba(255,255,255,.85) 0 50px, transparent 50px 86px) }
+.sun{ position:absolute; right:56px; top:52px; width:84px; height:84px; border-radius:50%; background:#FFD86B }
+#av{ position:absolute; left:50%; transform:translateX(-50%); bottom:-6px }
+#av svg{ display:block }
+#av{ bottom:14px !important } #av svg{ height:448px !important; width:auto } body.mask #av{ bottom:34px !important } body.mask #av svg{ height:410px !important }
+</style></head><body>
+<div class="sun"></div><div class="foam"></div><div id="av"></div>
+<script src="../mochi.js"></script>
+<script>
+const pr = { gender:'f', hair:'bob', hairc:'k', skin:'s', face:'smile', wear:'rash', top:'r', bottom:'b', boardc:'y', eye:'sparkle' };
+/* 머리~허리만 크게 — 아이콘은 작게 보이니 얼굴이 주인공 */
+const svg = mochiSVG(pr, { charm:2, uid:'i' }).replace(/viewBox="[^"]+" width="\d+" height="\d+"/, 'viewBox="14 -4 172 214" width="500" height="622"');
+document.getElementById('av').innerHTML = svg;
+if(location.hash === '#mask') document.body.classList.add('mask');
+</script></body></html>
