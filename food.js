@@ -4,7 +4,35 @@
    남이 쓴 글(한줄평·이름·주소)은 모두 esc, 링크는 http(s) 만(safeHttp). 서버가 안 닿으면 마지막으로 받은 목록을 보여준다. */
 (function(){
 const KEY = 'lineup.share.food', SEEN = 'lineup.share.foodseen', FRESH = 5 * 60e3;
-let data = null, view = 'food', area = '전체', sort = 'near', busy = false, failed = false;
+let data = null, view = 'food', area = '전체', sort = 'near', busy = false, failed = false, fcat = '전체';
+/* 세부 분류·사진·블로그 후기 — /api/place-info(네이버 공식 검색 API). 가게 이름별로 이 기기에 7일 저장, 서버 키가 없으면 조용히 안 보인다 */
+const PIK = 'lineup.share.pi', PI = (()=>{ try{ return JSON.parse(localStorage.getItem(PIK) || '{}'); }catch(e){ return {}; } })();
+let piOff = false, piBusy = 0;
+const piKey = i => String(i.n || '').slice(0, 40);
+const piOf = i => { const x = PI[piKey(i)]; return x && Date.now() - x.at < 7 * 864e5 ? x.info : null; };
+function piHTML(i){
+  const x = piOf(i); if(!x || !x.enabled) return '';
+  const img = (x.img || []).filter(m=>safeHttp(m.thumb)), bl = (x.blogs || []).filter(b=>safeHttp(b.link));
+  if(!img.length && !bl.length) return '';
+  return `${img.length ? `<div class="pi-imgs">${img.map(m=>`<a href="${esc(safeHttp(m.link) || safeHttp(m.thumb))}" target="_blank" rel="noopener"><img src="${esc(safeHttp(m.thumb))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></a>`).join('')}</div>` : ''}
+    ${bl.length ? `<details class="pi-blog"><summary>📝 블로그 후기 ${bl.length}개</summary>${bl.map(b=>`<a class="pi-b" href="${esc(safeHttp(b.link))}" target="_blank" rel="noopener"><b>${esc(b.t)}</b><span>${esc(b.d)}</span><small>${esc(b.by)}${b.date ? ' · ' + esc(b.date.slice(0, 4) + '.' + b.date.slice(4, 6) + '.' + b.date.slice(6)) : ''} ↗</small></a>`).join('')}</details>` : ''}
+    <small class="pi-src">사진·후기: 네이버 검색 결과 · 누르면 원문</small>`;
+}
+async function piLoad(list){
+  if(piOff) return;
+  const todo = list.filter(i=>!piOf(i)).slice(0, 40); if(!todo.length) return;
+  let got = 0;
+  const one = async i => { try{ const r = await fetch(`/api/place-info?n=${encodeURIComponent(i.n)}&a=${encodeURIComponent(i.a || '')}`); if(!r.ok) return; const info = await r.json();
+      if(info.enabled === false){ piOff = true; return; }
+      PI[piKey(i)] = { at:Date.now(), info }; got++;
+      const box = document.querySelector(`[data-pi="${CSS.escape(String(i.id))}"]`); if(box) box.innerHTML = piHTML(i);
+      const tg = document.querySelector(`[data-pic="${CSS.escape(String(i.id))}"]`); if(tg && info.cat){ tg.textContent = info.cat; tg.hidden = false; } }catch(e){} };
+  piBusy++;
+  for(let k = 0; k < todo.length && !piOff; k += 4) await Promise.all(todo.slice(k, k + 4).map(one));
+  piBusy--;
+  try{ localStorage.setItem(PIK, JSON.stringify(Object.fromEntries(Object.entries(PI).filter(([, v])=>Date.now() - v.at < 7 * 864e5).slice(-120)))); }catch(e){}
+  if(got && view === 'food') render();                          // 분류 칩이 생기게 한 번 다시 그린다(글 쓰는 중이면 render 가 알아서 건너뛴다)
+}
 const $f = id => document.getElementById(id);
 const areaOf = a => /양양/.test(a) ? '양양' : /속초/.test(a) ? '속초' : /고성/.test(a) ? '고성' : /강릉/.test(a) ? '강릉' : '기타';
 const seenSet = () => { try{ return new Set(JSON.parse(localStorage.getItem(SEEN) || '[]')); }catch(e){ return new Set(); } };
@@ -44,23 +72,30 @@ function renderFood(root){
   const all = items('food').concat(FT.added('food')), counts = { 전체:all.length }; all.forEach(i=>{ const a = areaOf(i.a); counts[a] = (counts[a] || 0) + 1; });
   const areas = ['전체', '양양', '속초', '고성', '강릉', '기타'].filter(a=>counts[a]);
   const seen = seenSet(), week = Date.now() - 7 * 864e5, dist = i => i.lat == null ? Infinity : distKm(i.lat, i.lon);
-  const list = all.filter(i=>area === '전체' || areaOf(i.a) === area).sort((a,b)=> sort === 'new' ? (b.t - a.t) : (dist(a) - dist(b)) || (b.t - a.t));
+  const catOfI = i => piOf(i)?.cat || '';
+  const cc = {}; all.forEach(i=>{ const c = catOfI(i); if(c) cc[c] = (cc[c] || 0) + 1; });
+  const cats = Object.keys(cc).sort((a,b)=>cc[b] - cc[a]); if(fcat !== '전체' && !cc[fcat]) fcat = '전체';
+  const list = all.filter(i=>(area === '전체' || areaOf(i.a) === area) && (fcat === '전체' || catOfI(i) === fcat)).sort((a,b)=> sort === 'new' ? (b.t - a.t) : (dist(a) - dist(b)) || (b.t - a.t));
   const at = (()=>{ try{ const t = JSON.parse(localStorage.getItem(KEY) || 'null')?.at; return t ? new Date(t).toTimeString().slice(0,5) : ''; }catch(e){ return ''; } })();
   root.innerHTML = `
     <div class="food-hd"><b>${esc(f.title)}</b><span>${esc(f.memo || '')}</span>
       <small>${all.length}곳 · 네이버 리스트와 자동으로 맞춰져요${at ? ` · 갱신 ${at}` : ''}${failed ? ' · ⚠️ 새로 못 불러와 저장된 목록이에요' : ''}</small></div>
     ${FT.ownerBox('food')}${FT.addForm('food', howTo('food', f.link))}
     <div class="food-chips" role="group" aria-label="지역">${areas.map(a=>`<button type="button" aria-pressed="${a === area}" data-area="${esc(a)}">${esc(a)} <small>${counts[a]}</small></button>`).join('')}</div>
+    ${cats.length >= 2 ? `<div class="food-chips fc-cat" role="group" aria-label="종류"><button type="button" aria-pressed="${fcat === '전체'}" data-fcat="전체">모든 종류</button>${cats.map(c=>`<button type="button" aria-pressed="${c === fcat}" data-fcat="${esc(c)}">${esc(c)} <small>${cc[c]}</small></button>`).join('')}</div>` : ''}
     <div class="food-sort" role="group" aria-label="정렬"><button type="button" aria-pressed="${sort === 'near'}" data-sort="near">📍 학교에서 가까운 순</button><button type="button" aria-pressed="${sort === 'new'}" data-sort="new">🆕 최근 추가 순</button></div>
     ${list.map(i=>{ const km = dist(i), isNew = i.t && i.t > week, fresh = !i.by && seen.size && !seen.has(i.id), reg = i.by ? i : FT.regOf('food', i.id);
       const link = safeHttp(i.u) || (i.pid ? `https://map.naver.com/p/entry/place/${i.pid}` : `https://map.naver.com/p/search/${encodeURIComponent(i.n)}`);
-      return `<article class="card food-card${i.by ? ' app' : ''}"><div class="hd"><b>${esc(i.n)}</b>${i.c && i.c !== '음식점' ? `<span class="tag">${esc(i.c)}</span>` : ''}${isNew || fresh ? '<span class="tag" style="background:var(--coral);color:#fff">NEW</span>' : ''}</div>
+      return `<article class="card food-card${i.by ? ' app' : ''}"><div class="hd"><b>${esc(i.n)}</b><span class="tag pi-cat" data-pic="${esc(i.id)}"${catOfI(i) ? '' : ' hidden'}>${esc(catOfI(i))}</span>${isNew || fresh ? '<span class="tag" style="background:var(--coral);color:#fff">NEW</span>' : ''}</div>
         ${reg ? FT.regLine(reg, !i.by) : ''}
         ${i.m && !i.by ? `<div class="food-memo">💬 ${esc(i.m)}</div>` : i.by && i.m ? `<div class="food-memo">🙋 ${esc(i.m)}</div>` : ''}
         <div class="meta">${esc(i.a)}${km < Infinity ? ` · 학교에서 <b>${km < 10 ? km.toFixed(1) : Math.round(km)}km</b>` : ''}</div>
+        <div class="pi" data-pi="${esc(i.id)}">${piHTML(i)}</div>
         ${FT.block('food', i.id, !i.by && reg ? reg.id : '', `<a class="ft-b ft-map" href="${esc(link)}" target="_blank" rel="noopener">📍 지도 ↗</a>`)}</article>`; }).join('') || '<div class="empty">이 지역에는 아직 없어요</div>'}`;
   root.querySelectorAll('[data-area]').forEach(b=>b.onclick = ()=>{ area = b.dataset.area; render(true); });
   root.querySelectorAll('[data-sort]').forEach(b=>b.onclick = ()=>{ sort = b.dataset.sort; render(true); });
+  root.querySelectorAll('[data-fcat]').forEach(b=>b.onclick = ()=>{ fcat = b.dataset.fcat; render(true); });
+  if(!piBusy) piLoad(all);
 }
 
 /* 서핑 스팟 — 네이버 '서핑 스팟' 폴더(kind 'spot')가 본체. 폴더에 스팟을 추가하면 10분 안에 여기 나타난다.
