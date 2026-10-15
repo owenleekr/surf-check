@@ -6,7 +6,7 @@
 (function(){
 if(!window.history || !history.pushState) return;
 const SEL = '.sheet:not([hidden]), .pop:not([hidden]), .game:not([hidden])';
-const GAMEX = { game:'g-x', surf:'s-x', skate:'k-x', quest:'q-x' };
+const GAMEX = { game:'g-x', surf:'s-x', skate:'k-x', quest:'q-x', defend:'d-x' };
 let depth = 0, skip = 0, tabBase = false, busy = false;
 const opened = () => [...document.querySelectorAll(SEL)].filter(el=>el.offsetParent !== null || getComputedStyle(el).position === 'fixed');
 const zOf = el => +getComputedStyle(el).zIndex || 0;

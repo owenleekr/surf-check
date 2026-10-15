@@ -291,6 +291,7 @@ function playMerge(remote){
   Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
   if(remote.dbest && remote.dbest.day && (!p.dbest || remote.dbest.day > p.dbest.day || (remote.dbest.day === p.dbest.day && remote.dbest.score > p.dbest.score))){ p.dbest = remote.dbest; ch = true; }
   if(remote.qb && typeof remote.qb === 'object'){ const q = (p.qb ||= { best:-1, clears:0 }); if((remote.qb.best ?? -1) > (q.best ?? -1)){ q.best = remote.qb.best; ch = true; } if((remote.qb.clears || 0) > (q.clears || 0)){ q.clears = remote.qb.clears; ch = true; } if(remote.qb.legend && !q.legend){ q.legend = 1; ch = true; } const rc = _num(remote.qb.ch, 11); if(rc > _num(q.ch, 11)){ q.ch = rc; ch = true; } }
+  if(remote.df && typeof remote.df === 'object'){ const d = (p.df ||= { best:0, clears:0 }), rb = _num(remote.df.best, 12), rc = _num(remote.df.clears, 9999), rh = _num(remote.df.hd, 3); if(rb > _num(d.best, 12)){ d.best = rb; ch = true; } if(rc > _num(d.clears, 9999)){ d.clears = rc; ch = true; } if(rh > _num(d.hd, 3)){ d.hd = rh; ch = true; } }
   if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
     Object.keys(remote.sk.best || {}).forEach(k=>{ if((remote.sk.best[k] || 0) > (sk.best[k] || 0)){ sk.best[k] = remote.sk.best[k]; ch = true; } });
     Object.keys(remote.sk.real || {}).forEach(d=>{ if(!sk.real[d]){ sk.real[d] = 1; ch = true; } });
@@ -424,6 +425,19 @@ function playQuestDone(stage, win, shells, cleared){
   return { best:q.best, gain };
 }
 
+/* 해변 수호가 끝났을 때 — 최고 파도·성공 횟수(df)와 조개. XP 는 다른 게임과 같은 하루 상한(gxp) 안에서만 */
+function playDefendDone(wave, win, shells, diff){
+  if(!ME.profile.play){ playReady.force = true; playTick(); }
+  const p = playP(), day = today(), d = (p.df ||= { best:0, clears:0 });
+  const w = _num(wave, 12); if(w > _num(d.best, 12)) d.best = w;
+  if(win){ d.clears = _num(d.clears, 9999) + 1; const h = _num(diff, 2) + 1; if(h > _num(d.hd, 3)) d.hd = h; }
+  p.shells = (p.shells || 0) + _num(shells, 60);
+  if(p.gday !== day){ p.gday = day; p.gxp = 0; }
+  const gain = Math.max(0, Math.min(Math.ceil(w / 2) + (win ? 4 : 0), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
+  playTick(); playPush();
+  return { best:d.best, gain };
+}
+
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
    주(월요일 시작)마다 한 번만. 렌더 때마다 불리므로 저장값(goalWk)으로 막는다. */
 function playGoal(sum, goal, myWeek){
@@ -543,6 +557,7 @@ function renderHub(enter){
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
       ${card(0,'🗺️','전설의 보드 원정', p.qb ? `봉인 조각 ${_num(p.qb.ch, 11)}/11${p.qb.clears ? ` · 완주 ${p.qb.clears}` : ''}` : '강원 해안 11마을 이야기', p.qb && p.qb.ch != null ? '' : 'NEW', 'quest')}
+      ${card(0,'🛡️','해변 수호', p.df ? `최고 ${_num(p.df.best, 12)}/12 파도${_num(p.df.clears, 9999) ? ` · 수호 ${_num(p.df.clears, 9999)}` : ''}` : '바다 골칫거리를 막아요', p.df ? '' : 'NEW', 'defend')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
@@ -584,7 +599,7 @@ function renderHub(enter){
   { const hc = root.querySelector('#hh-av'); if(hc && typeof drawSpr === 'function'){ const q = withLook(ME.profile || {}, ME.name); requestAnimationFrame(()=>drawSpr(hc, avatarRows(q, false), avatarTintOf(q, 0))); } }
   root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
   root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
-    if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'skate') skateOpen(); else if(k === 'quest') questOpen(); else if(k === 'quiz') quizOpen();
+    if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'skate') skateOpen(); else if(k === 'quest') questOpen(); else if(k === 'defend') window.defendOpen?.(); else if(k === 'quiz') quizOpen();
     else if(k === 'fort'){ if(!fortOpen) playFortune(); _hubFort = !_hubFort || !fortOpen ? true : false; renderHub(); setTimeout(()=>root.querySelector('.fort')?.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');

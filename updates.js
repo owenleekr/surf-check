@@ -5,6 +5,7 @@
 (function(){
 const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide';
 const UPDATES = [
+  { id:'u1016e', date:'10.16', t:'🛡️ 새 게임 — 해변 수호', items:[['🛡️','바다에서 밀려오는 해파리·성게·쓰레기를 수호대로 막아 낙산 해변을 지켜요 · 12파도 끝엔 폭풍 너울','defend'],['🐚','라이프가드·돌고래·서핑보드·해녀 — 빈 자리를 눌러 놓고 강화 · 끝나면 조개와 XP','defend']] },
   { id:'u1016d', date:'10.16', t:'🗺️ 전설의 보드 원정이 이야기가 됐어요', items:[['🗺️','고성 아야진 → 삼척 장호항, 강원 해안 11마을을 지도로 따라가요','quest'],['💬','마을 사람·바다 친구와 대화 → 바다 지키기 → 봉인 조각 + 마을 선물',''],['🧩','진행은 저장돼요 — 다음에 이어서, 11조각을 모으면 전설의 보드','']] },
   { id:'u1016c', date:'10.16', t:'🍡 모찌 미니미가 더 또렷해졌어요', items:[['🍡','진한 외곽선 · 또렷한 그늘 · 머리결 하이라이트 · 금빛 반짝이','me']] },
   { id:'u1016b', date:'10.16', t:'👆 한 손으로 더 편하게', items:[
@@ -100,6 +101,7 @@ function go(k){
   else if(k === 'shop') window.shopOpen?.(); else if(k === 'food' || k === 'spot') window.foodOpen?.(k);
   else if(k === 'bus') window.busOpen?.();
   else if(k === 'quest') window.questOpen?.();
+  else if(k === 'defend') window.defendOpen?.();
   else if(k === 'slog') window.surfLogOpen?.();
   else if(k === 'guide') window.open('/guide', '_blank', 'noopener');
   else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $u('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }

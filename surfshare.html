@@ -71,6 +71,7 @@ window.__bootFail = (files) => {
 <script src="surfride.js" defer></script>
 <script src="skate.js" defer></script>
 <script src="quest.js" defer></script>
+<script src="defend.js" defer></script>
 <script src="surfgame.js" defer></script>
 <script src="quiz.js" defer></script>
 <script src="foodtalk.js" defer></script>
@@ -342,6 +343,14 @@ body.game-on{ overflow:hidden }
 .game .game-box{ max-width:none; width:min(100%, calc((100dvh - 150px - env(safe-area-inset-bottom)) * var(--ar, .82) + 28px)); padding-left:6px; padding-right:6px }
 #game{ --ar:calc(180 / 220) } #quest{ --ar:1 }
 #quest .game-box{ width:min(100%, calc((100dvh - 270px - env(safe-area-inset-bottom)) + 28px)) }
+/* 해변 수호 (defend.js) — 캔버스 240×300, 아래 막대는 높이를 고정해 탭 위치가 흔들리지 않게 */
+#defend{ --ar:.8 } #defend .game-box{ width:min(100%, calc((100dvh - 250px - env(safe-area-inset-bottom)) * .8 + 28px)) }
+#d-cv{ display:block; width:100%; height:auto; touch-action:none; -webkit-touch-callout:none }
+.d-bar{ display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:6px; min-height:64px }
+.d-b{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; min-height:64px; padding:4px 2px; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); cursor:pointer; line-height:1.2 } .d-b:disabled{ opacity:.45; cursor:default }
+.d-b i, .d-info i{ font-style:normal; font-size:20px; font-family:sans-serif } .d-b b{ font-size:12.5px } .d-b small{ font-size:10.5px; color:#5B6275; font-weight:700; word-break:keep-all; text-align:center }
+.d-info{ grid-column:span 2; display:flex; flex-direction:column; justify-content:center; padding:4px 8px; background:#E6FBEF; border:2px solid var(--ink); color:var(--ink) } .d-info b{ font-size:13px } .d-info small{ font-size:11px; color:#5B6275; font-weight:700 }
+.d-tip{ grid-column:1/-1; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px; color:#9FC4E4; font-size:12.5px; font-weight:700; word-break:keep-all }
 #q-cv{ display:block; width:100%; height:auto; image-rendering:pixelated }
 .q-ctl{ display:flex; gap:8px; margin-top:8px } .q-ctl .btn{ flex:1; min-height:42px }
 .q-log{ margin-top:8px; min-height:96px; padding:8px 10px; background:#0E2A4A; border:2px solid var(--ink); color:#EAF6FF; font-size:13px; font-weight:700; line-height:1.55 }
@@ -1329,6 +1338,19 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
     </div>
     <div class="q-ctl"><button class="btn sm ghost" id="q-speed" type="button">⏩ 1배</button><button class="btn sm ghost" id="q-auto" type="button" aria-pressed="true">🤖 자동 고르기 켜짐</button></div>
     <div class="q-log" id="q-log" aria-live="polite"></div>
+  </div>
+</div>
+
+<!-- 해변 수호 (defend.js) -->
+<div class="game" id="defend" hidden role="dialog" aria-modal="true" aria-label="해변 수호">
+  <div class="game-box">
+    <div class="game-hd"><b>🛡️ 해변 수호</b><span class="game-sc" id="d-hud" style="font-size:14px"></span><button class="btn sm ghost" id="d-x" type="button" aria-label="해변 수호 닫기">✕</button></div>
+    <div class="game-stage">
+      <canvas id="d-cv" width="480" height="600" aria-label="해변 수호 화면 — 빈 자리를 눌러 수호대를 놓아요"></canvas>
+      <div class="game-ov" id="d-ov"></div>
+    </div>
+    <div class="d-bar" id="d-bar" aria-live="polite"></div>
+    <div class="q-ctl"><button class="btn sm ghost" id="d-pause" type="button">⏸ 멈춤</button><button class="btn sm ghost" id="d-speed" type="button">⏩ 1배</button><button class="btn sm" id="d-act" type="button" style="flex:1.6">🌊 큰 파도</button></div>
   </div>
 </div>
 
