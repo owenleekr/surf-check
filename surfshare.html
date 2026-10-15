@@ -948,6 +948,8 @@ body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
 .he-list{ display:flex; flex-direction:column; gap:6px } .he-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:48px; padding:0 12px; font-family:inherit; font-size:14.5px; font-weight:700; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:12px; cursor:pointer; text-align:left }
 .he-sw{ position:relative; flex:0 0 auto; width:44px; height:26px; border-radius:999px; background:#C9D1E0; transition:background .15s } .he-sw::after{ content:""; position:absolute; left:3px; top:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .15s }
 .he-sw.on{ background:var(--mint) } .he-sw.on::after{ transform:translateX(18px) }
+/* 작은 글씨 하한 12px — 11px 이하는 휴대폰에서 읽기 힘들었다(점검 도구 지적) */
+.bs-gr, .sl-go small, .hgame small, .hg small, .hf small, .sl-sum small, .sl-fr small, .bs-routes small, .bs-days small, .wv-d small, .hsec small, .rec-k, #home-rec small, .upd-h em, .hubcard em, .tag, .feed-n, .pi-src, .sl-bars small, .sl-d small{ font-size:12px }
 </style>
 </head>
 <body>
