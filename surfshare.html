@@ -1061,6 +1061,14 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .q-gift{ display:flex; align-items:center; gap:8px; margin:0 0 8px; padding:8px 10px; text-align:left; background:#FFF3C4; border:2px solid var(--ink); border-radius:10px } .q-gift i{ font-size:26px; font-style:normal } .q-gift b{ display:block; font-size:13.5px } .q-gift small{ display:block; font-size:12px; font-weight:700; color:#5B6275 }
 @keyframes qfade{ from{ opacity:0; transform:translateY(8px) } } @keyframes qblink{ 50%{ opacity:0 } } @keyframes qbob{ 50%{ transform:translateY(-3px) } } @keyframes qpop{ from{ transform:scale(.4); opacity:0 } }
 @media (prefers-reduced-motion:reduce){ .qtt,.qt-nx,.qm-me,.qpc,.q-leg,.qs-svg *,.qs-l,.qvn-f,.qm-d,#q-ov.qv-title::before,#q-ov.qv-title::after,#q-ov.qv-talk.cine::before,#q-ov.qv-talk.cine::after{ animation:none !important } .qs-svg .qfl{ display:none } }
+/* 서핑 일지 — 탄 파도 정확히(− 숫자 +) · 자세히 쓰기 */
+.sl-step{ display:flex; align-items:center; justify-content:center; gap:14px; margin-top:6px }
+.sl-step button{ width:56px; height:56px; font-size:30px; font-weight:800; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:14px; cursor:pointer; touch-action:manipulation }
+.sl-step button:active{ transform:translateY(1px); background:#FFF3C4 } .sl-step b{ min-width:64px; text-align:center; font-size:36px; line-height:1 } .sl-step span{ font-weight:800; margin-left:-8px }
+.sl-old{ display:block; margin-top:4px; color:#5B6275; font-size:12px; font-weight:700 }
+.sl-more2{ margin-top:12px; padding:8px 10px; background:#F4F8FC; border-radius:10px } .sl-more2 summary{ font-weight:800; font-size:14px; cursor:pointer; min-height:32px; display:flex; align-items:center; gap:6px } .sl-more2 summary small{ color:#5B6275; font-size:12px; font-weight:700 }
+.sl-more2 textarea{ width:100%; box-sizing:border-box; margin-top:4px; font-family:inherit; font-size:16px; resize:vertical }
+.sl-nt{ display:block; margin-top:2px; font-size:12.5px; color:#36405A; white-space:normal; word-break:keep-all; overflow-wrap:anywhere }
 </style>
 </head>
 <body>

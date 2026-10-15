@@ -39,8 +39,10 @@ async function make(entry){
     g.fillStyle = '#1B1B2F'; g.font = '800 54px "Apple SD Gothic Neo","Noto Sans KR",sans-serif';
     g.fillText(`${md} ${String(entry.s || '').slice(0, 10)} ${FE[entry.f] || ''}`, W / 2, H - 218);
     g.font = '700 38px "Apple SD Gothic Neo","Noto Sans KR",sans-serif'; g.fillStyle = '#36405A';
-    g.fillText(`${entry.m >= 60 ? (entry.m / 60) + '시간' : entry.m + '분'} · 탄 파도 ${WV[entry.w] || ''}${entry.wx ? ` · 🌊 ${entry.wx.h}m ${entry.wx.p ? entry.wx.p + '초' : ''}` : ''}`, W / 2, H - 160);
-    if(entry.t){ g.font = '700 34px "Apple SD Gothic Neo","Noto Sans KR",sans-serif'; g.fillStyle = '#5B6275'; g.fillText(`"${String(entry.t).slice(0, 24)}"`, W / 2, H - 108); }
+    g.fillText(`${entry.m >= 60 ? (entry.m / 60) + '시간' : entry.m + '분'} · 탄 파도 ${entry.wn != null && isFinite(+entry.wn) ? Math.max(0, Math.min(99, Math.round(+entry.wn))) + '개' : WV[entry.w] || ''}${entry.wx ? ` · 🌊 ${entry.wx.h}m ${entry.wx.p ? entry.wx.p + '초' : ''}` : ''}`, W / 2, H - 160);
+    /* 한줄이 없으면 짧은 '잘한 것'을 대신 — 카드 한 줄에 들어갈 때만 */
+    const ln = entry.t ? `"${String(entry.t).slice(0, 24)}"` : entry.good && String(entry.good).length <= 24 ? `👍 ${String(entry.good)}` : '';
+    if(ln){ g.font = '700 34px "Apple SD Gothic Neo","Noto Sans KR",sans-serif'; g.fillStyle = '#5B6275'; g.fillText(ln, W / 2, H - 108); }
     g.fillStyle = '#5B6275'; g.font = '700 28px "Apple SD Gothic Neo","Noto Sans KR",sans-serif'; g.fillText('SurfShare · surf.owenai.xyz', W / 2, H - 66);
     return cv;
   }
