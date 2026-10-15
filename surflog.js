@@ -35,12 +35,21 @@ function render(){
   const L = logs(), td = todayS(), mon = td.slice(0, 7), M = L.filter(e=>e.d.slice(0, 7) === mon);
   const hrs = Math.round(M.reduce((a, e)=>a + e.m, 0) / 6) / 10, cnt = {}; L.forEach(e=>{ cnt[e.s] = (cnt[e.s] || 0) + 1; });
   const fav = Object.keys(cnt).sort((a, b)=>cnt[b] - cnt[a])[0], done = L.some(e=>e.d === td);
+  /* 이번 주 바다 간 동기 — 마을 명단(state.town, 홈에서 이미 받아 둠)의 각자 일지에서 */
+  const wk = (()=>{ const d = new Date(Date.now() - 6 * 864e5); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); })();
+  const town = (typeof state !== 'undefined' && Array.isArray(state.town)) ? state.town : [];
+  const fr = town.filter(x=>x && x.id !== me().id).map(x=>{ const raw = x.profile?.play?.log; const a = Array.isArray(raw) ? raw.slice(-60).map(clean).filter(e=>e && e.d >= wk && e.d <= td) : [];
+    if(!a.length) return null; a.sort((p, q)=>p.d < q.d ? 1 : -1); return { name:String(x.name || '').slice(0, 12), n:a.length, s:a[0].s, h:a.reduce((t, e)=>t + e.m, 0) }; }).filter(Boolean).sort((a, b)=>b.n - a.n || b.h - a.h);
+  const mine = L.filter(e=>e.d >= wk).length;
+  const frHTML = town.length ? `<div class="sl-fr"><b>🌊 이번 주 바다 간 동기</b>${fr.length ? `<div class="sl-frs">${fr.slice(0, 8).map(f=>`<span><b>${esc(f.name)}</b> ${esc(f.s || '')} ${f.n}번</span>`).join('')}</div>`
+    : `<small>${mine ? '이번 주엔 아직 나만 기록했어요 🏄' : '아직 아무도 기록 안 했어요 — 첫 번째가 돼 봐요'}</small>`}</div>` : '';
   el.hidden = false;
   el.innerHTML = `<div class="hsec">📒 서핑 일지 <small>바다에 다녀오면 10초 기록</small></div>
     <div class="sl-card">
       <div class="sl-sum"><div><b>${M.length}</b><small>이번 달</small></div><div><b>${hrs}</b><small>시간</small></div><div><b>${L.length}</b><small>전체</small></div><div class="sl-fav"><b>${fav ? esc(fav) : '-'}</b><small>자주 간 곳</small></div></div>
       <button type="button" class="btn ${done ? 'ghost' : 'blue'} sl-go" data-slnew>${done ? '✓ 오늘 기록했어요 · 하나 더' : '🏄 오늘 서핑 기록하기 <small>+15 XP</small>'}</button>
       ${L.length ? `<div class="sl-list">${L.slice(0, 3).map(row).join('')}</div>${L.length > 3 ? `<button type="button" class="sl-more" data-slall>기록 ${L.length}개 모두 보기 ›</button>` : ''}` : '<div class="note" style="margin:8px 0 0">첫 기록을 남기면 이번 달 몇 번·몇 시간 탔는지 쌓여요.</div>'}
+      ${frHTML}
     </div>`;
   el.onclick = e=>{ if(e.target.closest('[data-slnew]')) form(); else if(e.target.closest('[data-slall]')) all(); else { const r = e.target.closest('[data-slid]'); if(r) form(r.dataset.slid); } };
 }

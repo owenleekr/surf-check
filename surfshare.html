@@ -884,6 +884,8 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 #sl-body input{ width:100% }
 .hh-av{ position:relative; width:auto; height:auto; padding:2px 4px 0; cursor:pointer; background:linear-gradient(#C9EAFF,#E6F5FF 78%,#F3E6C8 78%); border-radius:12px }
 .hh-av canvas{ display:block; height:78px } .hh-av i{ position:absolute; right:-8px; bottom:-6px; font-style:normal; font-size:20px; line-height:1; background:#fff; border:2px solid var(--ink); border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center }
+.sl-fr{ margin-top:10px; padding:8px 10px; background:#EAF6FF; border-radius:10px; font-size:13px } .sl-fr small{ display:block; color:#5B6275; font-weight:700; margin-top:2px }
+.sl-frs{ display:flex; flex-wrap:wrap; gap:4px; margin-top:6px } .sl-frs span{ padding:3px 8px; background:#fff; border:1.5px solid var(--ink); border-radius:999px; font-size:12px; font-weight:700 }
 </style>
 </head>
 <body>
@@ -2739,6 +2741,9 @@ function onbShow(i, back){
 function onbStart(){ document.body.classList.add('onb-on'); $('onb').hidden = false; onbShow(0); }
 $('onb-next').onclick = ()=>{ onbI + 1 >= ONB.length ? onbEnd() : onbShow(onbI + 1); };
 $('onb-skip').onclick = ()=>{ onbI === 0 ? onbEnd() : onbShow(onbI - 1, true); };
+/* 프로필의 내 캐릭터를 누르면 꾸미기 — 꾸미기가 홈 맨 아래에 숨어 있었다 */
+$('me-av').style.cursor = 'pointer'; $('me-av').setAttribute('role', 'button'); $('me-av').setAttribute('aria-label', '내 캐릭터 꾸미기');
+$('me-av').onclick = ()=>{ const d = $('bld-fold'); if(d){ d.open = true; d.dispatchEvent(new Event('toggle')); setTimeout(()=>d.scrollIntoView({ block:'start', behavior:'smooth' }), 60); } };
 $('help').onclick = ()=>{ if($('onb').hidden) onbStart(); else onbEnd(); };
 
 /* ── 기타 메뉴 ── 번개·숙소·카풀·마을은 쓰임이 줄어 아래 탭에서 빼고 여기로 모았다(화면·기능은 그대로) */
@@ -2986,6 +2991,7 @@ async function pullDrills(){
   if(!(state.town||[]).length){
     try{ state.town = (await api('surfers?select=id,name,cohort,profile&limit=300')).filter(x=>!isTest(x.id)); }catch(e){} }
   renderDrill();
+  window.surfLogRender?.();
 }
 function renderDrill(){
   const box = $('drill'); if(!box) return;
