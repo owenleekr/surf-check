@@ -495,6 +495,7 @@ function renderHub(enter){
       ${card(3,'📍','해변 스탬프', `${st}/${SEAS.length} 곳`, '', 'stamp')}
       ${card(4,'🎒','배지 도감', `${got}/${BADGES.length}개`, '', 'badge')}
       ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
+      ${card(7,'🏘','마을 · 채팅', '캐릭터들이 모인 곳 · 한마디', '', 'town')}
       ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
     </div>
     <div class="pt" style="margin-top:18px">설정 · 공유</div>
@@ -528,7 +529,7 @@ function renderHub(enter){
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');
     else if(k === 'shop') shopOpen();
-    else if(k === 'emote'){ setTab('town'); toast('내 캐릭터를 눌러 표정을 지어 보세요 🙂'); } });
+    else if(k === 'emote' || k === 'town'){ setTab('town'); } });
 }
 
 function renderPlayBits(){

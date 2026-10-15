@@ -1,0 +1,25 @@
+/* 아래 탭 — 주력 5개(홈·맛집·놀이·캠·버스) + 기타(번개·숙소·카풀·마을·가이드·홈 화면 추가), 버스 탭은 버스 빈자리가 먼저, 노선 추가 요청 */
+import { open } from './mock.mjs';
+import fs from 'fs';
+const bus = u => ({ fetched:new Date().toISOString(), buses:[{ t:'23:59', co:'금강고속', dur:'2:40', grade:'일반', fare:21600, left:0, total:41 }] });
+const t = await open({ surfers:[{ id:'u4', name:'이성현', cohort:'6기', profile:{} }], __bus:bus, place_talk:[{ id:'u0|1', target:'req:bus', user_id:'u0', name:'김도훈', cohort:'6기', title:'속초 → 서울경부', text:'일요일 저녁', created_at:new Date().toISOString() }], reacts:[{ id:'u0|ft:c:u0|1|🙋', user_id:'u0', target:'ft:c:u0|1', emo:'🙋' }] }, { id:'u4', name:'이성현', profile:{ gender:'f', birth:'1', dressed:1 } }, { wait:2500 });
+await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); }); await t.sleep(300);
+console.log('아래 탭', await t.S(()=>[...document.querySelectorAll('#nav button')].filter(b=>!b.hidden).map(b=>b.textContent.replace(/[0-9!]/g,'').trim())));
+await t.S(()=>document.getElementById('t-ride').click()); await t.sleep(800);
+console.log('버스 탭', await t.S(()=>({ 보기:document.getElementById('pane-ride').dataset.view, 세그:[...document.querySelectorAll('#ride-seg button')].map(b=>b.textContent+(b.getAttribute('aria-pressed')==='true'?'✓':'')), 행:document.querySelectorAll('.bs-row').length, 요청:[...document.querySelectorAll('.bs-rq')].map(r=>r.textContent.replace(/\s+/g,' ').trim()) })));
+await t.S(()=>document.getElementById('br-open').click()); await t.sleep(100);
+await t.S(()=>{ document.getElementById('br-from').value='양양'; document.getElementById('br-to').value='인천공항'; document.getElementById('br-go').click(); }); await t.sleep(400);
+console.log('요청 POST', JSON.stringify(t.posts.filter(p=>p[0]==='place_talk').map(p=>p[1].title)), '| 목록', await t.S(()=>[...document.querySelectorAll('.bs-rq b')].map(b=>b.textContent)));
+await t.S(()=>document.querySelector('[data-rvote="u0|1"]').click()); await t.sleep(200);
+console.log('나도 필요', await t.S(()=>document.querySelector('[data-rvote="u0|1"]').textContent.trim()), JSON.stringify(t.posts.filter(p=>p[0]==='reacts').map(p=>p[1].target)));
+fs.writeFileSync('/tmp/nav-bus.png', await t.p.screenshot({ fullPage:true }));
+await t.S(()=>document.getElementById('t-more').click()); await t.sleep(200);
+console.log('기타', await t.S(()=>[...document.querySelectorAll('.more-it b')].map(b=>b.textContent)));
+fs.writeFileSync('/tmp/nav-more.png', await t.p.screenshot());
+await t.S(()=>document.querySelector('[data-more="bolt"]').click()); await t.sleep(300);
+console.log('번개로', await t.S(()=>({ 탭:state.tab, 기타눌림:document.getElementById('t-more').getAttribute('aria-pressed') })));
+await t.S(()=>{ document.getElementById('t-more').click(); document.querySelector('[data-more="car"]').click(); }); await t.sleep(300);
+console.log('카풀로', await t.S(()=>({ 탭:state.tab, 보기:document.getElementById('pane-ride').dataset.view })));
+await t.S(()=>{ setTab('play'); }); await t.sleep(300); await t.S(()=>document.querySelector('[data-hub="town"]').click()); await t.sleep(300);
+console.log('놀이→마을', await t.S(()=>state.tab));
+console.log('errs', t.errs); await t.b.close(); process.exit(0);

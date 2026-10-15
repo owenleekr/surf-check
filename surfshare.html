@@ -412,6 +412,11 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .pi-src{ display:block; margin-top:4px; font-size:11px; color:#8A8FA0; font-weight:700 } .pi:empty{ display:none } .fc-cat button[aria-pressed="true"]{ background:var(--mint) }
 .ft-links{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px } .ft-links .btn{ min-height:40px }
 .ft-bar .ft-b{ flex:1 1 auto; justify-content:center; padding:0 6px; white-space:nowrap } .sp-cam{ margin-top:8px }
+/* 아래 탭 '기타' 메뉴 */
+.more-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px }
+.more-it{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:88px; padding:10px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
+.more-it i{ font-style:normal; font-size:26px; font-family:sans-serif } .more-it b{ font-size:15px } .more-it small{ font-size:12px; color:#5B6275; font-weight:700 }
+.more-it em{ position:absolute; top:8px; right:8px; font-style:normal; font-size:11px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
 /* 홈 — 안 써 본 기능 추천 */
 #home-rec{ padding:10px 12px; background:#E6FBEF; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink) }
 .rec{ display:flex; align-items:flex-start; gap:10px } .rec-ic{ font-size:30px; font-family:sans-serif; line-height:1.1 }
@@ -475,6 +480,10 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .gd-tip{ margin-top:10px; padding:10px 12px; background:#E6FBEF; border:3px solid var(--ink); font-size:13.5px; line-height:1.65; word-break:keep-all } .gd-tip ul{ margin:4px 0 0; padding-left:18px } .gd-tip li{ margin-bottom:5px }
 #pane-ride[data-view="bus"] > :not(#ride-seg):not(#bus-view){ display:none }
 #pane-ride:not([data-view="bus"]) #bus-view{ display:none }
+.bs-req{ margin-top:16px; padding:12px 14px; background:#E6F6FF; border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink) } .bs-rh{ display:flex; flex-direction:column; gap:2px; margin-bottom:6px } .bs-rh b{ font-family:"Galmuri11",sans-serif; font-size:15px } .bs-rh small{ font-size:12px; color:#5B6275; font-weight:700 }
+.bs-rq{ display:flex; align-items:center; gap:6px; padding:8px 0; border-bottom:2px dashed rgba(27,27,47,.15) } .bs-rq-m{ flex:1; min-width:0; display:flex; flex-direction:column } .bs-rq-m b{ font-size:14.5px } .bs-rq-m small{ font-size:12px; color:#5B6275; font-weight:700 }
+.bs-vote{ flex:0 0 auto; min-width:44px; min-height:40px; font-family:inherit; font-weight:800; background:#fff; border:3px solid var(--ink); cursor:pointer } .bs-vote.on{ background:var(--sun) }
+.bs-rf{ display:flex; align-items:center; gap:6px; margin-top:8px } .bs-rf input{ flex:1; min-width:0 } .bs-rf span{ font-weight:800 }
 .bs-dir{ margin:12px 0 0 } .bs-days{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; margin-top:8px }
 .bs-days button{ display:flex; flex-direction:column; align-items:center; padding:5px 0; min-height:48px; font-family:inherit; background:#fff; border:3px solid var(--ink); cursor:pointer } .bs-days small{ font-size:11px; font-weight:800; color:#5B6275 } .bs-days b{ font-family:"Galmuri11",sans-serif; font-size:16px }
 .bs-days button[aria-pressed="true"]{ background:var(--ink); color:#fff } .bs-days button[aria-pressed="true"] small{ color:#CFE6FF }
@@ -923,7 +932,7 @@ body.onb-on .wrap{ padding-bottom:230px }
         <h3>📌 내 일정</h3>
         <div id="mine-list"></div>
       </section>
-      <div class="grp" id="here-grp"><span class="t">같이 가요 — 번개 · 차 · 숙소</span><div class="px" id="home-sum"></div></div>
+      <div class="grp" id="here-grp"><span class="t">같이 가요 — 번개 · 카풀 · 숙소</span><div class="px" id="home-sum"></div></div>
       <button type="button" class="voice" id="voice" hidden>
         <span class="vh">🎙 코치님들의 목소리</span>
         <span class="vt" id="voice-t"></span>
@@ -935,8 +944,8 @@ body.onb-on .wrap{ padding-bottom:230px }
     </div>
 
     <!-- 차량 -->
-    <div id="pane-ride" data-view="car">
-      <div class="seg" id="ride-seg" role="group" aria-label="카풀과 버스"><button type="button" data-view="car" aria-pressed="true">🚗 카풀</button><button type="button" data-view="bus" aria-pressed="false">🚌 버스 빈자리</button></div>
+    <div id="pane-ride" data-view="bus">
+      <div class="seg" id="ride-seg" role="group" aria-label="카풀과 버스"><button type="button" data-view="bus" aria-pressed="true">🚌 버스 빈자리</button><button type="button" data-view="car" aria-pressed="false">🚗 카풀</button></div>
       <div id="bus-view"></div>
       <details class="px sand fold"><summary>🚗 차량 쉐어 올리기</summary>
         <div class="grid2" style="margin-top:8px">
@@ -1087,11 +1096,12 @@ body.onb-on .wrap{ padding-bottom:230px }
   <button type="button" id="t-home" aria-pressed="true"><i>🏄</i>홈<span class="dot" id="home-dot" hidden>!</span></button>
   <button type="button" id="t-food" aria-pressed="false"><i>🍜</i>맛집<span class="dot" id="food-dot" hidden>0</span></button>
   <button type="button" id="t-play" aria-pressed="false"><i>🎮</i>놀이<span class="dot" id="play-dot" hidden>0</span></button>
-  <button type="button" id="t-bolt" aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
-  <button type="button" id="t-town" aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
   <button type="button" id="t-cam"  aria-pressed="false"><i>📹</i>캠</button>
-  <button type="button" id="t-ride" aria-pressed="false"><i>🚗</i>차량<span class="dot" id="ride-dot" hidden>0</span></button>
-  <button type="button" id="t-stay" aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
+  <button type="button" id="t-ride" aria-pressed="false"><i>🚌</i>버스<span class="dot" id="ride-dot" hidden>0</span></button>
+  <button type="button" id="t-more" aria-pressed="false" aria-haspopup="dialog"><i>☰</i>기타<span class="dot" id="more-dot" hidden>!</span></button>
+  <button type="button" id="t-bolt" hidden aria-pressed="false"><i>⚡</i>번개<span class="dot" id="bolt-dot" hidden>0</span></button>
+  <button type="button" id="t-stay" hidden aria-pressed="false"><i>🏠</i>숙소<span class="dot" id="stay-dot" hidden>0</span></button>
+  <button type="button" id="t-town" hidden aria-pressed="false"><i>🏘</i>마을<span class="dot" id="town-dot" hidden>0</span></button>
 </nav>
 <button type="button" class="mailfab" id="mail" aria-label="쪽지">✉️<span class="dot" id="mail-dot" hidden>0</span></button>
 <!-- 서프스케이트 훈련 (skate.js) -->
@@ -1156,6 +1166,22 @@ body.onb-on .wrap{ padding-bottom:230px }
     <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
       <button class="btn blue" id="pop-go" type="button" style="min-width:120px;min-height:48px" hidden></button>
       <button class="btn" id="pop-ok" type="button" style="min-width:120px;min-height:48px">좋아요</button>
+    </div>
+  </div>
+</div>
+
+<!-- 기타 메뉴 — 주력(홈·맛집·놀이·캠·버스) 밖의 것들 -->
+<div class="sheet" id="more-sheet" hidden>
+  <div class="sheet-dim" data-moreclose></div>
+  <div class="sheet-in">
+    <div class="sheet-hd"><span class="t">☰ 기타</span><button class="btn sm ghost" data-moreclose>닫기</button></div>
+    <div class="more-grid">
+      <button type="button" class="more-it" data-more="bolt"><i>⚡</i><b>서핑번개</b><small>언제 같이 들어갈지</small><em id="more-bolt" hidden></em></button>
+      <button type="button" class="more-it" data-more="stay"><i>🏠</i><b>숙소</b><small>같이 쓰기 · 별점</small><em id="more-stay" hidden></em></button>
+      <button type="button" class="more-it" data-more="car"><i>🚗</i><b>카풀</b><small>같이 타고 내려가기</small></button>
+      <button type="button" class="more-it" data-more="town"><i>🏘</i><b>마을 · 채팅</b><small>캐릭터들이 모인 곳</small></button>
+      <button type="button" class="more-it" data-more="guide"><i>📖</i><b>사용 가이드</b><small>맛집·스팟 등록하는 법</small></button>
+      <button type="button" class="more-it" data-more="a2hs"><i>📲</i><b>홈 화면에 추가</b><small>아이콘으로 바로 열기</small></button>
     </div>
   </div>
 </div>
@@ -2566,12 +2592,10 @@ const ONB = [
     d:'🏄 <b>파도 점프</b>(메인 게임 · 매일 📅 오늘의 챌린지) · 🌊 라인업 서핑 · 🛹 서프스케이트 훈련 · 코치 퀴즈 · 운세 · 스탬프 · 조개 상점.' },
   { tab:'bolt', at:'t-bolt', t:'⚡ 서핑번개',
     d:'시간과 바다만 정해 올리면 갈 사람이 <b>[나도 갈래요]</b>로 채워요. 정원은 없어요.' },
-  { tab:'town', at:'t-town', t:'🏘 마을 — 한마디가 머리 위로',
-    d:'채팅에 친 말이 내 머리 위 <b>말풍선</b>으로 떠요. 내 캐릭터를 누르면 이모트, 동기를 누르면 응원을 보내요.' },
   { tab:'cam', at:'t-cam', t:'📹 라이브캠',
     d:'나가기 전에 그 해변을 <b>눈으로</b> 봐요. 데이터를 꽤 써서 다른 탭으로 가면 알아서 꺼져요.' },
-  { tab:'ride', at:'t-ride', t:'🚗 차 — 같이 타기',
-    d:'빈자리에 <b>[탈래요]</b>를 누르면 자리가 잡혀요. 운전하면 <b>[차량 쉐어 올리기]</b>로 날짜·시각·인원을.<br><b>양양 가는 차 / 나가는 차</b>를 골라 볼 수 있어요.' },
+  { tab:'ride', at:'t-ride', t:'🚌 버스 — 남은 좌석 · 자리 나면 알림',
+    d:'양양↔동서울 시외버스가 <b>몇 석 남았는지</b> 바로 보여요. 매진 차에 🔕 를 누르면 <b>자리 날 때 알려 드려요</b>.<br>다른 노선이 필요하면 맨 아래 <b>노선 추가 요청</b>, 카풀은 옆 칸에.' },
   { tab:'stay', at:'t-stay', t:'🏠 숙소 — 같이 쓰기',
     d:'남는 자리가 있는 숙소에 들어가거나 내 방을 올려 사람을 채워요. 다녀왔으면 <b>별점 한 줄</b> — 다음 사람이 그걸 보고 골라요.' },
   { tab:'home', at:'a2hs', t:'📲 마지막 — 홈 화면에 추가', skip:()=>$('a2hs')?.hidden,
@@ -2603,6 +2627,19 @@ $('onb-next').onclick = ()=>{ onbI + 1 >= ONB.length ? onbEnd() : onbShow(onbI +
 $('onb-skip').onclick = ()=>{ onbI === 0 ? onbEnd() : onbShow(onbI - 1, true); };
 $('help').onclick = ()=>{ if($('onb').hidden) onbStart(); else onbEnd(); };
 
+/* ── 기타 메뉴 ── 번개·숙소·카풀·마을은 쓰임이 줄어 아래 탭에서 빼고 여기로 모았다(화면·기능은 그대로) */
+function moreDots(){
+  let n = 0; ['bolt', 'stay'].forEach(k=>{ const d = $(k + '-dot'), e = $('more-' + k); const v = d && !d.hidden ? d.textContent : '';
+    if(e){ e.hidden = !v; e.textContent = v ? `새 글 ${v}` : ''; } if(v) n++; });
+  const md = $('more-dot'); if(md) md.hidden = !n;
+}
+$('t-more').onclick = ()=>{ moreDots(); $('more-sheet').hidden = false; };
+$('more-sheet').addEventListener('click', e=>{
+  if(e.target.closest('[data-moreclose]')){ $('more-sheet').hidden = true; return; }
+  const b = e.target.closest('[data-more]'); if(!b) return; const k = b.dataset.more; $('more-sheet').hidden = true;
+  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else setTab(k);
+});
+
 /* ── 탭 ─────────────────────────────────────────────────── */
 /* ── 새 글 표시 ───────────────────────────────────────────
    차·숙소·번개에 새 글이 올라와도 그 탭에 들어가 봐야 알 수 있었다.
@@ -2631,9 +2668,10 @@ function refreshDots(){
   setDot('ride', state.rides, r=>isGone(r,'ride'));
   setDot('stay', state.stays, r=>isGone(r,'stay'));
   setDot('bolt', bolts, boltGone);
+  moreDots();
 }
 
-const TABS = ['home','food','play','bolt','town','cam','ride','stay'];        // 서핑·놀이가 먼저, 차·숙소는 뒤로(쓰임이 줄었다)
+const TABS = ['home','food','play','cam','ride','bolt','stay','town'];        // 서핑·놀이가 먼저, 차·숙소는 뒤로(쓰임이 줄었다)
 let nowOpen = false;
 /* 머리를 탭에 따라 접는다 — 홈에서는 온전히, 나머지에서는 한 줄. */
 /* 바다 상황 카드는 홈에서도 한 줄로 접어 둔다 — 홈 앞자리를 연습·게임·맛집/스팟에 내준다(펼치면 체크인) */
@@ -2647,6 +2685,7 @@ $('nowbar').onclick = ()=>{ nowOpen = !nowOpen; layoutHead(); if(nowOpen) render
 const setTab = t => { const prevTab = state.tab; state.tab = t;
   ['home','ride','stay','food','bolt','town','play','cam','me'].forEach(k=>{
     const btn = $('t-'+k); if(btn) btn.setAttribute('aria-pressed', String(t===k));
+    $('t-more')?.setAttribute('aria-pressed', String(['bolt','stay','town'].includes(t)));
     $('pane-'+k).hidden = t!==k; });
   if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); homeDot(); }
   layoutHead(); homeDot();
@@ -2657,6 +2696,7 @@ const setTab = t => { const prevTab = state.tab; state.tab = t;
   if(t==='bolt') pullBolts();
   if(t==='food' && typeof foodEnter === 'function'){ foodEnter(); const d = $('food-dot'); if(d) d.hidden = true; }
   if(t==='play' && typeof renderHub === 'function') renderHub(true);
+  if(t==='ride') window.busEnter?.();
   if(t==='ride' || t==='stay' || t==='bolt'){ markSeen(t); const d = $(t+'-dot'); if(d) d.hidden = true; }
   $('trust').hidden = !(t==='ride' || t==='stay');
   $('school').hidden = t!=='home';                  // 커밍순 카드는 홈에만
