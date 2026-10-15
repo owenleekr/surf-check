@@ -41,7 +41,7 @@ function collect(){
   if(window.FT) FT.events(nameOf).forEach(e=>out.push({ ts:e.ts, ic:e.ic, who:e.who, text:e.text, go:e.kind }));
   out.sort((a,b)=>b.ts - a.ts);
   const top = out.slice(0, 8);
-  if(typeof window.updEvents === 'function') top.splice(Math.min(1, top.length), 0, ...window.updEvents());
+  /* 업데이트는 홈 카드·로그인 알림이 맡는다 — 소식줄에까지 넣으면 같은 말이 세 번 나온다 */
   { const r = typeof window.recTop === 'function' ? window.recTop() : null; if(r) top.splice(Math.min(2, top.length), 0, r); }   // 안 해 본 것 하나     // 최근 업데이트도 한 칸
   if(top.length < 3){            // 조용한 날엔 '지금의 기록'을 보여 준다 — 도전할 이유
     const best = peers.filter(p=>p.best >= 100).sort((a,b)=>b.best - a.best)[0];

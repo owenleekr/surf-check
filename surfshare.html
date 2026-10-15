@@ -78,6 +78,7 @@ body{ background:#5AB4EF; background-image:linear-gradient(to bottom,#DCF3FF 0 1
 h1,h2,.t{ font-family:"Galmuri14","Galmuri11",sans-serif; font-weight:700 }
 h1{ color:var(--paper); text-shadow:3px 3px 0 var(--ink); font-size:26px; margin:0 }
 .sub{ color:var(--ink); font-size:13.5px; margin:4px 0 12px; text-shadow:1px 1px 0 rgba(255,255,255,.7) }
+body:not(.on-home) .wrap > h1{ font-size:20px } body:not(.on-home) .wrap > .sub{ display:none }      /* 홈이 아닐 땐 머리글을 줄여 화면을 내용에 */
 .sub a{ color:var(--deep) }
 .px{ background:var(--paper); border:4px solid var(--ink); box-shadow:4px 4px 0 var(--ink); padding:14px }
 .px.sand{ background:var(--sand) } .px.white{ background:#fff }
@@ -449,9 +450,10 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 /* 홈 — 업데이트 소식 */
 .upd{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; margin:0 0 12px; padding:10px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF3C4; border:3px solid var(--ink); box-shadow:3px 3px 0 var(--ink); cursor:pointer }
 #home-upd{ position:relative; margin:0 0 12px } #home-upd .upd{ margin:0 }
-.upd-x{ position:absolute; right:8px; top:8px; min-height:30px; padding:0 8px; font-family:inherit; font-size:11.5px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); cursor:pointer }
-.upd-h{ display:flex; align-items:center; gap:6px; width:100%; padding-right:96px } .upd-h b{ font-size:12.5px; color:#8A5A00 } .upd-h em{ font-style:normal; font-size:10.5px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
-.upd-t{ font-family:"Galmuri11",sans-serif; font-size:15.5px; font-weight:800 } .upd-l{ font-size:12.5px; font-weight:700; color:#4B4A6B; line-height:1.55 } .upd-more{ align-self:flex-end; font-size:12px; font-weight:800; color:#2E6BFF }
+.upd-x{ position:absolute; right:8px; top:8px; min-height:30px; padding:0 8px; font-size:0 !important; font-family:inherit; font-size:11.5px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); cursor:pointer }
+.upd-h{ display:flex; align-items:center; gap:6px; width:100%; padding-right:40px }
+.upd-x::after{ content:'✕'; font-size:14px } .upd-h b{ font-size:12.5px; color:#8A5A00 } .upd-h em{ font-style:normal; font-size:10.5px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
+.upd-t{ font-family:"Galmuri11",sans-serif; font-size:14.5px; font-weight:800; padding-right:40px } .upd-l{ display:none } .upd-more{ align-self:flex-end; font-size:12px; font-weight:800; color:#2E6BFF; margin-top:-18px }
 .upd-sec{ padding:10px 0; border-bottom:2px dashed var(--grid) } .upd-sec h4{ margin:0 0 6px; font-size:14.5px } .upd-sec h4 em{ font-style:normal; font-size:10.5px; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
 .upd-it{ display:flex; align-items:center; gap:8px; padding:5px 0; font-size:13.5px; line-height:1.5 } .upd-it i{ font-style:normal; font-size:18px; font-family:sans-serif } .upd-it span{ flex:1; word-break:keep-all } .upd-it .btn{ flex:0 0 auto; min-height:36px }
 /* 홈 — 오늘 한 판 · 맛집 */
@@ -914,7 +916,6 @@ body.onb-on .wrap{ padding-bottom:230px }
 
     <!-- 홈 -->
     <div id="pane-home" hidden>
-      <div class="a2" id="a2hs" hidden></div>
       <div class="px prof">
         <canvas class="me-av" id="me-av"></canvas>
         <button type="button" class="prof-lv" id="prof-lv" aria-label="내 레벨과 도감 열기">
@@ -954,6 +955,7 @@ body.onb-on .wrap{ padding-bottom:230px }
       </section>
       <section class="hgame" id="home-games" aria-label="오늘 한 판"></section>
       <section class="hfood" id="home-food" aria-label="맛집·서핑 스팟" hidden></section>
+      <div class="a2" id="a2hs" hidden></div>
       <button type="button" class="todo" id="todo" hidden></button>
       <section class="mine" id="mine" aria-label="내 일정" hidden>
         <h3>📌 내 일정</h3>
@@ -2727,6 +2729,7 @@ const setTab = t => { const prevTab = state.tab; state.tab = t;
     const btn = $('t-'+k); if(btn) btn.setAttribute('aria-pressed', String(t===k));
     $('t-more')?.setAttribute('aria-pressed', String(['bolt','stay','town'].includes(t)));
     $('pane-'+k).hidden = t!==k; });
+  document.body.classList.toggle('on-home', t==='home');
   if(t==='home'){ $('t-home').setAttribute('aria-pressed','true'); renderHome(); pullDrills(); homeDot(); }
   layoutHead(); homeDot();
   if(t==='me') renderBuilder();
@@ -3119,14 +3122,14 @@ function renderHome(){
       <span class="hgo">›</span></button>`;
   const rows = [];
   if(bs.length)    rows.push(line('⚡','번개', bs.length, 'bolt', `${dShort(bs[0].date)} ${hLabel(bs[0].time)} · ${esc(bs[0].beach)} · ${(bs[0].joins||[]).length}명`));
-  if(rides.length) rows.push(line('🚗','차량', rides.length, 'ride', `${dShort(rides[0].date)} ${hLabel(rides[0].depart_at)} · ${esc(rides[0].from_place)} → ${esc(rides[0].to_place)} · 빈자리 ${Math.max(0,(rides[0].seats||0)-(rides[0].riders||[]).length)}`));
+  if(rides.length) rows.push(line('🚗','카풀', rides.length, 'car', `${dShort(rides[0].date)} ${hLabel(rides[0].depart_at)} · ${esc(rides[0].from_place)} → ${esc(rides[0].to_place)} · 빈자리 ${Math.max(0,(rides[0].seats||0)-(rides[0].riders||[]).length)}`));
   if(stays.length) rows.push(line('🏠','숙소', stays.length, 'stay', `${dShort(stays[0].date_from)} ~ ${dShort(stays[0].date_to)} · ${esc(stays[0].place)} · ${(stays[0].guests||[]).length}/${stays[0].capacity}명`));
   homeGames(); homeFood(); window.recCard?.(); window.waveHome?.();
   box.innerHTML = rows.join('') || `<div class="hsub dim" style="padding:2px 0 8px">아직 올라온 글이 없어요. 먼저 열어볼까요?</div>
       <div class="hq"><button type="button" class="btn sm mint" data-go="bolt">⚡ 번개</button>
-      <button type="button" class="btn sm mint" data-go="ride">🚗 차량</button>
+      <button type="button" class="btn sm mint" data-go="car">🚗 카풀</button>
       <button type="button" class="btn sm mint" data-go="stay">🏠 숙소</button></div>`;
-  box.querySelectorAll('[data-go]').forEach(el=>el.onclick = ()=>{ el.dataset.go === 'food' ? foodOpen() : setTab(el.dataset.go); });
+  box.querySelectorAll('[data-go]').forEach(el=>el.onclick = ()=>{ const g = el.dataset.go; g === 'food' ? foodOpen() : (g === 'car' || g === 'ride') ? window.carOpen?.() : setTab(g); });
 }
 
 /* 홈 안에서 여는 꾸미기 — 탭을 하나 줄이려고 pane-me 를 통째로 옮겨 넣는다 */

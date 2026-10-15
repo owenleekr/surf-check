@@ -66,7 +66,7 @@ function card(){
   el.hidden = false;
   el.innerHTML = `<button type="button" class="upd" id="upd-open"><span class="upd-h"><b>🆕 업데이트 · ${u.date}</b>${n ? `<em>NEW ${n}</em>` : ''}</span>
     <span class="upd-t">${u.t}</span><span class="upd-l">${u.items.slice(0, 2).map(i=>`${i[0]} ${i[1].split(' — ')[0]}`).join('<br>')}</span><span class="upd-more">전체 보기 ›</span></button>
-    <button type="button" class="upd-x" id="upd-x">다시 보지 않기</button>`;
+    <button type="button" class="upd-x" id="upd-x" aria-label="다시 보지 않기" title="다시 보지 않기">다시 보지 않기</button>`;
   $u('upd-open').onclick = openAll;
   $u('upd-x').onclick = ()=>{ try{ localStorage.setItem(HIDE, u.id); localStorage.setItem(SEEN, u.id); }catch(e){} card(); };
 }

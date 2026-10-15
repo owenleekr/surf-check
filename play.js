@@ -499,9 +499,7 @@ function renderHub(enter){
       <div class="hh-chips"><span>${stk ? `🔥 ${stk}일` : '🔥 —'}</span><span>🐚 ${shellBal()}</span><span>🏅 ${got}/${BADGES.length}</span></div>
       <div class="xpbar big" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${enter ? 0 : pct}%" data-w="${pct}"></i></div>
     </div>
-    <div class="pt" style="margin-top:16px">오늘의 퀘스트 <small>${done}/${qs.length}${done === qs.length ? ' · 모두 완료 🎉' : ' · 모두 하면 +20 XP'}</small></div>
-    ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-hq="${i}"><i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
-    <div class="pt" style="margin-top:18px">놀이 메뉴</div>
+    <div class="pt" style="margin-top:16px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
       ${card(0,'🗺️','전설의 보드 원정', p.qb?.best != null ? `최고 ${p.qb.best + 1}/10 · 완주 ${p.qb.clears || 0}` : '자동 모험 · 독도까지', p.qb ? '' : 'NEW', 'quest')}
@@ -513,8 +511,10 @@ function renderHub(enter){
       ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
       ${card(7,'🏘','마을 · 채팅', '캐릭터들이 모인 곳 · 한마디', '', 'town')}
       ${card(6,'🛍️','조개 상점', `🐚 ${shellBal()} 보유`, '', 'shop')}
-      ${card(8,'🌊','라인업 서핑', `쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, (p.sn || 0) ? '' : 'NEW', 'surf')}
+      ${card(8,'🌊','라인업 서핑', `쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, '', 'surf')}
     </div>
+    <div class="pt" style="margin-top:18px">오늘의 퀘스트 <small>${done}/${qs.length}${done === qs.length ? ' · 모두 완료 🎉' : ' · 모두 하면 +20 XP'}</small></div>
+    ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-hq="${i}"><i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
     <div class="pt" style="margin-top:18px">설정 · 공유</div>
     <div class="hubset">
       <button type="button" data-set="haptic" aria-pressed="${hapticOn()}"><span>📳 진동</span><b>${hapticOn() ? '켜짐' : '꺼짐'}</b></button>

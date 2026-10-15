@@ -55,7 +55,7 @@ function render(){
   const W = watches();
   root.innerHTML = `
     <div class="bus-hd"><b>🚌 시외버스 남은 좌석</b>
-      <small>${RT.kind}버스 예매 화면(${RT.bookN})의 좌석 수예요${ago != null ? ` · ${ago ? ago + '분 전' : '방금'} 기준` : ''}. 매진 차에 🔕 를 누르면 자리 날 때 알려 드려요. 예매는 공식 사이트·앱에서.</small></div>
+      <small>${ago != null ? `${ago ? ago + '분 전' : '방금'} 기준 · ` : ''}매진 차의 🔕 를 누르면 자리 날 때 알려 드려요</small></div>
     <div class="bs-routes" role="group" aria-label="노선">${Object.entries(ROUTES).map(([k, r])=>`<button type="button" data-bto="${k}" aria-pressed="${pref.to === k}"><b>${r.n}</b><small>${r.kind}</small></button>`).join('')}</div>
     <div class="go-mode bs-dir" role="group" aria-label="방향"><button type="button" data-bdir="out" aria-pressed="${pref.dir === 'out'}">양양 → ${RT.n}</button><button type="button" data-bdir="in" aria-pressed="${pref.dir === 'in'}">${RT.n} → 양양</button></div>
     <div class="bs-days" role="group" aria-label="날짜">${Array.from({ length:7 }, (_, i)=>{ const dd = new Date(ymd(i) + 'T00:00'); return `<button type="button" data-bday="${i}" aria-pressed="${pref.day === i}"><small>${i === 0 ? '오늘' : i === 1 ? '내일' : DOW[dd.getDay()]}</small><b>${dd.getDate()}</b></button>`; }).join('')}</div>
