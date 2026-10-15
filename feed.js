@@ -21,13 +21,20 @@ async function pullPeers(){
   if(typeof api !== 'function' || !hasMe()) return;
   try{ const rows = await api('surfers?select=id,name,cohort,play:profile->play&limit=300');
     peers = (rows || []).filter(x=>x && x.id !== ME.id && !(typeof isTest === 'function' && isTest(x.id))).map(x=>{
-      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat, hbest:pp.hbest, hbat:pp.hbat, sbest:pp.sbest, sbat:pp.sbat } : null; }).filter(Boolean);
+      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat, hbest:pp.hbest, hbat:pp.hbat, sbest:pp.sbest, sbat:pp.sbat, log:(window._slog && Array.isArray(x.play?.log)) ? x.play.log.slice(-8).map(window._slog.clean).filter(Boolean) : [] } : (window._slog && Array.isArray(x.play?.log) && x.play.log.length ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, log:x.play.log.slice(-8).map(window._slog.clean).filter(Boolean) } : null); }).filter(Boolean);
   }catch(e){}
   pulledAt = Date.now();
 }
 
 function collect(){
   const out = [], now = Date.now(), tag = c => c === '6기' ? '6기' : '서퍼';
+  /* 동기들 서핑 일지 — 이틀 안에 남긴 것. 시각은 기록 id(Date.now 36진수)에서, 없으면 그날 정오 */
+  const FE = ['😵', '😐', '🙂', '😆'];
+  peers.forEach(p=>(p.log || []).forEach(e=>{
+    let ts = parseInt(e.id, 36); if(!(ts > 1.6e12 && ts < now + 6e4)) ts = new Date(e.d + 'T12:00').getTime();
+    if(ts < now - 48 * 3600e3) return;
+    const dur = e.m >= 60 ? (e.m / 60).toString().replace(/\.0$/, '') + '시간' : e.m + '분';
+    out.push({ ts, ic:'📒', who:`${p.name}(${tag(p.cohort)})`, text:`님이 ${e.s || '바다'}에서 ${dur} 탔어요 ${FE[e.f] || ''}`, go:'slog' }); }));
   peers.forEach(p=>{ if(p.best >= 100 && p.bat > now - 72 * 3600e3 && p.bat <= now + 6e4)
     out.push({ ts:p.bat, ic:'🏄', who:`${p.name}(${tag(p.cohort)})`, text:`님이 파도 점프 ${tierOf(p.best)}점 돌파! (${p.best}점)`, go:'game' });
     if(p.hbest >= 100 && p.hbat > now - 72 * 3600e3 && p.hbat <= now + 6e4)
@@ -72,6 +79,7 @@ function go(){
   else if(g === 'surf' && typeof surfOpen === 'function') surfOpen();
   else if(g === 'upd' && typeof updOpen === 'function') updOpen();
   else if(g === 'rec' && typeof recGo === 'function') recGo();
+  else if(g === 'slog'){ if(typeof setTab === 'function') setTab('home'); setTimeout(()=>document.getElementById('home-log')?.scrollIntoView({ block:'center', behavior:'smooth' }), 120); }
   else if((g === 'food' || g === 'spot') && typeof foodOpen === 'function') foodOpen(g);
   paint(false);
 }
