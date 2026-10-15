@@ -10,7 +10,7 @@ let talk = null, talkOk = null, rx = [], rxOk = null, pulledAt = 0, pulling = nu
 const open = new Set(), draft = {}, replyTo = {};
 let sentAt = 0, onChange = ()=>{}, getItems = ()=>[];
 const ok = id => /^[\w-]{1,40}$/.test(String(id));
-const NAVER_OK = /^https?:\/\/(naver\.me|map\.naver\.com|m\.map\.naver\.com|m\.place\.naver\.com|pcmap\.place\.naver\.com|place\.map\.naver\.com)\//i;
+const NAVER_OK = /^https?:\/\/(naver\.me|([a-z0-9-]+\.)*naver\.com)\//i;                    // 네이버 주소만(지도·플레이스 앱마다 하위 주소가 달라 *.naver.com 전부)
 const tTarget = (kind, id) => `${kind}:${id}`;
 const rP = (kind, id) => `ft:p:${kind}:${id}`;
 const rC = cid => `ft:c:${cid}`;
@@ -131,10 +131,11 @@ function addForm(kind, links){
       <small>네이버지도 링크 + 한줄평이면 <b>바로 올라가요</b> · 운영자가 리스트에 넣으면 ❌ → ⭕</small></div>
     ${addOpen[k] ? `<div class="ft-form">
         <label class="ft-lb">네이버지도 링크 <small>네이버지도 앱 → 장소 → 공유 → 링크 복사</small></label>
-        <input maxlength="200" data-rq="link" inputmode="url" placeholder="https://naver.me/…" aria-label="네이버지도 링크" value="${d('link')}">
+        <textarea rows="2" maxlength="400" data-rq="link" inputmode="url" placeholder="네이버지도에서 복사한 걸 그대로 붙여 넣어요 (https://naver.me/…)" aria-label="네이버지도 링크" style="width:100%;font:inherit">${d('link')}</textarea>
         <input maxlength="30" data-rq="title" placeholder="${lbl} 이름" aria-label="이름" value="${d('title')}">
         <div class="food-chips" role="group" aria-label="지역">${AREAS[k].map(a=>`<button type="button" data-rqarea="${esc(a)}" aria-pressed="${a === ar}">${esc(a)}</button>`).join('')}</div>
         <input maxlength="80" data-rq="text" placeholder="${kind === 'spot' ? '한줄 설명 (파도·포인트·주의점)' : '한줄평 (메뉴·웨이팅·팁)'}" aria-label="한줄평" value="${d('text')}">
+        <div class="ft-err" role="alert" data-rqerr="${esc(k)}"></div>
         <div class="food-btns"><button type="button" class="btn sm mint" data-rqsend="${esc(k)}">등록하기</button><button type="button" class="btn sm ghost" data-rqopen="${esc(k)}">닫기</button></div>${links ? `<div class="ft-links">${links}</div>` : ''}</div>`
       : `<div class="ft-links"><button type="button" class="btn sm mint" data-rqopen="${esc(k)}">➕ ${lbl} 등록하기</button>${links || ''}</div>`}</div>`;
 }
@@ -152,13 +153,15 @@ async function send(T){
 async function sendAdd(kind, box){
   if(!ME) return;
   const v = k => String(box.querySelector(`[data-rq="${k}"]`)?.value || '').trim();
+  const fail = (msg, field)=>{ const el = box.querySelector('[data-rqerr]'); if(el) el.textContent = '⚠️ ' + msg; toast(msg);
+    const f = field && box.querySelector(field); if(f){ f.scrollIntoView({ block:'center', behavior:'smooth' }); f.focus?.({ preventScroll:true }); } };
   const title = v('title').slice(0, 30), text = v('text').slice(0, 80), area = draft[`rq-area-${kind}`] || '';
-  const link = (v('link').match(/https?:\/\/\S+/) || [''])[0].slice(0, 200);          // '[네이버지도] 가게이름 https://naver.me/…' 통째로 붙여도 링크만 뽑는다
-  if(!link) return toast('네이버지도 링크를 붙여 주세요');
-  if(!NAVER_OK.test(link)) return toast('네이버지도 링크만 받아요 (naver.me · map.naver.com)');
-  if(!title) return toast('이름을 적어 주세요');
-  if(!AREAS[kind].includes(area)) return toast('지역을 골라 주세요');
-  if(!text) return toast('한줄평을 적어 주세요');
+  const link = (v('link').match(/https?:\/\/\S+/) || [''])[0].replace(/[)\]>.,]+$/, '').slice(0, 200);   // '[네이버지도] 가게이름 … https://naver.me/…' 통째로 붙여도 링크만 뽑는다
+  if(!link) return fail('네이버지도 링크를 붙여 주세요 — 장소 → 공유 → 링크 복사', '[data-rq="link"]');
+  if(!NAVER_OK.test(link)) return fail('네이버지도 링크만 받아요 (naver.me · map.naver.com)', '[data-rq="link"]');
+  if(!title) return fail('이름을 적어 주세요', '[data-rq="title"]');
+  if(!AREAS[kind].includes(area)) return fail('지역을 하나 골라 주세요 (양양·속초·고성·강릉·기타)', '[data-rqarea]');
+  if(!text) return fail('한줄평을 적어 주세요', '[data-rq="text"]');
   if(Date.now() - sentAt < 3000) return toast('조금 천천히요 🙂');
   sentAt = Date.now();
   const btn = box.querySelector('[data-rqsend]'); if(btn){ btn.disabled = true; btn.textContent = '확인 중…'; }
@@ -167,11 +170,11 @@ async function sendAdd(kind, box){
   pid = /^\d{4,12}$/.test(String(pid)) ? String(pid) : '';
   const { pending } = registry(kind);
   const dupe = getItems(kind).find(i=>(pid && pidFrom(i.u) === pid) || norm(i.n) === norm(title)) || pending.find(i=>(pid && i.pid === pid) || norm(i.n) === norm(title));
-  if(dupe){ if(btn){ btn.disabled = false; btn.textContent = '등록하기'; } return toast(`이미 있어요 — ‘${dupe.n}’ 카드에 💬 댓글로 남겨 주세요`); }
+  if(dupe){ if(btn){ btn.disabled = false; btn.textContent = '등록하기'; } return fail(`이미 목록에 있어요 — ‘${dupe.n}’ 카드에 💬 댓글로 남겨 주세요`); }
   const row = { id:`${ME.id}|${Date.now()}`, target:`add:${kind}`, parent:null, user_id:ME.id, name:ME.name, cohort:ME.cohort || 'open', title, area, link, pid:pid || null, text, created_at:new Date().toISOString() };
   try{ await api('place_talk', { method:'POST', body:JSON.stringify(row) }); (talk ||= []).push(row);
     ['title', 'link', 'text', 'area'].forEach(k=>delete draft[`rq-${k}-${kind}`]); addOpen[kind] = false; onChange(); toast('등록했어요 🙌 목록에 바로 올라갔어요'); navigator.vibrate?.(15); }
-  catch(e){ if(btn){ btn.disabled = false; btn.textContent = '등록하기'; } toast(e.code === 'notable' ? '등록 표가 아직 없어요 (운영자 설정 필요)' : '등록하지 못했어요 · 신호 확인'); }
+  catch(e){ if(btn){ btn.disabled = false; btn.textContent = '등록하기'; } fail(e.code === 'notable' ? '등록 표가 아직 없어요 (운영자 설정 필요)' : '등록하지 못했어요 · 신호 확인'); }
 }
 async function del(id){
   const had = talk; talk = (talk || []).filter(t=>t.id !== id && t.parent !== id); onChange();
@@ -179,12 +182,27 @@ async function del(id){
   catch(e){ talk = had; onChange(); toast('지우지 못했어요'); }
 }
 
+/* 네이버지도 '공유 → 복사'는 보통 '[네이버지도]\n가게 이름\n주소\nhttps://naver.me/…' 꼴이다 — 이름과 지역을 대신 채운다(이미 적은 건 안 덮는다) */
+function autofill(box, k, raw){
+  if(!box) return;
+  const lines = String(raw).split(/\n|\r/).map(x=>x.trim()).filter(Boolean).filter(x=>!/^https?:/i.test(x));
+  const body = lines.filter(x=>!/^\[?네이버\s*지도\]?$/.test(x)).map(x=>x.replace(/^\[네이버\s*지도\]\s*/, ''));
+  const addr = body.find(x=>/(강원|양양|속초|고성|강릉|서울|경기|부산)/.test(x) && /(시|군|구|읍|면|동|로|길)/.test(x)) || '';
+  const name = body.find(x=>x !== addr && x.length <= 30 && !/^https?:/.test(x)) || '';
+  const tIn = box.querySelector('[data-rq="title"]');
+  if(name && tIn && !tIn.value){ tIn.value = name.slice(0, 30); draft[`rq-title-${k}`] = tIn.value; }
+  const area = /양양/.test(addr) ? '양양' : /속초/.test(addr) ? '속초' : /고성/.test(addr) ? '고성' : /강릉/.test(addr) ? '강릉' : addr ? '기타' : '';
+  if(area && !draft[`rq-area-${k}`]){ draft[`rq-area-${k}`] = area; box.querySelectorAll('[data-rqarea]').forEach(x=>x.setAttribute('aria-pressed', String(x.dataset.rqarea === area))); }
+}
+
 function init(root, rerender, itemsFn){
   onChange = rerender; getItems = itemsFn || (()=>[]);
   if(root.dataset.ftWired) return; root.dataset.ftWired = '1';
   root.addEventListener('input', e=>{
     const d = e.target.closest?.('[data-draft]'); if(d){ draft[d.dataset.draft] = d.value; return; }
-    const q = e.target.closest?.('[data-rq]'); const k = q?.closest('[data-rqbox]')?.dataset.rqbox; if(q && k) draft[`rq-${q.dataset.rq}-${k}`] = q.value; });
+    const q = e.target.closest?.('[data-rq]'); const k = q?.closest('[data-rqbox]')?.dataset.rqbox; if(q && k) draft[`rq-${q.dataset.rq}-${k}`] = q.value;
+    if(q && k && q.dataset.rq === 'link') autofill(q.closest('[data-rqbox]'), k, q.value);
+    const er = q?.closest('[data-rqbox]')?.querySelector('[data-rqerr]'); if(er) er.textContent = ''; });
   root.addEventListener('keydown', e=>{ if(e.key === 'Enter' && e.target.matches?.('[data-draft]')){ e.preventDefault(); send(e.target.dataset.draft); } });
   root.addEventListener('click', e=>{
     const b = e.target.closest('button'); if(!b || !root.contains(b)) return;

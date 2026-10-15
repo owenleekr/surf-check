@@ -54,6 +54,7 @@ await t.sleep(3100);
 await setRq('link','https://evil.example.com/x'); await setRq('title','테스트식당'); await setRq('text','맛있음');
 await t.S(()=>document.querySelector('.ft-form [data-rqarea="양양"]').click());
 await t.S(()=>document.querySelector('[data-rqsend]').click()); await t.sleep(300);
+console.log('칸 안 오류', await t.S(()=>document.querySelector('[data-rqerr]')?.textContent), '| 토스트 위치', await t.S(()=>{ const r=document.getElementById('toast').getBoundingClientRect(), n=document.getElementById('nav').getBoundingClientRect(); return { 토스트아래:Math.round(r.bottom), 탭위:Math.round(n.top), 가림없음:r.bottom <= n.top, z:getComputedStyle(document.getElementById('toast')).zIndex }; }));
 console.log('나쁜 링크 → 토스트', await t.S(()=>document.getElementById('toast')?.textContent), '| 등록 POST 수', t.posts.filter(p=>p[0]==='place_talk'&&p[1].target==='add:food').length);
 await setRq('link','[네이버지도] 테스트식당 강원 양양군 https://naver.me/abcd'); await setRq('text','');
 await t.S(()=>document.querySelector('[data-rqsend]').click()); await t.sleep(300);
@@ -63,6 +64,9 @@ await t.S(()=>document.querySelector('[data-rqsend]').click()); await t.sleep(80
 console.log('등록 POST', JSON.stringify(t.posts.filter(p=>p[0]==='place_talk'&&p[1].target==='add:food').map(p=>({title:p[1].title,link:p[1].link,pid:p[1].pid,area:p[1].area,cohort:p[1].cohort,text:p[1].text}))));
 console.log('바로 올라옴', await t.S(()=>[...document.querySelectorAll('.food-card.app b')].map(b=>b.textContent).filter(x=>!/^[가-힣A-Za-z]+\(/.test(x))));
 await t.sleep(3100); await t.S(()=>document.querySelector('[data-rqopen="food"]').click()); await t.sleep(200);
+await t.S(()=>{ const i=document.querySelector('.ft-form [data-rq="link"]'); i.value='[네이버지도]\n바다횟집\n강원 속초시 청호로 12\nhttps://naver.me/zzzz'; i.dispatchEvent(new Event('input',{bubbles:true})); }); await t.sleep(100);
+console.log('공유 글 자동 채움', await t.S(()=>({ 이름:document.querySelector('.ft-form [data-rq="title"]').value, 지역:[...document.querySelectorAll('.ft-form [data-rqarea]')].find(b=>b.getAttribute('aria-pressed')==='true')?.dataset.rqarea })));
+await t.S(()=>{ const i=document.querySelector('.ft-form [data-rq="title"]'); i.value=''; i.dispatchEvent(new Event('input',{bubbles:true})); });
 await setRq('link','https://naver.me/qqqq'); await setRq('title','테스트 식당'); await setRq('text','중복'); await t.S(()=>document.querySelector('.ft-form [data-rqarea="속초"]').click());
 await t.S(()=>document.querySelector('[data-rqsend]').click()); await t.sleep(800);
 console.log('중복 → 토스트', await t.S(()=>document.getElementById('toast')?.textContent));

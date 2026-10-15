@@ -164,8 +164,8 @@ label{ display:block; font-size:12.5px; color:var(--ink2); margin:10px 0 4px; fo
    어두운 글씨에 흰 그림자를 깔아 뒤집는다 — 같은 자리에서 훨씬 잘 읽힌다. */
 .note.onsea{ color:var(--deep); font-size:13px; text-shadow:0 1px 0 rgba(255,255,255,.85) }
 .empty{ font-size:13.5px; color:var(--ink2); padding:18px 6px; text-align:center; line-height:1.7 }
-.toast{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); background:var(--ink); color:var(--sun);
-        border:3px solid var(--sun); padding:9px 16px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; z-index:50 }
+.toast{ position:fixed; left:50%; bottom:calc(92px + env(safe-area-inset-bottom)); transform:translateX(-50%); width:max-content; max-width:calc(100% - 32px); text-align:center; line-height:1.5; word-break:keep-all;
+        background:var(--ink); color:var(--sun); border:3px solid var(--sun); padding:9px 16px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; z-index:2000 }   /* 아래 탭(55)·시트·게임(940)보다 위, 탭 높이만큼 띄운다 — 탭 뒤에 가려 '잘려서 안 보였다' */
 .toast.show{ opacity:1 }
 .perks{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px }
 /* 19px 짜리 칩을 손가락으로 누르라고 둘 순 없다. 글자도 11px 은 작다. */
@@ -406,6 +406,7 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 #pane-home:not([hidden]){ display:flex; flex-direction:column; gap:14px; padding-top:14px }
 #pane-home > *{ margin-top:0 !important; margin-bottom:0 !important }
 #pane-home .hsec{ margin:0 0 8px }
+.ft-err{ min-height:0; color:#C2303A; font-size:13px; font-weight:800; line-height:1.5 } .ft-err:empty{ display:none }
 .ft-links{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px } .ft-links .btn{ min-height:40px }
 .ft-bar .ft-b{ flex:1 1 auto; justify-content:center; padding:0 6px; white-space:nowrap } .sp-cam{ margin-top:8px }
 /* 홈 — 안 써 본 기능 추천 */
@@ -1242,7 +1243,7 @@ function loadBar(k, retry){
     el.querySelector('[data-retry]').onclick = ()=>{ el.querySelector('button').disabled = true; retry(); }; }
 }
 let toastT;
-const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'),1900); };
+const toast = t => { const e=$('toast'); e.textContent=t; e.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>e.classList.remove('show'), Math.min(5000, 1900 + String(t).length * 45)); };   // 긴 안내는 그만큼 오래
 const esc = t => String(t==null?'':t).replace(/[<>&"]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
 const today = () => new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 /* 진동 — 손에 닿는 피드백이지만 수업 중·조용한 곳에선 거슬린다. 끌 수 있어야 한다.
