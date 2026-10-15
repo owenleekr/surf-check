@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>캐릭터 얼굴 시안</title>
+<style>
+:root{ --ink:#1B1B2F; --sub:#5B6275; --bg:#F3F6FA; --line:#DDE5EF }
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; line-height:1.55 }
+.wrap{ max-width:800px; margin:0 auto; padding:20px 16px 70px }
+h1{ font-size:22px; margin:0 0 6px } .lead{ color:var(--sub); font-size:14px; margin:0 }
+.grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:12px; margin-top:14px }
+.card{ background:#fff; border:1px solid var(--line); border-radius:18px; padding:14px }
+.hd{ display:flex; align-items:center; gap:8px } .no{ display:inline-flex; width:28px; height:28px; align-items:center; justify-content:center; border-radius:50%; background:var(--ink); color:#fff; font-weight:800 }
+.hd b{ font-size:17px } .why{ font-size:13px; color:var(--sub); margin:4px 0 8px }
+.stage{ display:flex; justify-content:center; align-items:flex-end; gap:4px; padding:10px 6px 4px; border-radius:14px; background:linear-gradient(#C9EAFF,#E6F5FF 76%,#F3E6C8 76%) }
+.stage svg{ width:150px; height:auto; display:block }
+.mini{ display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12px; color:var(--sub); font-weight:700 }
+.mini svg{ width:44px; height:auto } .mini .chat{ display:flex; align-items:center; gap:6px; background:#F4F8FC; border-radius:12px; padding:2px 10px 2px 2px; color:var(--ink) }
+.mini .chat svg{ width:30px }
+.pick{ margin-top:20px; padding:14px 16px; border-radius:14px; background:var(--ink); color:#fff; font-size:14px } .pick b{ color:#FFD23F }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🙂 캐릭터 생김새 시안 6종</h1>
+  <p class="lead">이번엔 그림체가 아니라 <b>생김새</b>를 다시 디자인했어요 — 얼굴형(아래가 통통한 모찌형), 눈 크기·위치, 앞머리 결, 몸 비율(목·팔·손·신발)까지. 같은 두 사람(단발·짧은머리)을 6가지 얼굴로 그렸어요.</p>
+  <div class="grid" id="grid"></div>
+  <div class="pick">마음에 드는 <b>얼굴 번호</b>를 알려 주세요. 귀엽다고 느끼는 캐릭터 <b>캡처 한 장</b>(앱·게임·이모티콘 아무거나)을 같이 보내 주시면 그 눈·비율에 더 가깝게 맞출게요.</div>
+</div>
+<script>
+let UID = 0;
+const P = {
+  girl:{ hair:'bob',   hc:'#2E2420', skin:'#FBD9C0', top:'#FF7A7A', bot:'#4F7BFF', shoe:'#FFFFFF' },
+  boy: { hair:'short', hc:'#6B4A33', skin:'#E9B48F', top:'#3D6DF2', bot:'#2B2F45', shoe:'#FFD23F' },
+};
+const dk = (hex, f)=>'#' + hex.slice(1).match(/../g).map(h=>Math.max(0, Math.min(255, Math.round(parseInt(h, 16) * f))).toString(16).padStart(2, '0')).join('');
+
+/* 얼굴 6종 — 눈·입·볼·선·질감 */
+const FACES = [
+  { name:'모찌 미니미', why:'아래가 통통한 얼굴, 크고 반짝이는 세로 눈을 얼굴 아래쪽에. 싸이월드 3D 미니미·본디 쪽.', line:'none', shade:true, eye:'big', mouth:'smile', brow:false },
+  { name:'망곰 동글', why:'굵은 갈색 테두리, 멀찍이 떨어진 작은 점 눈, ω 입. 단순해서 오히려 웃김.', line:'thick', shade:false, eye:'dot', mouth:'w', brow:false },
+  { name:'반짝 눈망울', why:'눈동자 색·속눈썹·큰 하이라이트 — 이모티콘·웹툰 주인공 느낌.', line:'thin', shade:true, eye:'anime', mouth:'small', brow:true },
+  { name:'섬 주민', why:'테두리 없이 부드러운 그림자, 검은 타원 눈과 작은 코 — 동물의 숲 주민 느낌.', line:'none', shade:true, eye:'oval', mouth:'v', brow:false, nose:true },
+  { name:'ZEP 플랫', why:'얇은 진한 테두리, 세로 막대 눈, 단색 면 — 작게 봐도 또렷한 2D.', line:'thin-dark', shade:false, eye:'bar', mouth:'line', brow:false },
+  { name:'말랑 3D', why:'모찌 얼굴 + 은은한 눈썹 + 둥근 코, 볼이 살짝 빛나는 3D 토이.', line:'none', shade:true, eye:'soft', mouth:'open', brow:true, nose:true },
+];
+
+function svg(p, F, size){
+  const id = 'c' + (UID++), L = F.line === 'thick' ? '#3A2E2A' : F.line === 'thin-dark' ? '#2A2438' : null;
+  const sw = F.line === 'thick' ? 5 : F.line === 'thin-dark' ? 3 : F.line === 'thin' ? 2.4 : 0;
+  const st = c => sw ? ` stroke="${L || dk(c, .62)}" stroke-width="${sw}" stroke-linejoin="round"` : '';
+  const sh = F.shade ? ` fill="url(#${id}g)"` : '';
+  const gloss = (d)=> F.shade ? `<path d="${d}"${sh}/>` : '';
+  const S = p.skin, H = p.hc;
+  /* 모찌형 머리 — 위는 둥글고 아래 볼이 통통 */
+  const head = 'M100,36 C142,36 168,62 169,99 C170,138 143,161 100,161 C57,161 30,138 31,99 C32,62 58,36 100,36Z';
+  /* 몸 — 짧은 사다리꼴 몸통 + 끝이 둥근 팔 + 짧은 다리 + 동그란 신발 */
+  const torso = 'M78,150 C74,168 71,186 72,200 Q100,208 128,200 C129,186 126,168 122,150 Z';
+  const armL = 'M80,158 C68,166 61,180 62,193 C63,201 73,202 75,195 C76,185 80,175 86,168 Z', armR = 'M120,158 C132,166 139,180 138,193 C137,201 127,202 125,195 C124,185 120,175 114,168 Z';
+  const shorts = 'M71,194 Q100,203 129,194 L131,212 Q118,217 104,215 L100,207 L96,215 Q82,217 69,212 Z';
+  let o = `<svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+    <radialGradient id="${id}g" cx=".32" cy=".26" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity=".08"/><stop offset=".8" stop-color="#000030" stop-opacity=".05"/><stop offset="1" stop-color="#000030" stop-opacity=".22"/></radialGradient>
+    <linearGradient id="${id}i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A2A22"/><stop offset="1" stop-color="#8A5A3A"/></linearGradient></defs>`;
+  o += `<ellipse cx="100" cy="240" rx="38" ry="6" fill="#12245F" opacity=".14"/>`;
+  /* 뒷머리 */
+  if(p.hair === 'bob'){ const d = 'M24,106 C20,52 56,20 100,20 C144,20 180,52 176,106 L178,146 C179,162 163,168 150,160 L50,160 C37,168 21,162 22,146 Z'; o += `<path d="${d}" fill="${H}"${st(H)}/>${gloss(d)}`; }
+  /* 다리 · 신발 */
+  o += `<rect x="83" y="208" width="14" height="22" rx="7" fill="${S}"${st(S)}/><rect x="103" y="208" width="14" height="22" rx="7" fill="${S}"${st(S)}/>`;
+  o += `<ellipse cx="89" cy="232" rx="11" ry="7" fill="${p.shoe}"${st(p.shoe === '#FFFFFF' ? '#B9C2D6' : p.shoe)}/><ellipse cx="111" cy="232" rx="11" ry="7" fill="${p.shoe}"${st(p.shoe === '#FFFFFF' ? '#B9C2D6' : p.shoe)}/>`;
+  /* 팔 · 손 */
+  o += `<path d="${armL}" fill="${p.top}"${st(p.top)}/><path d="${armR}" fill="${p.top}"${st(p.top)}/><circle cx="68" cy="196" r="8" fill="${S}"${st(S)}/><circle cx="132" cy="196" r="8" fill="${S}"${st(S)}/>`;
+  /* 몸통 · 반바지 */
+  o += `<path d="${shorts}" fill="${p.bot}"${st(p.bot)}/><path d="${torso}" fill="${p.top}"${st(p.top)}/>${gloss(torso)}`;
+  o += `<path d="M90,150 Q100,158 110,150" fill="none" stroke="${dk(p.top, .75)}" stroke-width="2.4" stroke-linecap="round"/>`;
+  /* 귀(짧은머리만) */
+  if(p.hair === 'short') o += `<circle cx="32" cy="108" r="11" fill="${S}"${st(S)}/><circle cx="168" cy="108" r="11" fill="${S}"${st(S)}/>`;
+  /* 얼굴 */
+  o += `<path d="${head}" fill="${S}"${st(S)}/>${gloss(head)}`;
+  o += face(F, id);
+  /* 앞머리 — 덩어리 결(삐침)이 보이게 */
+  if(p.hair === 'bob'){
+    const d = 'M30,104 C27,56 60,25 100,25 C140,25 173,56 170,104 C167,95 162,86 157,79 C151,89 141,94 129,92 C125,82 119,74 113,68 C108,81 98,89 85,89 C81,79 76,73 71,69 C65,81 55,90 43,93 C38,97 34,101 30,104 Z';
+    const sl = 'M30,98 C25,122 28,142 41,156 C45,141 47,122 44,104 Z', sr = 'M170,98 C175,122 172,142 159,156 C155,141 153,122 156,104 Z';
+    o += `<path d="${sl}" fill="${H}"${st(H)}/><path d="${sr}" fill="${H}"${st(H)}/><path d="${d}" fill="${H}"${st(H)}/>${gloss(d)}`;
+    o += `<path d="M62,48 Q100,32 138,48" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="6" stroke-linecap="round"/>`;
+  } else {
+    const d = 'M31,106 C26,54 60,24 100,24 C140,24 174,54 169,106 C166,97 162,88 158,81 C150,91 138,93 126,87 C120,94 108,96 96,89 C86,95 72,93 64,85 C56,93 45,97 37,101 Z';
+    o += `<path d="M95,27 C96,13 110,8 120,15 C111,17 105,22 105,29 Z" fill="${H}"${st(H)}/><path d="${d}" fill="${H}"${st(H)}/>${gloss(d)}`;
+    o += `<path d="M64,46 Q100,30 136,46" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="6" stroke-linecap="round"/>`;
+  }
+  return o + '</svg>';
+}
+
+function face(F, id){
+  const E = '#2B2430', ey = 112, xl = 76, xr = 124; let o = '';
+  /* 볼 */
+  o += `<ellipse cx="${xl - 14}" cy="${ey + 16}" rx="13" ry="7.5" fill="#FF8FA3" opacity="${F.eye === 'dot' ? .38 : .45}"/><ellipse cx="${xr + 14}" cy="${ey + 16}" rx="13" ry="7.5" fill="#FF8FA3" opacity="${F.eye === 'dot' ? .38 : .45}"/>`;
+  if(F.brow) o += `<path d="M${xl - 9},${ey - 20} Q${xl},${ey - 24} ${xl + 8},${ey - 20}" fill="none" stroke="${E}" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/><path d="M${xr - 8},${ey - 20} Q${xr},${ey - 24} ${xr + 9},${ey - 20}" fill="none" stroke="${E}" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/>`;
+  [xl, xr].forEach(x=>{
+    if(F.eye === 'big') o += `<ellipse cx="${x}" cy="${ey}" rx="9.5" ry="12.5" fill="${E}"/><circle cx="${x + 3.5}" cy="${ey - 5}" r="4.2" fill="#fff"/><circle cx="${x - 3.5}" cy="${ey + 5}" r="1.9" fill="#fff" opacity=".9"/>`;
+    if(F.eye === 'dot') o += `<ellipse cx="${x + (x < 100 ? -4 : 4)}" cy="${ey + 2}" rx="5.2" ry="5.8" fill="#3A2E2A"/>`;
+    if(F.eye === 'anime') o += `<ellipse cx="${x}" cy="${ey}" rx="11" ry="14" fill="#fff"/><ellipse cx="${x}" cy="${ey + 1.5}" rx="9" ry="12.5" fill="url(#${id}i)"/><ellipse cx="${x}" cy="${ey + 3}" rx="4.5" ry="6" fill="#1E1418"/><circle cx="${x + 3.6}" cy="${ey - 5}" r="4" fill="#fff"/><circle cx="${x - 3}" cy="${ey + 6}" r="1.8" fill="#fff"/><path d="M${x - 12},${ey - 9} Q${x},${ey - 17} ${x + 12},${ey - 9}" fill="none" stroke="${E}" stroke-width="3.6" stroke-linecap="round"/>`;
+    if(F.eye === 'oval') o += `<ellipse cx="${x}" cy="${ey}" rx="6.5" ry="9" fill="${E}"/><circle cx="${x + 2.2}" cy="${ey - 3.6}" r="2.2" fill="#fff"/>`;
+    if(F.eye === 'bar') o += `<rect x="${x - 3.5}" y="${ey - 9}" width="7" height="18" rx="3.5" fill="#2A2438"/>`;
+    if(F.eye === 'soft') o += `<ellipse cx="${x}" cy="${ey}" rx="8" ry="10.5" fill="#33262A"/><ellipse cx="${x}" cy="${ey + 3}" rx="5" ry="5.5" fill="#5A3A2E"/><circle cx="${x + 3}" cy="${ey - 4}" r="3.4" fill="#fff"/><circle cx="${x - 2.6}" cy="${ey + 4.5}" r="1.5" fill="#fff"/>`;
+  });
+  if(F.nose) o += `<ellipse cx="100" cy="${ey + 9}" rx="3.2" ry="2.3" fill="#C9826A" opacity=".55"/>`;
+  const my = ey + 16;
+  if(F.mouth === 'smile') o += `<path d="M93,${my} Q100,${my + 7} 107,${my}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round"/>`;
+  if(F.mouth === 'w') o += `<path d="M90,${my - 1} Q95,${my + 6} 100,${my} Q105,${my + 6} 110,${my - 1}" fill="none" stroke="#3A2E2A" stroke-width="3.6" stroke-linecap="round"/>`;
+  if(F.mouth === 'small') o += `<path d="M95,${my + 1} Q100,${my + 5} 105,${my + 1}" fill="none" stroke="#B2475A" stroke-width="2.8" stroke-linecap="round"/>`;
+  if(F.mouth === 'v') o += `<path d="M95,${my} L100,${my + 4.5} L105,${my}" fill="none" stroke="${E}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if(F.mouth === 'line') o += `<rect x="96" y="${my}" width="8" height="3" rx="1.5" fill="#2A2438"/>`;
+  if(F.mouth === 'open') o += `<path d="M93,${my - 1} Q100,${my - 2} 107,${my - 1} Q106,${my + 9} 100,${my + 9} Q94,${my + 9} 93,${my - 1} Z" fill="#B8303F"/><ellipse cx="100" cy="${my + 6}" rx="4" ry="2.4" fill="#FF8FA3"/>`;
+  return o;
+}
+
+document.getElementById('grid').innerHTML = FACES.map((F, i)=>`<section class="card"><div class="hd"><span class="no">${i + 1}</span><b>${F.name}</b></div><p class="why">${F.why}</p>
+  <div class="stage">${svg(P.girl, F)}${svg(P.boy, F)}</div>
+  <div class="mini">${svg(P.girl, F)}${svg(P.boy, F)}<span>마을 크기</span><span class="chat">${svg(P.girl, F)}오늘 파도 좋다!</span></div></section>`).join('');
+</script>
+</body>
+</html>
