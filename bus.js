@@ -14,6 +14,7 @@ const read = (k, d) => { try{ return JSON.parse(localStorage.getItem(k) || 'null
 const write = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 const ymd = off => { const d = new Date(Date.now() + off * 864e5); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const DOW = ['일','월','화','수','목','금','토'];
+const SEATS = {}; let seatOpen = '';                                   // 좌석도: 'to|dir|date|t' → { rows } | 'loading' | 'err'
 let view = 'bus', pref = { to:'ds', ...read(PK, { dir:'out', day:0 }) }, cache = {}, loading = false, err = '', poll = 0;
 const key = (dir, date, to) => `${to || 'ds'}|${dir}|${date}`;
 const watches = () => read(WK, []).filter(w=>w.date >= ymd(0));                       // 지난 날짜는 버린다
@@ -63,8 +64,10 @@ function render(){
     ${loading && !d ? '<div class="skel" aria-hidden="true"><i></i><i></i><i></i></div>' : ''}
     ${err ? `<div class="empty">${err}<br><button type="button" class="btn sm mint" id="bs-retry" style="margin-top:8px">다시 불러오기</button></div>` : ''}
     ${d ? (list.length ? `<div class="bs-list">${list.map(b=>{ const w = isWatched(pref.dir, date, b.t, pref.to), want = b.left === 0 || (b.left != null && b.left <= 3);
-        return `<div class="bs-row${b.left === 0 ? ' sold' : ''}"><span class="bs-t">${b.t}</span><span class="bs-m"><b>${b.grade ? `<i class="bs-gr ${GCLS(b.grade)}">${esc(b.grade)}</i>` : ''}${esc(b.co)}</b><small>${b.total ? `${b.total}인승` : ''}${b.dur ? `${b.total ? ' · ' : ''}${esc(b.dur)} 소요` : ''}${b.fare ? ` · ${Number(b.fare).toLocaleString()}원` : ''}</small></span>
-          ${seatTag(b)}${want || w ? `<button type="button" class="bs-bell${w ? ' on' : ''}" data-bell="${esc(b.t)}" aria-pressed="${w}" aria-label="${esc(b.t)} 자리 나면 알림">${w ? '🔔' : '🔕'}</button>` : '<span class="bs-bell-sp"></span>'}</div>`; }).join('')}</div>`
+        const sk = `${pref.to}|${pref.dir}|${date}|${b.t}`, so = seatOpen === sk, sm = SEATS[sk];
+        return `<div class="bs-row${b.left === 0 ? ' sold' : ''}${b.k ? ' tap' : ''}"${b.k ? ` data-seat="${esc(b.t)}" role="button" tabindex="0" aria-expanded="${so}"` : ''}><span class="bs-t">${b.t}</span><span class="bs-m"><b>${b.grade ? `<i class="bs-gr ${GCLS(b.grade)}">${esc(b.grade)}</i>` : ''}${esc(b.co)}</b><small>${b.total ? `${b.total}인승` : ''}${b.dur ? `${b.total ? ' · ' : ''}${esc(b.dur)} 소요` : ''}${b.fare ? ` · ${Number(b.fare).toLocaleString()}원` : ''}</small></span>
+          ${seatTag(b)}${want || w ? `<button type="button" class="bs-bell${w ? ' on' : ''}" data-bell="${esc(b.t)}" aria-pressed="${w}" aria-label="${esc(b.t)} 자리 나면 알림">${w ? '🔔' : '🔕'}</button>` : '<span class="bs-bell-sp"></span>'}</div>
+          ${so ? seatHTML(sm, b) : ''}`; }).join('')}</div>`
       : `<div class="empty">${pref.day === 0 ? '오늘은 더 떠날 버스가 없어요' : '이날은 배차가 없어요'}</div>`) : ''}
     <div class="bs-book"><a class="btn sm blue" href="${RT.book}" target="_blank" rel="noopener">🎫 ${RT.bookN}에서 예매 ↗</a><button type="button" class="btn sm ghost" id="bs-refresh">↻ 새로 보기</button></div>
     <div class="note" style="margin-top:6px">📱 휴대폰은 <b>${RT.app}</b>이 편해요(출발 60분 안 차는 앱에서만 예매돼요) · 등급: <i class="bs-gr ud">우등</i> 28인승 · <i class="bs-gr pr">프리미엄</i> 21인승 · <i class="bs-gr ip">일반</i> 41~45인승<br>출처: ${RT.bookN} · ${a} → ${z} · 좌석 수는 몇 분 늦을 수 있어요</div>
@@ -72,6 +75,8 @@ function render(){
   root.querySelectorAll('[data-bto]').forEach(b=>b.onclick = ()=>{ pref.to = b.dataset.bto; write(PK, pref); load(false); });
   root.querySelectorAll('[data-bdir]').forEach(b=>b.onclick = ()=>{ pref.dir = b.dataset.bdir; write(PK, pref); load(false); });
   root.querySelectorAll('[data-bday]').forEach(b=>b.onclick = ()=>{ pref.day = +b.dataset.bday; write(PK, pref); load(false); });
+  root.querySelectorAll('[data-seat]').forEach(r=>{ const go = e=>{ if(e.target.closest('[data-bell]')) return; toggleSeat(pref.to, pref.dir, date, r.dataset.seat); };
+    r.onclick = go; r.onkeydown = e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(e); } }; });
   root.querySelectorAll('[data-bell]').forEach(b=>b.onclick = ()=>toggleWatch(pref.dir, date, b.dataset.bell, pref.to));
   $b('bs-retry')?.addEventListener('click', ()=>load(true));
   $b('bs-refresh')?.addEventListener('click', ()=>load(true));
@@ -132,6 +137,26 @@ async function vote(id, to){
   try{ if(had) await api(`reacts?id=eq.${encodeURIComponent(rid)}`, { method:'DELETE' });
        else await api('reacts', { method:'POST', body:JSON.stringify({ id:rid, user_id:ME.id, name:ME.name, target, emo:'🙋', to_user:to || null }) }); }
   catch(e){ say('반영하지 못했어요'); }
+}
+
+/* 좌석 배치도 — 앞이 위. 빈 좌석은 민트, 팔린 좌석은 회색. 통로는 빈칸 */
+function seatHTML(sm, b){
+  if(!sm || sm === 'loading') return '<div class="bs-seat"><div class="skel" aria-hidden="true"><i></i></div><small>좌석 배치를 불러오는 중…</small></div>';
+  if(sm === 'err') return '<div class="bs-seat"><small>좌석 배치를 못 불러왔어요 — 예매 사이트에서 확인해 주세요</small></div>';
+  const free = sm.rows.flat().filter(x=>x.free).map(x=>x.n);
+  return `<div class="bs-seat"><div class="bs-front">🚌 앞 (운전석)</div><div class="bs-grid">${sm.rows.map(r=>`<div class="bs-sr">${r.map(x=>`${x.gap ? '<i class="bs-aisle"></i>' : ''}<span class="bs-st ${x.free ? 'f' : 'x'}" title="${x.n}번 ${x.free ? '빈 좌석' : '예매됨'}">${x.n}</span>`).join('')}</div>`).join('')}</div>
+    <small>빈 좌석 <b>${free.length}</b>석${free.length ? ` · ${free.slice(0, 14).join(', ')}${free.length > 14 ? ' …' : ''}번` : ''} · 1분 전후 기준</small></div>`;
+}
+async function toggleSeat(to, dir, date, t){
+  const sk = `${to}|${dir}|${date}|${t}`;
+  if(seatOpen === sk){ seatOpen = ''; render(); return; }
+  seatOpen = sk; const b = (cache[key(dir, date, to)]?.data?.buses || []).find(x=>x.t === t); if(!b?.k) return;
+  if(!SEATS[sk] || SEATS[sk] === 'err' || Date.now() - (SEATS[sk].at || 0) > 60e3){
+    SEATS[sk] = 'loading'; render();
+    try{ const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}&map=${encodeURIComponent(b.k)}`); if(!r.ok) throw 0;
+      const j = await r.json(); SEATS[sk] = { rows:j.rows || [], at:Date.now() }; }catch(e){ SEATS[sk] = 'err'; }
+  }
+  render();
 }
 
 function askPerm(){ try{ Notification.requestPermission().then(()=>render()); }catch(e){} }

@@ -26,11 +26,14 @@ export function parseKobus(html){
     const n = (rem.match(/(\d+)\s*석/) || [])[1];
     const left = n != null ? +n : /매진/.test(rem + status) ? 0 : null, shut = n == null && /(마감|불가)/.test(rem + status);
     if(out.some(x=>x.t === t.padStart(5, '0') && x.co === co)) continue;
-    out.push({ t:t.padStart(5, '0'), co, dur:'', grade:gradeOf(grade, null), fare:null, left, total:null, shut });
+    const sa = (r.match(/fnSatsChc\(([^)]*)\)/) || [])[1];
+    const k = sa ? sa.split(',').map(x=>x.trim().replace(/^'|'$/g, '')).join('~') : '';
+    out.push({ t:t.padStart(5, '0'), co, dur:'', grade:gradeOf(grade, null), fare:null, left, total:null, shut, k:KOK.test(k) ? k : '' });
   }
   return out.sort((a,b)=>a.t.localeCompare(b.t));
 }
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+const KOK = /^[A-Za-z0-9가-힣~ ._()-]{4,400}$/;                                            // 좌석도 열쇠에 쓸 수 있는 글자
 const strip = s => String(s || '').replace(/<!--[\s\S]*?-->/g, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 
 export function parse(html){
@@ -51,7 +54,9 @@ export function parse(html){
     const left = seat ? +seat[1] : /매진/.test(last) ? 0 : null, total = seat ? +seat[2] : null;
     const shut = !seat && /(마감|불가|종료)/.test(last);                       // 예매 마감 등 — 좌석 수를 모름
     if(out.some(x=>x.t === t.padStart(5, '0') && x.co === co)) continue;
-    out.push({ t:t.padStart(5, '0'), co, dur, grade:gradeOf(grade, total), fare, left, total, shut });
+    const sa = (tr.match(/readSasFeeInf\(([^)]*)\)/) || [])[1];                          // 좌석 화면을 여는 값들 — 좌석도 조회에 그대로 쓴다
+    const k = sa ? sa.split(',').map(x=>x.trim().replace(/^'|'$/g, '')).join('~') : '';
+    out.push({ t:t.padStart(5, '0'), co, dur, grade:gradeOf(grade, total), fare, left, total, shut, k:KOK.test(k) ? k : '' });
   }
   return out.sort((a,b)=>a.t.localeCompare(b.t));
 }
@@ -72,12 +77,70 @@ async function fetchKb(dep, arr, date){
   return { html, buses:parseKobus(html) };
 }
 
+/* ── 좌석 배치도 ── 비었는지/팔렸는지만 읽는다(좌석을 고르거나 잡지 않는다) */
+const chunk = (a, n) => { const out = []; for(let i = 0; i < a.length; i += n) out.push(a.slice(i, i + n)); return out; };
+export function seatsTx(html){
+  const box = (String(html).match(/<div class="seat [^"]*">([\s\S]*?)<\/div>/) || [])[1] || '';
+  const rows = [];
+  for(const ul of box.matchAll(/<ul class="line\d+">([\s\S]*?)<\/ul>/g)){
+    const row = [];
+    for(const li of ul[1].matchAll(/<li class=['"]([^'"]*)['"]>([\s\S]*?)<\/li>/g)){
+      const n = +((li[2].match(/<span>\s*(\d+)\s*<\/span>/) || [])[1] || 0); if(!n) continue;
+      row.push({ n, free:!/disabled/.test(li[1]), gap:/\bcase\b/.test(li[1]) });
+    }
+    if(row.length) rows.push(row);
+  }
+  return rows;
+}
+export function seatsKb(html){
+  const total = +((String(html).match(/class="bg_seatBox seat(\d+)/) || [])[1] || 0);
+  const all = [...String(html).matchAll(/<span class="seatBox([^"]*)">[\s\S]*?<label[^>]*>\s*(\d+)\s*<\/label>/g)].map(m=>({ n:+m[2], free:!/disabled/.test(m[1]) }));
+  const per = total && total <= 31 ? 3 : 4;
+  const rows = chunk(all, per);
+  if(rows.length > 1 && rows[rows.length - 1].length < per - 1){ const tail = rows.pop(); rows[rows.length - 1].push(...tail); }   // 맨 뒷줄은 한 줄로
+  rows.forEach(r=>r.forEach((x, i)=>{ x.gap = per === 4 ? i === 2 && r.length === 4 : total <= 22 ? i > 0 && i < 3 : i === 2; }));
+  return rows;
+}
+async function seatMap(rk, R, dir, date, k){
+  const a = k.split('~');
+  if(R.sys === 'tx'){
+    const names = ['rot_Id','rot_Sqno','alcn_Dt','alcn_Sqno','depr_Trml_Cd','arvl_Trml_Cd','depr_Trml_Nm','arvl_Trml_Nm','depr_Time','bus_Cacm_Cd','bus_Cls_Cd','bus_Cacm_Nm','bus_Cls_Nm','ig','im','ic','rmn_Scnt','sats_Num','atl_Depr_Dt','atl_Depr_Time','dc_Psb_Yn'];
+    if(a.length !== names.length) throw new Error('key');
+    const body = new URLSearchParams(Object.fromEntries(names.map((n, i)=>[n, a[i]]))); body.set('atl_Depr_Dt_S1', a[18]); body.set('atl_Depr_Time_S1', a[19]);
+    const r = await fetch('https://txbus.t-money.co.kr/otck/readSatsFee.do', { method:'POST', body, headers:{ 'user-agent':UA, referer:'https://txbus.t-money.co.kr/otck/readAlcnList.do', 'content-type':'application/x-www-form-urlencoded' }, signal:AbortSignal.timeout(9000) });
+    return seatsTx(await r.text());
+  }
+  /* 코버스 — 배차 화면의 숨은 칸(노선 거리 등)이 필요해서 목록을 한 번 더 받고, 그 칸에 이 차의 값을 채워 좌석 화면을 연다 */
+  const keys = ['deprDt','deprTime','alcnDeprTime','alcnDeprTrmlNo','alcnArvlTrmlNo','indVBusClsCd','cacmCd','dcDvsCd','mrsPsbYn','alertYn','deprTrmlNo','arvlTrmlNo','prvtBbizEmpAcmtRt','chldSftySatsYn','mlgAcmtYn','dsprSatsYn'];
+  if(a.length !== keys.length) throw new Error('key');
+  const A = Object.fromEntries(keys.map((n, i)=>[n, a[i]]));
+  const yy = ['270', '양양'], other = [R.code, R.n], [dep, arr] = dir === 'out' ? [yy, other] : [other, yy];
+  const { html } = await fetchKb(dep, arr, date);
+  const f = (html.match(/id="alcnSrchFrm"[\s\S]*?<\/form>/) || [''])[0];
+  const body = new URLSearchParams([...f.matchAll(/<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"/g)].map(m=>[m[1], m[2]]));
+  ['deprTime','alcnDeprTime','alcnDeprTrmlNo','alcnArvlTrmlNo','indVBusClsCd','cacmCd','dcDvsCd','prvtBbizEmpAcmtRt','chldSftySatsYn','dsprSatsYn'].forEach(n=>body.set(n, A[n]));
+  const wd = '일월화수목금토'[new Date(Date.UTC(+A.deprDt.slice(0, 4), +A.deprDt.slice(4, 6) - 1, +A.deprDt.slice(6))).getUTCDay()];
+  body.set('deprDtm', A.deprDt); body.set('deprDtmAll', `${A.deprDt.slice(0, 4)}. ${+A.deprDt.slice(4, 6)}. ${+A.deprDt.slice(6)}. ${wd}`);
+  const r = await fetch('https://www.kobus.co.kr/mrs/satschc.do', { method:'POST', body, headers:{ 'user-agent':UA, referer:'https://www.kobus.co.kr/mrs/alcnSrch.do', 'content-type':'application/x-www-form-urlencoded' }, signal:AbortSignal.timeout(9000) });
+  return seatsKb(await r.text());
+}
+
 export default async function handler(req, res){
   const q = req.query || {}, dir = q.dir === 'in' ? 'in' : 'out', rk = ROUTES[q.to] ? q.to : 'ds', R = ROUTES[rk];
   const date = String(q.date || '').replace(/\D/g, '');
   const d = date.length === 8 ? new Date(`${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6)}T00:00:00+09:00`) : null;
   const now = Date.now();
   if(!d || isNaN(d) || d.getTime() < now - 864e5 * 1.5 || d.getTime() > now + 864e5 * 31){ res.status(400).json({ error:'date' }); return; }
+  if(q.map){
+    const k = String(q.map).slice(0, 400);
+    if(!KOK.test(k)){ res.status(400).json({ error:'key' }); return; }
+    try{ const rows = await seatMap(rk, R, dir, date, k);
+      if(!rows.length) throw new Error('empty');
+      res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=30');
+      res.status(200).json({ fetched:new Date().toISOString(), rows, free:rows.flat().filter(x=>x.free).length, total:rows.flat().length });
+    }catch(e){ res.setHeader('Cache-Control', 'no-store'); res.status(502).json({ error:'seatmap' }); }
+    return;
+  }
   let got;
   try{
     if(R.sys === 'tx'){ const [a, b] = dir === 'out' ? [T.yy, T.ds] : [T.ds, T.yy]; got = await fetchTx(a, b, date); }
