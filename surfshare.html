@@ -959,6 +959,10 @@ html.big .wrap, html.big .sheet-in, html.big .pop-card{ zoom:1.12 } html.big .na
 .qact{ display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-top:10px }
 .qact button{ display:flex; flex-direction:column; align-items:center; gap:2px; min-height:58px; padding:6px 2px; font-family:inherit; font-size:12.5px; font-weight:800; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:12px; cursor:pointer }
 .qact i{ font-style:normal; font-size:20px; font-family:sans-serif; line-height:1.1 } .qact button:active{ transform:translateY(1px) }
+/* 눌림 반응 — 아이폰의 회색 깜빡임 대신, 누른 버튼이 살짝 눌려 보이게(모든 버튼 공통) */
+html{ -webkit-tap-highlight-color:transparent }
+button:not(:disabled):active, [role="button"]:active, a.btn:active{ filter:brightness(.94) }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focus-visible, select:focus-visible{ outline:3px solid var(--sea); outline-offset:2px }
 </style>
 </head>
 <body>
