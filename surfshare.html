@@ -53,6 +53,7 @@ window.__bootFail = (files) => {
 <script src="sprite.js"></script>
 <script src="mochi.js"></script>
 <script src="surflog.js" defer></script>
+<script src="charcard.js" defer></script>
 <script src="roster.js"></script>
 <script src="play.js"></script>
 <script src="surfride.js" defer></script>
@@ -1163,7 +1164,7 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
     <div id="pane-me" hidden>
       <div class="px white" style="text-align:center">
         <canvas id="bld-av" style="height:170px;background:linear-gradient(#C9EAFF,#E6F5FF 78%,#F3E6C8 78%);border-radius:16px;padding:0 6px"></canvas>
-        <div class="note" style="margin-top:6px">여기서 만든 캐릭터가 <b>차·숙소 글에 그대로 나와요.</b><br>학교가 열리면 마을에도 이 모습으로 서 있습니다.</div>
+        <div class="note" style="margin-top:6px">여기서 만든 캐릭터가 <b>마을·채팅·차·숙소 글에 그대로 나와요.</b><br>📸 카드로 저장해 카톡·인스타에 자랑해요.</div>
       </div>
       <div class="px" style="margin-top:10px"><div id="bld-opts"></div></div>
 
@@ -1610,7 +1611,7 @@ function renderBuilder(){
   const TABS = [['face','얼굴'],['wear','옷'],['board','보드'],['pet','친구']];
   $('bld-opts').innerHTML = `<div style="display:flex;gap:4px;flex-wrap:wrap">${TABS.map(([k,t])=>
       `<button type="button" class="btn sm ${bldTab===k?'blue':'ghost'}" data-bt="${k}">${t}</button>`).join('')}
-      <button type="button" class="btn sm mint" id="bld-shop" style="margin-left:auto">🛍️ 소품샵</button><button type="button" class="btn sm ghost" id="bld-rand">🎲 랜덤</button></div>
+      <button type="button" class="btn sm mint" id="bld-shop" style="margin-left:auto">🛍️ 소품샵</button><button type="button" class="btn sm ghost" id="bld-card">📸 카드</button><button type="button" class="btn sm ghost" id="bld-rand">🎲 랜덤</button></div>
     ${G[bldTab]}`;
   const paint = () => { if(typeof drawSpr==='function'){ const q = withLook(ME.profile, ME.name);
       drawSpr($('bld-av'), avatarRows(q), avatarTintOf(q, 0)); if($('me-av')) drawSpr($('me-av'), avatarRows(q, false), avatarTintOf(q, 0)); } };
@@ -1624,6 +1625,7 @@ function renderBuilder(){
   $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(+b.dataset.lock === 98 ? '🔒 전설의 보드 원정에서 독도까지 가면 열려요' : `🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
   /* 랜덤이 잠긴 걸 뽑으면 레벨 보상이 의미가 없다 */
   $('bld-shop').onclick = ()=>{ if(typeof shopOpen === 'function') shopOpen(); };
+  $('bld-card').onclick = ()=>{ if(typeof charCardShare === 'function') charCardShare(); };
   $('bld-rand').onclick = ()=>{ const pick = (o, key) => { const ks = Object.keys(o).filter(k=>key == null || (lockOf(key, k) == null && !(typeof shopOf === 'function' && shopOf(key, k)))); return ks[Math.floor(Math.random()*ks.length)]; };
     if(window.MOCHI_OPT) Object.assign(ME.profile, { fshape:pick(MOCHI_OPT.fshape), eye:pick(MOCHI_OPT.eye, 'eye'), brow:pick(MOCHI_OPT.brow), acc:pick(MOCHI_OPT.acc, 'acc') });
     Object.assign(ME.profile, { hair:pick(HAIR, 'hair'), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
