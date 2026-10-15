@@ -17,6 +17,8 @@ await t.S(()=>{ for(const k in _bus.cache) delete _bus.cache[k]; return _bus.che
 console.log('자리 나면', await t.S(()=>document.getElementById('toast').textContent));
 await t.S(()=>document.querySelector('[data-bdir="in"]').click()); await t.sleep(300);
 await t.S(()=>document.querySelector('[data-bday="3"]').click()); await t.sleep(300);
+await t.S(()=>document.querySelector('[data-bto="gb"]').click()); await t.sleep(300);
+console.log('서울경부', await t.S(()=>({ 노선:document.querySelector('[data-bto][aria-pressed="true"]').textContent, 방향:[...document.querySelectorAll('[data-bdir]')].map(b=>b.textContent), 예매:document.querySelector('.bs-book a').textContent+' '+document.querySelector('.bs-book a').getAttribute('href'), 등급:[...document.querySelectorAll('.bs-row .bs-gr')].map(x=>x.textContent) })));
 console.log('방향·날짜', await t.S(()=>({ 방향:document.querySelector('[data-bdir][aria-pressed="true"]').textContent, 날짜:document.querySelector('[data-bday][aria-pressed="true"]').textContent, 행:document.querySelectorAll('.bs-row').length })));
 data.__bus = null;
 await t.S(()=>document.getElementById('bs-refresh').click()); await t.sleep(400);

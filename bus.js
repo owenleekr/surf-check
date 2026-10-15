@@ -6,21 +6,25 @@
 (function(){
 const $b = id => document.getElementById(id);
 const WK = 'lineup.share.buswatch', PK = 'lineup.share.buspref';
-const BOOK = 'https://txbus.t-money.co.kr/main.do';
+const ROUTES = { ds:{ n:'동서울', kind:'시외', book:'https://txbus.t-money.co.kr/main.do', bookN:'티머니 시외버스', app:'티머니GO 앱' },
+  gb:{ n:'서울경부', kind:'고속', book:'https://www.kobus.co.kr/main.do', bookN:'코버스(고속버스)', app:'고속버스티머니 앱' },
+  ic:{ n:'인천', kind:'고속', book:'https://www.kobus.co.kr/main.do', bookN:'코버스(고속버스)', app:'고속버스티머니 앱' } };
+const GCLS = g => /프리미엄/.test(g) ? 'pr' : /심야/.test(g) ? 'nt' : /우등/.test(g) ? 'ud' : 'ip';
 const read = (k, d) => { try{ return JSON.parse(localStorage.getItem(k) || 'null') || d; }catch(e){ return d; } };
 const write = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 const ymd = off => { const d = new Date(Date.now() + off * 864e5); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const DOW = ['일','월','화','수','목','금','토'];
-let view = 'bus', pref = read(PK, { dir:'out', day:0 }), cache = {}, loading = false, err = '', poll = 0;
-const key = (dir, date) => `${dir}|${date}`;
+let view = 'bus', pref = { to:'ds', ...read(PK, { dir:'out', day:0 }) }, cache = {}, loading = false, err = '', poll = 0;
+const key = (dir, date, to) => `${to || 'ds'}|${dir}|${date}`;
 const watches = () => read(WK, []).filter(w=>w.date >= ymd(0));                       // 지난 날짜는 버린다
-const isWatched = (dir, date, t) => watches().some(w=>w.dir === dir && w.date === date && w.t === t);
+const wto = w => w.to || 'ds';
+const isWatched = (dir, date, t, to) => watches().some(w=>w.dir === dir && w.date === date && w.t === t && wto(w) === to);
 const say = m => { if(typeof toast === 'function') toast(m); };
 
-async function fetchDay(dir, date, force){
-  const k = key(dir, date), c = cache[k];
+async function fetchDay(dir, date, force, to){
+  to = to || 'ds'; const k = key(dir, date, to), c = cache[k];
   if(!force && c && Date.now() - c.at < 110e3) return c.data;
-  const r = await fetch(`/api/bus-seats?dir=${dir}&date=${date.replace(/-/g, '')}`);
+  const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}`);
   if(!r.ok) throw new Error(r.status === 503 ? 'blocked' : 'upstream');
   const j = await r.json(); cache[k] = { at:Date.now(), data:j }; return j;
 }
@@ -33,7 +37,7 @@ function setView(v){
 
 async function load(force){
   const date = ymd(pref.day); loading = true; err = ''; render();
-  try{ await fetchDay(pref.dir, date, force); }catch(e){ err = e.message === 'blocked' ? '지금은 예매 사이트가 조회를 받지 않아요. 잠시 뒤에 다시 볼게요.' : '좌석 정보를 못 불러왔어요 · 신호 확인'; }
+  try{ await fetchDay(pref.dir, date, force, pref.to); }catch(e){ err = e.message === 'blocked' ? '지금은 예매 사이트가 조회를 받지 않아요. 잠시 뒤에 다시 볼게요.' : '좌석 정보를 못 불러왔어요 · 신호 확인'; }
   loading = false; render();
 }
 
@@ -44,29 +48,31 @@ function seatTag(b){
 }
 function render(){
   const root = $b('bus-view'); if(!root || view !== 'bus') return;
-  const date = ymd(pref.day), c = cache[key(pref.dir, date)], d = c?.data, nowHM = new Date().toTimeString().slice(0, 5);
+  const date = ymd(pref.day), c = cache[key(pref.dir, date, pref.to)], d = c?.data, nowHM = new Date().toTimeString().slice(0, 5), RT = ROUTES[pref.to] || ROUTES.ds;
   const list = (d?.buses || []).filter(b=>pref.day > 0 || b.t > nowHM);
-  const [a, z] = pref.dir === 'out' ? ['양양', '동서울'] : ['동서울', '양양'];
+  const [a, z] = pref.dir === 'out' ? ['양양', RT.n] : [RT.n, '양양'];
   const ago = d ? Math.max(0, Math.round((Date.now() - new Date(d.fetched).getTime()) / 6e4)) : null;
   const W = watches();
   root.innerHTML = `
     <div class="bus-hd"><b>🚌 시외버스 남은 좌석</b>
-      <small>티머니 시외버스 예매 화면의 좌석 수예요${ago != null ? ` · ${ago ? ago + '분 전' : '방금'} 기준` : ''}. 매진 차에 🔕 를 누르면 자리 날 때 알려 드려요. 예매는 공식 사이트·앱에서.</small></div>
-    <div class="go-mode bs-dir" role="group" aria-label="방향"><button type="button" data-bdir="out" aria-pressed="${pref.dir === 'out'}">양양 → 동서울</button><button type="button" data-bdir="in" aria-pressed="${pref.dir === 'in'}">동서울 → 양양</button></div>
+      <small>${RT.kind}버스 예매 화면(${RT.bookN})의 좌석 수예요${ago != null ? ` · ${ago ? ago + '분 전' : '방금'} 기준` : ''}. 매진 차에 🔕 를 누르면 자리 날 때 알려 드려요. 예매는 공식 사이트·앱에서.</small></div>
+    <div class="bs-routes" role="group" aria-label="노선">${Object.entries(ROUTES).map(([k, r])=>`<button type="button" data-bto="${k}" aria-pressed="${pref.to === k}"><b>${r.n}</b><small>${r.kind}</small></button>`).join('')}</div>
+    <div class="go-mode bs-dir" role="group" aria-label="방향"><button type="button" data-bdir="out" aria-pressed="${pref.dir === 'out'}">양양 → ${RT.n}</button><button type="button" data-bdir="in" aria-pressed="${pref.dir === 'in'}">${RT.n} → 양양</button></div>
     <div class="bs-days" role="group" aria-label="날짜">${Array.from({ length:7 }, (_, i)=>{ const dd = new Date(ymd(i) + 'T00:00'); return `<button type="button" data-bday="${i}" aria-pressed="${pref.day === i}"><small>${i === 0 ? '오늘' : i === 1 ? '내일' : DOW[dd.getDay()]}</small><b>${dd.getDate()}</b></button>`; }).join('')}</div>
     ${W.length ? `<div class="bs-watching">🔔 알림 거는 중 ${W.length}편 · 앱이 열려 있는 동안 3분마다 확인해요${typeof Notification !== 'undefined' && Notification.permission !== 'granted' ? ' <button type="button" class="btn sm ghost" id="bs-perm">휴대폰 알림 켜기</button>' : ''}</div>` : ''}
     ${loading && !d ? '<div class="skel" aria-hidden="true"><i></i><i></i><i></i></div>' : ''}
     ${err ? `<div class="empty">${err}<br><button type="button" class="btn sm mint" id="bs-retry" style="margin-top:8px">다시 불러오기</button></div>` : ''}
-    ${d ? (list.length ? `<div class="bs-list">${list.map(b=>{ const w = isWatched(pref.dir, date, b.t), want = b.left === 0 || (b.left != null && b.left <= 3);
-        return `<div class="bs-row${b.left === 0 ? ' sold' : ''}"><span class="bs-t">${b.t}</span><span class="bs-m"><b>${esc(b.co)}</b><small>${esc(b.grade)}${b.dur ? ` · ${esc(b.dur)} 소요` : ''}${b.fare ? ` · ${Number(b.fare).toLocaleString()}원` : ''}</small></span>
+    ${d ? (list.length ? `<div class="bs-list">${list.map(b=>{ const w = isWatched(pref.dir, date, b.t, pref.to), want = b.left === 0 || (b.left != null && b.left <= 3);
+        return `<div class="bs-row${b.left === 0 ? ' sold' : ''}"><span class="bs-t">${b.t}</span><span class="bs-m"><b>${b.grade ? `<i class="bs-gr ${GCLS(b.grade)}">${esc(b.grade)}</i>` : ''}${esc(b.co)}</b><small>${b.total ? `${b.total}인승` : ''}${b.dur ? `${b.total ? ' · ' : ''}${esc(b.dur)} 소요` : ''}${b.fare ? ` · ${Number(b.fare).toLocaleString()}원` : ''}</small></span>
           ${seatTag(b)}${want || w ? `<button type="button" class="bs-bell${w ? ' on' : ''}" data-bell="${esc(b.t)}" aria-pressed="${w}" aria-label="${esc(b.t)} 자리 나면 알림">${w ? '🔔' : '🔕'}</button>` : '<span class="bs-bell-sp"></span>'}</div>`; }).join('')}</div>`
       : `<div class="empty">${pref.day === 0 ? '오늘은 더 떠날 버스가 없어요' : '이날은 배차가 없어요'}</div>`) : ''}
-    <div class="food-btns" style="margin-top:12px"><a class="btn sm blue" href="${BOOK}" target="_blank" rel="noopener">🎫 티머니에서 예매하기 ↗</a><button type="button" class="btn sm ghost" id="bs-refresh">↻ 새로 보기</button></div>
-    <div class="note" style="margin-top:6px">출처: 티머니 시외버스 통합예매 · ${a} → ${z} · 좌석 수는 몇 분 늦을 수 있어요</div>
+    <div class="bs-book"><a class="btn sm blue" href="${RT.book}" target="_blank" rel="noopener">🎫 ${RT.bookN}에서 예매 ↗</a><button type="button" class="btn sm ghost" id="bs-refresh">↻ 새로 보기</button></div>
+    <div class="note" style="margin-top:6px">📱 휴대폰은 <b>${RT.app}</b>이 편해요(출발 60분 안 차는 앱에서만 예매돼요) · 등급: <i class="bs-gr ud">우등</i> 28인승 · <i class="bs-gr pr">프리미엄</i> 21인승 · <i class="bs-gr ip">일반</i> 41~45인승<br>출처: ${RT.bookN} · ${a} → ${z} · 좌석 수는 몇 분 늦을 수 있어요</div>
     ${reqHTML()}`;
+  root.querySelectorAll('[data-bto]').forEach(b=>b.onclick = ()=>{ pref.to = b.dataset.bto; write(PK, pref); load(false); });
   root.querySelectorAll('[data-bdir]').forEach(b=>b.onclick = ()=>{ pref.dir = b.dataset.bdir; write(PK, pref); load(false); });
   root.querySelectorAll('[data-bday]').forEach(b=>b.onclick = ()=>{ pref.day = +b.dataset.bday; write(PK, pref); load(false); });
-  root.querySelectorAll('[data-bell]').forEach(b=>b.onclick = ()=>toggleWatch(pref.dir, date, b.dataset.bell));
+  root.querySelectorAll('[data-bell]').forEach(b=>b.onclick = ()=>toggleWatch(pref.dir, date, b.dataset.bell, pref.to));
   $b('bs-retry')?.addEventListener('click', ()=>load(true));
   $b('bs-refresh')?.addEventListener('click', ()=>load(true));
   $b('bs-perm')?.addEventListener('click', askPerm);
@@ -129,11 +135,12 @@ async function vote(id, to){
 }
 
 function askPerm(){ try{ Notification.requestPermission().then(()=>render()); }catch(e){} }
-function toggleWatch(dir, date, t){
-  let W = read(WK, []); const on = W.some(w=>w.dir === dir && w.date === date && w.t === t);
-  if(on) W = W.filter(w=>!(w.dir === dir && w.date === date && w.t === t));
-  else{ const b = (cache[key(dir, date)]?.data?.buses || []).find(x=>x.t === t);
-    W.push({ dir, date, t, at:Date.now(), last:b?.left ?? null }); say('🔔 자리 나면 알려 드릴게요 (앱이 열려 있는 동안)');
+function toggleWatch(dir, date, t, to){
+  to = to || 'ds'; const same = w=>w.dir === dir && w.date === date && w.t === t && wto(w) === to;
+  let W = read(WK, []); const on = W.some(same);
+  if(on) W = W.filter(w=>!same(w));
+  else{ const b = (cache[key(dir, date, to)]?.data?.buses || []).find(x=>x.t === t);
+    W.push({ to, dir, date, t, at:Date.now(), last:b?.left ?? null }); say('🔔 자리 나면 알려 드릴게요 (앱이 열려 있는 동안)');
     if(typeof Notification !== 'undefined' && Notification.permission === 'default') askPerm(); }
   write(WK, W.filter(w=>w.date >= ymd(0)).slice(-12)); render(); startPoll();
 }
@@ -141,14 +148,14 @@ function toggleWatch(dir, date, t){
 /* 알림 확인 — 걸어 둔 차의 남은 좌석이 걸 때(마지막으로 본 때)보다 늘고 1석 이상이면 알린다 */
 async function check(){
   const W = watches(); if(!W.length || document.hidden) return;
-  const groups = [...new Set(W.map(w=>key(w.dir, w.date)))];
+  const groups = [...new Set(W.map(w=>key(w.dir, w.date, wto(w))))];
   for(const g of groups){
-    const [dir, date] = g.split('|'); let d;
-    try{ d = await fetchDay(dir, date, false); }catch(e){ continue; }
-    for(const w of W.filter(x=>x.dir === dir && x.date === date)){
+    const [to, dir, date] = g.split('|'); let d;
+    try{ d = await fetchDay(dir, date, false, to); }catch(e){ continue; }
+    for(const w of W.filter(x=>x.dir === dir && x.date === date && wto(x) === to)){
       const b = (d.buses || []).find(x=>x.t === w.t); if(!b || b.left == null) continue;
       if(w.last != null && b.left > w.last && b.left > 0){
-        const [a, z] = dir === 'out' ? ['양양', '동서울'] : ['동서울', '양양'];
+        const rn = (ROUTES[to] || ROUTES.ds).n, [a, z] = dir === 'out' ? ['양양', rn] : [rn, '양양'];
         const msg = `🚌 ${a}→${z} ${date.slice(5).replace('-', '.')} ${w.t} 자리 ${b.left}석 났어요!`;
         say(msg); navigator.vibrate?.([40, 60, 40, 60, 80]);
         try{ if(typeof Notification !== 'undefined' && Notification.permission === 'granted') new Notification('SurfShare 버스 자리', { body:msg, icon:'icon-192.png', tag:'bus-' + g + w.t }); }catch(e){}
@@ -156,7 +163,7 @@ async function check(){
       w.last = b.left;
     }
   }
-  const all = read(WK, []); all.forEach(x=>{ const n = W.find(y=>y.dir === x.dir && y.date === x.date && y.t === x.t); if(n) x.last = n.last; }); write(WK, all);
+  const all = read(WK, []); all.forEach(x=>{ const n = W.find(y=>y.dir === x.dir && y.date === x.date && y.t === x.t && wto(y) === wto(x)); if(n) x.last = n.last; }); write(WK, all);
   if(view === 'bus') render();
 }
 function startPoll(){ clearInterval(poll); if(watches().length){ poll = setInterval(check, 180e3); } }
