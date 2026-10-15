@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>캐릭터 레퍼런스</title>
+<style>
+:root{ --ink:#1B1B2F; --sub:#5B6275; --bg:#F3F6FA; --card:#fff; --line:#DDE5EF; --sea:#2E6BFF; --mint:#E8FAF2; --sun:#FFD23F }
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; line-height:1.55 }
+.wrap{ max-width:820px; margin:0 auto; padding:22px 16px 80px }
+h1{ font-size:22px; margin:0 0 6px } h2{ font-size:18px; margin:30px 0 4px } h2 small{ font-size:12.5px; color:var(--sub); font-weight:600 }
+.lead{ color:var(--sub); font-size:14px; margin:0 } .lead b{ color:var(--ink) }
+.grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; margin-top:10px }
+.ref{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:6px }
+.ref .t{ display:flex; align-items:baseline; gap:6px; flex-wrap:wrap } .ref .t b{ font-size:15.5px } .ref .t span{ font-size:11.5px; color:var(--sub); font-weight:700 }
+.ref .no{ font-size:11px; font-weight:800; color:#fff; background:var(--ink); border-radius:6px; padding:1px 6px }
+.kw{ display:flex; flex-wrap:wrap; gap:4px } .kw i{ font-style:normal; font-size:11.5px; padding:1px 7px; border-radius:999px; background:#EEF2F8; color:#3A4258; font-weight:700 }
+.ref p{ margin:0; font-size:13px } .ref p.take{ background:var(--mint); border-radius:8px; padding:6px 8px; font-size:12.5px } .ref p.take b{ color:#137A52 }
+.ref a{ font-size:12.5px; color:var(--sea); font-weight:700; text-decoration:none; margin-top:auto } .ref a:hover{ text-decoration:underline }
+.sum{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:14px; font-size:13.5px } .sum ul{ margin:6px 0 0; padding-left:18px } .sum li{ margin:3px 0 }
+.plan{ display:grid; gap:8px; margin-top:10px }
+.pl{ display:flex; gap:10px; align-items:flex-start; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 12px; cursor:pointer }
+.pl input{ width:22px; height:22px; margin:2px 0 0; flex:0 0 auto; accent-color:var(--sea) }
+.pl b{ font-size:14.5px } .pl small{ display:block; font-size:12.5px; color:var(--sub) } .pl em{ font-style:normal; font-size:11.5px; color:var(--sea); font-weight:800 }
+.pl:has(input:checked){ border-color:var(--sea); background:#F1F6FF }
+.bar{ position:sticky; bottom:12px; margin-top:16px; display:flex; gap:8px; align-items:center; background:var(--ink); color:#fff; border-radius:14px; padding:10px 12px; font-size:13.5px }
+.bar span{ flex:1 } .bar b{ color:var(--sun) }
+.bar button{ border:0; border-radius:10px; background:var(--sun); color:var(--ink); font-weight:800; font-size:13.5px; padding:9px 14px; font-family:inherit; cursor:pointer }
+.note{ font-size:12px; color:var(--sub); margin-top:14px }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔎 캐릭터 레퍼런스 보드</h1>
+  <p class="lead">국내·해외 서비스의 캐릭터·아바타를 <b>그림체 계열 6갈래, 26개</b>로 모았어요. 이미지는 저작권 때문에 붙이지 않고 <b>공식 페이지 링크</b>로 연결했어요 — 눌러서 실제 모습을 보세요. 맨 아래에 이 레퍼런스에서 뽑은 <b>시안 15개 계획</b>이 있고, 그려 볼 것만 체크하면 돼요.</p>
+
+  <div class="sum"><b>📌 조사에서 보인 흐름</b><ul>
+    <li><b>손맛 낙서 캐릭터가 대세</b> — 망그러진곰·가나디·춘식이 같은 국내 창작 캐릭터가 산리오·짱구와 나란히 굿즈 협업을 휩쓸고, 주 소비층이 10~30대.</li>
+    <li><b>도트 미니미의 귀환</b> — 2025년 SNS에서 "내 사진으로 픽셀 미니미 만들기"가 유행. 새 싸이월드도 3D로 가면서 도트 감성을 남김.</li>
+    <li><b>3D는 '장난감'처럼 단순하게</b> — 본디(Bondee)는 심즈·동물의 숲·하보호텔을 섞은 듯한 귀여운 3D로 아시아에서 화제. 제페토는 사실적 꾸미기·브랜드 옷으로 반대편.</li>
+    <li><b>키우는 캐릭터가 습관을 만든다</b> — 핀치(Finch)는 할 일을 하면 새가 자라는 구조, 포켓몬 슬립은 동화책 같은 느린 그림체. 우리 앱의 연습 체크·스탬프와 잘 맞음.</li>
+    <li><b>작은 크기에서 읽혀야 한다</b> — 게더타운·ZEP·하비티카는 일부러 낮은 해상도. 마을·채팅처럼 작게 보이는 자리가 많은 앱엔 실루엣이 먼저.</li>
+  </ul></div>
+
+  <div id="refs"></div>
+
+  <h2>🎨 시안 15개 계획 <small>레퍼런스를 베끼지 않고 비율·선·색·눈 같은 '문법'만 가져와요</small></h2>
+  <p class="lead">그려 볼 것을 체크하세요(전부 그대로 두면 15개 다). 아래 버튼으로 고른 번호를 복사해 채팅에 붙여 주시면 돼요.</p>
+  <div class="plan" id="plan"></div>
+  <div class="bar"><span>고른 시안 <b id="cnt">15</b>개</span><button type="button" id="copy">번호 복사</button></div>
+  <p class="note">설명은 각 서비스의 공식 페이지·보도 기사 기준이고, 그림체 특징은 공개 화면을 보고 요약한 거예요. 캐릭터 자체(이름·모양)는 각 회사 저작물이라 그대로 쓰지 않아요.</p>
+</div>
+<script>
+const G = [
+  ['A. 도트 · 픽셀', '작게 봐도 또렷, 레트로 감성', [
+    ['싸이월드 미니미', '국내 · 미니홈피', ['2.5등신', '검은 외곽선', '정면', '도트'], '머리 크고 몸 짧은 정면 도트, 굵은 검은 테두리. 2000년대 감성의 원조. 새 싸이월드는 2D 미니미가 걸어 나와 3D로 바뀌는 연출.', '정면 2.5등신 + 검은 1px 외곽선 = 작은 크기에서도 누군지 보임', 'https://v.daum.net/v/20241211144906894'],
+    ['메이플스토리', '국내 · 게임', ['SD 2등신', '큰 눈', '진한 음영'], '머리가 몸만큼 큰 SD 도트. 눈이 크고 반짝이고, 옷·헤어 아이템이 수천 개.', '큰 눈 + 2단 음영 → 도트인데도 표정이 풍부', 'https://maplestory.nexon.com'],
+    ['스타듀 밸리', '해외 · 게임', ['3/4 시점', '따뜻한 색', '작은 몸'], '따뜻한 흙·풀 색 팔레트의 작은 도트 사람들. 표정보다 몸짓과 옷 색으로 구분.', '자연 배경과 어울리는 따뜻한 팔레트(바다·모래)', 'https://www.stardewvalley.net'],
+    ['하비티카', '해외 · 습관 앱', ['RPG 도트', '장비 수집', '펫'], '할 일을 하면 캐릭터가 성장하는 습관 RPG. 장비·펫을 모아 도트 아바타를 꾸밈. 모든 그림을 같은 크기·같은 도트 규칙으로 맞춤.', '연습 = 성장 구조, 모든 아이템 같은 격자 규칙', 'https://habitica.com'],
+    ['게더타운 · ZEP', '해외 · 국내 · 메타버스', ['8비트', '탑다운', '아주 작음'], '1980년대 8비트 같은 아주 작은 탑다운 캐릭터. 낮은 해상도가 오히려 매력이라는 평가.', '마을 화면은 이 정도로 단순해도 충분', 'https://zep.us'],
+  ]],
+  ['B. 3D · 장난감', '크게 볼 때 예쁨, 고급스러움', [
+    ['동물의 숲', '해외 · 게임', ['둥근 3D', '점 눈', '부드러운 그림자'], '공 같은 머리, 단순한 점 눈, 소프트한 조명. 주민마다 동물·색·옷으로 확 다름.', '단순한 얼굴 + 둥근 덩어리 → 누구나 귀엽게', 'https://animal-crossing.com'],
+    ['본디 (Bondee)', '해외 · 소셜 앱', ['3D 치비', '파스텔', '아바타로 채팅'], '2023년 아시아에서 화제가 된 아바타 메신저. 귀여운 3D 치비가 방에 모여 말풍선으로 대화. 심즈·동물의 숲·하보호텔을 섞은 느낌이라는 평.', '아바타 옆 말풍선·입력 중 표시 — 마을 채팅에 바로 응용', 'https://www.dotyeti.com/blog/bondee-social-app-3d-art-style-explained/'],
+    ['제페토', '국내 · 메타버스', ['세밀한 얼굴', '브랜드 옷', '반실사'], '얼굴 부위를 세세하게 조절하는 반실사 3D. 실제 브랜드 옷 협업이 강점.', '꾸미기 깊이(우리 상점) — 다만 그림체는 너무 사실적', 'https://zepeto.me'],
+    ['닌텐도 Mii · 피크민 블룸', '해외 · 게임·걷기 앱', ['부품 조합', '공 손', '미니멀'], '얼굴 부품(눈·코·입·눈썹)만 골라 조합하는 미니멀 3D. 피크민 블룸은 이 Mii가 걸으며 꽃을 심음.', '부품 조합식 꾸미기가 쉽고 결과가 늘 귀여움', 'https://pikminbloom.com'],
+    ['폴 가이즈', '해외 · 게임', ['젤리빈 몸', '스킨', '통통'], '몸통 하나(젤리빈)에 옷 스킨만 갈아입히는 구조. 넘어지고 튕기는 움직임이 귀여움의 핵심.', '몸은 하나, 옷만 바꿔도 개성 — 움직임으로 귀여움', 'https://www.fallguys.com'],
+  ]],
+  ['C. 플랫 · 마스코트', '앱 화면과 가장 잘 어울림', [
+    ['듀오링고', '해외 · 학습 앱', ['굵은 도형', '외곽선 없음', '선명한 색'], '원·둥근 사각형 같은 기하 도형으로 만든 캐릭터들. 외곽선 없이 면과 그림자로만. 공식 디자인 가이드를 공개.', '버튼·카드와 같은 모양 언어 → 앱 UI와 한 몸', 'https://design.duolingo.com'],
+    ['토카 보카', '해외 · 어린이 앱', ['큰 얼굴', '패턴 옷', '다양한 사람'], '얼굴이 크고 피부·머리·체형이 아주 다양한 플랫 캐릭터. 옷 무늬가 화려.', '다양한 사람을 자연스럽게 + 옷 무늬로 개성', 'https://tocaboca.com'],
+    ['노션 페이스', '해외 · 생산성', ['흑백 선', '얼굴만', '포인트 색'], '검은 선으로만 그린 얼굴 아바타 + 배경 포인트 색 하나. 차분하고 어른스러움.', '키치함을 확 빼는 방법 — 선 + 단색 배경', 'https://faces.notion.com'],
+    ['비트모지', '해외 · 소셜', ['나를 닮게', '상황 스티커'], '내 얼굴을 닮게 만든 아바타가 수천 개 상황 스티커에 등장.', '"서핑 중", "웨이팅 중" 같은 상황 스티커로 재사용', 'https://www.bitmoji.com'],
+    ['헤드스페이스', '해외 · 명상 앱', ['블롭', '오렌지', '단순 표정'], '팔다리 없는 동글한 덩어리(블롭) 캐릭터와 단순한 표정. 따뜻하고 차분함.', '정보가 많은 화면에선 캐릭터가 조용해야', 'https://www.headspace.com'],
+  ]],
+  ['D. 손그림 · 낙서', '요즘 10~30대 감성', [
+    ['망그러진곰', '국내 · 이모티콘', ['삐뚤 선', '단순 몸', '웃긴 표정'], '굵고 삐뚤빼뚤한 손그림 선의 곰. 올리브영 협업 한정 굿즈 조기 품절, 두산베어스 협업 3년째.', '완벽하지 않은 선 = 친근함, 표정 하나로 웃김', 'https://news.bizwatch.co.kr/article/consumer/2026/03/17/0027'],
+    ['가나디 · 춘식이', '국내 · 이모티콘', ['낙서', '동물', '팬덤'], 'SNS에서 팬덤을 키운 국내 창작 캐릭터들. 단순한 동물 + 일상 상황.', '일상 상황(웨이팅, 비 오는 날 서핑 취소) 스티커', 'https://www.fnnews.com/news/202604241011107911'],
+    ['치이카와', '해외(일본) · 만화', ['아주 둥근 얼굴', '얇은 선', '파스텔'], '작고 동글한 몸, 얇은 선, 흐린 파스텔. 앱(치이카와 포켓)·팝업까지 확장.', '얇은 선 + 흐린 볼터치 → 귀엽지만 유치하지 않음', 'https://www.haveagood-holiday.com/ko/articles/chiikawa-pocket-4th-merchandise-bento-shop-2026'],
+    ['스밋코구라시', '해외(일본) · 캐릭터', ['구석', '작은 동물', '부드러운 색'], '구석을 좋아하는 작은 캐릭터들. 낮은 채도, 둥근 형태, 소품이 많음.', '낮은 채도 팔레트 — 화면이 덜 시끄러움', 'https://www.san-x.co.jp/sumikko/'],
+    ['푸신 (Pusheen)', '해외 · 이모티콘', ['단순 고양이', '회색', '두꺼운 선'], '회색 고양이 하나로 수많은 상황 스티커. 형태가 극도로 단순.', '형태는 단순하게, 상황으로 재미', 'https://pusheen.com'],
+  ]],
+  ['E. 키우기 · 펫', '매일 들어오게 만드는 구조', [
+    ['핀치 (Finch)', '해외 · 셀프케어 앱', ['작은 새', '성장', '옷 입히기'], '할 일·기분 체크를 하면 내 새가 모험을 떠나고 자람. 디지털 다마고치라는 평.', '"오늘 테이크오프 연습" 체크 → 내 캐릭터가 자람', 'https://finchcare.com'],
+    ['포켓몬 슬립', '해외 · 수면 앱', ['동화책', '느린 움직임', '잠자는 모습 수집'], '동화책 같은 부드러운 그림체, 일부러 느린 움직임. 잠자는 모습을 도감처럼 수집.', '"파도 탄 모습" 도감 수집', 'https://www.pokemonsleep.net'],
+    ['다마고치', '해외(일본) · 장난감', ['도트', '돌봄', '단순'], '돌보지 않으면 시무룩해지는 도트 펫의 원조.', '며칠 안 오면 펫이 심심해함(부담 없게)', 'https://tamagotchi-official.com'],
+  ]],
+  ['F. 소셜 공간 · 꾸미기', '같이 노는 마을', [
+    ['하보 호텔', '해외 · 소셜', ['아이소메트릭', '방 꾸미기', '도트'], '비스듬한 시점의 도트 방에서 아바타끼리 만남. 가구 수집·방 꾸미기가 핵심.', '마을을 비스듬한 시점 방으로 — 숙소·학교 꾸미기', 'https://www.habbo.com'],
+    ['라인프렌즈 · 산리오', '국내·해외 · 캐릭터', ['마스코트', '단순 형태', '시그니처 색'], '캐릭터마다 시그니처 색과 실루엣 하나. 굿즈로 확장되는 형태.', '6기 공식 마스코트 하나 정하기(양양 바다 동물)', 'https://www.sanrio.com'],
+    ['네코 아츠메', '해외(일본) · 게임', ['고양이', '마당', '수집'], '마당에 놓은 물건을 보고 고양이가 찾아옴. 접속하면 누가 왔나 보는 재미.', '마을에 오늘 누가 왔다 갔는지 흔적 보기', 'https://nekoatsume.com'],
+  ]],
+];
+const PLAN = [
+  ['미니미 오리지널', '정면 2.5등신 도트 + 검은 외곽선, 표정 디테일 추가', '싸이월드 미니미'],
+  ['메이플 SD 도트', '큰 눈·2단 음영의 SD 도트', '메이플스토리'],
+  ['따뜻한 바닷가 도트', '3/4 시점 작은 도트, 모래·바다 팔레트', '스타듀 밸리 · 하비티카'],
+  ['8비트 마을 주민', '마을용 초미니 탑다운 도트(프로필은 크게)', '게더타운 · ZEP'],
+  ['둥근 섬 주민', '공 같은 머리, 점 눈, 소프트 조명 3D', '동물의 숲'],
+  ['파스텔 3D 치비', '단순한 3D + 파스텔, 말풍선 채팅과 세트', '본디'],
+  ['부품 조합 미니멀', '눈·코·입 부품만 바꾸는 미니멀 3D', 'Mii · 피크민 블룸'],
+  ['젤리빈 서퍼', '몸통 하나 + 서핑 슈트 스킨, 통통 튀는 움직임', '폴 가이즈'],
+  ['기하 플랫', '외곽선 없는 굵은 도형, 앱 버튼과 같은 모양 언어', '듀오링고'],
+  ['다양한 사람 플랫', '큰 얼굴, 다양한 피부·체형, 무늬 옷', '토카 보카'],
+  ['라인 드로잉 얼굴', '흑백 선 얼굴 + 포인트 색 배경, 어른스러움', '노션 페이스'],
+  ['삐뚤 낙서', '굵은 손그림 선, 단순 몸, 웃긴 표정', '망그러진곰 · 가나디'],
+  ['동글 파스텔', '아주 둥근 얼굴, 얇은 선, 흐린 파스텔', '치이카와 · 스밋코구라시'],
+  ['키우는 바다친구', '사람 대신 바다 동물(물개·거북·해달)을 키우는 구조', '핀치 · 포켓몬 슬립'],
+  ['동물 후드 서퍼', '지난 시안 4번 발전 — 후드 + 시그니처 색', '라인프렌즈 · 산리오'],
+];
+let n = 0;
+document.getElementById('refs').innerHTML = G.map(([t, s, rs])=>`<h2>${t} <small>${s}</small></h2><div class="grid">${rs.map(r=>{ n++;
+  return `<div class="ref"><div class="t"><span class="no">R${n}</span><b>${r[0]}</b><span>${r[1]}</span></div><div class="kw">${r[2].map(k=>`<i>${k}</i>`).join('')}</div>
+  <p>${r[3]}</p><p class="take"><b>가져올 점</b> ${r[4]}</p><a href="${r[5]}" target="_blank" rel="noopener">공식 페이지 · 자료 보기 ↗</a></div>`; }).join('')}</div>`).join('');
+const plan = document.getElementById('plan');
+plan.innerHTML = PLAN.map((p, i)=>`<label class="pl"><input type="checkbox" checked data-i="${i + 1}"><span><b>${i + 1}. ${p[0]}</b><small>${p[1]}</small><em>참고: ${p[2]}</em></span></label>`).join('');
+const sel = ()=>[...plan.querySelectorAll('input:checked')].map(x=>x.dataset.i);
+plan.addEventListener('change', ()=>{ document.getElementById('cnt').textContent = sel().length; });
+document.getElementById('copy').onclick = async e=>{ const t = `캐릭터 시안: ${sel().join(', ')}번`; try{ await navigator.clipboard.writeText(t); e.target.textContent = '복사됨 ✓'; }catch(_){ prompt('복사해서 붙여 주세요', t); } setTimeout(()=>e.target.textContent = '번호 복사', 1800); };
+</script>
+</body>
+</html>
