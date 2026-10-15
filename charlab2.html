@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>캐릭터 시안 2</title>
+<style>
+:root{ --ink:#1B1B2F; --sub:#5B6275; --bg:#F3F6FA; --card:#fff; --line:#DDE5EF; --sea:#2E6BFF }
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; line-height:1.55 }
+.wrap{ max-width:780px; margin:0 auto; padding:20px 16px 70px }
+h1{ font-size:22px; margin:0 0 6px } .lead{ color:var(--sub); font-size:14px; margin:0 }
+h2{ font-size:17px; margin:28px 0 2px } h2 small{ font-size:12.5px; color:var(--sub); font-weight:600 }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px; margin-top:12px }
+.hd{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap } .no{ display:inline-flex; width:28px; height:28px; align-items:center; justify-content:center; border-radius:50%; background:var(--ink); color:#fff; font-weight:800; font-size:14px }
+.hd b{ font-size:17px } .why{ font-size:13px; color:var(--sub); margin:4px 0 0 }
+.row{ display:flex; gap:6px; overflow-x:auto; padding:10px 2px 4px; scrollbar-width:none } .row::-webkit-scrollbar{ display:none }
+.cell{ flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 6px 6px; border-radius:14px; background:linear-gradient(#C5E8FF,#E3F4FF 72%,#F3E6C8 72%) }
+.cell canvas{ height:124px; display:block } .cell small{ font-size:11px; color:var(--sub); font-weight:700 }
+.sizes{ display:flex; align-items:flex-end; gap:14px; margin-top:6px; padding:8px 12px; border-radius:12px; background:#F4F8FC; font-size:11.5px; color:var(--sub); font-weight:700; flex-wrap:wrap }
+.sizes div{ display:flex; flex-direction:column; align-items:center; gap:3px }
+.chat{ display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:3px 10px 3px 4px; color:var(--ink); font-size:12.5px }
+.pick{ margin-top:22px; padding:14px 16px; border-radius:14px; background:var(--ink); color:#fff; font-size:14px } .pick b{ color:#FFD23F }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧑 캐릭터 시안 2 — 싸이월드 3D · 망곰 · ZEP</h1>
+  <p class="lead">고르신 세 감성으로 9개를 그렸어요. 같은 6명이고, 옆으로 밀면 더 보여요. 아래 작은 크기는 마을·채팅에서 보이는 모습이에요. 비율(머리 크고 몸 짧은 미니미)과 포즈(서 있기 / 서핑)도 같이 바꿔 봤어요.</p>
+  <div id="list"></div>
+  <div class="pick">마음에 드는 번호를 알려 주세요 — <b>"2번"</b>, <b>"4번 얼굴에 1번 질감"</b>처럼 섞어도 돼요.</div>
+</div>
+<script src="sprite.js"></script>
+<script>
+const ORIG = { _vFS, _vRR, _vEl, _vFace };
+const SAMPLES = [
+  { gender:'f', hair:'bob',  hairc:'k', skin:'s', face:'smile', wear:'rash', top:'r', pet:'dog', petc:'y' },
+  { gender:'m', hair:'short',hairc:'n', skin:'d', face:'happy', wear:'hood', top:'b' },
+  { gender:'f', hair:'long', hairc:'y', skin:'l', face:'wink',  wear:'tank', top:'g', boardc:'p' },
+  { gender:'m', hair:'surf', hairc:'k', skin:'t', face:'cool',  wear:'suit', top:'k', hat:'cap', boardc:'c' },
+  { gender:'f', hair:'twin', hairc:'r', skin:'s', face:'wow',   wear:'rash', top:'p', pet:'cat', petc:'w' },
+  { gender:'m', hair:'wave', hairc:'n', skin:'l', face:'sleepy',wear:'bare', top:'o', hat:'bucket', role:'coach' },
+].map((p, i)=>withLook({ board:'long', boardc:'y', bottom:'b', ...p }, 'lab' + i));
+const LBL = ['단발·강아지', '짧은머리·후디', '장발·민소매', '서퍼컷·캡', '양갈래·고양이', '웨이브·코치'];
+
+/* ── 시안 정의 ──
+   mode: vec(벡터) · pixel(도트) · voxel(도트를 입체 블록으로)
+   mini: 미니미 비율(머리 크게, 몸 짧게) · pose: stand(팔 내림) / surf(팔 벌림) · board: 보드 위
+   tex: toy(빛 받은 말랑 질감) · doodle(삐뚤 손그림 선) · sticker(흰 테두리 스티커) */
+const FAM = [
+  ['☁️ 싸이월드 3D 미니미 계열', '도트 미니미 비율 그대로 입체로'],
+  ['🐻 망그러진곰 계열', '삐뚤빼뚤 손그림 선, 단순한 얼굴'],
+  ['🟩 ZEP 계열', '작고 또렷한 2D 도트'],
+];
+const C = [
+  { f:0, name:'3D 미니미', why:'머리 크고 몸 짧은 미니미를 말랑한 장난감처럼. 빛이 왼쪽 위에서 비치고 바닥에 그림자.', mode:'vec', mini:1, pose:'stand', board:0, tex:['toy'] },
+  { f:0, name:'복셀 미니미', why:'도트 한 칸 한 칸을 작은 블록으로 쌓은 입체 — "3D 미니미도 도트로 만들었다"는 싸이월드 방향 그대로.', mode:'voxel', u:1.2, mini:1, pose:'stand', board:0 },
+  { f:0, name:'3D 미니미 · 서핑', why:'1번을 보드 위 서핑 자세로. 앱 정체성(서핑)을 살린 버전.', mode:'vec', mini:1, pose:'surf', board:1, tex:['toy'] },
+  { f:1, name:'망곰 낙서 미니미', why:'굵고 삐뚤한 갈색 선, 점 눈과 ω 입. 몸은 미니미 비율로 짧게.', mode:'vec', mini:1, pose:'stand', board:0, tex:['doodle'], face:'doodle' },
+  { f:1, name:'낙서 스티커', why:'낙서 캐릭터에 흰 테두리를 둘러 오려 붙인 스티커처럼. 채팅·마을에서 배경 위로 또렷.', mode:'vec', mini:1, pose:'surf', board:1, tex:['doodle', 'sticker'], face:'doodle' },
+  { f:1, name:'낙서 × 3D', why:'망곰 선 + 3D 미니미 질감을 섞은 것. 손맛은 남기고 입체감을 더함.', mode:'vec', mini:1, pose:'stand', board:0, tex:['doodle', 'toy'], face:'doodle' },
+  { f:2, name:'ZEP 도트', why:'작은 격자에 또렷한 외곽선 — 마을에서 여러 명이 있어도 한눈에.', mode:'pixel', u:1.05, mini:1, pose:'stand', board:0 },
+  { f:2, name:'ZEP 도트 · 서핑', why:'7번을 보드 위로. 게임 속 캐릭터와 같은 세계.', mode:'pixel', u:1.05, mini:1, pose:'surf', board:1 },
+  { f:2, name:'미니미 도트 HD', why:'조금 더 촘촘한 도트로 표정을 살린 2D 미니미. 프로필처럼 크게 보는 자리용.', mode:'pixel', u:1.75, mini:1, pose:'stand', board:0 },
+];
+
+const nz = (a, b, c)=>{ const v = Math.sin(a * 12.9898 + b * 78.233 + c * 37.719) * 43758.5453; return v - Math.floor(v); };
+const mix = (a, b, t)=>{ const p = h=>[1,3,5].map(i=>parseInt(_vHex(h).slice(i, i + 2), 16)); const A = p(a), B = p(b); return '#' + A.map((x, i)=>Math.round(x + (B[i] - x) * t).toString(16).padStart(2, '0')).join(''); };
+let LB = null, LINE = null, seed = 0;
+const LINEC = '#2B2220';
+
+function setTex(tex){
+  Object.assign(window, ORIG); LINE = null;
+  const doodle = tex.includes('doodle'), toy = tex.includes('toy');
+  window._vRR = (g, x, y, w, h, r)=>{ LB = { x, y, w, h }; if(!doodle) return ORIG._vRR(g, x, y, w, h, r);
+    const P = [], rr = Math.min(Array.isArray(r) ? r[0] : r, w / 2, h / 2);
+    for(let i = 0; i <= 6; i++) P.push([x + rr + (w - 2 * rr) * i / 6, y]); for(let i = 0; i <= 4; i++) P.push([x + w, y + rr + (h - 2 * rr) * i / 4]);
+    for(let i = 0; i <= 6; i++) P.push([x + w - rr - (w - 2 * rr) * i / 6, y + h]); for(let i = 0; i <= 4; i++) P.push([x, y + h - rr - (h - 2 * rr) * i / 4]);
+    wob(g, P); };
+  window._vEl = (g, x, y, rx, ry, rot)=>{ LB = { x:x - rx, y:y - ry, w:rx * 2, h:ry * 2 }; if(!doodle || (rx < .9 && ry < .9)) return ORIG._vEl(g, x, y, rx, ry, rot);
+    const n = 14, c = Math.cos(rot || 0), s = Math.sin(rot || 0), P = [];
+    for(let i = 0; i < n; i++){ const a = i / n * Math.PI * 2, px = Math.cos(a) * rx, py = Math.sin(a) * ry; P.push([x + px * c - py * s, y + px * s + py * c]); }
+    wob(g, P); };
+  window._vFS = (g, c, lw)=>{
+    g.fillStyle = doodle ? mix(c, '#FFFFFF', .15) : c; g.fill();
+    if(toy){ const b = LB && LB.w >= 1.5 ? LB : { x:5.6, y:1.2, w:12.8, h:11.8 };
+      g.save(); g.clip(); const cx = b.x + b.w * .32, cy = b.y + b.h * .26, R = Math.max(b.w, b.h) * .95, gr = g.createRadialGradient(cx, cy, 0, cx, cy, R);
+      gr.addColorStop(0, 'rgba(255,255,255,.6)'); gr.addColorStop(.32, 'rgba(255,255,255,.1)'); gr.addColorStop(.75, 'rgba(0,0,30,.05)'); gr.addColorStop(1, 'rgba(10,10,50,.3)');
+      g.fillStyle = gr; g.fillRect(b.x - 3, b.y - 3, b.w + 6, b.h + 6); g.restore(); }
+    if(lw === 0) return;
+    if(doodle){ g.strokeStyle = LINEC; g.lineWidth = .62; g.lineJoin = 'round'; g.stroke(); }
+    else if(toy){ g.strokeStyle = shade(c, .8); g.lineWidth = .12; g.stroke(); }
+    else { g.strokeStyle = shade(c, .58); g.lineWidth = lw || .34; g.stroke(); } };
+  if(doodle) LINE = LINEC;
+}
+function wob(g, pts){ g.beginPath(); pts.forEach(([x, y], i)=>{ const j = (nz(x, y, seed) - .5) * .5, k = (nz(y, x, seed + 3) - .5) * .5; i ? g.lineTo(x + j, y + k) : g.moveTo(x + j, y + k); }); g.closePath(); seed++; }
+
+/* 망곰식 얼굴 — 점 눈을 멀찍이, ω 입, 연한 볼 */
+function doodleFace(g, face){
+  const E = LINEC, ey = 8.7, L = 9.3, R = 14.7;
+  const dot = (x, r)=>{ ORIG._vEl(g, x, ey, r || .5, (r || .5) * 1.1); g.fillStyle = E; g.fill(); };
+  const arc = (x, up)=>{ g.beginPath(); g.moveTo(x - .65, ey + (up ? .2 : -.1)); g.quadraticCurveTo(x, ey + (up ? -.55 : .5), x + .65, ey + (up ? .2 : -.1)); g.strokeStyle = E; g.lineWidth = .42; g.lineCap = 'round'; g.stroke(); };
+  const w = (open)=>{ g.beginPath(); g.moveTo(11.25, 9.85); g.quadraticCurveTo(11.62, 10.45, 12, 9.95); g.quadraticCurveTo(12.38, 10.45, 12.75, 9.85); g.strokeStyle = E; g.lineWidth = .36; g.lineCap = 'round'; g.stroke();
+    if(open){ ORIG._vEl(g, 12, 10.45, .45, .38); g.fillStyle = '#E5546B'; g.fill(); } };
+  [[8.1, 9.9], [15.9, 9.9]].forEach(([x, y])=>{ ORIG._vEl(g, x, y, .9, .5); g.fillStyle = 'rgba(255,120,150,.38)'; g.fill(); });
+  if(face === 'happy'){ arc(L, true); arc(R, true); w(true); }
+  else if(face === 'cool'){ [[8,7.9],[12.8,7.9]].forEach(([x, y])=>{ ORIG._vRR(g, x, y, 3.2, 1.6, .7); g.fillStyle = E; g.fill(); }); g.beginPath(); g.moveTo(11.2, 8.5); g.lineTo(12.8, 8.5); g.strokeStyle = E; g.lineWidth = .4; g.stroke(); w(false); }
+  else if(face === 'wow'){ dot(L, .62); dot(R, .62); ORIG._vEl(g, 12, 10.2, .48, .55); g.strokeStyle = E; g.lineWidth = .36; g.stroke(); }
+  else if(face === 'wink'){ dot(L); arc(R, true); w(false); }
+  else if(face === 'sleepy'){ arc(L, false); arc(R, false); ORIG._vEl(g, 12, 10.1, .28, .32); g.fillStyle = E; g.fill(); }
+  else { dot(L); dot(R); w(false); }
+}
+
+/* 몸 — sprite.js _vBody 와 같되 포즈(팔)를 고른다 */
+function body(g, pr, T, pose){
+  const S = _vHex(T.s), top = _vHex(T.r), bot = _vHex(T.b), wear = WEAR[pr.wear] ? pr.wear : 'rash';
+  const sleeve = wear === 'tank' || wear === 'bare' ? S : top, legC = wear === 'suit' ? top : S;
+  [9.5, 12.3].forEach(x=>{ _vRR(g, x, 16.6, 2.2, 4.1, [.6, .6, .9, .9]); _vFS(g, legC); });
+  if(wear !== 'suit'){ _vRR(g, 8.9, 15.6, 6.2, 2.7, [.6, .6, 1, 1]); _vFS(g, bot); }
+  const arms = pose === 'stand' ? [[9.3, 13.3, 8.2, 16.4], [14.7, 13.3, 15.8, 16.4]] : [[9.2, 13.4, 5.4, 15.1], [14.8, 13.4, 18.6, 15.1]];
+  arms.forEach(([x1, y1, x2, y2])=>{
+    g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.lineCap = 'round'; g.strokeStyle = LINE || shade(sleeve, .58); g.lineWidth = LINE ? 2.6 : 2.2; g.stroke(); g.strokeStyle = sleeve; g.lineWidth = 1.55; g.stroke();
+    _vEl(g, x2, y2, .95, .95); _vFS(g, S, .3); });
+  if(wear === 'hood'){ _vEl(g, 12, 12.4, 3.6, 1.3); _vFS(g, shade(top, .85)); }
+  _vRR(g, 8.7, 12.2, 6.6, wear === 'suit' ? 5.6 : 4.6, [1.8, 1.8, 1, 1]); _vFS(g, wear === 'bare' || wear === 'tank' ? S : top);
+  if(wear === 'tank'){ _vRR(g, 9.4, 12.9, 5.2, 3.9, [1, 1, .8, .8]); _vFS(g, top); }
+  if(wear === 'hood') [11.2, 12.8].forEach(x=>{ g.beginPath(); g.moveTo(x, 12.9); g.lineTo(x, 14.6); g.strokeStyle = '#fff'; g.lineWidth = .32; g.lineCap = 'round'; g.stroke(); });
+  if(pr.role === 'coach'){ _vRR(g, 9, 12.6, 6, 3.6, [1.2, 1.2, .8, .8]); _vFS(g, '#FF9F1C'); _vRR(g, 9, 14.3, 6, .6, 0); g.fillStyle = '#FFF4D6'; g.fill(); }
+}
+
+/* 한 장면 — 미니미 비율이면 몸을 발 기준으로 줄이고 머리를 키워 내린다 */
+function compose(g, pr, T, c, withPet){
+  const kind = hairOf(pr), S = _vHex(T.s), H = _vHex(T.h);
+  g.lineJoin = 'round'; seed = 0;
+  if(withPet) _vPet(g, pr, T, 0);
+  g.save(); if(withPet) g.translate(14, 0);
+  if(c.board) _vBoard(g, pr, T); else { ORIG._vEl(g, 12, 21.1, 4.6, .7); g.fillStyle = 'rgba(18,36,95,.16)'; g.fill(); }
+  const head = fn=>{ g.save(); if(c.mini){ g.translate(12, 14.7); g.scale(1.12, 1.12); g.translate(-12, -13.2); } fn(); g.restore(); };
+  head(()=>_vHairBack(g, kind, H));
+  g.save(); if(c.mini){ g.translate(12, 20.7); g.scale(.88, .78); g.translate(-12, -20.7); } body(g, pr, T, c.pose); g.restore();
+  head(()=>{
+    if(!/bob|long|twin|wave/.test(kind)) [[5.6, 8.3], [18.4, 8.3]].forEach(([x, y])=>{ _vEl(g, x, y, 1.05, 1.15); _vFS(g, S, .3); });
+    _vEl(g, 12, 7.3, 6.4, 5.85); _vFS(g, S, .36);
+    (c.face === 'doodle' ? doodleFace : ORIG._vFace)(g, pr.face, T);
+    _vHatOn = pr.hat || 'none'; _vHairFront(g, kind, H);
+    if(HAT[pr.hat]) _vHat(g, pr.hat, T);
+  });
+  g.restore();
+}
+
+function stickerize(src, r){
+  const w = src.width, h = src.height, sil = document.createElement('canvas'); sil.width = w; sil.height = h;
+  const s = sil.getContext('2d'); s.drawImage(src, 0, 0); s.globalCompositeOperation = 'source-in'; s.fillStyle = '#fff'; s.fillRect(0, 0, w, h);
+  const out = document.createElement('canvas'); out.width = w; out.height = h; const o = out.getContext('2d');
+  o.globalAlpha = .18; o.filter = 'none'; o.drawImage(sil, 0, r * .9); o.globalCompositeOperation = 'source-in'; o.fillStyle = '#12245F'; o.fillRect(0, 0, w, h);
+  o.globalCompositeOperation = 'source-over'; o.globalAlpha = 1;
+  for(let a = 0; a < 16; a++) o.drawImage(sil, Math.cos(a / 16 * Math.PI * 2) * r, Math.sin(a / 16 * Math.PI * 2) * r);
+  o.drawImage(src, 0, 0); return out;
+}
+
+function render(cv, pr, c, hPx){
+  const pet = !!PET[pr.pet], W = pet ? 38 : 24, H = 24, pad = 1.2;
+  const T = avatarTintOf(pr, 0), dpr = Math.min(3, devicePixelRatio || 1);
+  if(c.mode === 'pixel' || c.mode === 'voxel'){
+    setTex([]);
+    const u = c.u, w = Math.round((W + pad * 2) * u), h = Math.round((H + pad * 2) * u);
+    const o = document.createElement('canvas'); o.width = w; o.height = h; const g = o.getContext('2d');
+    g.setTransform(u, 0, 0, u, pad * u, pad * u);
+    const st = g.stroke.bind(g), fl = g.fill.bind(g);
+    g.stroke = (...a)=>{ if(/^rgba/.test(String(g.strokeStyle))) return; st(...a); };
+    g.fill = (...a)=>{ if(/^rgba/.test(String(g.fillStyle)) && !/18, 36, 95/.test(String(g.fillStyle))) return; fl(...a); };
+    window._vFS = (gg, col)=>{ gg.fillStyle = col; gg.fill(); };
+    const vf = ORIG._vFace; ORIG._vFace = ()=>{};                       // 얼굴은 아래에서 칸 단위로 찍는다(작은 격자에선 벡터 눈이 뭉개졌다)
+    compose(g, pr, T, c, pet); g.stroke = st; g.fill = fl; ORIG._vFace = vf;
+    const im = g.getImageData(0, 0, w, h), d = im.data;
+    const pal = [...new Set([T.s, T.h, T.r, T.b, T.y, T.n, T.m, T.t, T.q, '#2A2438', '#FFFFFF', '#B8303F', '#FF6B9A', '#1A2340', '#F7F3EA', '#FF9F1C', '#F7F9FB', '#FFF4D6', '#C9D3E6', shade(T.r, .85), shade(T.y, .58), shade(T.s, .6)].filter(Boolean).map(_vHex))]
+      .map(hx=>[1,3,5].map(i=>parseInt(hx.slice(i, i + 2), 16)));
+    const solid = new Uint8Array(w * h), shadow = new Uint8Array(w * h);
+    for(let i = 0; i < w * h; i++){ const a = d[i * 4 + 3];
+      if(a < 128){ d[i * 4 + 3] = 0; continue; }
+      if(d[i*4] < 120 && d[i*4+1] < 140 && d[i*4+2] > 120 && a < 200){ shadow[i] = 1; d[i*4+3] = 0; continue; }        // 바닥 그림자는 외곽선 없이 따로
+      solid[i] = 1; let best = pal[0], bd = 1e9; for(const p of pal){ const dd = (p[0] - d[i*4]) ** 2 + (p[1] - d[i*4+1]) ** 2 + (p[2] - d[i*4+2]) ** 2; if(dd < bd){ bd = dd; best = p; } }
+      d[i*4] = best[0]; d[i*4+1] = best[1]; d[i*4+2] = best[2]; d[i*4+3] = 255; }
+    const out = new Uint8Array(w * h);
+    for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){ const i = y * w + x; if(solid[i]) continue;
+      if((x > 0 && solid[i - 1]) || (x < w - 1 && solid[i + 1]) || (y > 0 && solid[i - w]) || (y < h - 1 && solid[i + w])) out[i] = 1; }
+    /* 도트 얼굴 — 눈 2칸(세로), 볼 1칸, 입 1칸. 머리 변환(미니미 비율)·펫 자리·여백을 그대로 따라 좌표를 구한다 */
+    const map = (x, y)=>{ if(c.mini){ x = (x - 12) * 1.12 + 12; y = (y - 13.2) * 1.12 + 14.7; } return [Math.floor((x + (pet ? 14 : 0) + pad) * u), Math.floor((y + pad) * u)]; };
+    const put = (x, y, rgb)=>{ if(x < 0 || y < 0 || x >= w || y >= h) return; const i = (y * w + x) * 4; d[i] = rgb[0]; d[i+1] = rgb[1]; d[i+2] = rgb[2]; d[i+3] = 255; };
+    const EYE = [42, 36, 56], PINK = [255, 150, 170], RED = [200, 60, 80], f = pr.face || 'smile', eh = u >= 1.5 ? 2 : 2;
+    [[9.7, 8.0], [14.3, 8.0]].forEach(([ex, ey], si)=>{ const [X, Y] = map(ex, ey);
+      if(f === 'cool'){ for(let dx = -1; dx <= 1; dx++) put(X + dx, Y, [26, 35, 64]); for(let dx = -1; dx <= 1; dx++) put(X + dx, Y + 1, [26, 35, 64]); return; }
+      if(f === 'happy' || f === 'sleepy' || (f === 'wink' && si === 1)){ put(X - 1, Y + (f === 'sleepy' ? 1 : 1), EYE); put(X, Y + (f === 'sleepy' ? 1 : 0), EYE); put(X + 1, Y + 1, EYE); return; }
+      put(X, Y, EYE); put(X, Y + 1, EYE); if(f === 'wow' && u >= 1.5){ put(X + 1, Y, EYE); put(X + 1, Y + 1, EYE); } });
+    if(f !== 'cool') [[8.3, 9.5], [15.7, 9.5]].forEach(([bx, by])=>{ const [X, Y] = map(bx, by); put(X, Y, PINK); if(u >= 1.5) put(X + (bx < 12 ? -1 : 1), Y, PINK); });
+    { const [X, Y] = map(12, 9.9); if(f === 'happy' || f === 'wow') { put(X, Y, RED); if(u >= 1.5) put(X, Y + 1, RED); } else put(X, Y, f === 'sleepy' ? RED : EYE); }
+    for(let i = 0; i < w * h; i++){ if(out[i]){ d[i*4] = 42; d[i*4+1] = 36; d[i*4+2] = 56; d[i*4+3] = 255; solid[i] = 1; } else if(shadow[i] && !solid[i]){ d[i*4] = 18; d[i*4+1] = 36; d[i*4+2] = 95; d[i*4+3] = 46; } }
+    const k = Math.max(2, Math.round(hPx * dpr / h)); cv.width = w * k; cv.height = h * k; cv.style.height = hPx + 'px'; cv.style.width = Math.round(hPx * w / h) + 'px';
+    const x2 = cv.getContext('2d');
+    if(c.mode === 'pixel'){ g.setTransform(1, 0, 0, 1, 0, 0); g.putImageData(im, 0, 0); x2.imageSmoothingEnabled = false; x2.drawImage(o, 0, 0, w * k, h * k); cv.style.imageRendering = 'pixelated'; return; }
+    /* 복셀 — 칸마다 위·왼쪽은 밝게, 아래·오른쪽은 어둡게 깎아 작은 블록처럼 */
+    const bv = Math.max(1, Math.round(k * .16));
+    for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){ const i = (y * w + x) * 4; if(!d[i + 3]) continue;
+      const col = `rgba(${d[i]},${d[i+1]},${d[i+2]},${d[i+3] / 255})`, X = x * k, Y = y * k; x2.fillStyle = col; x2.fillRect(X, Y, k, k);
+      if(d[i + 3] < 255) continue;
+      x2.fillStyle = 'rgba(255,255,255,.22)'; x2.fillRect(X, Y, k, bv); x2.fillRect(X, Y, bv, k);
+      x2.fillStyle = 'rgba(0,0,40,.16)'; x2.fillRect(X, Y + k - bv, k, bv); x2.fillRect(X + k - bv, Y, bv, k); }
+    return;
+  }
+  setTex(c.tex || []);
+  const U = hPx * dpr / (H + pad * 2), w = Math.round((W + pad * 2) * U), h = Math.round((H + pad * 2) * U);
+  let off = document.createElement('canvas'); off.width = w; off.height = h; const g = off.getContext('2d');
+  g.setTransform(U, 0, 0, U, pad * U, pad * U);
+  compose(g, pr, T, c, pet);
+  if((c.tex || []).includes('sticker')) off = stickerize(off, U * .55);
+  cv.width = w; cv.height = h; cv.style.height = hPx + 'px'; cv.style.width = Math.round(hPx * w / h) + 'px';
+  const x2 = cv.getContext('2d');
+  if((c.tex || []).includes('toy')){ x2.shadowColor = 'rgba(18,36,95,.2)'; x2.shadowBlur = U * .5; x2.shadowOffsetY = U * .2; }
+  x2.drawImage(off, 0, 0);
+}
+
+const list = document.getElementById('list');
+let k = 0;
+FAM.forEach(([t, s], fi)=>{
+  const h2 = document.createElement('h2'); h2.innerHTML = `${t} <small>${s}</small>`; list.appendChild(h2);
+  C.filter(c=>c.f === fi).forEach(c=>{ k++;
+    const el = document.createElement('section'); el.className = 'card';
+    el.innerHTML = `<div class="hd"><span class="no">${k}</span><b>${c.name}</b></div><p class="why">${c.why}</p>
+      <div class="row">${SAMPLES.map((p, i)=>`<div class="cell"><canvas data-s="${i}"></canvas><small>${LBL[i]}</small></div>`).join('')}</div>
+      <div class="sizes"><div><canvas data-s="0" data-h="62"></canvas>마을 크기</div><div><canvas data-s="3" data-h="62"></canvas></div><div><canvas data-s="4" data-h="62"></canvas></div>
+        <div><span class="chat"><canvas data-s="1" data-h="34"></canvas>오늘 파도 좋다!</span>채팅 크기</div></div>`;
+    list.appendChild(el);
+    el.querySelectorAll('canvas').forEach(cv=>render(cv, SAMPLES[+cv.dataset.s], c, +(cv.dataset.h || 124)));
+  });
+});
+Object.assign(window, ORIG);
+</script>
+</body>
+</html>
