@@ -68,7 +68,8 @@ function weekendLine(){
   if(!fc?.days?.length) return '';
   const wk = fc.days.map((d, i)=>({ d, i, L:dayLbl(d.day, i) })).filter(o=>o.L.wk).slice(0, 2);
   return wk.map(o=>{ const b = best(o.d), t = recommend(o.d, 2);
-    return `<button type="button" class="wv-wk" data-wvday="${o.i}"><b>${o.L.full}</b><span>${b ? `${stars(b.x.s)} ${b.x.h}m · ${b.x.p}초 — ${esc(b.x.why)}` : '예보 없음'}</span>${t.length ? `<small>추천: ${t.map(x=>esc(x.n)).join(' · ')}</small>` : ''}</button>`; }).join('');
+    const sr = o.d.sun && /^\d{2}:\d{2}$/.test(o.d.sun.rise || '') ? ` · 🌅 ${o.d.sun.rise}` : '';
+    return `<button type="button" class="wv-wk" data-wvday="${o.i}"><b>${o.L.full}${sr}</b><span>${b ? `${stars(b.x.s)} ${b.x.h}m · ${b.x.p}초 — ${esc(b.x.why)}` : '예보 없음'}</span>${t.length ? `<small>추천: ${t.map(x=>esc(x.n)).join(' · ')}</small>` : ''}</button>`; }).join('');
 }
 
 function homeCard(){
@@ -96,8 +97,10 @@ function detail(i){
       const c = e.target.closest('[data-wvcam]'); if(c){ sh.hidden = true; if(typeof setSea === 'function') setSea(c.dataset.wvcam); setTab('cam'); }
       const n = e.target.closest('[data-wvday]'); if(n) detail(+n.dataset.wvday); }); }
   $w('wv-t').textContent = `🌊 ${L.full} 파도`;
+  const sunOk = d.sun && /^\d{2}:\d{2}$/.test(d.sun.rise || '') && /^\d{2}:\d{2}$/.test(d.sun.set || '');
   const row = (lbl, x) => x ? `<div class="wv-r"><span class="wv-rl">${lbl}</span><span class="wv-rv"><b>${x.h}m</b> · ${x.p}초 · ${comp(x.dir)}쪽 파도<br><small>바람 ${comp(x.wd)}풍 ${x.w}m/s · ${sky(x.code)} ${x.tmp ?? ''}° · 비 ${x.rain}%</small></span><span class="wv-s s${x.s}">${stars(x.s)}</span></div><div class="wv-why">${esc(x.why)}</div>` : '';
   $w('wv-body').innerHTML = `
+    ${sunOk ? `<div class="wv-sun">🌅 해 뜸 <b>${d.sun.rise}</b> · 🌇 해 짐 <b>${d.sun.set}</b><small>새벽 서핑은 해 뜨기 30분 전부터 물빛이 보여요</small></div>` : ''}
     ${rec.length ? `<div class="wv-rec"><b>🏄 추천 스팟</b>${rec.map((s, k)=>`<div class="wv-rs"><span class="wv-rk">${k + 1}</span><span class="wv-rm"><b>${esc(s.n)}</b><small>${esc(s.rn)} · ${stars(Math.max(0, Math.min(5, Math.round(s.sc))))}${s.why.length ? ' · ' + esc(s.why.join(' · ')) : ''}</small>${s.m ? `<small>💬 ${esc(s.m)}</small>` : ''}</span>
       ${s.cam ? `<button type="button" class="btn sm blue" data-wvcam="${esc(s.cam)}">📹 캠</button>` : ''}</div>`).join('')}</div>` : ''}
     ${d.regions.map(r=>`<div class="wv-reg"><h4>${esc(r.n)}</h4>${row('오전', r.am)}${row('오후', r.pm)}</div>`).join('')}

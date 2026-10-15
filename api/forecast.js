@@ -67,7 +67,7 @@ export default async function handler(req, res){
   try{
     [mar, wx] = await Promise.all([
       fetch(`https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lon}&hourly=wave_height,wave_period,wave_direction&forecast_days=7&timezone=Asia%2FSeoul`, { signal:AbortSignal.timeout(8000) }).then(r=>{ if(!r.ok) throw 0; return r.json(); }),
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m,weather_code,temperature_2m,precipitation_probability&wind_speed_unit=ms&forecast_days=7&timezone=Asia%2FSeoul`, { signal:AbortSignal.timeout(8000) }).then(r=>{ if(!r.ok) throw 0; return r.json(); }) ]);
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=wind_speed_10m,wind_direction_10m,weather_code,temperature_2m,precipitation_probability&daily=sunrise,sunset&wind_speed_unit=ms&forecast_days=7&timezone=Asia%2FSeoul`, { signal:AbortSignal.timeout(8000) }).then(r=>{ if(!r.ok) throw 0; return r.json(); }) ]);
   }catch(e){ res.setHeader('Cache-Control', 'no-store'); res.status(502).json({ error:'forecast' }); return; }
   if(!Array.isArray(mar)) mar = [mar]; if(!Array.isArray(wx)) wx = [wx];
   const days = {};
@@ -82,7 +82,9 @@ export default async function handler(req, res){
       if(j >= 0){ r.w.push(W.wind_speed_10m?.[j]); r.wd.push(W.wind_direction_10m?.[j]); r.code.push(W.weather_code?.[j]); r.tmp.push(W.temperature_2m?.[j]); r.rain.push(W.precipitation_probability?.[j]); }
     });
   });
-  const out = Object.keys(days).sort().slice(0, 7).map(day=>({ day, regions:REG.map(g=>{
+  /* 해 뜨고 지는 시각 — 가운데 구역 기준(세 구역 차이는 1분 안팎) */
+  const D = (wx[1] || wx[0])?.daily || {}, sunOf = day=>{ const i = (D.time || []).indexOf(day); return i < 0 ? null : { rise:String(D.sunrise?.[i] || '').slice(11, 16), set:String(D.sunset?.[i] || '').slice(11, 16) }; };
+  const out = Object.keys(days).sort().slice(0, 7).map(day=>({ day, sun:sunOf(day), regions:REG.map(g=>{
     const one = part => { const r = days[day][g.k]?.[part]; if(!r) return null;
       const h = avg(r.h), p = avg(r.p), w = avg(r.w), wd = angAvg(r.wd), rt = rate(h, p, w, wd);
       return { h:r1(h), p:r1(p), dir:Math.round(angAvg(r.dir) ?? -1), w:r1(w), wd:Math.round(wd ?? -1), tmp:r1(avg(r.tmp)), rain:Math.round(Math.max(...r.rain.filter(x=>x != null), 0)),
