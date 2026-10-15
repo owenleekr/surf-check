@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>캐릭터 시안</title>
+<style>
+:root{ --ink:#1B1B2F; --sub:#5B6275; --bg:#EAF6FF; --card:#fff; --line:#D6E3F0; --sea:#2E6BFF }
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; line-height:1.55 }
+.wrap{ max-width:760px; margin:0 auto; padding:20px 16px 60px }
+h1{ font-size:22px; margin:0 0 6px }
+.lead{ color:var(--sub); font-size:14px; margin:0 0 16px }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:18px; padding:16px; margin-top:16px; box-shadow:0 2px 10px rgba(18,36,95,.06) }
+.hd{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap }
+.no{ display:inline-flex; width:28px; height:28px; align-items:center; justify-content:center; border-radius:50%; background:var(--ink); color:#fff; font-weight:800; font-size:14px; flex:0 0 auto }
+.hd b{ font-size:18px }
+.hd em{ font-style:normal; font-size:12.5px; color:var(--sea); font-weight:700 }
+.why{ font-size:13.5px; color:var(--sub); margin:6px 0 0 }
+.row{ display:flex; gap:6px; overflow-x:auto; padding:12px 2px 6px; scrollbar-width:none; scroll-snap-type:x mandatory }
+.row::-webkit-scrollbar{ display:none }
+.cell{ flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:4px; padding:8px 6px 6px; border-radius:14px; background:linear-gradient(#BFE6FF,#DDF2FF 70%,#F3E6C8 70%); scroll-snap-align:start }
+.cell canvas{ height:118px; display:block }
+.cell small{ font-size:11px; color:var(--sub); font-weight:700 }
+.sizes{ display:flex; align-items:flex-end; gap:14px; margin-top:8px; padding:10px 12px; border-radius:12px; background:#F4F8FC; font-size:11.5px; color:var(--sub); font-weight:700 }
+.sizes div{ display:flex; flex-direction:column; align-items:center; gap:4px }
+.sizes .chat{ display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:4px 10px 4px 4px; color:var(--ink); font-size:12.5px }
+.pros{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; font-size:12.5px }
+.pros div{ padding:8px 10px; border-radius:10px; background:#F2FBF6 } .pros div + div{ background:#FFF4F2 }
+.pros b{ display:block; font-size:12px; margin-bottom:2px }
+.pick{ margin-top:22px; padding:14px 16px; border-radius:14px; background:var(--ink); color:#fff; font-size:14px }
+.pick b{ color:#FFD23F }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧑 캐릭터 시안 5종</h1>
+  <p class="lead">같은 6명(머리·표정·옷·모자·펫 조합)을 다섯 그림체로 그렸어요. 옆으로 밀면 더 보이고, 아래 작은 크기는 마을·채팅에서 보이는 모습이에요. 고르는 값(머리·옷·색·펫)은 어느 시안이든 그대로 이어져요.</p>
+  <div id="list"></div>
+  <div class="pick">마음에 드는 번호를 알려 주세요 — <b>"3번"</b>, <b>"1번 얼굴에 5번 질감"</b>처럼 섞어도 돼요.</div>
+</div>
+<script src="sprite.js"></script>
+<script>
+/* 시안 비교 전용 — sprite.js 의 벡터 캐릭터(drawAvatarVec)를 그대로 쓰고, 칠·선·머리 부분만 시안마다 바꿔 끼운다. */
+const ORIG = { _vFS, _vRR, _vEl, _vHairFront, _vHairBack, _vHat };
+const SAMPLES = [
+  { gender:'f', hair:'bob',  hairc:'k', skin:'s', face:'smile', wear:'rash', top:'r', pet:'dog', petc:'y' },
+  { gender:'m', hair:'short',hairc:'n', skin:'d', face:'happy', wear:'hood', top:'b' },
+  { gender:'f', hair:'long', hairc:'y', skin:'l', face:'wink',  wear:'tank', top:'g', boardc:'p' },
+  { gender:'m', hair:'surf', hairc:'k', skin:'t', face:'cool',  wear:'suit', top:'k', hat:'cap', boardc:'c' },
+  { gender:'f', hair:'twin', hairc:'r', skin:'s', face:'wow',   wear:'rash', top:'p', pet:'cat', petc:'w' },
+  { gender:'m', hair:'wave', hairc:'n', skin:'l', face:'sleepy',wear:'bare', top:'o', hat:'bucket', role:'coach' },
+].map((p, i)=>withLook({ board:'long', boardc:'y', bottom:'b', ...p }, 'lab' + i));
+const LBL = ['단발·강아지', '짧은머리·후디', '장발·민소매', '서퍼컷·캡', '양갈래·고양이', '웨이브·코치'];
+
+const nz = (a, b, c)=>{ const v = Math.sin(a * 12.9898 + b * 78.233 + c * 37.719) * 43758.5453; return v - Math.floor(v); };
+const mix = (a, b, t)=>{ const p = h=>[1,3,5].map(i=>parseInt(_vHex(h).slice(i, i + 2), 16)); const A = p(a), B = p(b); return '#' + A.map((x, i)=>Math.round(x + (B[i] - x) * t).toString(16).padStart(2, '0')).join(''); };
+let LB = null, CUR = null;
+const trackRR = (g, x, y, w, h, r)=>{ LB = { x, y, w, h }; ORIG._vRR(g, x, y, w, h, r); };
+const trackEl = (g, x, y, rx, ry, rot)=>{ LB = { x:x - rx, y:y - ry, w:rx * 2, h:ry * 2 }; ORIG._vEl(g, x, y, rx, ry, rot); };
+
+/* 동물 후드 — 펫 종류를 따라가고, 펫이 없으면 이름으로 고정 */
+const HOOD_OF = { dog:'bear', cat:'cat', rabbit:'rabbit', penguin:'penguin', seal:'shark', none:null };
+function hoodKind(pr){ return HOOD_OF[pr.pet] || ['bear','cat','rabbit','shark'][hashN(pr.hair + pr.top) % 4]; }
+function hoodBack(g, pr, c){ ORIG._vEl(g, 12, 7.7, 7.5, 6.9); g.fillStyle = c; g.fill(); }
+function hoodFront(g, pr, c, H){
+  const k = hoodKind(pr), d = shade(c, .82);
+  /* 귀 */
+  if(k === 'bear'){ [[6.2,1.8],[17.8,1.8]].forEach(([x,y])=>{ ORIG._vEl(g, x, y, 2, 2); g.fillStyle = c; g.fill(); ORIG._vEl(g, x, y, 1, 1); g.fillStyle = '#FFC9D6'; g.fill(); }); }
+  if(k === 'cat'){ [[5.6,-.6,4.4,3.4,8.4,2],[18.4,-.6,19.6,3.4,15.6,2]].forEach(([tx,ty,ax,ay,bx,by])=>{ g.beginPath(); g.moveTo(tx, ty); g.lineTo(ax, ay); g.lineTo(bx, by); g.closePath(); g.fillStyle = c; g.fill(); }); }
+  if(k === 'rabbit'){ [[8.4,-1.4,-.18],[15.6,-1.4,.18]].forEach(([x,y,r])=>{ ORIG._vEl(g, x, y, 1.5, 3.6, r); g.fillStyle = c; g.fill(); ORIG._vEl(g, x, y + .4, .7, 2.5, r); g.fillStyle = '#FFC9D6'; g.fill(); }); }
+  if(k === 'shark'){ g.beginPath(); g.moveTo(10.2, 1.4); g.quadraticCurveTo(12.6, -2.6, 14.6, -2.2); g.quadraticCurveTo(13.4, -.4, 14, 1.4); g.closePath(); g.fillStyle = c; g.fill(); }
+  /* 후드 테 — 얼굴 구멍을 뚫는다 */
+  g.beginPath(); g.ellipse(12, 7.6, 7.4, 6.8, 0, 0, Math.PI * 2); g.ellipse(12, 8.4, 5.5, 4.7, 0, 0, Math.PI * 2); g.fillStyle = c; g.fill('evenodd');
+  g.beginPath(); g.ellipse(12, 8.4, 5.5, 4.7, 0, 0, Math.PI * 2); g.strokeStyle = d; g.lineWidth = .5; g.stroke();
+  /* 앞머리 살짝 */
+  g.beginPath(); g.ellipse(12, 8.4, 5.5, 4.7, 0, Math.PI * 1.08, Math.PI * 1.92); g.quadraticCurveTo(14.5, 5.4, 12, 5.2); g.quadraticCurveTo(9.4, 5.4, 6.9, 6.6); g.closePath(); g.fillStyle = H; g.fill();
+  if(k === 'shark'){ [[7.4,11],[9,12],[10.6,12.4],[13.4,12.4],[15,12],[16.6,11]].forEach(([x,y])=>{ g.beginPath(); g.moveTo(x - .55, y - .2); g.lineTo(x, y + .7); g.lineTo(x + .55, y - .2); g.closePath(); g.fillStyle = '#fff'; g.fill(); }); }
+  if(k === 'penguin'){ ORIG._vEl(g, 12, 1.6, 1, .7); g.fillStyle = '#FF9F1C'; g.fill(); }
+}
+
+const STYLES = [
+  { id:'pixel', name:'미니미 도트', tag:'싸이월드 감성 · 픽셀 미니미',
+    why:'2000년대 미니홈피 미니미처럼 또렷한 도트 + 검은 외곽선. 2025년 SNS에서 "내 사진으로 픽셀 미니미 만들기"가 다시 유행했고, 3D로 바뀌는 새 싸이월드도 도트 감성을 남겼어요.',
+    pro:'추억 감성 · 작은 크기(마을·채팅)에서 제일 또렷 · 게임 도트와 한 세계', con:'크게 띄우면 투박 · 표정 디테일이 적음' },
+  { id:'soft', name:'말랑 치비', tag:'지금 버전 · 둥근 벡터',
+    why:'머리 큰 2등신, 반짝이는 눈과 볼터치. 이모티콘·굿즈에서 가장 흔한 "귀여운 기본형"이에요.',
+    pro:'고른 옷·머리가 잘 보임 · 깔끔', con:'개성이 약해 어디서 본 듯함' },
+  { id:'doodle', name:'낙서 스티커', tag:'망그러진곰 · 가나디 감성',
+    why:'삐뚤빼뚤한 굵은 손그림 선과 파스텔 칠. 요즘 10~30대 굿즈 협업을 휩쓴 국내 창작 캐릭터들의 공통점이 "완벽하지 않은 손맛"이에요.',
+    pro:'요즘 감성 · 친근하고 웃김 · 스티커처럼 공유하기 좋음', con:'정돈된 앱 화면과 섞이면 어수선할 수 있음' },
+  { id:'hood', name:'동물 후드 서퍼', tag:'동물 귀 트렌드 · 앱 마스코트형',
+    why:'머리 대신 곰·고양이·토끼·상어 후드를 쓴 플랫 캐릭터. 외곽선 없이 색 면으로만 — 요즘 앱 마스코트 스타일이고, 아바타 시장에서 동물 귀·꼬리가 꾸준히 상위예요. 펫 종류가 후드가 돼요.',
+    pro:'멀리서도 누가 누군지 실루엣으로 구분 · 서핑앱다운 상어 후드', con:'머리 모양 고르기가 덜 보임' },
+  { id:'toy', name:'3D 토이', tag:'3D 미니미 · 제페토 감성',
+    why:'빛이 왼쪽 위에서 비치는 말랑한 비닐 장난감 질감. 새 싸이월드 미니미와 제페토가 가는 방향이에요.',
+    pro:'고급스럽고 입체감 · 크게 띄울 때 제일 예쁨', con:'작게 보면 뭉개짐 · 2D 게임 도트와 결이 다름' },
+];
+
+function setStyle(id){
+  Object.assign(window, ORIG);
+  window._vRR = trackRR; window._vEl = trackEl;
+  if(id === 'toy'){
+    window._vFS = (g, c, lw)=>{ g.fillStyle = c; g.fill(); let b = LB && LB.w >= 1.5 ? LB : { x:5.6, y:1.2, w:12.8, h:11.8 };
+      g.save(); g.clip(); const cx = b.x + b.w * .32, cy = b.y + b.h * .26, R = Math.max(b.w, b.h) * .95, gr = g.createRadialGradient(cx, cy, 0, cx, cy, R);
+      gr.addColorStop(0, 'rgba(255,255,255,.62)'); gr.addColorStop(.32, 'rgba(255,255,255,.1)'); gr.addColorStop(.75, 'rgba(0,0,30,.06)'); gr.addColorStop(1, 'rgba(10,10,50,.32)');
+      g.fillStyle = gr; g.fillRect(b.x - 3, b.y - 3, b.w + 6, b.h + 6); g.restore();
+      if(lw !== 0){ g.strokeStyle = shade(c, .78); g.lineWidth = .14; g.stroke(); } };
+  }
+  if(id === 'doodle'){
+    let seed = 0;
+    const wob = (g, pts)=>{ g.beginPath(); pts.forEach(([x, y], i)=>{ const j = (nz(x, y, seed) - .5) * .55, k = (nz(y, x, seed + 3) - .5) * .55; i ? g.lineTo(x + j, y + k) : g.moveTo(x + j, y + k); }); g.closePath(); seed++; };
+    window._vEl = (g, x, y, rx, ry, rot)=>{ LB = { x:x - rx, y:y - ry, w:rx * 2, h:ry * 2 };
+      if(rx < .9 && ry < .9) return ORIG._vEl(g, x, y, rx, ry, rot);
+      const n = 14, c = Math.cos(rot || 0), s = Math.sin(rot || 0), P = [];
+      for(let i = 0; i < n; i++){ const a = i / n * Math.PI * 2, px = Math.cos(a) * rx, py = Math.sin(a) * ry; P.push([x + px * c - py * s, y + px * s + py * c]); }
+      wob(g, P); };
+    window._vRR = (g, x, y, w, h, r)=>{ LB = { x, y, w, h }; const P = [], rr = Math.min(Array.isArray(r) ? r[0] : r, w / 2, h / 2);
+      for(let i = 0; i <= 6; i++) P.push([x + rr + (w - 2 * rr) * i / 6, y]); for(let i = 0; i <= 4; i++) P.push([x + w, y + rr + (h - 2 * rr) * i / 4]);
+      for(let i = 0; i <= 6; i++) P.push([x + w - rr - (w - 2 * rr) * i / 6, y + h]); for(let i = 0; i <= 4; i++) P.push([x, y + h - rr - (h - 2 * rr) * i / 4]);
+      wob(g, P); };
+    window._vFS = (g, c, lw)=>{ g.fillStyle = mix(c, '#FFFFFF', .18); g.fill(); if(lw !== 0){ g.strokeStyle = '#3B2F2F'; g.lineWidth = .7; g.lineJoin = 'round'; g.stroke(); } };
+    window._vHairFront = (g, kind, H)=>{ ORIG._vHairFront(g, kind, H); g.strokeStyle = '#3B2F2F'; g.lineWidth = .7; g.stroke(); };
+  }
+  if(id === 'hood' || id === 'pixel'){
+    window._vFS = (g, c, lw)=>{ g.fillStyle = c; g.fill(); if(id === 'hood' && lw !== 0){ g.strokeStyle = shade(c, .84); g.lineWidth = .16; g.stroke(); } };
+  }
+  if(id === 'hood'){
+    window._vHairBack = (g, kind, H)=>hoodBack(g, CUR, _vHex(CUR._T.r));
+    window._vHairFront = (g, kind, H)=>hoodFront(g, CUR, _vHex(CUR._T.r), H);
+    window._vHat = ()=>{};
+  }
+}
+
+function render(cv, pr, id, hPx){
+  const pet = !!PET[pr.pet], W = pet ? 38 : 24, H = 24, pad = 1;
+  const T = avatarTintOf(pr, 0); CUR = { ...pr, _T:T }; setStyle(id);
+  const dpr = Math.min(3, devicePixelRatio || 1);
+  if(id === 'pixel'){
+    /* 작게(1칸 = 1.4px) 그린 뒤 알파를 자르고 팔레트로 맞추고 검은 외곽선 1px — 그다음 정수배로 키운다 */
+    const u = 1.75, w = Math.round((W + pad * 2) * u), h = Math.round((H + pad * 2) * u);
+    const o = document.createElement('canvas'); o.width = w; o.height = h; const g = o.getContext('2d');
+    g.setTransform(u, 0, 0, u, pad * u, pad * u);
+    const st = g.stroke.bind(g), fl = g.fill.bind(g);                                   // 광택·볼터치처럼 반투명한 칠은 도트에서 얼룩이 된다 → 뺀다
+    g.stroke = (...a)=>{ if(/^rgba/.test(String(g.strokeStyle))) return; st(...a); };
+    g.fill = (...a)=>{ if(/^rgba/.test(String(g.fillStyle))) return; fl(...a); };
+    drawAvatarVec(g, pr, pet, T, 0); g.stroke = st; g.fill = fl;
+    const im = g.getImageData(0, 0, w, h), d = im.data;
+    const pal = [...new Set([T.s, T.h, T.r, T.b, T.y, T.n, T.m, T.t, T.q, '#2A2438', '#FFFFFF', '#B8303F', '#FF6B9A', '#1A2340', '#F7F3EA', '#FF9F1C', '#F7F9FB', '#FFF4D6', mix(T.s, '#FF6E8C', .42), shade(T.r, .85), shade(T.y, .58)].filter(Boolean).map(_vHex))]
+      .map(hx=>[1,3,5].map(i=>parseInt(hx.slice(i, i + 2), 16)));
+    const solid = new Uint8Array(w * h);
+    for(let i = 0; i < w * h; i++){ const a = d[i * 4 + 3]; if(a < 128){ d[i * 4 + 3] = 0; continue; } solid[i] = 1;
+      let best = pal[0], bd = 1e9; for(const p of pal){ const dd = (p[0] - d[i*4]) ** 2 + (p[1] - d[i*4+1]) ** 2 + (p[2] - d[i*4+2]) ** 2; if(dd < bd){ bd = dd; best = p; } }
+      d[i*4] = best[0]; d[i*4+1] = best[1]; d[i*4+2] = best[2]; d[i*4+3] = 255; }
+    for(let y = 0; y < h; y++) for(let x = 0; x < w; x++){ const i = y * w + x; if(solid[i]) continue;
+      if((x > 0 && solid[i - 1]) || (x < w - 1 && solid[i + 1]) || (y > 0 && solid[i - w]) || (y < h - 1 && solid[i + w])){ d[i*4] = 42; d[i*4+1] = 36; d[i*4+2] = 56; d[i*4+3] = 255; } }
+    g.setTransform(1, 0, 0, 1, 0, 0); g.putImageData(im, 0, 0);
+    const k = Math.max(1, Math.round(hPx * dpr / h)); cv.width = w * k; cv.height = h * k; cv.style.height = hPx + 'px'; cv.style.width = Math.round(hPx * w / h) + 'px';
+    const c = cv.getContext('2d'); c.imageSmoothingEnabled = false; c.drawImage(o, 0, 0, w * k, h * k); cv.style.imageRendering = 'pixelated';
+    return;
+  }
+  const U = hPx * dpr / (H + pad * 2); cv.width = Math.round((W + pad * 2) * U); cv.height = Math.round((H + pad * 2) * U);
+  cv.style.height = hPx + 'px'; cv.style.width = Math.round(hPx * (W + pad * 2) / (H + pad * 2)) + 'px';
+  const g = cv.getContext('2d'); g.setTransform(U, 0, 0, U, pad * U, pad * U);
+  if(id === 'toy'){ g.shadowColor = 'rgba(18,36,95,.22)'; g.shadowBlur = U * .6; g.shadowOffsetY = U * .25; }
+  drawAvatarVec(g, pr, pet, T, 0);
+}
+
+const list = document.getElementById('list');
+STYLES.forEach((st, si)=>{
+  const el = document.createElement('section'); el.className = 'card';
+  el.innerHTML = `<div class="hd"><span class="no">${si + 1}</span><b>${st.name}</b><em>${st.tag}</em></div><p class="why">${st.why}</p>
+    <div class="row">${SAMPLES.map((p, i)=>`<div class="cell"><canvas data-s="${i}"></canvas><small>${LBL[i]}</small></div>`).join('')}</div>
+    <div class="sizes"><div><canvas data-s="0" data-h="64"></canvas>마을 크기</div><div><canvas data-s="4" data-h="64"></canvas></div>
+      <div><span class="chat"><canvas data-s="1" data-h="34"></canvas>오늘 파도 좋다!</span>채팅 크기</div></div>
+    <div class="pros"><div><b>👍 좋은 점</b>${st.pro}</div><div><b>🤔 아쉬운 점</b>${st.con}</div></div>`;
+  list.appendChild(el);
+  el.querySelectorAll('canvas').forEach(cv=>render(cv, SAMPLES[+cv.dataset.s], st.id, +(cv.dataset.h || 118)));
+});
+Object.assign(window, ORIG);
+</script>
+</body>
+</html>
