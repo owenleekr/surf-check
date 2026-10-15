@@ -896,6 +896,7 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .rec-x{ width:40px; height:40px } .upd-x{ min-width:40px; min-height:40px; right:4px; top:4px }
 /* 꾸미기 미리보기는 따라온다 — 선택지가 길어져 아래를 고르면 캐릭터가 화면 밖이었다 */
 .bld-pv{ position:sticky; top:6px; z-index:6; padding:8px 10px; box-shadow:0 6px 14px rgba(18,36,95,.18) }
+.vc-av{ float:right; height:92px; margin:-4px -2px 4px 8px; background:linear-gradient(#C9EAFF,#E6F5FF 78%,#F3E6C8 78%); border-radius:12px }
 </style>
 </head>
 <body>
@@ -2310,7 +2311,12 @@ function renderTown(){
     const x = rows.find(r=>r.id===el.dataset.id); document.querySelector('.vcard')?.remove();
     const c = document.createElement('div'); c.className = 'vcard';
     const lvx = lvOfUser(x), stk = typeof drillStat === 'function' ? drillStat(x.id).streak : 0;
-    c.innerHTML = `<b>${esc(x.name)}</b>${x.profile?.role==='coach'?' · 코치':''}
+    /* 이 사람의 서핑 일지 — 이번 달 몇 번 · 자주 간 곳(값은 걸러서) */
+    const lg = (window._slog && Array.isArray(x.profile?.play?.log)) ? x.profile.play.log.slice(-120).map(window._slog.clean).filter(Boolean) : [];
+    const monK = new Date().toISOString().slice(0, 7), lgM = lg.filter(e=>e.d.slice(0, 7) === monK).length, lgC = {}; lg.forEach(e=>{ lgC[e.s] = (lgC[e.s] || 0) + 1; });
+    const lgFav = Object.keys(lgC).sort((a, b)=>lgC[b] - lgC[a])[0];
+    c.innerHTML = `<canvas class="vc-av" data-vcav></canvas><b>${esc(x.name)}</b>${x.profile?.role==='coach'?' · 코치':''}
+      ${lg.length ? `<br>📒 이번 달 바다 ${lgM}번${lgFav ? ` · 자주 ${esc(lgFav)}` : ''}` : ''}
       ${soonBolt(x.id) ? `<br>⚡ ${hLabel(soonBolt(x.id).time)} ${esc(soonBolt(x.id).beach)} 번개에 가요` : ''}
       ${lvx != null ? `<br><span style="color:#B45309;font-weight:800">Lv.${lvx+1} ${PLV[lvx][1]} ${PLV[lvx][2]}</span>${stk ? ` · 🔥 ${stk}일 연속` : ''}` : (stk ? `<br>🔥 ${stk}일 연속` : '')}
       ${moodOf(x)?`<br>💬 ${esc(moodOf(x))}`:''}
@@ -2325,7 +2331,8 @@ function renderTown(){
       ${x.id!==ME.id?`<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px">
         ${[['👏','수고했어요'],['🔥','오늘 불탔다'],['🌊','같이 들어가요'],['💪','파이팅']].map(([e,t])=>
           `<button class="btn sm ghost" type="button" data-cheer="${e}|${t}" style="padding:8px 0;font-family:sans-serif">${e}</button>`).join('')}</div>`:''}`;
-    $('village').appendChild(c); bindRx(c);
+    $('village').appendChild(c);
+    { const vc = c.querySelector('[data-vcav]'); if(vc && typeof drawSpr === 'function'){ const q = withLook(x.profile, x.name); requestAnimationFrame(()=>drawSpr(vc, avatarRows(q), avatarTintOf(q, 0))); } } bindRx(c);
     c.querySelector('[data-close]').onclick = ()=>c.remove();
     c.querySelector('[data-unbub]')?.addEventListener('click', ()=>{ c.remove(); saveMood(''); });
     c.querySelectorAll('[data-emote]').forEach(b=>b.addEventListener('click', ()=>{ c.remove(); sendEmote(b.dataset.emote); }));
