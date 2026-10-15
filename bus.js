@@ -144,7 +144,16 @@ function seatHTML(sm, b){
   if(!sm || sm === 'loading') return '<div class="bs-seat"><div class="skel" aria-hidden="true"><i></i></div><small>좌석 배치를 불러오는 중…</small></div>';
   if(sm === 'err') return '<div class="bs-seat"><small>좌석 배치를 못 불러왔어요 — 예매 사이트에서 확인해 주세요</small></div>';
   const free = sm.rows.flat().filter(x=>x.free).map(x=>x.n);
-  return `<div class="bs-seat"><div class="bs-front">🚌 앞 (운전석)</div><div class="bs-grid">${sm.rows.map(r=>`<div class="bs-sr">${r.map(x=>`${x.gap ? '<i class="bs-aisle"></i>' : ''}<span class="bs-st ${x.free ? 'f' : 'x'}" title="${x.n}번 ${x.free ? '빈 좌석' : '예매됨'}">${x.n}</span>`).join('')}</div>`).join('')}</div>
+  /* 통로 칸을 계산해 격자에 놓는다 — 시외 41인승은 통로 표시(gap)가 없어 네 자리가 붙어 보이고 맨 뒷줄 5석만 튀어나왔다.
+     줄마다 '통로 앞 자리 수 / 뒤 자리 수'를 세고, 통로 표시가 하나도 없으면 짝수 줄을 반으로 가른다. 맨 뒷줄(통로까지 다 찬 줄)은 그대로 채운다. */
+  let rows = sm.rows.map(r=>r.slice());
+  if(!rows.some(r=>r.some(x=>x.gap))) rows = rows.map(r=>r.length % 2 === 0 && r.length >= 2 ? r.map((x, i)=>i === r.length / 2 ? { ...x, gap:true } : x) : r);
+  const split = r=>{ const gi = r.findIndex(x=>x.gap); return gi > 0 ? [gi, r.length - gi] : null; };
+  const sp = rows.map(split).filter(Boolean), L = Math.max(1, ...sp.map(s=>s[0])), R = Math.max(1, ...sp.map(s=>s[1])), C = L + 1 + R;
+  const cell = (x, col)=>`<span class="bs-st ${x.free ? 'f' : 'x'}" style="grid-column:${col}" title="${+x.n}번 ${x.free ? '빈 좌석' : '예매됨'}">${+x.n}</span>`;
+  const grid = rows.map(r=>{ const s = split(r);
+    return s ? r.map((x, i)=>cell(x, i < s[0] ? i + 1 : C - (r.length - 1 - i))).join('') : r.map((x, i)=>cell(x, Math.min(C, i + 1))).join(''); }).join('');
+  return `<div class="bs-seat"><div class="bs-front" style="--c:${C}">🚌 앞 · 운전석</div><div class="bs-grid" style="grid-template-columns:repeat(${C}, 38px)">${grid}</div>
     <small>빈 좌석 <b>${free.length}</b>석${free.length ? ` · ${free.slice(0, 14).join(', ')}${free.length > 14 ? ' …' : ''}번` : ''} · 1분 전후 기준</small></div>`;
 }
 async function toggleSeat(to, dir, date, t){
@@ -203,6 +212,6 @@ window.busRender = ()=>{ if(view === 'bus') render(); };
 window.busOpen = ()=>{ if(typeof setTab === 'function') setTab('ride'); setView('bus'); };
 window.busEnter = ()=>{ setView(view); pullReq(); };
 window.carOpen = ()=>{ if(typeof setTab === 'function') setTab('ride'); setView('car'); };
-window._bus = { check, toggleWatch, watches, fetchDay, get cache(){ return cache; } };
+window._bus = { check, toggleWatch, watches, fetchDay, seatHTML, get cache(){ return cache; } };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 })();

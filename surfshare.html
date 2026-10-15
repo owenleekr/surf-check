@@ -517,9 +517,9 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .bs-book{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px } .bs-book a.btn{ text-decoration:none; display:inline-flex; align-items:center }
 .bs-row.tap{ cursor:pointer } .bs-row.tap:hover{ background:#FFF3C4 }
 .bs-seat{ padding:10px 12px 12px; background:#F4FBFF; border-bottom:2px dashed rgba(27,27,47,.15) } .bs-seat small{ display:block; margin-top:6px; font-size:12px; color:#5B6275; font-weight:700 }
-.bs-front{ font-size:11.5px; font-weight:800; color:#5B6275; margin-bottom:4px }
-.bs-grid{ display:flex; flex-direction:column; gap:4px; align-items:flex-start } .bs-sr{ display:flex; gap:4px }
-.bs-st{ width:30px; height:28px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:800; border:2px solid var(--ink); border-radius:6px 6px 3px 3px } .bs-st.f{ background:var(--mint) } .bs-st.x{ background:#D7DBE5; color:#8A8FA0 }
+.bs-front{ width:calc(var(--c, 5) * 38px + (var(--c, 5) - 1) * 6px); max-width:100%; margin:0 auto 6px; padding:4px 0; text-align:center; font-size:11.5px; font-weight:800; color:#5B6275; background:#E3EBF5; border-radius:10px 10px 4px 4px }
+.bs-grid{ display:grid; gap:6px; justify-content:center; grid-auto-flow:row }
+.bs-st{ width:38px; height:34px; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:800; border:2px solid var(--ink); border-radius:6px 6px 3px 3px } .bs-st.f{ background:var(--mint) } .bs-st.x{ background:#D7DBE5; color:#8A8FA0 }
 .bs-aisle{ display:inline-block; width:18px }
 .bs-dir{ margin:12px 0 0 } .bs-days{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; margin-top:8px }
 .bs-days button{ display:flex; flex-direction:column; align-items:center; padding:5px 0; min-height:48px; font-family:inherit; background:#fff; border:2px solid var(--ink); cursor:pointer } .bs-days small{ font-size:11px; font-weight:800; color:#5B6275 } .bs-days b{ font-family:"Galmuri11",sans-serif; font-size:16px }
@@ -856,6 +856,7 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .dcell,.dmgrid .d,.dmgrid .d.today,.mrow .cd,.seg em,.wv-s,.wv-spot,.feed-n,.bs-gr,.bs-tag{ border-radius:6px }
 /* 상단 한 줄 요약(나우바) 바로 밑 카드가 붙어 겹쳐 보였다 — 탭 내용 첫 상자와 간격 */
 .nowbar{ margin-bottom:12px } #play-hub > :first-child{ margin-top:0 }
+.prof .me-av{ width:58px; height:58px; border-radius:12px }   /* ❓·↩ 버튼을 ☰기타로 옮긴 자리만큼 캐릭터를 크게 */
 </style>
 </head>
 <body>
@@ -958,8 +959,6 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
           <span class="xpbar"><i id="xp-fill"></i></span>
           <small id="xp-txt"></small>
         </button>
-        <button class="btn sm ghost" id="help" title="사용법" aria-label="사용법">❓</button>
-        <button class="btn sm ghost" id="out" title="나가기" aria-label="나가기">↩</button>
       </div>
       <section id="home-rec" hidden></section>
       <section id="home-upd" hidden></section>
@@ -1258,6 +1257,8 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
       <button type="button" class="more-it" data-more="town"><i>🏘</i><b>마을 · 채팅</b><small>캐릭터들이 모인 곳</small></button>
       <button type="button" class="more-it" data-more="guide"><i>📖</i><b>사용 가이드</b><small>맛집·스팟 등록하는 법</small></button>
       <button type="button" class="more-it" data-more="a2hs"><i>📲</i><b>홈 화면에 추가</b><small>아이콘으로 바로 열기</small></button>
+      <button type="button" class="more-it" data-more="help" id="help"><i>💡</i><b>처음 안내 다시 보기</b><small>탭마다 뭐가 있는지</small></button>
+      <button type="button" class="more-it" id="out"><i>🚪</i><b>로그아웃</b><small>이 기기에서 나가기</small></button>
     </div>
   </div>
 </div>
@@ -1532,7 +1533,7 @@ $('go').onclick = async ()=>{
    경로가 곧바로 다시 들여보낸다. 화면이 깜빡이고 제자리로 돌아온다.
    학교 세션(surf.session)까지 지우면 학교 앱에서도 로그아웃되니 그건 건드리지 않고,
    "여기서는 나갔다"는 표시를 따로 남긴다. */
-$('out').onclick = ()=>{
+$('out').onclick = ()=>{ if(!confirm('이 기기에서 로그아웃할까요?')) return; $('more-sheet').hidden = true;
   try{ localStorage.removeItem('lineup.share.me'); localStorage.setItem('lineup.share.out','1'); }catch(e){}
   camStop(); location.reload(); };
 
@@ -2713,7 +2714,7 @@ $('t-more').onclick = ()=>{ moreDots(); $('more-sheet').hidden = false; };
 $('more-sheet').addEventListener('click', e=>{
   if(e.target.closest('[data-moreclose]')){ $('more-sheet').hidden = true; return; }
   const b = e.target.closest('[data-more]'); if(!b) return; const k = b.dataset.more; $('more-sheet').hidden = true;
-  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else setTab(k);
+  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
 });
 
 /* ── 탭 ─────────────────────────────────────────────────── */
