@@ -1922,7 +1922,7 @@ function renderNow(){
     sel.onchange = ()=>{ setSea(sel.value); renderNow(); pullCond(); }; }
   sel.value = mySea(); if(!sel.value){ sel.value = '낙산'; setSea('낙산'); }
   if(nowRows === null){ $('now-t').textContent = '체크인 표가 아직 없어요';
-    $('now-else').textContent = '코치가 supabase-social.sql 을 실행하면 켜집니다.';
+    $('now-else').textContent = '운영자가 서버를 설정하면 켜집니다.';
     $('now-avs').innerHTML = ''; $('now-btn').disabled = true; return; }
   const beach = sel.value, here = nowRows.filter(c=>c.beach===beach), mine = myNow();
   /* 한 줄 요약도 같이 갱신 — 두 군데가 다른 말을 하면 안 된다 */
@@ -2133,7 +2133,7 @@ function renderBolts(){
   if(!sel.options.length){ sel.innerHTML = SEAS.map(([n])=>`<option value="${n}">${n}</option>`).join(''); sel.value = mySea(); }
   if(!$('b-date').value) $('b-date').value = nextWeekend();
   loadBar('bolts', pullBolts);
-  if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-social.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜집니다.</div>`; return; }
   if(LD.bolts === 0 && !bolts.length){ box.innerHTML = SKEL; return; }
   if(LD.bolts === 2 && !bolts.length){ box.innerHTML = ''; return; }
   refreshDots(); if(state.tab==='home') renderHome();
@@ -2222,7 +2222,7 @@ $('b-save').onclick = async ()=>{
   try{ await api('parties', { method:'POST', body:JSON.stringify(row) });
     $('b-note').value = ''; document.querySelector('#pane-bolt details').open = false;
     await pullBolts(); toast('번개를 올렸어요');
-  }catch(err){ e.textContent = err.code==='notable' ? '번개 표가 아직 없어요 (supabase-social.sql)'
+  }catch(err){ e.textContent = err.code==='notable' ? '번개 표가 아직 없어요 — 운영자에게 알려 주세요'
       : err.message && err.message !== 'Failed to fetch' ? `올리지 못했어요 — ${String(err.message).slice(0,70)}`
       : '올리지 못했어요 · 신호 확인'; }
   finally{ $('b-save').disabled = false; }
@@ -2652,7 +2652,7 @@ function renderChat(){
     const id = a.dataset.cdel;
     try{ await api(`chat?id=eq.${encodeURIComponent(id)}`, { method:'DELETE' });
       state.chat = state.chat.filter(m=>m.id!==id); renderChat(); toast('지웠어요');
-    }catch(err){ toast('지우지 못했어요 — supabase-chatdel.sql 을 돌려야 해요'); } });
+    }catch(err){ toast('지우지 못했어요 · 잠시 뒤 다시 해 주세요'); } });
   bindRx(box);
 }
 let chatBusy = false;                       // 연타하면 같은 말이 세 번 올라갔다
@@ -2697,7 +2697,7 @@ async function pullMail(quiet){
     mailBox = { inbox:r.inbox||[], sent:r.sent||[], unread:+r.unread||0 };
     const d = $('mail-dot'); d.textContent = mailBox.unread; d.hidden = !mailBox.unread;
     if(!$('mail-sheet').hidden) renderMail();
-  }catch(e){ if(!quiet && e.code==='norpc') toast('쪽지 표가 아직 없어요 (supabase-notes.sql)'); }
+  }catch(e){ if(!quiet && e.code==='norpc') toast('쪽지 표가 아직 없어요 — 운영자에게 알려 주세요'); }
 }
 const ago = t => { const m = Math.floor((Date.now()-new Date(t))/60000);
   return m<1?'방금':m<60?`${m}분 전`:m<1440?`${Math.floor(m/60)}시간 전`:`${Math.floor(m/1440)}일 전`; };
@@ -2753,7 +2753,7 @@ $('mail-send').onclick = async ()=>{
     $('mail-text').value = ''; mailTo = null; $('mail-to').hidden = true; toast('보냈어요'); await pullMail(); }
   catch(err){ e.textContent = { unauthorized:'다시 로그인해 주세요', nouser:'그 사람을 찾지 못했어요',
       toofast:'조금 천천히 보내주세요', empty:'내용을 적어주세요', self:'나에게는 못 보내요' }[err.message]
-      || (err.code==='norpc' ? '쪽지 표가 아직 없어요 (supabase-notes.sql)' : '보내지 못했어요'); }
+      || (err.code==='norpc' ? '쪽지 표가 아직 없어요 — 운영자에게 알려 주세요' : '보내지 못했어요'); }
   finally{ b.disabled = false; b.textContent = '보내기'; }
 };
 /* 글 올린 사람에게 바로 — 여기서 물어볼 수 있어야 단톡방으로 안 나간다 */
@@ -3183,7 +3183,7 @@ $('drill-btn').onclick = async ()=>{
   }catch(e){
     if(!did && e.status === 409) return;            // 다른 폰에서 이미 눌렀다 — 그대로 둔다
     drillRows = back; renderDrill(); renderTodo();
-    toast(e.code==='notable' ? '훈련 표가 아직 없어요 (supabase-drills.sql)' : '저장하지 못했어요 · 신호 확인');
+    toast(e.code==='notable' ? '훈련 표가 아직 없어요 — 운영자에게 알려 주세요' : '저장하지 못했어요 · 신호 확인');
   }
 };
 $('board-more').onclick = ()=>{ boardAll = !boardAll; renderDrill(); };
@@ -3321,7 +3321,7 @@ function renderRides(){
   const box = $('rides'); loadBar('rides', pullRides);
   if(state.rides !== null && LD.rides === 0 && !state.rides.length){ box.innerHTML = SKEL; return; }
   if(state.rides && LD.rides === 2 && !state.rides.length){ box.innerHTML = ''; return; }
-  if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜집니다.</div>`; return; }
   /* "아직 없어요" 한 줄로 끝내면 첫 사람이 아무것도 안 한다. 여기가 첫 행동 자리다. */
   if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>
     <button class="btn sm mint" type="button" data-first="ride" style="margin-top:9px">🚗 첫 차 올리기</button></div>`;
@@ -3367,7 +3367,7 @@ $('r-save').onclick = async ()=>{
   try{ await api('rides', { method:'POST', body:JSON.stringify(row) });
     toast('올렸어요'); ['r-from','r-to','r-note','r-contact'].forEach(x=>$(x).value='');
     document.querySelector('#pane-ride details').open = false; pullRides(); }
-  catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 (supabase-surfshare.sql)' : '올리지 못했어요 · 신호 확인'; }
+  catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 — 운영자에게 알려 주세요' : '올리지 못했어요 · 신호 확인'; }
   finally{ btn.disabled = false; }
 };
 
@@ -3383,7 +3383,7 @@ function renderStays(){
   const box = $('stays'); loadBar('stays', pullStays);
   if(state.stays !== null && LD.stays === 0 && !state.stays.length){ box.innerHTML = SKEL; return; }
   if(state.stays && LD.stays === 2 && !state.stays.length){ box.innerHTML = ''; return; }
-  if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>코치가 <b>supabase-surfshare.sql</b>을 실행하면 켜집니다.</div>`; return; }
+  if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜집니다.</div>`; return; }
   if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.<br>
     <button class="btn sm mint" type="button" data-first="stay" style="margin-top:9px">🏠 첫 숙소 올리기</button></div>`;
     bindFirst(box); return; }
@@ -3457,7 +3457,7 @@ const editsOf = id => (state.edits||[]).filter(e=>e.place_id===id);
 function renderPlaces(){
   const box = $('places'); if(!box) return;
   if(state.places === null){ box.innerHTML = `<div class="empty">아직 서버에 정보판이 없어요.<br>
-    코치가 <b>supabase-places.sql</b>을 실행하면 켜집니다.</div>`; return; }
+    운영자가 서버를 설정하면 켜집니다.</div>`; return; }
   if(!state.places.length){ box.innerHTML = `<div class="empty">아직 등록된 숙소가 없어요.</div>`; return; }
   const withXY = p => p.lat && p.lon;
   /* 순서 — ① 내가 별 단 곳 ② 해변 도보·주차·취사가 되는 곳 ③ 가까운 곳 ④ 핀 없는 곳은 아래로.
@@ -3561,7 +3561,7 @@ function bindPlaces(box){
         user_id:ME.id, name:ME.name, field:f, before:bf, after:af }))) });
       toast('고마워요 · 기록에 남았어요'); await pullPlaces();
     }catch(e){ b.disabled = false; b.textContent = '고친 내용 올리기';
-      err.textContent = e.code==='notable' ? '정보판 표가 아직 없어요 (supabase-places.sql)' : '올리지 못했어요 · 신호 확인'; }
+      err.textContent = e.code==='notable' ? '정보판 표가 아직 없어요 — 운영자에게 알려 주세요' : '올리지 못했어요 · 신호 확인'; }
   });
 }
 
@@ -3647,7 +3647,7 @@ function bindReviews(box){
         id:`${stay?.id||place}|${ME.id}`, stay_id:stay?.id||'', place, user_id:ME.id, name:ME.name,
         profile:pubRow(), stars:v, good, text, paid }) });
       toast('고마워요'); await pullReviews(); renderStays(); renderMap(); }
-    catch(e){ b.disabled = false; toast(e.code==='notable' ? '평가 표가 아직 없어요 (supabase-reviews.sql)' : '실패 · 신호 확인'); }
+    catch(e){ b.disabled = false; toast(e.code==='notable' ? '평가 표가 아직 없어요 — 운영자에게 알려 주세요' : '실패 · 신호 확인'); }
     finally{ delete b.dataset.busy; }
   });
   box.querySelectorAll('[data-rvdel]').forEach(b=>b.onclick = async ()=>{
@@ -3876,7 +3876,7 @@ $('s-save').onclick = async ()=>{
     delete $('s-near').dataset.xy;
     $('s-perks').querySelectorAll('[aria-pressed="true"]').forEach(b=>b.setAttribute('aria-pressed','false'));
     document.querySelector('#pane-stay details').open = false; pullStays(); }
-  catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 (supabase-surfshare.sql)' : '올리지 못했어요 · 신호 확인'; }
+  catch(err){ e.textContent = err.code==='notable' ? '서버에 표가 아직 없어요 — 운영자에게 알려 주세요' : '올리지 못했어요 · 신호 확인'; }
   finally{ btn.disabled = false; }
 };
 
