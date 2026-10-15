@@ -16,20 +16,23 @@ const CAT_RULE = [[/곱창|막창|대창/, '곱창'], [/양꼬치/, '양꼬치']
   [/짜장|짬뽕|중식|중국/, '중식'], [/분식|떡볶이|김밥/, '분식'], [/쌈밥|백반|한정식|식당|밥집|한식/, '한식']];
 const CAT_IC = { '고기':'🥩', '곱창':'🍖', '양꼬치':'🍢', '국밥·찌개':'🍲', '횟집·해산물':'🐟', '면':'🍜', '일식':'🍣', '양식':'🍝', '카페·디저트':'☕', '술집':'🍺', '중식':'🥟', '분식':'🍙', '한식':'🍚' };
 const guessCat = i => { const t = `${i.n || ''} ${i.m || ''}`; for(const [re, c] of CAT_RULE) if(re.test(t)) return c; return ''; };
-const piOf = i => { const x = PI[piKey(i)]; return x && Date.now() - x.at < 7 * 864e5 ? x.info : null; };
+const piOf = i => { const x = PI[piKey(i)]; if(!x) return null; const full = !x.info?.enabled || x.info.cat || x.info.ncat || !x.info.lerr;   // 분류를 못 받은 건 1시간 뒤 다시
+  return Date.now() - x.at < (full ? 7 * 864e5 : 3600e3) ? x.info : null; };
 function piHTML(i){
   const x = piOf(i); if(!x || !x.enabled) return '';
   const img = (x.img || []).filter(m=>safeHttp(m.thumb)), bl = (x.blogs || []).filter(b=>safeHttp(b.link));
-  if(!img.length && !bl.length) return '';
+  const mp = /^https:\/\/place\.map\.kakao\.com\/\d+$/.test(String(x.url || '')) ? x.url : '';
+  if(!img.length && !bl.length && !mp) return '';
   return `${img.length ? `<div class="pi-imgs">${img.map(m=>`<a href="${esc(safeHttp(m.link) || safeHttp(m.thumb))}" target="_blank" rel="noopener"><img src="${esc(safeHttp(m.thumb))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></a>`).join('')}</div>` : ''}
     ${bl.length ? `<details class="pi-blog"><summary>📝 블로그 후기 ${bl.length}개</summary>${bl.map(b=>`<a class="pi-b" href="${esc(safeHttp(b.link))}" target="_blank" rel="noopener"><b>${esc(b.t)}</b><span>${esc(b.d)}</span><small>${esc(b.by)}${b.date ? ' · ' + esc(b.date.slice(0, 4) + '.' + b.date.slice(4, 6) + '.' + b.date.slice(6)) : ''} ↗</small></a>`).join('')}</details>` : ''}
+    ${mp ? `<a class="pi-map" href="${esc(mp)}" target="_blank" rel="noopener">⭐ 카카오맵 평점·후기 ↗</a>` : ''}
     <small class="pi-src">사진·후기: ${esc(x.src || '검색 결과')} · 누르면 원문</small>`;
 }
 async function piLoad(list){
   if(piOff) return;
   const todo = list.filter(i=>!piOf(i)).slice(0, 40); if(!todo.length) return;
   let got = 0;
-  const one = async i => { try{ const r = await fetch(`/api/place-info?n=${encodeURIComponent(i.n)}&a=${encodeURIComponent(i.a || '')}`); if(!r.ok) return; const info = await r.json();
+  const one = async i => { try{ const r = await fetch(`/api/place-info?n=${encodeURIComponent(i.n)}&a=${encodeURIComponent(i.a || '')}&v=2`); if(!r.ok) return; const info = await r.json();
       if(info.enabled === false){ piOff = true; return; }
       PI[piKey(i)] = { at:Date.now(), info }; got++;
       const box = document.querySelector(`[data-pi="${CSS.escape(String(i.id))}"]`); if(box) box.innerHTML = piHTML(i);

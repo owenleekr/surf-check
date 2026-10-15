@@ -9,6 +9,7 @@
 // 호출량: 가게 하나당 3번, 결과는 엣지에 7일 캐시 — 하루 한도(25,000)에 한참 못 미친다.
 const strip = s => String(s || '').replace(/<[^>]+>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").trim();
 const httpsOnly = u => /^https:\/\//i.test(String(u || '')) ? String(u).slice(0, 500) : '';
+const httpOk = u => /^https?:\/\//i.test(String(u || '')) ? String(u).slice(0, 500) : '';   // 원문 링크는 http 블로그도 있다(이미지 src 는 https 만)
 
 /* 네이버 분류(예: '한식>육류,고기요리') → 앱에서 쓰는 짧은 분류 */
 export function catOf(c){
@@ -31,13 +32,16 @@ async function viaKakao(q, key){
   const [loc, img, blog] = await Promise.allSettled([
     kk('v2/local/search/keyword.json', { query:q, size:'1' }, key),
     kk('v2/search/image', { query:q, size:'4', sort:'accuracy' }, key),
-    kk('v2/search/blog', { query:`${q} 후기`, size:'2', sort:'accuracy' }, key) ]);
+    kk('v2/search/blog', { query:`${q} 후기`, size:'3', sort:'accuracy' }, key) ]);
   const L = loc.status === 'fulfilled' ? loc.value.documents?.[0] : null;
   const cat = L ? String(L.category_name || '').split('>').map(x=>x.trim()).slice(1).join('>') : '';   // '음식점 > 한식 > 육류,고기' → '한식>육류,고기'
-  return { ok:loc.status === 'fulfilled' || img.status === 'fulfilled', src:'카카오·다음 검색',
+  return { ok:loc.status === 'fulfilled' || img.status === 'fulfilled', lok:loc.status === 'fulfilled', src:'카카오·다음 검색',
+    lerr:loc.status === 'rejected' ? String(loc.reason?.message || 'err').slice(0, 20) : undefined,   // 분류가 비면 왜인지(예: kakao 403 = 카카오맵 꺼짐) — 상태 코드만
     cat:L ? catOf(cat) : '', ncat:cat.slice(0, 30),
-    img:(img.status === 'fulfilled' ? img.value.documents || [] : []).map(x=>({ thumb:httpsOnly(x.thumbnail_url), link:httpsOnly(x.doc_url) })).filter(x=>x.thumb).slice(0, 4),
-    blogs:(blog.status === 'fulfilled' ? blog.value.documents || [] : []).map(x=>({ t:strip(x.title).slice(0, 60), d:strip(x.contents).slice(0, 140), link:httpsOnly(x.url), by:strip(x.blogname).slice(0, 20), date:String(x.datetime || '').slice(0, 10).replace(/-/g, '') })).filter(x=>x.link).slice(0, 2) };
+    /* 카카오맵 가게 페이지 — 평점·방문자 후기는 공식 API에 없어 긁어오지 않고 원래 페이지로 보낸다 */
+    url:L && /^https?:\/\/place\.map\.kakao\.com\/\d+$/.test(String(L.place_url || '')) ? String(L.place_url).replace(/^http:/, 'https:') : '',
+    img:(img.status === 'fulfilled' ? img.value.documents || [] : []).map(x=>({ thumb:httpsOnly(x.thumbnail_url), link:httpOk(x.doc_url) })).filter(x=>x.thumb).slice(0, 4),
+    blogs:(blog.status === 'fulfilled' ? blog.value.documents || [] : []).map(x=>({ t:strip(x.title).slice(0, 60), d:strip(x.contents).slice(0, 140), link:httpsOnly(x.url), by:strip(x.blogname).slice(0, 20), date:String(x.datetime || '').slice(0, 10).replace(/-/g, '') })).filter(x=>x.link).slice(0, 3) };
 }
 
 async function nv(path, q, id, secret){
@@ -55,8 +59,9 @@ export default async function handler(req, res){
   const area = (a.match(/(양양|속초|고성|강릉|주문진|삼척|동해)/) || [])[1] || '양양';
   const q = `${area} ${n.replace(/\s*(본점|[가-힣]{1,4}점)$/, '')}`;
   if(kakao){
-    const k = await viaKakao(q, kakao); const { ok, ...rest } = k;
-    res.setHeader('Cache-Control', ok ? 's-maxage=604800, stale-while-revalidate=86400' : 'no-store');
+    const k = await viaKakao(q, kakao); const { ok, lok, ...rest } = k;
+    /* 분류(로컬 검색)까지 받아야 7일 캐시 — 사진만 받고 7일 묶이면 카카오맵을 켜도 일주일 동안 분류가 안 생긴다 */
+    res.setHeader('Cache-Control', ok && lok ? 's-maxage=604800, stale-while-revalidate=86400' : ok ? 's-maxage=600' : 'no-store');
     res.status(200).json({ enabled:true, q, ...rest }); return;
   }
   const [loc, img, blog] = await Promise.allSettled([
