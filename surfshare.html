@@ -950,6 +950,8 @@ body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
 .he-sw.on{ background:var(--mint) } .he-sw.on::after{ transform:translateX(18px) }
 /* 작은 글씨 하한 12px — 11px 이하는 휴대폰에서 읽기 힘들었다(점검 도구 지적) */
 .bs-gr, .sl-go small, .hgame small, .hg small, .hf small, .sl-sum small, .sl-fr small, .bs-routes small, .bs-days small, .wv-d small, .hsec small, .rec-k, #home-rec small, .upd-h em, .hubcard em, .tag, .feed-n, .pi-src, .sl-bars small, .sl-d small{ font-size:12px }
+/* 글씨 크게(설정) — px 로 짠 화면이라 글자만 키우면 깨진다. 본문 열과 창·탭을 통째로 키운다 */
+html.big .wrap, html.big .sheet-in, html.big .pop-card{ zoom:1.12 } html.big .nav button{ font-size:12px } html.big .nav button i.pxi{ width:28px; height:28px }
 </style>
 </head>
 <body>

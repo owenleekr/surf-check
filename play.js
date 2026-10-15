@@ -208,6 +208,10 @@ const BADGES = [
 
 /* 사용자가 한 번도 건드리지 않은 페이지의 진동은 브라우저가 막고 경고를 남긴다 — 눌러본 뒤에만 */
 const vib = pat => { try{ if(navigator.userActivation?.hasBeenActive) navigator.vibrate?.(pat); }catch(e){} };
+/* 글씨 크게 — 화면 전체(본문 열)를 12% 키운다. 이 기기에만 */
+const bigOn = () => { try{ return localStorage.getItem('lineup.share.big') === '1'; }catch(e){ return false; } };
+function applyBig(){ document.documentElement.classList.toggle('big', bigOn()); }
+applyBig();
 const playP = () => (ME.profile.play ||= { base:0, bonus:0, badges:{}, qd:{}, qall:0, best:0, gday:'', gxp:0, gn:{}, lvSeen:0 });
 const playXp = p => (p.base||0) + (p.bonus||0);
 const localDay = iso => { const d = new Date(iso); return new Date(d - d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
@@ -553,6 +557,7 @@ function renderHub(enter){
     <div class="hubset">
       <button type="button" data-set="haptic" aria-pressed="${hapticOn()}"><span>📳 진동</span><b>${hapticOn() ? '켜짐' : '꺼짐'}</b></button>
       <button type="button" data-set="sound" aria-pressed="${soundOn()}"><span>🔊 게임 소리</span><b>${soundOn() ? '켜짐' : '꺼짐'}</b></button>
+      <button type="button" data-set="big" aria-pressed="${bigOn()}"><span>🔠 글씨 크게</span><b>${bigOn() ? '켜짐' : '꺼짐'}</b></button>
       <button type="button" data-set="a2hs"><span>📲 홈 화면에 추가</span><b>방법</b></button>
       <button type="button" data-set="guide"><span>📖 사용 가이드</span><b>열기</b></button>
       <button type="button" data-set="share"><span>🔗 친구에게 앱 알리기</span><b>공유</b></button>
@@ -568,6 +573,7 @@ function renderHub(enter){
   if(enter) requestAnimationFrame(()=>requestAnimationFrame(()=>{ const i = root.querySelector('.xpbar i'); if(i) i.style.width = i.dataset.w + '%'; }));   // 막대가 0 에서 차오른다
   root.querySelectorAll('[data-set]').forEach(b=>b.onclick = async ()=>{ const k = b.dataset.set;
     if(k === 'haptic'){ const on = !hapticOn(); try{ localStorage.setItem('lineup.share.haptic', on ? '1' : '0'); }catch(e){} if(on) navigator.vibrate?.(15); renderHub(); toast(on ? '진동을 켰어요' : '진동을 껐어요'); }
+    else if(k === 'big'){ const on = !bigOn(); try{ localStorage.setItem('lineup.share.big', on ? '1' : '0'); }catch(e){} applyBig(); renderHub(); toast(on ? '글씨를 크게 했어요' : '글씨를 원래대로 했어요'); }
     else if(k === 'sound'){ const on = !soundOn(); try{ localStorage.setItem('lineup.share.snd', on ? '1' : '0'); }catch(e){} renderHub(); toast(on ? '게임 소리를 켰어요' : '게임 소리를 껐어요'); }
     else if(k === 'guide'){ open('/guide', '_blank', 'noopener'); }
     else if(k === 'a2hs'){ if(typeof a2hsOpen === 'function') a2hsOpen(); }
