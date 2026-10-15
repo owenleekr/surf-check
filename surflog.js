@@ -110,7 +110,7 @@ function save(){
   let msg = '📒 기록했어요';
   const lx = (p.logx ||= {});
   if(!lx[e.d]){ lx[e.d] = 1; p.bonus = (p.bonus || 0) + 15; msg = '📒 기록했어요 · +15 XP'; Object.keys(lx).sort().slice(0, -60).forEach(k=>delete lx[k]); }
-  $l('sl-sheet').hidden = true; push(); render(); toast(msg); navigator.vibrate?.(15);
+  $l('sl-sheet').hidden = true; push(); render(); window.waveHome?.(); toast(msg); navigator.vibrate?.(15);
   if(typeof playTick === 'function') playTick();
 }
 function push(){ if(typeof playPush === 'function') playPush(); }

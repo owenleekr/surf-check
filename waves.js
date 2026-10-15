@@ -49,11 +49,19 @@ function recommend(d, n){
   }).filter(Boolean).sort((a,b)=>b.sc - a.sc).slice(0, n || 3);
 }
 
+/* 내 파도 — 서핑 일지에서 기분 좋았던 날(🙂·😆)의 예보 파고 범위. 3번 이상 쌓여야 쓴다 */
+function myRange(){
+  const L = window._slog?.logs?.() || [], hs = L.filter(e=>e.f >= 2 && e.h != null).map(e=>e.h).sort((a, b)=>a - b);
+  if(hs.length < 3) return null;
+  return [hs[Math.floor(hs.length * .2)] - .1, hs[Math.ceil(hs.length * .8) - 1] + .1];
+}
 /* 7일 띠 — 홈 카드와 스팟 화면이 같이 쓴다 */
 function strip(){
   if(!fc?.days?.length) return '';
+  const mr = myRange();
   return `<div class="wv-strip">${fc.days.map((d, i)=>{ const L = dayLbl(d.day, i), b = best(d), top = recommend(d, 1)[0];
-    return `<button type="button" class="wv-d${L.wk ? ' wk' : ''}" data-wvday="${i}"><small>${L.dow}</small><b>${L.date}</b>
+    const mine = mr && b && b.x.h != null && b.x.h >= mr[0] && b.x.h <= mr[1] && b.x.s >= 3;
+    return `<button type="button" class="wv-d${L.wk ? ' wk' : ''}${mine ? ' mine' : ''}" data-wvday="${i}"${mine ? ' title="내가 즐긴 파도 높이"' : ''}>${mine ? '<i class="wv-mine">💛</i>' : ''}<small>${L.dow}</small><b>${L.date}</b>
       <span class="wv-h">${b ? `${b.x.h ?? '-'}m` : '-'}</span><span class="wv-s s${b ? b.x.s : 0}">${b ? '★' + b.x.s : ''}</span>${top ? `<em>${esc(String(top.n).replace(/해수욕장|해변/, ''))}</em>` : ''}</button>`; }).join('')}</div>`;
 }
 function weekendLine(){
@@ -68,7 +76,7 @@ function homeCard(){
   if(!fc?.days?.length){ el.hidden = true; load(); return; }
   el.hidden = false;
   el.innerHTML = `<div class="hsec">🌊 이번주의 파도 <small>예보 · 누르면 자세히</small></div>
-    <div class="wv-card">${strip()}<div class="wv-wks">${weekendLine()}</div></div>`;
+    <div class="wv-card">${strip()}${myRange() ? `<div class="wv-mynote">💛 = 내가 즐긴 파도 높이(${myRange().map(x=>Math.max(0, Math.round(x * 10) / 10)).join('~')}m)와 맞는 날 · 서핑 일지 기준</div>` : ''}<div class="wv-wks">${weekendLine()}</div></div>`;
   wire(el);
   if(!fresh()) load();
 }
