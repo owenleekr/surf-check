@@ -28,10 +28,22 @@ async function kk(path, q, key){
   if(!r.ok) throw new Error('kakao ' + r.status);
   return r.json();
 }
+/* 이미지 검색은 쇼핑몰·광고·엉뚱한 사진이 섞인다 — 20장 받아 거른다.
+   ① 후기 블로그 글 안의 사진이 먼저(그 가게를 다녀온 글) ② 블로그·카페 사진 ③ 쇼핑·광고 출처, 배너처럼 긴 사진, 작은 사진은 뺀다 */
+const AD = /coupang|gmarket|11st|auction|smartstore|shopping|wemakeprice|tmon|interpark|ssg\.com|lotteon|ad\.|광고|쇼핑|분양|부동산|모텔|호텔|펜션/i;
+export function pickImgs(docs, blogs){
+  const posts = new Set(blogs.map(b=>String(b.url || '').split('?')[0]));
+  return docs.map(x=>{
+    const w = +x.width || 0, h = +x.height || 0, r = w && h ? w / h : 1, d = String(x.doc_url || ''), site = String(x.display_sitename || '');
+    if(AD.test(d) || AD.test(site) || (w && w < 300) || r > 2.2 || r < 0.45) return null;
+    const sc = (posts.has(d.split('?')[0]) ? 3 : 0) + (x.collection === 'blog' || x.collection === 'cafe' || /blog|cafe|tistory|brunch/i.test(d) ? 1 : 0);
+    return { thumb:httpsOnly(x.thumbnail_url), link:httpOk(d), sc };
+  }).filter(x=>x && x.thumb && x.sc > 0).sort((a,b)=>b.sc - a.sc).slice(0, 4).map(({ sc, ...x })=>x);
+}
 async function viaKakao(q, key){
   const [loc, img, blog] = await Promise.allSettled([
     kk('v2/local/search/keyword.json', { query:q, size:'1' }, key),
-    kk('v2/search/image', { query:q, size:'4', sort:'accuracy' }, key),
+    kk('v2/search/image', { query:q, size:'20', sort:'accuracy' }, key),
     kk('v2/search/blog', { query:`${q} 후기`, size:'3', sort:'accuracy' }, key) ]);
   const L = loc.status === 'fulfilled' ? loc.value.documents?.[0] : null;
   const cat = L ? String(L.category_name || '').split('>').map(x=>x.trim()).slice(1).join('>') : '';   // '음식점 > 한식 > 육류,고기' → '한식>육류,고기'
@@ -40,7 +52,7 @@ async function viaKakao(q, key){
     cat:L ? catOf(cat) : '', ncat:cat.slice(0, 30),
     /* 카카오맵 가게 페이지 — 평점·방문자 후기는 공식 API에 없어 긁어오지 않고 원래 페이지로 보낸다 */
     url:L && /^https?:\/\/place\.map\.kakao\.com\/\d+$/.test(String(L.place_url || '')) ? String(L.place_url).replace(/^http:/, 'https:') : '',
-    img:(img.status === 'fulfilled' ? img.value.documents || [] : []).map(x=>({ thumb:httpsOnly(x.thumbnail_url), link:httpOk(x.doc_url) })).filter(x=>x.thumb).slice(0, 4),
+    img:pickImgs(img.status === 'fulfilled' ? img.value.documents || [] : [], blog.status === 'fulfilled' ? blog.value.documents || [] : []),
     blogs:(blog.status === 'fulfilled' ? blog.value.documents || [] : []).map(x=>({ t:strip(x.title).slice(0, 60), d:strip(x.contents).slice(0, 140), link:httpsOnly(x.url), by:strip(x.blogname).slice(0, 20), date:String(x.datetime || '').slice(0, 10).replace(/-/g, '') })).filter(x=>x.link).slice(0, 3) };
 }
 

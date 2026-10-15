@@ -32,7 +32,7 @@ async function piLoad(list){
   if(piOff) return;
   const todo = list.filter(i=>!piOf(i)).slice(0, 40); if(!todo.length) return;
   let got = 0;
-  const one = async i => { try{ const r = await fetch(`/api/place-info?n=${encodeURIComponent(i.n)}&a=${encodeURIComponent(i.a || '')}&v=2`); if(!r.ok) return; const info = await r.json();
+  const one = async i => { try{ const r = await fetch(`/api/place-info?n=${encodeURIComponent(i.n)}&a=${encodeURIComponent(i.a || '')}&v=3`); if(!r.ok) return; const info = await r.json();
       if(info.enabled === false){ piOff = true; return; }
       PI[piKey(i)] = { at:Date.now(), info }; got++;
       const box = document.querySelector(`[data-pi="${CSS.escape(String(i.id))}"]`); if(box) box.innerHTML = piHTML(i);
