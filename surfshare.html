@@ -968,7 +968,7 @@ body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
     <span class="tag">양양서핑학교 6기</span>
     <div class="note" style="margin-top:7px;line-height:1.65">6기 단톡방에서 받은 <b>입장 비밀번호</b>를 넣어주세요.</div>
     <label for="gate-code">입장 비밀번호</label>
-    <input id="gate-code" type="password" maxlength="40" placeholder="단톡방에서 받은 비밀번호" autocomplete="off">
+    <input id="gate-code" type="password" maxlength="40" placeholder="단톡방에서 받은 비밀번호" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go">
     <div class="err" id="gate-err"></div>
     <button class="btn blue big" id="gate-ok" style="width:100%">들어가기</button>
     <div class="note" style="margin-top:9px">비밀번호를 못 받으셨다면 단톡방에 물어보세요.</div>
@@ -986,9 +986,9 @@ body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
       <label for="uroster">이름 — 6기 명단에서 찾기</label>
       <select id="uroster"></select>
       <div id="etc-wrap" hidden>
-        <label for="uname">이름 직접 입력</label><input id="uname" maxlength="12" placeholder="차·숙소 글에 표시돼요">
+        <label for="uname">이름 직접 입력</label><input id="uname" maxlength="12" placeholder="마을·채팅에 표시돼요" autocomplete="nickname" enterkeyhint="next">
       </div>
-      <label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때</label><input id="ubirth" inputmode="numeric" maxlength="6" placeholder="예) 881102">
+      <label for="ubirth">생년월일 6자리 · 비밀번호 잊었을 때</label><input id="ubirth" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="예) 881102" enterkeyhint="next">
       <label>내 캐릭터</label>
       <div class="newav-box">
         <canvas class="new-av" id="new-av"></canvas>
@@ -999,7 +999,7 @@ body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
     </div>
     <label for="upw">비밀번호</label>
     <div style="display:flex;gap:6px">
-      <input id="upw" type="password" placeholder="4자 이상" style="flex:1">
+      <input id="upw" type="password" placeholder="4자 이상" style="flex:1" autocomplete="current-password" autocapitalize="off" enterkeyhint="go">
       <button type="button" class="btn sm ghost" id="pw-eye" aria-label="비밀번호 보기" style="flex:0 0 auto">👁</button>
     </div>
     <div class="note" id="pw-note" style="margin-top:4px" hidden>다음에 이 아이디와 비밀번호로 다시 들어옵니다. <b>기억해 두세요.</b></div>
@@ -1547,6 +1547,10 @@ $('gate-ok').onclick = async ()=>{
   finally{ btn.disabled = false; btn.textContent = '들어가기'; }
 };
 $('gate-code').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('gate-ok').click(); } });
+/* 가입 칸 — 엔터로 다음 칸 · 마지막 칸(비밀번호)에서 엔터 = 들어가기 */
+$('uname')?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('ubirth')?.focus(); } });
+$('ubirth')?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('upw')?.focus(); } });
+$('upw')?.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); $('go')?.click(); } });
 
 let mode = 'in';
 /* 6기 명단에서 고르게 한다 — 아무 이름이나 쓰면 차에 누가 타는지 알 수가 없다.
