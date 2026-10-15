@@ -8,7 +8,7 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="SurfShare 사용 가이드 — 맛집·스팟 등록하는 법">
 <meta property="og:description" content="네이버지도 링크 + 한줄평이면 바로 올라가요. 홈 화면에 추가하는 법도 여기에.">
-<meta property="og:image" content="https://surf.owenai.xyz/og-share.png">
+<meta property="og:image" content="https://surf.owenai.xyz/og-share2.png">
 <meta property="og:url" content="https://surf.owenai.xyz/guide">
 <meta name="theme-color" content="#5AB4EF">
 <link rel="icon" href="icon-180.png">
@@ -48,8 +48,49 @@ footer{ text-align:center; color:#fff; font-weight:700; text-shadow:1px 1px 0 va
 <body>
 <div class="wrap">
   <h1>SurfShare 가이드</h1>
-  <p class="sub">양서학 서퍼들의 앱 — 맛집·서핑 스팟, 차·숙소, 번개, 게임과 훈련. <b>로그인 없이 누구나</b> 이 페이지를 볼 수 있어요.</p>
-  <nav class="toc" aria-label="목차"><a href="#add">🍜 맛집·스팟 등록</a><a href="#a2hs">📲 홈 화면에 추가</a><a href="#talk">💬 댓글·추천</a><a href="#owner">🛠 운영자</a><a href="#play">🎮 게임·훈련</a><a href="#faq">❓ 자주 묻는 것</a></nav>
+  <p class="sub">양서학 서퍼들의 앱 — 파도 예보, 서핑 일지, 버스 빈자리, 맛집·서핑 스팟, 캐릭터 꾸미기, 게임과 훈련. <b>로그인 없이 누구나</b> 이 페이지를 볼 수 있어요.</p>
+  <nav class="toc" aria-label="목차"><a href="#wave">🌊 오늘 갈까?</a><a href="#slog">📒 서핑 일지</a><a href="#me">🧑 꾸미기·소품샵</a><a href="#bus">🚌 버스</a><a href="#add">🍜 맛집·스팟 등록</a><a href="#a2hs">📲 홈 화면에 추가</a><a href="#talk">💬 댓글·추천</a><a href="#owner">🛠 운영자</a><a href="#play">🎮 게임·훈련</a><a href="#faq">❓ 자주 묻는 것</a></nav>
+
+  <section id="wave">
+    <h2>🌊 이번주의 파도 · 오늘 갈까?</h2>
+    <dl>
+      <dt>홈 맨 위 한 줄</dt><dd>오늘 <b>오전·오후 중 나은 쪽</b>의 별점·파고·주기·바람(낙산 기준), 그리고 <b>수온에 맞는 웻수트</b>와 <b>해 뜨는 시각</b>.</dd>
+      <dt>별점 기준</dt><dd>입문~초중급 기준이에요. 0.5~1.2m 가 가장 좋고, <b>1.2m 이상은 주기·바람이 좋아도 ★3까지</b>, 2m 이상은 위험(★1). 오프쇼어(서풍)는 +, 온쇼어(동풍)·강풍은 −.</dd>
+      <dt>웻수트</dt><dd>수온 24°↑ 래시가드 · 21°↑ 스프링슈트(2mm) · 18°↑ 3/2mm · 15°↑ 4/3mm · 12°↑ 5/4mm+부츠 · 그 아래는 장갑·후드까지.</dd>
+      <dt>💛 내 파도</dt><dd>서핑 일지가 3번 이상 쌓이면, 기분 좋았던 날의 예보 파고와 맞는 날짜에 💛 가 떠요.</dd>
+    </dl>
+    <small class="src">예보: Open-Meteo 모델 값 — 실제와 다를 수 있어 나가기 전 📹 캠으로 한 번 확인하세요.</small>
+  </section>
+
+  <section id="slog">
+    <h2>📒 서핑 일지</h2>
+    <dl>
+      <dt>10초 기록</dt><dd>홈 → 📒 서핑 일지 → <b>오늘 서핑 기록하기</b>. 언제(오늘/어제·오전/오후) · 어디서 · 얼마나 · 탄 파도 · 기분 · 한줄. 날마다 첫 기록 <b>+15 XP</b>.</dd>
+      <dt>🎤 말로 기록</dt><dd>버튼을 누르고 <span class="ex">오늘 낙산에서 두 시간 탔고 파도 다섯 개, 최고였어</span>처럼 말하면 칸이 채워져요. 확인하고 기록하기. 음성은 저장하지 않아요.</dd>
+      <dt>그날 파도 자동</dt><dd>날짜·스팟·오전/오후를 고르면 그 시간의 파고·주기·방향·바람·수온을 같이 남겨요(지난 7일까지).</dd>
+      <dt>체크인 → 나왔어요</dt><dd>바다에서 📍 체크인하고 나올 때 <b>나왔어요</b>를 누르면 그 해변·머문 시간으로 일지가 바로 열려요.</dd>
+      <dt>통계 · 공유</dt><dd>「모두 보기」에서 월별 횟수·자주 간 스팟·기분 좋았던 날 예보 파고. 기록을 누르면 <b>📸 카드로 공유</b>.</dd>
+    </dl>
+  </section>
+
+  <section id="me">
+    <h2>🧑 캐릭터 꾸미기 · 🛍️ 소품샵</h2>
+    <dl>
+      <dt>여는 곳</dt><dd>홈 프로필이나 놀이 탭의 <b>내 캐릭터를 누르면</b> 꾸미기. 머리 15 · 얼굴형 5 · 눈 6 · 눈썹 4 · 얼굴 소품 · 옷 18(색 16) · 모자(색) · 친구 7종×4가지.</dd>
+      <dt>소품샵</dt><dd>꾸미기의 <b>🛍️ 소품샵</b> 또는 ☰기타. 서핑 용품(리쉬·트라이 핀·부츠·헬멧…) · 손 소품 · 옷 · 머리 · 친구. 그림을 누르면 내 캐릭터에 입혀 봐요.</dd>
+      <dt>조개 🐚 모으기</dt><dd>파도 점프 · 라인업 서핑 · 서프스케이트에서 모여요. 별눈·서퍼 선크림·해달은 <b>연습해서 레벨이 오르면</b> 열려요.</dd>
+      <dt>📸 카드</dt><dd>꾸미기 → 📸 카드 — 이름·기수·레벨·이번 달 바다 횟수가 들어간 그림으로 카톡·인스타에 공유.</dd>
+    </dl>
+  </section>
+
+  <section id="bus">
+    <h2>🚌 버스 빈자리 · 좌석 배치도</h2>
+    <dl>
+      <dt>노선</dt><dd>동서울(시외) · 서울경부 · 인천(고속), 양양 출발/도착 · 7일 치. 등급(우등 28석 · 프리미엄 21석 · 일반 41~45석) 표시.</dd>
+      <dt>배치도</dt><dd>시간을 누르면 <b>어느 자리가 비었는지</b> 번호까지. 매진 차의 🔕 를 누르면 자리 날 때 알려 드려요(앱을 열어 둔 동안).</dd>
+      <dt>예매</dt><dd>예매는 티머니GO · 코버스에서. 우리 앱은 조회만 해요.</dd>
+    </dl>
+  </section>
 
   <section id="add">
     <h2>🍜 맛집 · 🏄 서핑 스팟 등록하는 법</h2>
