@@ -71,7 +71,7 @@ window.__bootFail = (files) => {
 <script src="waves.js" defer></script>
 <script src="bus.js" defer></script>
 <style>
-:root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#4B4A6B; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
+:root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#363552; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
 *{box-sizing:border-box} html,body{margin:0}
 body{ background:#5AB4EF; background-image:linear-gradient(to bottom,#DCF3FF 0 120px,#AEE2FF 120px 280px,#83CCF7 280px 560px,#5AB4EF 560px);
@@ -887,6 +887,11 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 .hh-av canvas{ display:block; height:78px } .hh-av i{ position:absolute; right:-8px; bottom:-6px; font-style:normal; font-size:20px; line-height:1; background:#fff; border:2px solid var(--ink); border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center }
 .sl-fr{ margin-top:10px; padding:8px 10px; background:#EAF6FF; border-radius:10px; font-size:13px } .sl-fr small{ display:block; color:#5B6275; font-weight:700; margin-top:2px }
 .sl-frs{ display:flex; flex-wrap:wrap; gap:4px; margin-top:6px } .sl-frs span{ padding:3px 8px; background:#fff; border:1.5px solid var(--ink); border-radius:999px; font-size:12px; font-weight:700 }
+/* 섹션 제목 — 파란 바탕 위 크림 글자+그림자는 대비 2.2(기준 3 미달)이고 키치했다 → 진한 남색, 그림자 대신 얇은 흰 테 */
+.grp > .t, #play-hub .pt, .hsec, .gone-hd{ color:#12245F; text-shadow:0 1px 0 rgba(255,255,255,.55) }
+#play-hub .pt small, .hsec small{ color:#1D3566; text-shadow:none; opacity:.85 }
+.gone-hd{ border-top-color:rgba(18,36,95,.25) }
+.bs-routes button[aria-pressed="true"] small{ color:var(--ink) }
 </style>
 </head>
 <body>
