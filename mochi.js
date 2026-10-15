@@ -15,6 +15,7 @@ const TOP_ = { r:'#FF7A7A', b:'#3D6DF2', g:'#3FD49A', p:'#9B6BFF', y:'#FFD23F', 
 const BOT_ = { b:'#4F7BFF', k:'#2B2F45', r:'#FF6B6B', g:'#3FD49A', p:'#9B6BFF', t:'#E2B96A' };
 const BRD_ = { y:'#FFD23F', w:'#FFFFFF', c:'#8FD3FF', g:'#A6F542', p:'#FF9BD2', o:'#FF9F1C' };
 const PETC_ = { p:'#FFC2D9', y:'#FFE3B0', w:'#F4F6F9', n:'#C98A5B', g:'#A8F0D8', k:'#7A748A' };
+const PETDEF_ = { otter:'n', turtle:'g' };
 
 /* ── 머리 — [뒷머리, 앞머리, 옆머리(좌), 귀 보임] ── */
 const HAIRS = {
@@ -32,6 +33,18 @@ const HAIRS = {
            front:'M30,104 C27,56 60,25 100,25 C140,25 173,56 170,104 C167,95 162,86 157,79 C151,89 141,94 129,92 C125,82 119,74 113,68 C108,81 98,89 85,89 C81,79 76,73 71,69 C65,81 55,90 43,93 C38,97 34,101 30,104 Z', ties:[[42,92],[158,92]] },
   wave:  { back:'M22,106 C18,52 56,18 100,18 C144,18 182,52 178,106 C188,120 186,142 176,152 C184,168 170,182 156,174 L44,174 C30,182 16,168 24,152 C14,142 12,120 22,106 Z',
            front:'M30,104 C27,56 60,25 100,25 C140,25 173,56 170,104 C166,96 160,86 152,82 C146,92 134,94 126,86 C120,95 106,97 100,87 C94,97 80,95 74,86 C66,94 54,92 48,82 C40,86 34,96 30,104 Z' },
+  bun:   { top:'<circle cx="100" cy="20" r="23"/>', topTie:[100,40],
+           front:'M30,104 C27,56 60,25 100,25 C140,25 173,56 170,104 C167,95 162,86 157,79 C151,89 141,94 129,92 C125,82 119,74 113,68 C108,81 98,89 85,89 C81,79 76,73 71,69 C65,81 55,90 43,93 C38,97 34,101 30,104 Z', ears:1 },
+  halfup:{ back:'M22,106 C18,52 56,18 100,18 C144,18 182,52 178,106 L182,194 C182,208 168,212 158,204 L42,204 C32,212 18,208 18,194 Z', top:'<circle cx="100" cy="24" r="15"/>', topTie:[100,37],
+           front:'M30,104 C27,56 60,25 100,25 C140,25 173,56 170,104 C164,90 150,74 132,66 C120,60 110,58 103,57 C101,65 96,71 89,74 C75,78 62,86 51,95 C43,99 36,102 30,104 Z',
+           side:'M30,98 C23,130 25,170 38,198 C47,170 49,130 44,104 Z' },
+  pixie: { front:'M30,104 C26,54 60,24 100,24 C140,24 174,54 170,104 C168,92 164,82 157,74 C140,82 118,86 98,84 C82,90 66,100 50,106 C42,108 35,107 30,104 Z', ears:1 },
+  perm:  { perm:1, ears:0 },
+  braid: { back:'M24,106 C20,52 56,20 100,20 C144,20 180,52 176,106 L176,132 C176,142 166,146 158,140 L42,140 C34,146 24,142 24,132 Z', braid:1,
+           front:'M30,104 C27,56 60,25 100,25 C140,25 173,56 170,104 C167,95 162,86 157,79 C151,89 141,94 129,92 C125,82 119,74 113,68 C108,81 98,89 85,89 C81,79 76,73 71,69 C65,81 55,90 43,93 C38,97 34,101 30,104 Z' },
+  twoblock:{ front:'M36,96 C30,52 62,20 104,20 C146,20 172,50 166,92 C160,80 150,72 138,70 C124,74 108,72 94,66 C80,72 62,76 50,84 C44,88 40,92 36,96 Z', shave:1, ears:1, ahoge:1 },
+  hime:  { back:'M22,104 C18,52 56,18 100,18 C144,18 182,52 178,104 L180,204 L20,204 Z',
+           front:'M31,100 C28,54 60,25 100,25 C140,25 172,54 169,100 L167,86 L33,86 Z', side:'M31,92 L31,150 L49,150 L47,96 Z' },
   surf:  { front:'M31,106 C26,54 60,22 100,22 C140,22 174,54 169,106 C166,96 160,86 154,80 L150,95 C142,88 136,82 130,78 L124,93 C116,85 110,79 104,75 L98,91 C90,83 82,79 76,77 L70,93 C62,87 54,87 46,91 L40,101 Z',
            spikes:'M66,34 L58,10 L84,26 L96,4 L110,25 L134,8 L132,34 Z', ears:1 },
 };
@@ -52,15 +65,33 @@ const HAT2 = {
   flower:{ svg:'<g transform="translate(150 58)">' + [0,72,144,216,288].map(a=>`<circle cx="${Math.cos(a * Math.PI / 180) * 8}" cy="${Math.sin(a * Math.PI / 180) * 8}" r="7" fill="#FF8FB8"/>`).join('') + '<circle r="5.5" fill="#FFD23F"/></g>' },
 };
 
-function face(F, U, charm){
+/* 얼굴형 — 실루엣이 달라야 멀리서도 '누구'가 보인다 */
+const FSHAPE = {
+  mochi: 'M100,36 C142,36 168,62 169,99 C170,138 143,161 100,161 C57,161 30,138 31,99 C32,62 58,36 100,36Z',
+  round: 'M100,34 C136,34 165,62 165,98 C165,134 136,162 100,162 C64,162 35,134 35,98 C35,62 64,34 100,34Z',
+  oval:  'M100,34 C142,34 168,62 167,98 C166,128 140,158 100,167 C60,158 34,128 33,98 C32,62 58,34 100,34Z',
+  square:'M100,36 C150,36 169,58 169,96 C169,134 156,159 100,160 C44,159 31,134 31,96 C31,58 50,36 100,36Z',
+  peach: 'M100,42 C134,42 158,62 165,92 C173,132 146,161 100,161 C54,161 27,132 35,92 C42,62 66,42 100,42Z',
+};
+const EYES = ['sparkle','dot','cat','droopy','star','lash'], BROWS = ['none','soft','thick','sad'], ACCS = ['freckles','none','zinc','bandaid','glasses','star','mole'];
+
+function face(F, U, charm, es, H){
   const E = '#2A1F2B', ey = 112, X = [76, 124]; let o = '';
   /* 볼 + 빗금 */
   [62, 138].forEach(cx=>{ o += `<ellipse cx="${cx}" cy="${ey + 17}" rx="13.5" ry="7.5" fill="#FF8FA3" opacity=".5"/>`;
     if(charm) o += [-5, 0, 5].map(d=>`<path d="M${cx + d - 2},${ey + 20} L${cx + d + 2},${ey + 14}" stroke="#FF6F8A" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>`).join(''); });
-  const eye = (x, big)=>{ const k = big ? 1.1 : 1;
-    let s = `<ellipse cx="${x}" cy="${ey}" rx="${10 * k}" ry="${13 * k}" fill="${E}"/><ellipse cx="${x}" cy="${ey + 3.5}" rx="${7.4 * k}" ry="${8.4 * k}" fill="url(#${U}iris)"/>`;
-    s += `<circle cx="${x + 3.8 * k}" cy="${ey - 5.4 * k}" r="${4.8 * k}" fill="#fff"/><circle cx="${x - 3.6}" cy="${ey + 5.6}" r="2.1" fill="#fff" opacity=".9"/>`;
-    if(charm){ const out = x < 100 ? -1 : 1; s += `<path d="M${x - 10.5},${ey - 6} Q${x},${ey - 15.5} ${x + 10.5},${ey - 6}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round"/><path d="M${x + out * 9.5},${ey - 7.5} L${x + out * 14},${ey - 10.5}" stroke="${E}" stroke-width="2.6" stroke-linecap="round"/>`; }
+  const star = (cx, cy, r)=>`<path d="M${cx},${cy - r} L${cx + r * .3},${cy - r * .3} L${cx + r},${cy} L${cx + r * .3},${cy + r * .3} L${cx},${cy + r} L${cx - r * .3},${cy + r * .3} L${cx - r},${cy} L${cx - r * .3},${cy - r * .3} Z" fill="#fff"/>`;
+  const eye = (x, big)=>{ const k = big ? 1.1 : 1, out = x < 100 ? -1 : 1;
+    if(es === 'dot') return `<ellipse cx="${x + out * 2}" cy="${ey + 2}" rx="${6.6 * k}" ry="${7.8 * k}" fill="${E}"/><circle cx="${x + out * 2 + 2.4}" cy="${ey - 1}" r="2.4" fill="#fff"/>`;
+    if(es === 'cat'){ const t = x < 100 ? ` transform="translate(${2 * x} 0) scale(-1 1)"` : '';
+      return `<g${t}><path d="M${x - 11},${ey + 3} Q${x - 4},${ey - 13} ${x + 12},${ey - 8} Q${x + 6},${ey + 13} ${x - 11},${ey + 3} Z" fill="${E}"/><ellipse cx="${x}" cy="${ey + 2}" rx="5.6" ry="7" fill="url(#${U}iris)"/><circle cx="${x + 3.4}" cy="${ey - 3.6}" r="3.6" fill="#fff"/>
+        <path d="M${x - 11},${ey + 2} Q${x - 3},${ey - 14} ${x + 12},${ey - 8} L${x + 16},${ey - 12}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`; }
+    let s = `<ellipse cx="${x}" cy="${ey + (es === 'droopy' ? 1 : 0)}" rx="${10 * k}" ry="${(es === 'droopy' ? 11.5 : 13) * k}" fill="${E}"/><ellipse cx="${x}" cy="${ey + 3.5}" rx="${7.4 * k}" ry="${8.4 * k}" fill="url(#${U}iris)"/>`;
+    s += es === 'star' ? star(x + 2.6 * k, ey - 3.6 * k, 6.4 * k) + `<circle cx="${x - 3.6}" cy="${ey + 6}" r="1.9" fill="#fff" opacity=".9"/>`
+                       : `<circle cx="${x + 3.8 * k}" cy="${ey - 5.4 * k}" r="${4.8 * k}" fill="#fff"/><circle cx="${x - 3.6}" cy="${ey + 5.6}" r="2.1" fill="#fff" opacity=".9"/>`;
+    if(es === 'droopy') s += `<path d="M${x - out * 10},${ey - 11} Q${x + out * 2},${ey - 14} ${x + out * 12},${ey - 2}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round"/>`;
+    else if(charm){ s += `<path d="M${x - 10.5},${ey - 6} Q${x},${ey - 15.5} ${x + 10.5},${ey - 6}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round"/><path d="M${x + out * 9.5},${ey - 7.5} L${x + out * 14},${ey - 10.5}" stroke="${E}" stroke-width="2.6" stroke-linecap="round"/>`;
+      if(es === 'lash') s += `<path d="M${x + out * 6},${ey - 12} L${x + out * 9},${ey - 17} M${x + out * 1},${ey - 14} L${x + out * 2},${ey - 19}" stroke="${E}" stroke-width="2.4" stroke-linecap="round"/>`; }
     return s; };
   const closed = (x, up)=>`<path d="M${x - 9.5},${ey + (up ? 3 : -2)} Q${x},${ey + (up ? -10 : 7)} ${x + 9.5},${ey + (up ? 3 : -2)}" fill="none" stroke="${E}" stroke-width="4" stroke-linecap="round"/>`;
   const my = ey + 17;
@@ -78,34 +109,64 @@ function face(F, U, charm){
 }
 
 function petSVG(kind, c, lv, U){
-  const m = dk(c, .78), E = '#2A1F2B', W = '#FFFFFF';
-  const eyes = (y, xs)=>xs.map(x=>`<ellipse cx="${x}" cy="${y}" rx="5.4" ry="6.6" fill="${E}"/><circle cx="${x + 2}" cy="${y - 2.6}" r="2.2" fill="#fff"/>`).join('');
-  let o = `<ellipse cx="60" cy="242" rx="36" ry="5" fill="#12245F" opacity=".12"/>`, ey = 176, ex = [48, 72];
+  /* 머리 큰 치비 펫 — 머리 반지름 36, 몸은 작게. 눈은 하이라이트 둘, 볼터치는 늘 살짝. 친밀도: 1 볼터치 진하게 · 2 리본 · 3 선글라스 */
+  const m = dk(c, .8), mm = dk(c, .66), E = '#2A1F2B', W = '#FFFFFF', CR = '#FFF6EA';
+  const gl = d=>`<path d="${d}" fill="url(#${U}gl)"/>`;
+  const egl = (x, y, rx, ry)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="url(#${U}gl)"/>`;
+  const eyes = (y, xs, k)=>xs.map(x=>`<ellipse cx="${x}" cy="${y}" rx="${6.6 * (k || 1)}" ry="${8 * (k || 1)}" fill="${E}"/><circle cx="${x + 2.4}" cy="${y - 3}" r="2.8" fill="#fff"/><circle cx="${x - 2}" cy="${y + 3.4}" r="1.3" fill="#fff" opacity=".85"/>`).join('');
+  const mouthW = (x, y)=>`<path d="M${x - 6},${y} Q${x - 3},${y + 4} ${x},${y} Q${x + 3},${y + 4} ${x + 6},${y}" fill="none" stroke="${E}" stroke-width="2" stroke-linecap="round"/>`;
+  const whisk = (x, y)=>[-1, 1].map(sg=>[-3, 3].map(d=>`<path d="M${x + sg * 14},${y + d} L${x + sg * 28},${y + d * 1.8}" stroke="${E}" stroke-opacity=".4" stroke-width="1.4" stroke-linecap="round"/>`).join('')).join('');
+  const body = 'M60,192 C86,192 94,212 92,229 C90,241 78,244 60,244 C42,244 30,241 28,229 C26,212 34,192 60,192 Z';
+  let o = `<ellipse cx="60" cy="244" rx="34" ry="5" fill="#12245F" opacity=".12"/>`, hy = 164, ex = [46, 74], blushY = 178, scarfY = 196;
   if(kind === 'penguin'){
-    o += `<path d="M60,140 C88,140 96,176 94,206 C92,232 78,240 60,240 C42,240 28,232 26,206 C24,176 32,140 60,140 Z" fill="${c}"/><path d="M60,166 C78,166 82,190 80,212 C78,230 70,236 60,236 C50,236 42,230 40,212 C38,190 42,166 60,166 Z" fill="${W}"/>`;
-    o += `<path d="M28,190 C18,200 18,214 24,222 C30,214 32,204 34,196 Z" fill="${m}"/><path d="M92,190 C102,200 102,214 96,222 C90,214 88,204 86,196 Z" fill="${m}"/>`;
-    o += `<ellipse cx="50" cy="240" rx="9" ry="4" fill="#FF9F1C"/><ellipse cx="70" cy="240" rx="9" ry="4" fill="#FF9F1C"/>`;
-    ey = 166; ex = [49, 71]; o += eyes(ey, ex) + `<path d="M54,176 L66,176 L60,184 Z" fill="#FF9F1C"/>`;
+    const bd = 'M60,128 C92,128 100,170 98,206 C96,234 82,244 60,244 C38,244 24,234 22,206 C20,170 28,128 60,128 Z';
+    o += `<path d="M26,184 C12,194 10,214 18,224 C26,216 30,202 32,192 Z M94,184 C108,194 110,214 102,224 C94,216 90,202 88,192 Z" fill="${mm}"/>`;
+    o += `<path d="${bd}" fill="${c}"/>${gl(bd)}<path d="M60,150 C38,140 30,164 36,178 C40,196 50,206 60,236 C70,206 80,196 84,178 C90,164 82,140 60,150 Z" fill="${W}"/>`;
+    o += `<ellipse cx="48" cy="243" rx="10" ry="4.5" fill="#FF9F1C"/><ellipse cx="72" cy="243" rx="10" ry="4.5" fill="#FF9F1C"/>`;
+    hy = 160; ex = [48, 72]; o += eyes(hy, ex, .85) + `<path d="M53,171 Q60,166 67,171 Q60,180 53,171 Z" fill="#FF9F1C"/>`; blushY = 172; scarfY = 188;
   } else if(kind === 'seal'){
-    o += `<path d="M20,236 C14,200 26,152 60,150 C94,152 106,200 100,236 Z" fill="${c}"/><path d="M14,220 C4,226 4,236 12,240 C18,236 22,230 24,224 Z" fill="${m}"/><path d="M106,220 C116,226 116,236 108,240 C102,236 98,230 96,224 Z" fill="${m}"/>`;
-    ey = 178; ex = [47, 73]; o += eyes(ey, ex) + `<ellipse cx="60" cy="194" rx="12" ry="8" fill="${W}"/><ellipse cx="60" cy="189" rx="4.4" ry="3.2" fill="${E}"/>`;
-    o += [[-1],[1]].map(([s])=>[-3, 3].map(d=>`<path d="M${60 + s * 12},${194 + d} L${60 + s * 26},${192 + d * 2}" stroke="${E}" stroke-opacity=".45" stroke-width="1.4"/>`).join('')).join('');
+    const bd = 'M18,240 C10,202 24,146 60,144 C96,146 110,202 102,240 Z';
+    o += `<path d="${bd}" fill="${c}"/>${gl(bd)}<path d="M12,222 C0,228 0,240 10,243 C18,238 22,232 24,226 Z M108,222 C120,228 120,240 110,243 C102,238 98,232 96,226 Z" fill="${mm}"/>`;
+    o += [[34,214,4],[86,206,3],[78,226,3.6],[40,232,2.6]].map(([x, y, r])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${m}" opacity=".7"/>`).join('');
+    hy = 176; ex = [45, 75]; o += eyes(hy, ex) + `<ellipse cx="53" cy="192" rx="9" ry="7" fill="${CR}"/><ellipse cx="67" cy="192" rx="9" ry="7" fill="${CR}"/><ellipse cx="60" cy="186" rx="5" ry="3.6" fill="${E}"/>` + whisk(60, 192) + mouthW(60, 198);
+    blushY = 190; scarfY = 208;
+  } else if(kind === 'turtle'){
+    const sh = 'M14,226 C14,186 34,166 60,166 C86,166 106,186 106,226 Z';
+    o += `<ellipse cx="24" cy="236" rx="10" ry="7" fill="#9BD98C"/><ellipse cx="96" cy="236" rx="10" ry="7" fill="#9BD98C"/>`;
+    o += `<path d="${sh}" fill="${c}"/>${gl(sh)}<path d="M60,176 L76,186 L76,206 L60,216 L44,206 L44,186 Z" fill="none" stroke="${m}" stroke-width="3" stroke-linejoin="round"/><path d="M44,186 L28,196 M76,186 L92,196 M44,206 L30,222 M76,206 L90,222 M60,176 L60,168 M60,216 L60,226" stroke="${m}" stroke-width="3" stroke-linecap="round"/>`;
+    o += `<path d="M12,226 Q60,234 108,226 L108,230 Q60,240 12,230 Z" fill="${mm}"/>`;
+    o += `<ellipse cx="60" cy="150" rx="26" ry="24" fill="#9BD98C"/>${egl(60, 150, 26, 24)}`;
+    hy = 150; ex = [50, 70]; o += eyes(hy, ex, .75) + mouthW(60, 162); blushY = 160; scarfY = 170;
   } else {
-    o += `<ellipse cx="60" cy="214" rx="28" ry="24" fill="${c}"/><ellipse cx="60" cy="220" rx="16" ry="15" fill="${W}"/><ellipse cx="46" cy="236" rx="9" ry="5.5" fill="${c}"/><ellipse cx="74" cy="236" rx="9" ry="5.5" fill="${c}"/>`;
-    if(kind === 'cat') o += `<path d="M86,224 C104,222 108,200 98,192" fill="none" stroke="${m}" stroke-width="7" stroke-linecap="round"/>`;
-    if(kind === 'rabbit') o += `<ellipse cx="48" cy="128" rx="9" ry="26" fill="${c}" transform="rotate(-8 48 128)"/><ellipse cx="72" cy="128" rx="9" ry="26" fill="${c}" transform="rotate(8 72 128)"/><ellipse cx="48" cy="130" rx="4.5" ry="18" fill="#FFC2D2" transform="rotate(-8 48 130)"/><ellipse cx="72" cy="130" rx="4.5" ry="18" fill="#FFC2D2" transform="rotate(8 72 130)"/>`;
-    if(kind === 'cat') o += `<path d="M30,160 L34,130 L56,148 Z M90,160 L86,130 L64,148 Z" fill="${c}"/><path d="M35,152 L37,138 L48,148 Z M85,152 L83,138 L72,148 Z" fill="#FFC2D2"/>`;
-    o += `<path d="M60,144 C86,144 96,160 96,178 C96,198 80,206 60,206 C40,206 24,198 24,178 C24,160 34,144 60,144 Z" fill="${c}"/>`;
-    if(kind === 'dog') o += `<ellipse cx="26" cy="174" rx="10" ry="20" fill="${m}" transform="rotate(18 26 174)"/><ellipse cx="94" cy="174" rx="10" ry="20" fill="${m}" transform="rotate(-18 94 174)"/>`;
-    o += `<path d="M60,144 C86,144 96,160 96,178 C96,198 80,206 60,206 C40,206 24,198 24,178 C24,160 34,144 60,144 Z" fill="url(#${U}gl)"/>`;
-    o += eyes(ey, ex) + `<ellipse cx="60" cy="192" rx="12" ry="8.5" fill="${W}"/><ellipse cx="60" cy="187" rx="4.6" ry="3.4" fill="${E}"/>`;
-    if(kind === 'dog') o += `<ellipse cx="60" cy="199" rx="4" ry="5" fill="#FF7A95"/>`;
-    if(kind === 'rabbit') o += `<rect x="56.5" y="193" width="7" height="6" rx="1.5" fill="#fff" stroke="#D8D2E0" stroke-width="1"/>`;
-    if(kind === 'cat') o += [[-1],[1]].map(([s])=>[-3, 3].map(d=>`<path d="M${60 + s * 10},${192 + d} L${60 + s * 24},${190 + d * 2}" stroke="${E}" stroke-opacity=".45" stroke-width="1.4"/>`).join('')).join('');
+    /* 강아지·고양이·토끼·해달 — 앉은 몸 + 큰 머리 */
+    if(kind === 'dog') o += `<path d="M88,222 C104,214 108,198 100,190" fill="none" stroke="${m}" stroke-width="8" stroke-linecap="round"/>`;
+    if(kind === 'cat') o += `<path d="M88,230 C110,228 112,202 100,194 C96,190 92,196 96,200 C102,208 98,222 86,222" fill="${m}"/>`;
+    if(kind === 'rabbit') o += `<circle cx="92" cy="232" r="9" fill="${W}"/>`;
+    if(kind === 'otter') o += `<path d="M86,238 C108,240 116,224 110,212" fill="none" stroke="${m}" stroke-width="10" stroke-linecap="round"/>`;
+    o += `<path d="${body}" fill="${c}"/>${gl(body)}<ellipse cx="60" cy="222" rx="17" ry="16" fill="${kind === 'otter' ? CR : W}" opacity="${kind === 'otter' ? 1 : .9}"/>`;
+    o += `<ellipse cx="45" cy="240" rx="10" ry="6" fill="${c}"/><ellipse cx="75" cy="240" rx="10" ry="6" fill="${c}"/>`;
+    if(kind === 'otter') o += `<g transform="translate(60 214)"><path d="M-11,2 C-11,-10 11,-10 11,2 Q0,8 -11,2 Z" fill="#F6E3C8"/><path d="M-6,-5 L-4,3 M0,-7 L0,4 M6,-5 L4,3" stroke="#D9BF9A" stroke-width="1.6"/></g><ellipse cx="46" cy="212" rx="7" ry="5.5" fill="${m}"/><ellipse cx="74" cy="212" rx="7" ry="5.5" fill="${m}"/>`;
+    /* 귀 */
+    if(kind === 'rabbit') o += `<g transform="rotate(-10 46 116)"><ellipse cx="46" cy="116" rx="10" ry="28" fill="${c}"/><ellipse cx="46" cy="118" rx="5" ry="19" fill="#FFC2D2"/></g><g transform="rotate(28 76 112)"><path d="M66,124 C64,98 72,86 80,90 C90,94 88,112 84,126 Z" fill="${c}"/><path d="M70,120 C70,102 74,94 79,96 C84,99 83,110 80,120 Z" fill="#FFC2D2"/></g>`;
+    if(kind === 'cat') o += `<path d="M24,152 L28,118 L54,138 Z M96,152 L92,118 L66,138 Z" fill="${c}"/><path d="M30,144 L32,126 L46,138 Z M90,144 L88,126 L74,138 Z" fill="#FFC2D2"/>`;
+    if(kind === 'otter') o += `<circle cx="30" cy="140" r="9" fill="${c}"/><circle cx="90" cy="140" r="9" fill="${c}"/><circle cx="30" cy="140" r="4.5" fill="${m}"/><circle cx="90" cy="140" r="4.5" fill="${m}"/>`;
+    o += `<ellipse cx="60" cy="${hy}" rx="38" ry="33" fill="${c}"/>${egl(60, hy, 38, 33)}`;
+    if(kind === 'dog') o += `<g transform="rotate(16 25 166)"><path d="M14,146 C10,166 14,184 24,190 C34,186 38,166 34,148 C30,140 18,140 14,146 Z" fill="${m}"/></g><g transform="rotate(-16 95 166)"><path d="M106,146 C110,166 106,184 96,190 C86,186 82,166 86,148 C90,140 102,140 106,146 Z" fill="${m}"/></g><ellipse cx="76" cy="160" rx="12" ry="11" fill="${m}" opacity=".55"/>`;
+    if(kind === 'cat') o += `<path d="M54,134 L56,144 M60,132 L60,143 M66,134 L64,144" stroke="${m}" stroke-width="3" stroke-linecap="round"/>`;
+    if(kind === 'otter') o += `<ellipse cx="60" cy="${hy + 10}" rx="26" ry="18" fill="${CR}"/>`;
+    if(kind === 'rabbit') o += `<ellipse cx="34" cy="${hy + 12}" rx="7" ry="5" fill="${W}" opacity=".7"/><ellipse cx="86" cy="${hy + 12}" rx="7" ry="5" fill="${W}" opacity=".7"/>`;
+    o += eyes(hy, ex);
+    const ny = hy + 12;
+    if(kind !== 'otter') o += `<ellipse cx="60" cy="${ny + 4}" rx="11" ry="8" fill="${W}" opacity=".95"/>`;
+    o += `<ellipse cx="60" cy="${ny}" rx="${kind === 'rabbit' ? 3.6 : 5}" ry="${kind === 'rabbit' ? 2.8 : 3.6}" fill="${kind === 'rabbit' || kind === 'cat' ? '#FF8FA3' : E}"/>` + mouthW(60, ny + 5);
+    if(kind === 'dog') o += `<path d="M56,${ny + 8} Q60,${ny + 20} 64,${ny + 8} Z" fill="#FF7A95"/>`;
+    if(kind === 'rabbit') o += `<rect x="56.5" y="${ny + 7}" width="7" height="6" rx="1.5" fill="#fff" stroke="#D8D2E0" stroke-width="1"/>`;
+    if(kind === 'cat' || kind === 'otter') o += whisk(60, ny + 2);
+    blushY = hy + 12;
   }
-  if(lv >= 1) o += ex.map(x=>`<ellipse cx="${x + (x < 60 ? -8 : 8)}" cy="${ey + 10}" rx="6" ry="3.6" fill="#FF8FA3" opacity=".55"/>`).join('');
-  if(lv >= 2) o += `<path d="M36,${kind === 'penguin' ? 186 : 204} Q60,${kind === 'penguin' ? 196 : 214} 84,${kind === 'penguin' ? 186 : 204} L84,${kind === 'penguin' ? 194 : 212} Q60,${kind === 'penguin' ? 204 : 222} 36,${kind === 'penguin' ? 194 : 212} Z" fill="#FF5A5A"/>`;
-  if(lv >= 3) o += ex.map(x=>`<rect x="${x - 9}" y="${ey - 7}" width="18" height="13" rx="5" fill="#1B2440"/>`).join('') + `<path d="M${ex[0] + 9},${ey - 3} L${ex[1] - 9},${ey - 3}" stroke="#1B2440" stroke-width="3"/>`;
+  o += ex.map(x=>`<ellipse cx="${x + (x < 60 ? -9 : 9)}" cy="${blushY}" rx="${lv >= 1 ? 7 : 6}" ry="4" fill="#FF8FA3" opacity="${lv >= 1 ? .7 : .4}"/>`).join('');
+  if(lv >= 2) o += `<path d="M38,${scarfY} Q60,${scarfY + 9} 82,${scarfY} L82,${scarfY + 8} Q60,${scarfY + 17} 38,${scarfY + 8} Z" fill="#FF5A5A"/><path d="M66,${scarfY + 10} L72,${scarfY + 26} L80,${scarfY + 20} Z" fill="#E84848"/>`;
+  if(lv >= 3){ const y = (kind === 'penguin' ? 160 : kind === 'turtle' ? 150 : kind === 'seal' ? 176 : hy); o += ex.map(x=>`<rect x="${x - 10}" y="${y - 7}" width="20" height="14" rx="6" fill="#1B2440"/><path d="M${x - 6},${y - 3} L${x - 2},${y - 3}" stroke="#fff" stroke-opacity=".6" stroke-width="2.4" stroke-linecap="round"/>`).join('') + `<path d="M${ex[0] + 10},${y - 2} L${ex[1] - 10},${y - 2}" stroke="#1B2440" stroke-width="3"/>`; }
   return o;
 }
 
@@ -119,14 +180,15 @@ function mochiSVG(pr, opt){
   const wear = ['rash','hood','tank','suit','bare','stripe','heart','aloha','vest','poncho'].includes(pr.wear) ? pr.wear : 'rash';
   const hat = HATS[pr.hat] || HAT2[pr.hat] ? pr.hat : null, cover = hat && (HATS[hat] || HAT2[hat].cover) && !['cap','visor'].includes(hat);
   const face_ = ['smile','happy','cool','wow','wink','sleepy'].includes(pr.face) ? pr.face : 'smile';
-  const pet = opt.pet && ['dog','cat','rabbit','penguin','seal'].includes(pr.pet) ? pr.pet : null;
+  const HEAD = FSHAPE[pr.fshape] || FSHAPE.mochi, es = EYES.includes(pr.eye) ? pr.eye : 'sparkle', brow = BROWS.includes(pr.brow) ? pr.brow : 'none', acc = ACCS.includes(pr.acc) ? pr.acc : 'freckles';
+  const pet = opt.pet && ['dog','cat','rabbit','penguin','seal','otter','turtle'].includes(pr.pet) ? pr.pet : null;
   const holdBoard = charm >= 2 && opt.board !== false, wave = charm >= 1 && !holdBoard;
   const gl = d=>`<path d="${d}" fill="url(#${U}gl)"/>`;
   const sleeve = wear === 'tank' || wear === 'bare' ? S : T;
   let o = `<defs><radialGradient id="${U}gl" cx=".32" cy=".26" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity=".08"/><stop offset=".8" stop-color="#000030" stop-opacity=".05"/><stop offset="1" stop-color="#000030" stop-opacity=".22"/></radialGradient>
     <linearGradient id="${U}iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A1F2B" stop-opacity="0"/><stop offset="1" stop-color="#8A5A3E"/></linearGradient>
-    <clipPath id="${U}hd"><path d="M100,36 C142,36 168,62 169,99 C170,138 143,161 100,161 C57,161 30,138 31,99 C32,62 58,36 100,36Z"/></clipPath></defs>`;
-  if(pet) o += `<g>${petSVG(pet, PETC_[pr.petc] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U)}</g><g transform="translate(120 0)">`;
+    <clipPath id="${U}hd"><path d="${HEAD}"/></clipPath></defs>`;
+  if(pet) o += `<g>${petSVG(pet, PETC_[pr.petc] || PETC_[PETDEF_[pet]] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U)}</g><g transform="translate(120 0)">`;
   o += `<ellipse cx="100" cy="242" rx="42" ry="6" fill="#12245F" opacity=".14"/>`;
   /* 옆에 낀 서핑보드(뒤) */
   if(holdBoard){ const bd = 'M24,112 C24,86 34,70 44,70 C54,70 64,86 64,112 L64,214 C64,232 54,242 44,242 C34,242 24,232 24,214 Z';
@@ -138,7 +200,11 @@ function mochiSVG(pr, opt){
     if(pr.boardc === 'legend') o += [[34,96],[54,140],[36,186]].map(([x, y])=>`<path d="M${x},${y - 7} L${x + 2},${y - 2} L${x + 7},${y} L${x + 2},${y + 2} L${x},${y + 7} L${x - 2},${y + 2} L${x - 7},${y} L${x - 2},${y - 2} Z" fill="#fff" opacity=".85"/>`).join('');
     o += `</g>${gl(bd)}<path d="M44,74 L44,238" stroke="${pat === 'stringer' ? '#fff' : dk(BD, .78)}" stroke-width="${pat === 'stringer' ? 4 : 2.4}"/><path d="M38,226 L44,240 L50,226 Z" fill="${dk(BD, .7)}"/>`; }
   /* 뒷머리 · 꽁지 */
+  const curls = (pts, r)=>pts.map(([x, y])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
+  const PERM_B = [...Array(14)].map((_, i)=>{ const a = Math.PI * (0.92 + i / 13 * 1.16) ; return [100 + Math.cos(a) * 72, 100 + Math.sin(a) * 66]; }).concat([[34,140],[166,140],[44,160],[156,160]]);
+  if(h.perm) o += curls(PERM_B, 22) + `<ellipse cx="100" cy="100" rx="70" ry="66" fill="${H}"/>${gl('M30,100 C30,40 170,40 170,100 C170,160 30,160 30,100 Z')}`;
   if(h.back) o += `<path d="${h.back}" fill="${H}"/>${gl(h.back)}`;
+  if(h.top) o += h.top.replace('/>', ` fill="${H}"/>`) + `<ellipse cx="${h.topTie[0]}" cy="${h.topTie[1]}" rx="13" ry="4.5" fill="#FF6B9A"/>`;
   if(h.tail) o += `<path d="${h.tail}" fill="${H}"/>${gl(h.tail)}`;
   if(h.tails) h.tails.forEach(d=>{ o += `<path d="${d}" fill="${H}"/>${gl(d)}`; });
   /* 다리 · 쪼리 */
@@ -179,16 +245,28 @@ function mochiSVG(pr, opt){
   if(charm >= 2) o += `<path d="M86,151 Q100,163 114,151" fill="none" stroke="#8B6B4A" stroke-width="1.8"/><path d="M96,158 L100,168 L104,158 Z" fill="#FFF8EC" stroke="#D9C6A8" stroke-width="1"/>`;
   /* 귀 · 얼굴 */
   if(h.ears && !cover) o += `<circle cx="32" cy="110" r="11" fill="${S}"/><circle cx="168" cy="110" r="11" fill="${S}"/><circle cx="33" cy="111" r="5" fill="${dk(S, .9)}"/><circle cx="167" cy="111" r="5" fill="${dk(S, .9)}"/>`;
-  const head = 'M100,36 C142,36 168,62 169,99 C170,138 143,161 100,161 C57,161 30,138 31,99 C32,62 58,36 100,36Z';
-  o += `<path d="${head}" fill="${S}"/>${gl(head)}`;
+  o += `<path d="${HEAD}" fill="${S}"/>${gl(HEAD)}`;
+  if(h.shave) o += `<g clip-path="url(#${U}hd)"><path d="M28,70 L50,70 L48,112 L28,116 Z M172,70 L150,70 L152,112 L172,116 Z" fill="${dk(H, .9)}" opacity=".55"/></g>`;
   /* 앞머리가 이마에 드리우는 그림자 — 입체감 */
   if(charm && h.front) o += `<g clip-path="url(#${U}hd)"><path d="${h.front}" transform="translate(0 6)" fill="#8A4A3A" opacity=".16"/></g>`;
-  if(charm >= 2 && face_ !== 'cool') o += [[56,124],[62,121],[61,128],[138,124],[144,121],[143,128]].map(([x, y])=>`<circle cx="${x}" cy="${y - 2}" r="1.6" fill="${dk(S, .72)}" opacity=".7"/>`).join('');
-  o += face(face_, U, charm);
+  if(charm >= 2 && acc === 'freckles' && face_ !== 'cool') o += [[56,124],[62,121],[61,128],[138,124],[144,121],[143,128]].map(([x, y])=>`<circle cx="${x}" cy="${y - 2}" r="1.6" fill="${dk(S, .72)}" opacity=".7"/>`).join('');
+  o += face(face_, U, charm, es, H);
+  if(acc === 'zinc') o += `<rect x="82" y="116" width="36" height="8" rx="4" fill="#fff" opacity=".92"/><path d="M50,124 L66,121 M134,121 L150,124" stroke="#fff" stroke-opacity=".9" stroke-width="5" stroke-linecap="round"/>`;
+  if(acc === 'bandaid') o += `<g transform="rotate(-24 138 132)"><rect x="126" y="127" width="24" height="10" rx="5" fill="#F3C9A0"/><rect x="134" y="127" width="8" height="10" fill="#E8B88C"/></g>`;
+  if(acc === 'glasses' && face_ !== 'cool') o += `<circle cx="76" cy="112" r="17" fill="#fff" fill-opacity=".14" stroke="#3A3040" stroke-width="3.2"/><circle cx="124" cy="112" r="17" fill="#fff" fill-opacity=".14" stroke="#3A3040" stroke-width="3.2"/><path d="M93,110 Q100,105 107,110" fill="none" stroke="#3A3040" stroke-width="3"/>`;
+  if(acc === 'star') o += `<path d="M144,122 L146.5,128 L153,128.5 L148,132.5 L149.5,139 L144,135.5 L138.5,139 L140,132.5 L135,128.5 L141.5,128 Z" fill="#FFD23F" stroke="#F0B400" stroke-width="1"/>`;
+  if(acc === 'mole') o += `<circle cx="116" cy="138" r="2.2" fill="${dk(S, .5)}"/>`;
   /* 앞머리 */
   if(h.side) o += `<path d="${h.side}" fill="${H}"/><path d="${h.side}" transform="translate(200 0) scale(-1 1)" fill="${H}"/>`;
   if(h.spikes && !cover) o += `<path d="${h.spikes}" fill="${H}"/>`;
-  o += `<path d="${h.front}" fill="${H}"/>${gl(h.front)}`;
+  if(h.perm){ o += curls([[44,82],[62,70],[82,64],[100,62],[118,64],[138,70],[156,82],[36,100],[164,100]], 15) + curls([[70,48],[100,40],[130,48]], 20); }
+  else o += `<path d="${h.front}" fill="${H}"/>${gl(h.front)}`;
+  if(h.braid){ o += [0,1,2,3,4,5].map(i=>`<ellipse cx="${156 + (i % 2 ? 4 : -2)}" cy="${118 + i * 15}" rx="11" ry="9" fill="${H}" stroke="${dk(H, .78)}" stroke-width="1.6"/>`).join('') + `<ellipse cx="157" cy="206" rx="6" ry="4" fill="#FF6B9A"/><path d="M151,210 Q157,224 163,210" fill="${H}"/>`; }
+  if(brow !== 'none' && face_ !== 'cool'){ const bc = dk(H, .8);
+    o += [76, 124].map(x=>{ const o2 = x < 100 ? -1 : 1, y = 92;
+      if(brow === 'soft') return `<path d="M${x - 9},${y + 2} Q${x},${y - 3} ${x + 9},${y + 2}" fill="none" stroke="${bc}" stroke-width="3" stroke-linecap="round"/>`;
+      if(brow === 'thick') return `<path d="M${x - 10},${y + 1} L${x + 10},${y + 1}" stroke="${bc}" stroke-width="5.5" stroke-linecap="round"/>`;
+      return `<path d="M${x - o2 * 9},${y - 3} L${x + o2 * 9},${y + 3}" stroke="${bc}" stroke-width="3.4" stroke-linecap="round"/>`; }).join(''); }
   if(!cover){ o += `<path d="M60,48 Q100,30 140,48" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="7" stroke-linecap="round"/><path d="M128,40 Q136,42 142,48" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>`;
     if(charm && h.ahoge && !hat) o += `<path d="M98,28 C90,12 102,0 118,6 C106,8 102,16 105,28 Z" fill="${H}"/>`; }
   if(h.tie) o += `<circle cx="${h.tie[0]}" cy="${h.tie[1]}" r="7" fill="#FF6B9A"/>`;
@@ -207,4 +285,14 @@ function mochiSVG(pr, opt){
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} 250" width="${W}" height="250">${o}</svg>`;
 }
 window.mochiSVG = mochiSVG;
+/* 꾸미기 목록에 얹기 — sprite.js(도트, 게임·라인업 앱과 공유)의 목록에 새 머리·펫을 더하고, 도트로 그릴 땐 가까운 모양을 빌려 쓴다 */
+const HAIR_NEW = { bun:['bob','똥머리'], halfup:['long','반묶음'], pixie:['short','숏컷'], perm:['wave','뽀글펌'], braid:['bob','땋은머리'], twoblock:['short','투블럭'], hime:['long','히메컷'] };
+try{ if(typeof HAIR === 'object') Object.entries(HAIR_NEW).forEach(([k, [fb, ko]])=>{ if(!HAIR[k]){ HAIR[k] = HAIR[fb]; HAIR_KO[k] = ko; } }); }catch(e){}
+try{ if(typeof PET === 'object'){ if(!PET.otter){ PET.otter = PET.seal; PET_ACC.otter = PET_ACC.seal; PET_KO.otter = '해달'; } if(!PET.turtle){ PET.turtle = PET.penguin; PET_ACC.turtle = PET_ACC.penguin; PET_KO.turtle = '거북이'; } } }catch(e){}
+window.MOCHI_OPT = {
+  fshape:{ mochi:'모찌', round:'동글', oval:'갸름', square:'각진', peach:'복숭아' },
+  eye:{ sparkle:'반짝', dot:'점눈', cat:'고양이눈', droopy:'처진눈', star:'별눈', lash:'속눈썹' },
+  brow:{ none:'없음', soft:'둥근', thick:'짙은', sad:'팔자' },
+  acc:{ freckles:'주근깨', none:'없음', zinc:'서퍼 선크림', bandaid:'반창고', glasses:'동그란 안경', star:'별 스티커', mole:'점' },
+};
 })();

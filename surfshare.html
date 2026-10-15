@@ -1133,7 +1133,7 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
     <!-- 꾸미기 (홈 안에서 열린다) -->
     <div id="pane-me" hidden>
       <div class="px white" style="text-align:center">
-        <canvas id="bld-av" style="width:140px;height:140px;image-rendering:pixelated;background:#8FD3FF;border:4px solid var(--ink)"></canvas>
+        <canvas id="bld-av" style="height:170px;background:linear-gradient(#C9EAFF,#E6F5FF 78%,#F3E6C8 78%);border-radius:16px;padding:0 6px"></canvas>
         <div class="note" style="margin-top:6px">여기서 만든 캐릭터가 <b>차·숙소 글에 그대로 나와요.</b><br>학교가 열리면 마을에도 이 모습으로 서 있습니다.</div>
       </div>
       <div class="px" style="margin-top:10px"><div id="bld-opts"></div></div>
@@ -1547,7 +1547,8 @@ let bldTab = 'face';
 function renderBuilder(){
   if(typeof HAIR !== 'function' && typeof HAIR !== 'object') return;
   const pr = ME.profile || (ME.profile = freshProfile(ME.name));
-  const cur = { ...pr, hair: (typeof hairOf==='function' ? hairOf(pr) : pr.hair) };
+  const cur = { fshape:'mochi', eye:'sparkle', brow:'none', acc:'freckles', ...pr, hair: (typeof hairOf==='function' ? hairOf(pr) : pr.hair) };
+  const MO = window.MOCHI_OPT, mo = (label, key) => MO ? opt(label, key, Object.entries(MO[key])) : '';
   const sw = map => (v,t)=>`<i style="display:inline-block;width:10px;height:10px;border:2px solid var(--ink);background:${map[v]};vertical-align:-1px;margin-right:3px"></i>${t}`;
   const opt = (label, key, items, render) => `<div style="margin-top:10px"><div class="note" style="margin:0 0 4px">${label}</div>
     <div style="display:flex;gap:4px;flex-wrap:wrap">${items.map(([v,t])=>{ const lk = typeof lockOf === 'function' ? lockOf(key, v) : null;
@@ -1560,7 +1561,8 @@ function renderBuilder(){
     face: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k]]))
         + opt('머리 색', 'hairc', keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), sw(HAIRC))
         + opt('피부 톤', 'skin', keys(SKIN).map(k=>[k,SKIN_KO[k]]), sw(SKIN))
-        + opt('표정', 'face', keys(FACE).map(k=>[k,FACE_KO[k]])),
+        + opt('표정', 'face', keys(FACE).map(k=>[k,FACE_KO[k]]))
+        + mo('얼굴형', 'fshape') + mo('눈', 'eye') + mo('눈썹', 'brow') + mo('얼굴 소품', 'acc'),
     wear: opt('상의', 'wear', keys(WEAR).map(k=>[k,WEAR_KO[k]]))
         + (cur.wear==='bare' ? '' : opt('상의 색', 'top', keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)))
         + opt('팬츠 · 웻수트', 'bottom', keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS))
@@ -1588,8 +1590,9 @@ function renderBuilder(){
   $('bld-opts').querySelectorAll('[data-lock]').forEach(b=>b.onclick = ()=>toast(+b.dataset.lock === 98 ? '🔒 전설의 보드 원정에서 독도까지 가면 열려요' : `🔒 Lv.${+b.dataset.lock+1} ${PLV[+b.dataset.lock][1]}에서 열려요`));
   /* 랜덤이 잠긴 걸 뽑으면 레벨 보상이 의미가 없다 */
   $('bld-rand').onclick = ()=>{ const pick = (o, key) => { const ks = Object.keys(o).filter(k=>key == null || (lockOf(key, k) == null && !(typeof shopOf === 'function' && shopOf(key, k)))); return ks[Math.floor(Math.random()*ks.length)]; };
-    Object.assign(ME.profile, { hair:pick(HAIR), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
-      wear:pick(WEAR,'wear'), top:pick(TOPS), bottom:pick(BOTTOMS), hat:pick(HAT,'hat'), boardc:pick(BOARDC,'boardc'), pet:pick(PET), petc:pick(PETC) });
+    if(window.MOCHI_OPT) Object.assign(ME.profile, { fshape:pick(MOCHI_OPT.fshape), eye:pick(MOCHI_OPT.eye, 'eye'), brow:pick(MOCHI_OPT.brow), acc:pick(MOCHI_OPT.acc, 'acc') });
+    Object.assign(ME.profile, { hair:pick(HAIR, 'hair'), hairc:pick(HAIRC), skin:pick(SKIN), face:pick(FACE),
+      wear:pick(WEAR,'wear'), top:pick(TOPS), bottom:pick(BOTTOMS), hat:pick(HAT,'hat'), boardc:pick(BOARDC,'boardc'), pet:pick(PET, 'pet'), petc:pick(PETC) });
     renderBuilder(); saveProfile(); };
   $('bld-opts').querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
     ME.profile[b.dataset.k] = b.dataset.v; renderBuilder(); saveProfile(); });

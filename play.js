@@ -65,7 +65,11 @@ const UNLOCKS = [
   { lv:2, key:'hat',    v:'band',  n:'서프 헤어밴드',  ic:'🎽' },
   { lv:4, key:'boardc', v:'neon',  n:'네온 보드',      ic:'🟢' },
   { lv:6, key:'hat',    v:'crown', n:'왕관',           ic:'👑' },
-];
+  /* 모찌 미니미(mochi.js) 얼굴 꾸미기 — 연습할수록 열린다 */
+  { lv:1, key:'eye',    v:'star',  n:'별눈',           ic:'⭐' },
+  { lv:3, key:'acc',    v:'zinc',  n:'서퍼 선크림',    ic:'🧴' },
+  { lv:5, key:'pet',    v:'otter', n:'해달 친구',      ic:'🦦' },
+].sort((a, b)=>a.lv - b.lv);
 /* 조개 상점 — 값은 조개(🐚). 번 만큼(shells) 쓴 만큼(spent)을 빼서 잔액을 센다. 산 것(own)은 영구. */
 const SHOP = [
   { key:'wear',   v:'stripe', n:'스트라이프 티', ic:'👕', cost:30, cat:'옷' },
@@ -84,6 +88,11 @@ const SHOP = [
   { key:'bpat',   v:'racing', n:'레이싱 무늬',   ic:'🏁', cost:35, cat:'보드' },
   { key:'bpat',   v:'flower', n:'꽃무늬 보드',   ic:'🌸', cost:40, cat:'보드' },
   { key:'bpat',   v:'flame',  n:'불꽃 보드',     ic:'🔥', cost:55, cat:'보드' },
+  { key:'hair',   v:'perm',   n:'뽀글펌',        ic:'💇', cost:40, cat:'머리' },
+  { key:'hair',   v:'braid',  n:'땋은머리',      ic:'🎀', cost:35, cat:'머리' },
+  { key:'acc',    v:'glasses',n:'동그란 안경',   ic:'👓', cost:25, cat:'머리' },
+  { key:'acc',    v:'star',   n:'별 스티커',     ic:'🌟', cost:15, cat:'머리' },
+  { key:'pet',    v:'turtle', n:'거북이 친구',   ic:'🐢', cost:60, cat:'친구' },
 ];
 /* 오늘의 할인 — 날짜로 하나를 골라 30% 싸게(모두 같은 물건) */
 const dealOf = () => { const d = typeof today === 'function' ? today() : ''; let h = 7; for(const c of d) h = (h * 31 + c.charCodeAt(0)) >>> 0; return SHOP[h % SHOP.length]; };
@@ -124,7 +133,7 @@ function shopOpen(){
 function renderShop(){
   const body = $('shop-body'); if(!body) return;
   const own = ME.profile.play?.own || {}, deal = dealOf();
-  const cats = ['전체', '옷', '모자', '보드'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
+  const cats = ['전체', '옷', '모자', '머리', '보드', '친구'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
   const base = withLook(ME.profile || {}, ME.name), wear = shopTry ? { ...base, [shopTry.key]:shopTry.v } : base;
   body.innerHTML = `<div class="shop-top"><canvas id="shop-me" data-anim></canvas><div><b>🐚 ${shellBal()}개</b><small>${shopTry ? `👀 ${esc(shopTry.n)} 입어 보는 중` : '물건을 누르면 내 캐릭터에 입혀 봐요'}</small>
       <small>조개는 🌊 라인업 서핑 · 🏄 파도 점프 · 🛹 서프스케이트에서 모여요</small></div></div>
@@ -135,8 +144,8 @@ function renderShop(){
         <b>${esc(it.ic)} ${esc(it.n)}</b>
         <button type="button" class="btn sm ${got ? (on ? 'ghost' : 'mint') : 'blue'}" data-buy="${i}" ${got && on ? 'disabled' : ''}>${got ? (on ? '입는 중' : '입기') : `🐚 ${priceOf(it)}${sale ? ` <s>${it.cost}</s>` : ''}`}</button></div>`; }).join('')}</div>`;
   if(typeof drawSpr === 'function'){
-    drawSpr($('shop-me'), avatarRows(wear, false), avatarTintOf(wear, 0));
-    body.querySelectorAll('[data-pv]').forEach(c=>{ const it = SHOP[+c.dataset.pv], q = { ...base, [it.key]:it.v }; drawSpr(c, avatarRows(q, false), avatarTintOf(q, 0)); });
+    drawSpr($('shop-me'), avatarRows(wear, shopTry?.key === 'pet'), avatarTintOf(wear, 0));
+    body.querySelectorAll('[data-pv]').forEach(c=>{ const it = SHOP[+c.dataset.pv], q = { ...base, [it.key]:it.v }; drawSpr(c, avatarRows(q, it.key === 'pet'), avatarTintOf(q, 0)); });
   }
 }
 window.shopOpen = shopOpen;

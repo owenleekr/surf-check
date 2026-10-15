@@ -46,9 +46,13 @@ let h = '';
 });
 const base = { gender:'f', hair:'bob', hairc:'n', skin:'s', wear:'rash', top:'b', bottom:'b', boardc:'y' };
 h += `<h2>표정 6종 <small>③ 기준</small></h2><div class="row">${['smile','happy','cool','wow','wink','sleepy'].map(f=>cell(mochiSVG({ ...base, face:f }), { smile:'미소', happy:'신남', cool:'선글라스', wow:'놀람', wink:'윙크', sleepy:'졸림' }[f])).join('')}</div>`;
-h += `<h2>머리 8종</h2><div class="row">${['buzz','short','bob','long','pony','twin','wave','surf'].map((k, i)=>cell(mochiSVG({ ...base, hair:k, hairc:'knyrbpgw'[i] }), { buzz:'스포츠', short:'짧은머리', bob:'단발', long:'장발', pony:'포니테일', twin:'양갈래', wave:'웨이브', surf:'서퍼컷' }[k])).join('')}</div>`;
+const HK = { buzz:'스포츠', short:'짧은머리', bob:'단발', long:'장발', pony:'포니테일', twin:'양갈래', wave:'웨이브', surf:'서퍼컷', bun:'똥머리', halfup:'반묶음', pixie:'숏컷', perm:'뽀글펌', braid:'땋은머리', twoblock:'투블럭', hime:'히메컷' };
+h += `<h2>머리 15종 <small>새로 7종</small></h2><div class="row">${Object.keys(HK).map((k, i)=>cell(mochiSVG({ ...base, hair:k, hairc:'knyrbpgwknyrbpg'[i] }), HK[k])).join('')}</div>`;
+h += `<h2>얼굴형 5종</h2><div class="row">${Object.entries(MOCHI_OPT.fshape).map(([k, t])=>cell(mochiSVG({ ...base, gender:'m', hair:'short', fshape:k }), t)).join('')}</div>`;
+h += `<h2>눈 6종</h2><div class="row">${Object.entries(MOCHI_OPT.eye).map(([k, t])=>cell(mochiSVG({ ...base, eye:k }), t)).join('')}</div>`;
+h += `<h2>눈썹 4종 · 얼굴 소품 7종</h2><div class="row">${Object.entries(MOCHI_OPT.brow).map(([k, t])=>cell(mochiSVG({ ...base, hair:'pixie', brow:k }), '눈썹 ' + t)).join('')}${Object.entries(MOCHI_OPT.acc).map(([k, t])=>cell(mochiSVG({ ...base, gender:'m', hair:'twoblock', skin:'d', acc:k }), t)).join('')}</div>`;
 h += `<h2>옷 5종 · 모자 4종</h2><div class="row">${['rash','hood','tank','suit','bare'].map(w=>cell(mochiSVG({ ...base, gender:'m', hair:'short', wear:w, top:'r' }), { rash:'래시가드', hood:'후디', tank:'민소매', suit:'풀슈트', bare:'맨몸' }[w])).join('')}${['bucket','cap','visor','beanie'].map(t=>cell(mochiSVG({ ...base, hat:t }), { bucket:'서프햇', cap:'캡', visor:'바이저', beanie:'비니' }[t])).join('')}</div>`;
-h += `<h2>펫 5종 <small>친밀도 0~3단계</small></h2><div class="row">${['dog','cat','rabbit','penguin','seal'].map((k, i)=>cell(mochiSVG({ ...base, pet:k, petc:'ywpkn'[i], petLv:i % 4 }, { pet:1 }), { dog:'강아지', cat:'고양이', rabbit:'토끼', penguin:'펭귄', seal:'물개' }[k])).join('')}</div>`;
+h += `<h2>펫 7종 <small>해달·거북이 추가 · 친밀도 0~3단계</small></h2><div class="row">${['dog','cat','rabbit','penguin','seal','otter','turtle'].map((k, i)=>cell(mochiSVG({ ...base, pet:k, petc:'ywpkn  '[i].trim() || undefined, petLv:i % 4 }, { pet:1 }), { dog:'강아지', cat:'고양이', rabbit:'토끼', penguin:'펭귄', seal:'물개', otter:'해달', turtle:'거북이' }[k] + ' · 친밀도 ' + (i % 4))).join('')}</div>`;
 document.getElementById('out').innerHTML = h;
 </script>
 </body>
