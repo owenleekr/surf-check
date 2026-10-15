@@ -91,11 +91,11 @@ function face(F, U, charm, es, H){
     if(es === 'cat'){ const t = x < 100 ? ` transform="translate(${2 * x} 0) scale(-1 1)"` : '';
       return `<g${t}><path d="M${x - 11},${ey + 3} Q${x - 4},${ey - 13} ${x + 12},${ey - 8} Q${x + 6},${ey + 13} ${x - 11},${ey + 3} Z" fill="${E}"/><ellipse cx="${x}" cy="${ey + 2}" rx="5.6" ry="7" fill="url(#${U}iris)"/><circle cx="${x + 3.4}" cy="${ey - 3.6}" r="3.6" fill="#fff"/>
         <path d="M${x - 11},${ey + 2} Q${x - 3},${ey - 14} ${x + 12},${ey - 8} L${x + 16},${ey - 12}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`; }
-    let s = `<ellipse cx="${x}" cy="${ey + (es === 'droopy' ? 1 : 0)}" rx="${10 * k}" ry="${(es === 'droopy' ? 11.5 : 13) * k}" fill="${E}"/><ellipse cx="${x}" cy="${ey + 3.5}" rx="${7.4 * k}" ry="${8.4 * k}" fill="url(#${U}iris)"/>`;
+    let s = `<ellipse cx="${x}" cy="${ey + (es === 'droopy' ? 1 : 0)}" rx="${9.4 * k}" ry="${(es === 'droopy' ? 11 : 12.2) * k}" fill="${E}"/><ellipse cx="${x}" cy="${ey + 3.5}" rx="${7.4 * k}" ry="${8.4 * k}" fill="url(#${U}iris)"/>`;
     s += es === 'star' ? star(x + 2.6 * k, ey - 3.6 * k, 6.4 * k) + `<circle cx="${x - 3.6}" cy="${ey + 6}" r="1.9" fill="#fff" opacity=".9"/>`
                        : `<circle cx="${x + 3.8 * k}" cy="${ey - 5.4 * k}" r="${4.8 * k}" fill="#fff"/><circle cx="${x - 3.6}" cy="${ey + 5.6}" r="2.1" fill="#fff" opacity=".9"/>`;
     if(es === 'droopy') s += `<path d="M${x - out * 10},${ey - 11} Q${x + out * 2},${ey - 14} ${x + out * 12},${ey - 2}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round"/>`;
-    else if(charm){ s += `<path d="M${x - 10.5},${ey - 6} Q${x},${ey - 15.5} ${x + 10.5},${ey - 6}" fill="none" stroke="${E}" stroke-width="3" stroke-linecap="round"/><path d="M${x + out * 9.5},${ey - 7.5} L${x + out * 14},${ey - 10.5}" stroke="${E}" stroke-width="2.6" stroke-linecap="round"/>`;
+    else if(charm){ s += `<path d="M${x - 10.5},${ey - 6} Q${x},${ey - 15} ${x + 10.5},${ey - 6}" fill="none" stroke="${E}" stroke-width="3.8" stroke-linecap="round"/><path d="M${x + out * 9.5},${ey - 7.5} L${x + out * 14},${ey - 10.5}" stroke="${E}" stroke-width="2.6" stroke-linecap="round"/>`;
       if(es === 'lash') s += `<path d="M${x + out * 6},${ey - 12} L${x + out * 9},${ey - 17} M${x + out * 1},${ey - 14} L${x + out * 2},${ey - 19}" stroke="${E}" stroke-width="2.4" stroke-linecap="round"/>`; }
     return s; };
   const closed = (x, up)=>`<path d="M${x - 9.5},${ey + (up ? 3 : -2)} Q${x},${ey + (up ? -10 : 7)} ${x + 9.5},${ey + (up ? 3 : -2)}" fill="none" stroke="${E}" stroke-width="4" stroke-linecap="round"/>`;
@@ -249,12 +249,15 @@ function mochiSVG(pr, opt){
   const pet = opt.pet && ['dog','cat','rabbit','penguin','seal','otter','turtle'].includes(pr.pet) ? pr.pet : null;
   const holdBoard = charm >= 2 && opt.board !== false, wave = charm >= 1 && !holdBoard;
   const gl = d=>`<path d="${d}" fill="url(#${U}gl)"/>`;
+  /* 잉크 선 — 실루엣은 진한 밤색 한 줄(필터), 안쪽 경계는 그 면의 진한 색으로. 도트 RPG 캐릭터처럼 또렷하게 읽히게 */
+  const OL = '#3B2A2C', ln = (c, w)=>` stroke="${dk(c, .58)}" stroke-width="${w || 2.2}" stroke-linejoin="round"`;
   const sleeve = wear === 'tank' || wear === 'bare' || SHORT ? S : T;
-  let o = `<defs><radialGradient id="${U}gl" cx=".32" cy=".26" r=".85"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".35" stop-color="#fff" stop-opacity=".08"/><stop offset=".8" stop-color="#000030" stop-opacity=".05"/><stop offset="1" stop-color="#000030" stop-opacity=".22"/></radialGradient>
+  let o = `<defs><radialGradient id="${U}gl" cx=".3" cy=".24" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".17" stop-color="#fff" stop-opacity=".34"/><stop offset=".18" stop-color="#fff" stop-opacity="0"/><stop offset=".72" stop-color="#3A1E30" stop-opacity="0"/><stop offset=".73" stop-color="#3A1E30" stop-opacity=".13"/><stop offset="1" stop-color="#3A1E30" stop-opacity=".17"/></radialGradient>
+    <filter id="${U}ol" x="-6%" y="-6%" width="112%" height="112%"><feMorphology in="SourceAlpha" operator="dilate" radius="2.6" result="d"/><feFlood flood-color="${OL}"/><feComposite in2="d" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     <linearGradient id="${U}iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2A1F2B" stop-opacity="0"/><stop offset="1" stop-color="#8A5A3E"/></linearGradient>
     <clipPath id="${U}hd"><path d="${HEAD}"/></clipPath></defs>`;
-  if(pet) o += `<g>${petSVG(pet, own(PETC_, pr.petc) || PETC_[PETDEF_[pet]] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U, pr.petv)}</g><g transform="translate(120 0)">`;
-  o += `<ellipse cx="100" cy="242" rx="42" ry="6" fill="#12245F" opacity=".14"/>`;
+  if(pet) o += `<g filter="url(#${U}ol)">${petSVG(pet, own(PETC_, pr.petc) || PETC_[PETDEF_[pet]] || PETC_.y, Math.max(0, Math.min(3, +pr.petLv || 0)), U, pr.petv)}</g><g transform="translate(120 0)">`;
+  o += `<ellipse cx="100" cy="242" rx="42" ry="6" fill="#12245F" opacity=".14"/><g filter="url(#${U}ol)">`;
   /* 옆에 낀 서핑보드(뒤) */
   if(holdBoard){ const bd = 'M24,112 C24,86 34,70 44,70 C54,70 64,86 64,112 L64,214 C64,232 54,242 44,242 C34,242 24,232 24,214 Z';
     const pat = ['stringer','racing','flower','flame'].includes(pr.bpat) ? pr.bpat : null;
@@ -268,33 +271,33 @@ function mochiSVG(pr, opt){
   const curls = (pts, r)=>pts.map(([x, y])=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${H}"/>`).join('');
   const PERM_B = [...Array(14)].map((_, i)=>{ const a = Math.PI * (0.92 + i / 13 * 1.16) ; return [100 + Math.cos(a) * 72, 100 + Math.sin(a) * 66]; }).concat([[34,140],[166,140],[44,160],[156,160]]);
   if(h.perm) o += curls(PERM_B, 22) + `<ellipse cx="100" cy="100" rx="70" ry="66" fill="${H}"/>${gl('M30,100 C30,40 170,40 170,100 C170,160 30,160 30,100 Z')}`;
-  if(h.back) o += `<path d="${h.back}" fill="${H}"/>${gl(h.back)}`;
+  if(h.back) o += `<path d="${h.back}" fill="${H}"${ln(H)}/>${gl(h.back)}`;
   if(h.top) o += h.top.replace('/>', ` fill="${H}"/>`) + `<ellipse cx="${h.topTie[0]}" cy="${h.topTie[1]}" rx="13" ry="4.5" fill="#FF6B9A"/>`;
   if(h.tail) o += `<path d="${h.tail}" fill="${H}"/>${gl(h.tail)}`;
   if(h.tails) h.tails.forEach(d=>{ o += `<path d="${d}" fill="${H}"/>${gl(d)}`; });
   /* 다리 · 쪼리 */
   const legC = wear === 'suit' ? T : S;
-  o += `<rect x="83" y="206" width="14" height="26" rx="7" fill="${legC}"/><rect x="103" y="206" width="14" height="26" rx="7" fill="${legC}"/>`;
+  o += `<rect x="83" y="206" width="14" height="26" rx="7" fill="${legC}"${ln(legC, 2)}/><rect x="103" y="206" width="14" height="26" rx="7" fill="${legC}"${ln(legC, 2)}/>`;
   if(gear === 'booties') [89, 111].forEach(x=>{ o += `<path d="M${x - 9},220 L${x + 8},220 L${x + 9},234 Q${x + 13},239 ${x + 5},241 L${x - 11},241 Q${x - 14},238 ${x - 11},233 Z" fill="#22262F"/><path d="M${x - 11},238 L${x + 10},238" stroke="#3A3F4D" stroke-width="2"/>`; });
   else [89, 111].forEach(x=>{ o += `<ellipse cx="${x}" cy="237" rx="12.5" ry="5" fill="${dk(BD, .92)}"/><ellipse cx="${x}" cy="233" rx="9" ry="5.5" fill="${S}"/><path d="M${x - 6},234 L${x},228 L${x + 6},234" fill="none" stroke="${dk(BD, .75)}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`; });
   /* 반바지 */
   if(wear !== 'suit'){ const sh = 'M71,192 Q100,201 129,192 L131,212 Q118,217 104,215 L100,207 L96,215 Q82,217 69,212 Z';
-    o += `<path d="${sh}" fill="${wear === 'shorty' ? T : B}"/><path d="M73,200 L71,211 M127,200 L129,211" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>`;
+    o += `<path d="${sh}" fill="${wear === 'shorty' ? T : B}"${ln(wear === 'shorty' ? T : B)}/><path d="M73,200 L71,211 M127,200 L129,211" stroke="#fff" stroke-opacity=".75" stroke-width="3" stroke-linecap="round"/>`;
     if(charm) o += [[80,204],[90,209],[112,209],[121,204]].map(([x, y])=>`<circle cx="${x}" cy="${y}" r="2" fill="#fff" opacity=".55"/>`).join(''); }
   /* 팔 — 왼팔은 내리거나 보드를 잡고, 오른팔은 손 흔들기 */
   const armL = holdBoard ? 'M80,158 C66,162 56,170 52,180 C50,188 58,192 63,186 C68,178 76,172 86,168 Z' : 'M80,158 C68,166 61,180 62,193 C63,201 73,202 75,195 C76,185 80,175 86,168 Z';
   const handL = holdBoard ? [56, 184] : [68, 196];
   const armR = wave ? 'M118,157 C134,156 152,150 164,141 C170,135 179,141 175,148 C165,159 145,167 120,169 Z' : 'M120,158 C132,166 139,180 138,193 C137,201 127,202 125,195 C124,185 120,175 114,168 Z';   // 흔드는 손은 볼 옆으로 — 머리 뒤로 들면 가려졌다
   const handR = wave ? [172, 142] : [132, 196];
-  if(wear !== 'poncho') o += `<path d="${armL}" fill="${sleeve}"/><path d="${armR}" fill="${sleeve}"/>`;
+  if(wear !== 'poncho') o += `<path d="${armL}" fill="${sleeve}"${ln(sleeve)}/><path d="${armR}" fill="${sleeve}"${ln(sleeve)}/>`;
   if(wear === 'hood' || wear === 'zipup') o += `<path d="M74,156 C76,144 124,144 126,156 C116,162 84,162 74,156 Z" fill="${dk(T, .82)}"/>`;
   if(SHORT && wear !== 'poncho') o += `<circle cx="84" cy="161" r="10" fill="${wear === 'sailor' ? '#FFFFFF' : T}"/><circle cx="116" cy="161" r="10" fill="${wear === 'sailor' ? '#FFFFFF' : T}"/>`;
   /* 몸통 */
   const torso = 'M78,150 C74,168 71,186 72,200 Q100,208 128,200 C129,186 126,168 122,150 Z';
   const VEST = 'M80,152 L95,152 L97,200 Q88,203 74,199 C73,184 75,166 80,152 Z M120,152 L105,152 L103,200 Q112,203 126,199 C127,184 125,166 120,152 Z';
-  if(wear === 'tank' || wear === 'bare') o += `<path d="${torso}" fill="${S}"/>`;
+  if(wear === 'tank' || wear === 'bare') o += `<path d="${torso}" fill="${S}"${ln(S)}/>`;
   if(wear === 'tank') o += `<path d="M84,158 L88,152 L112,152 L116,158 C120,172 124,188 124,200 Q100,207 76,200 C76,188 80,172 84,158 Z" fill="${T}"/>`;
-  else if(wear !== 'bare') o += `<path d="${torso}" fill="${wear === 'sailor' ? '#FFFFFF' : T}"/>`;
+  else if(wear !== 'bare') o += `<path d="${torso}" fill="${wear === 'sailor' ? '#FFFFFF' : T}"${ln(wear === 'sailor' ? '#FFFFFF' : T)}/>`;
   o += gl(torso);
   if(wear === 'rash' && charm){ o += `<path d="M74,176 Q100,183 126,176 L126,183 Q100,190 74,183 Z" fill="#fff" opacity=".85"/><path d="M92,166 Q96,160 100,166 Q104,172 108,166" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`; }
   if(wear === 'hood') o += `<path d="M95,158 L94,172 M105,158 L106,172" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M84,186 Q100,192 116,186" fill="none" stroke="${dk(T, .75)}" stroke-width="2.4"/>`;
@@ -324,12 +327,12 @@ function mochiSVG(pr, opt){
   const hR = wear === 'poncho' ? [134, 204] : handR;
   if(hold !== 'none') o += `<g transform="translate(${hR[0]} ${hR[1]})">${HOLD_SVG[hold]}</g>`;
   if(wear === 'poncho') o += `<circle cx="66" cy="204" r="8" fill="${S}"/><circle cx="134" cy="204" r="8" fill="${S}"/>`;
-  else o += `<circle cx="${handL[0]}" cy="${handL[1]}" r="8.5" fill="${S}"/><circle cx="${handR[0]}" cy="${handR[1]}" r="8.5" fill="${S}"/>`;
+  else o += `<circle cx="${handL[0]}" cy="${handL[1]}" r="8.5" fill="${S}"${ln(S, 2)}/><circle cx="${handR[0]}" cy="${handR[1]}" r="8.5" fill="${S}"${ln(S, 2)}/>`;
   if(gear === 'watch') o += `<rect x="${hR[0] - 8}" y="${hR[1] - 15}" width="16" height="7" rx="3" fill="#2B2F45"/><circle cx="${hR[0]}" cy="${hR[1] - 11.5}" r="4.4" fill="#8FD3FF" stroke="#2B2F45" stroke-width="1.6"/>`;
   if(charm >= 2 && gear !== 'towel') o += `<path d="M86,151 Q100,163 114,151" fill="none" stroke="#8B6B4A" stroke-width="1.8"/><path d="M96,158 L100,168 L104,158 Z" fill="#FFF8EC" stroke="#D9C6A8" stroke-width="1"/>`;
   /* 귀 · 얼굴 */
-  if(h.ears && !cover) o += `<circle cx="32" cy="110" r="11" fill="${S}"/><circle cx="168" cy="110" r="11" fill="${S}"/><circle cx="33" cy="111" r="5" fill="${dk(S, .9)}"/><circle cx="167" cy="111" r="5" fill="${dk(S, .9)}"/>`;
-  o += `<path d="${HEAD}" fill="${S}"/>${gl(HEAD)}`;
+  if(h.ears && !cover) o += `<circle cx="32" cy="110" r="11" fill="${S}"${ln(S)}/><circle cx="168" cy="110" r="11" fill="${S}"${ln(S)}/><circle cx="33" cy="111" r="5" fill="${dk(S, .9)}"/><circle cx="167" cy="111" r="5" fill="${dk(S, .9)}"/>`;
+  o += `<path d="${HEAD}" fill="${S}"${ln(S)}/>${gl(HEAD)}`;
   if(h.shave) o += `<g clip-path="url(#${U}hd)"><path d="M28,70 L50,70 L48,112 L28,116 Z M172,70 L150,70 L152,112 L172,116 Z" fill="${dk(H, .9)}" opacity=".55"/></g>`;
   /* 앞머리가 이마에 드리우는 그림자 — 입체감 */
   if(charm && h.front) o += `<g clip-path="url(#${U}hd)"><path d="${h.front}" transform="translate(0 6)" fill="#8A4A3A" opacity=".16"/></g>`;
@@ -344,15 +347,15 @@ function mochiSVG(pr, opt){
   if(h.side) o += `<path d="${h.side}" fill="${H}"/><path d="${h.side}" transform="translate(200 0) scale(-1 1)" fill="${H}"/>`;
   if(h.spikes && !cover) o += `<path d="${h.spikes}" fill="${H}"/>`;
   if(h.perm){ o += curls([[44,82],[62,70],[82,64],[100,62],[118,64],[138,70],[156,82],[36,100],[164,100]], 15) + curls([[70,48],[100,40],[130,48]], 20); }
-  else o += `<path d="${h.front}" fill="${H}"/>${gl(h.front)}`;
+  else o += `<path d="${h.front}" fill="${H}"${ln(H, 2.6)}/>${gl(h.front)}<clipPath id="${U}hf"><path d="${h.front}"/></clipPath><g clip-path="url(#${U}hf)" fill="none" stroke="${lt(H, .34)}" stroke-width="4.6" stroke-linecap="round"><path d="M62,58 Q72,44 86,40"/><path d="M96,36 Q104,33 112,35"/><path d="M128,40 Q138,45 144,52"/></g>`;
   if(h.braid){ o += [0,1,2,3,4,5].map(i=>`<ellipse cx="${156 + (i % 2 ? 4 : -2)}" cy="${118 + i * 15}" rx="11" ry="9" fill="${H}" stroke="${dk(H, .78)}" stroke-width="1.6"/>`).join('') + `<ellipse cx="157" cy="206" rx="6" ry="4" fill="#FF6B9A"/><path d="M151,210 Q157,224 163,210" fill="${H}"/>`; }
   if(brow !== 'none' && face_ !== 'cool'){ const bc = dk(H, .8);
     o += [76, 124].map(x=>{ const o2 = x < 100 ? -1 : 1, y = 92;
       if(brow === 'soft') return `<path d="M${x - 9},${y + 2} Q${x},${y - 3} ${x + 9},${y + 2}" fill="none" stroke="${bc}" stroke-width="3" stroke-linecap="round"/>`;
       if(brow === 'thick') return `<path d="M${x - 10},${y + 1} L${x + 10},${y + 1}" stroke="${bc}" stroke-width="5.5" stroke-linecap="round"/>`;
       return `<path d="M${x - o2 * 9},${y - 3} L${x + o2 * 9},${y + 3}" stroke="${bc}" stroke-width="3.4" stroke-linecap="round"/>`; }).join(''); }
-  if(!cover){ o += `<path d="M60,48 Q100,30 140,48" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="7" stroke-linecap="round"/><path d="M128,40 Q136,42 142,48" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>`;
-    if(charm && h.ahoge && !hat) o += `<path d="M98,28 C90,12 102,0 118,6 C106,8 102,16 105,28 Z" fill="${H}"/>`; }
+  if(!cover){ if(h.perm) o += `<path d="M60,48 Q100,30 140,48" fill="none" stroke="#fff" stroke-opacity=".38" stroke-width="7" stroke-linecap="round"/>`;   // 나머지 머리는 앞머리 결 하이라이트가 대신
+    if(charm && h.ahoge && !hat) o += `<path d="M98,28 C90,12 102,0 118,6 C106,8 102,16 105,28 Z" fill="${H}"${ln(H, 2)}/>`; }
   if(h.tie) o += `<circle cx="${h.tie[0]}" cy="${h.tie[1]}" r="7" fill="#FF6B9A"/>`;
   if(h.ties) h.ties.forEach(([x, y])=>{ o += `<circle cx="${x}" cy="${y}" r="7" fill="#FF6B9A"/><circle cx="${x - 2}" cy="${y - 2}" r="2.2" fill="#fff" opacity=".6"/>`; });
   /* 선글라스를 머리에(소품) */
@@ -367,6 +370,9 @@ function mochiSVG(pr, opt){
     if(hat === 'bucket'){ o += `<path d="${X.d[0]}" fill="${c}"/>${gl(X.d[0])}<ellipse cx="${X.brim[0]}" cy="${X.brim[1]}" rx="${X.brim[2]}" ry="${X.brim[3]}" fill="${c}"/><path d="${X.band}" fill="${dk(c, .8)}"/>`; }
     if(hat === 'visor'){ o += `<path d="${X.d[0]}" fill="${c}"/><path d="${X.bill}" fill="${dk(c, .94)}"/>`; }
     if(hat === 'beanie'){ o += `<path d="${X.d[0]}" fill="${c}"/>${gl(X.d[0])}<rect x="${X.cuff[0]}" y="${X.cuff[1]}" width="${X.cuff[2]}" height="${X.cuff[3]}" rx="12" fill="#F7F3EA"/><circle cx="${X.pom[0]}" cy="${X.pom[1]}" r="11" fill="#F7F3EA"/>`; } }
+  o += '</g>';
+  /* 금빛 반짝이 — 칭찬받는 순간처럼. 외곽선 없이 가볍게 */
+  if(charm >= 2 && face_ !== 'sleepy') o += [[180, 34, 7], [192, 56, 4.4]].map(([x, y, r])=>`<path d="M${x},${y - r} Q${x + r * .18},${y - r * .18} ${x + r},${y} Q${x + r * .18},${y + r * .18} ${x},${y + r} Q${x - r * .18},${y + r * .18} ${x - r},${y} Q${x - r * .18},${y - r * .18} ${x},${y - r} Z" fill="#F2B632"/>`).join('');
   if(pet) o += '</g>';
   const W = pet ? 320 : 200, VB = opt.view && VIEWS[opt.view];
   if(VB){ const [, , vw, vh] = VB.split(' ').map(Number); return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VB}" width="${vw * 2}" height="${vh * 2}">${o}</svg>`; }

@@ -5,6 +5,7 @@
 (function(){
 const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide';
 const UPDATES = [
+  { id:'u1016c', date:'10.16', t:'🍡 모찌 미니미가 더 또렷해졌어요', items:[['🍡','진한 외곽선 · 또렷한 그늘 · 머리결 하이라이트 · 금빛 반짝이','me']] },
   { id:'u1016b', date:'10.16', t:'👆 한 손으로 더 편하게', items:[
       ['⚡', '홈 빠른 실행 — 체크인 · 캠 · 일지 쓰기 · 버스 좌석', ''],
       ['⬇️', '창은 제목줄을 잡고 아래로 끌면 닫혀요 · 쓰던 일지는 임시 저장', ''],
