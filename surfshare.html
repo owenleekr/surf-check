@@ -56,6 +56,7 @@ window.__bootFail = (files) => {
 <script src="surflog.js" defer></script>
 <script src="charcard.js" defer></script>
 <script src="backnav.js" defer></script>
+<script src="homeedit.js" defer></script>
 <script>
 /* 가입 화면 장면 — mochi.js 로 세 명 + 강아지(320px 폭에도 들어가게) */
 (function(){ const draw = ()=>{ const el = document.getElementById('gate-hero'); if(!el || el.dataset.ok || typeof mochiSVG !== 'function') return; el.dataset.ok = 1;
@@ -944,6 +945,9 @@ h1{ text-shadow:2px 2px 0 var(--ink) }
 /* 키보드가 떠 있을 때 */
 body.kb-on .nav, body.kb-on .mailfab{ display:none } body.kb-on .sheet-in{ max-height:calc(100vh - var(--kb, 0px) - 16px); margin-bottom:var(--kb, 0px) }
 body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
+.he-list{ display:flex; flex-direction:column; gap:6px } .he-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:48px; padding:0 12px; font-family:inherit; font-size:14.5px; font-weight:700; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:12px; cursor:pointer; text-align:left }
+.he-sw{ position:relative; flex:0 0 auto; width:44px; height:26px; border-radius:999px; background:#C9D1E0; transition:background .15s } .he-sw::after{ content:""; position:absolute; left:3px; top:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .15s }
+.he-sw.on{ background:var(--mint) } .he-sw.on::after{ transform:translateX(18px) }
 </style>
 </head>
 <body>
@@ -1349,6 +1353,7 @@ body.kb-on .toast, body.kb-on .undo-bar{ bottom:calc(var(--kb, 0px) + 12px) }
       <button type="button" class="more-it" data-more="guide"><i>📖</i><b>사용 가이드</b><small>맛집·스팟 등록하는 법</small></button>
       <button type="button" class="more-it" data-more="shop"><i>🛍️</i><b>소품샵</b><small>서핑 용품 · 소품 · 옷</small></button>
       <button type="button" class="more-it" data-more="a2hs"><i>📲</i><b>홈 화면에 추가</b><small>아이콘으로 바로 열기</small></button>
+      <button type="button" class="more-it" data-more="homeedit"><i>🏠</i><b>홈 편집</b><small>안 쓰는 섹션 숨기기</small></button>
       <button type="button" class="more-it" data-more="help" id="help"><i>💡</i><b>처음 안내 다시 보기</b><small>탭마다 뭐가 있는지</small></button>
       <button type="button" class="more-it" id="out"><i>🚪</i><b>로그아웃</b><small>이 기기에서 나가기</small></button>
     </div>
@@ -2815,7 +2820,7 @@ $('t-more').onclick = ()=>{ moreDots(); $('more-sheet').hidden = false; };
 $('more-sheet').addEventListener('click', e=>{
   if(e.target.closest('[data-moreclose]')){ $('more-sheet').hidden = true; return; }
   const b = e.target.closest('[data-more]'); if(!b) return; const k = b.dataset.more; $('more-sheet').hidden = true;
-  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'shop') window.shopOpen?.(); else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
+  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'shop') window.shopOpen?.(); else if(k === 'homeedit') window.homeEditOpen?.(); else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
 });
 
 /* ── 탭 ─────────────────────────────────────────────────── */
