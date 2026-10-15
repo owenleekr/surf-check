@@ -85,6 +85,7 @@ function renderFood(root){
   const f = folders('food')[0]; if(!f){ root.innerHTML = '<div class="empty">아직 목록이 없어요</div>'; return; }
   const all = items('food').concat(FT.added('food')), counts = { 전체:all.length }; all.forEach(i=>{ const a = areaOf(i.a); counts[a] = (counts[a] || 0) + 1; });
   const areas = ['전체', '양양', '속초', '고성', '강릉', '기타'].filter(a=>counts[a]);
+  if(!areas.includes(area)) area = '전체';
   const seen = seenSet(), week = Date.now() - 7 * 864e5, dist = i => i.lat == null ? Infinity : distKm(i.lat, i.lon);
   const catOfI = i => piOf(i)?.cat || guessCat(i);
   const cc = {}; all.forEach(i=>{ const c = catOfI(i); if(c) cc[c] = (cc[c] || 0) + 1; });
@@ -119,6 +120,12 @@ function renderFood(root){
    앱의 해변 캠(SEAS)과 이름이 맞으면 📹 캠 버튼이 붙고, 폴더에 없는 캠 해변은 아래에 따로 보여준다. 모든 글은 esc */
 const spotKey = n => String(n).replace(/해수욕장|해변|[\s·]/g, '').replace(/[0-9]+리$/, '');
 let sarea = '전체';
+/* 마지막에 고른 보기·지역·종류·정렬 — 나갔다 오면 처음으로 돌아가 있었다 */
+const FPK = 'lineup.share.foodpref';
+try{ const fp = JSON.parse(localStorage.getItem(FPK) || 'null'); if(fp && typeof fp === 'object'){
+  if(['food', 'spot'].includes(fp.view)) view = fp.view; if(['near', 'new'].includes(fp.sort)) sort = fp.sort;
+  ['area', 'fcat', 'sarea'].forEach(k=>{ if(typeof fp[k] === 'string' && fp[k].length <= 12){ if(k === 'area') area = fp[k]; else if(k === 'fcat') fcat = fp[k]; else sarea = fp[k]; } }); } }catch(e){}
+const saveFP = () => { try{ localStorage.setItem(FPK, JSON.stringify({ view, area, sort, fcat, sarea })); }catch(e){} };
 function renderSpots(root){
   const search = n => `https://map.naver.com/p/search/${encodeURIComponent(String(n).replace(/·/g, ' ') + (/해수욕장|해변|항|교$/.test(n) ? '' : ' 해변'))}`;
   const f = folders('spot')[0], all = items('spot').concat(FT.added('spot')), dist = i => i.lat == null ? Infinity : distKm(i.lat, i.lon);
@@ -159,6 +166,7 @@ document.addEventListener('input', e=>{ const el = e.target.closest?.('[data-fq]
   clearTimeout(fqT); fqT = setTimeout(()=>{ const k = el.dataset.fq, pos = el.selectionStart; render(true);
     const n = document.querySelector(`[data-fq="${k}"]`); if(n){ n.focus({ preventScroll:true }); try{ n.setSelectionRange(pos, pos); }catch(_){} } }, 160); });
 function render(force){
+  saveFP();
   const root = $f('food-body'); if(!root || state.tab !== 'food') return;
   const ae = document.activeElement; if(force !== true && ae && root.contains(ae) && ae.matches('input')) return;   // 글 쓰는 중에 배경 갱신이 칸을 날리지 않게
   $f('food-seg')?.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.view === view)));
