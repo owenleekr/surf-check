@@ -301,7 +301,8 @@ function playMerge(remote){
   Object.keys(remote.vis||{}).forEach(d=>{ (p.vis ||= {})[d] = { ...(remote.vis[d]||{}), ...(p.vis[d]||{}) }; });
   if(remote.dbest && remote.dbest.day && (!p.dbest || remote.dbest.day > p.dbest.day || (remote.dbest.day === p.dbest.day && remote.dbest.score > p.dbest.score))){ p.dbest = remote.dbest; ch = true; }
   if(remote.qb && typeof remote.qb === 'object'){ const q = (p.qb ||= { best:-1, clears:0 }); if((remote.qb.best ?? -1) > (q.best ?? -1)){ q.best = remote.qb.best; ch = true; } if((remote.qb.clears || 0) > (q.clears || 0)){ q.clears = remote.qb.clears; ch = true; } if(remote.qb.legend && !q.legend){ q.legend = 1; ch = true; } const rc = _num(remote.qb.ch, 11); if(rc > _num(q.ch, 11)){ q.ch = rc; ch = true; } }
-  if(remote.df && typeof remote.df === 'object'){ const d = (p.df ||= { best:0, clears:0 }), rb = _num(remote.df.best, 12), rc = _num(remote.df.clears, 9999), rh = _num(remote.df.hd, 3); if(rb > _num(d.best, 12)){ d.best = rb; ch = true; } if(rc > _num(d.clears, 9999)){ d.clears = rc; ch = true; } if(rh > _num(d.hd, 3)){ d.hd = rh; ch = true; } }
+  if(remote.df && typeof remote.df === 'object'){ const d = (p.df ||= { best:0, clears:0 }), rb = _num(remote.df.best, 15), rc = _num(remote.df.clears, 9999), rh = _num(remote.df.hd, 3); if(rb > _num(d.best, 15)){ d.best = rb; ch = true; } if(rc > _num(d.clears, 9999)){ d.clears = rc; ch = true; } if(rh > _num(d.hd, 3)){ d.hd = rh; ch = true; }
+    for(const [k, mx] of [['st', 3], ['sb', 15]]) if(Array.isArray(remote.df[k])){ const a = Array.isArray(d[k]) ? d[k] : (d[k] = [0, 0, 0]); for(let i = 0; i < 3; i++){ const v = _num(remote.df[k][i], mx); if(v > _num(a[i], mx)){ a[i] = v; ch = true; } } } }   // 해변별 별·최고 라운드 — 칸마다 큰 값
   if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
     Object.keys(remote.sk.best || {}).forEach(k=>{ if((remote.sk.best[k] || 0) > (sk.best[k] || 0)){ sk.best[k] = remote.sk.best[k]; ch = true; } });
     Object.keys(remote.sk.real || {}).forEach(d=>{ if(!sk.real[d]){ sk.real[d] = 1; ch = true; } });
@@ -439,18 +440,22 @@ function playQuestDone(stage, win, shells, cleared){
   return { best:q.best, gain, shells:sh + bx, x2:bx };
 }
 
-/* 해변 수호가 끝났을 때 — 최고 파도·성공 횟수(df)와 조개. XP 는 다른 게임과 같은 하루 상한(gxp) 안에서만 */
-function playDefendDone(wave, win, shells, diff){
+/* 해변 수호가 끝났을 때 — 최고 라운드·성공 횟수·연 해변(hd)·해변별 별(st)·최고 라운드(sb)와 조개.
+   해변을 처음 지키면 첫 클리어 보너스(🐚20·30·40, ×2 없음). XP 는 다른 게임과 같은 하루 상한(gxp) 안에서만 */
+function playDefendDone(wave, win, shells, stage, stars){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
-  const p = playP(), day = today(), d = (p.df ||= { best:0, clears:0 });
-  const w = _num(wave, 15); if(w > _num(d.best, 12)) d.best = w;
-  if(win){ d.clears = _num(d.clears, 9999) + 1; const h = _num(diff, 2) + 1; if(h > _num(d.hd, 3)) d.hd = h; }
-  const sh = _num(shells, 60), bx = x2('defend', sh); p.shells = (p.shells || 0) + sh + bx;
+  const p = playP(), day = today(), d = (p.df ||= { best:0, clears:0 }), g = _num(stage, 2);
+  const st = Array.isArray(d.st) ? d.st : (d.st = [0, 0, 0]), sb = Array.isArray(d.sb) ? d.sb : (d.sb = [0, 0, 0]);
+  const w = _num(wave, 15); if(w > _num(d.best, 15)) d.best = w; if(w > _num(sb[g], 15)) sb[g] = w;
+  let first = 0;
+  if(win){ d.clears = _num(d.clears, 9999) + 1; if(g + 1 > _num(d.hd, 3)) d.hd = g + 1;
+    if(!_num(st[g], 3)) first = [20, 30, 40][g]; const s = _num(stars, 3); if(s > _num(st[g], 3)) st[g] = s; }
+  const sh = _num(shells, 60), bx = x2('defend', sh); p.shells = (p.shells || 0) + sh + bx + first;
   dmNote('df', w); wkNote('d', w);
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.ceil(w / 2) + (win ? 4 : 0), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
-  return { best:d.best, gain, shells:sh + bx, x2:bx };
+  return { best:d.best, gain, shells:sh + bx, x2:bx, first };
 }
 
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
@@ -572,7 +577,7 @@ function renderHub(enter){
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
       ${card(0,'🗺️','전설의 보드 원정', p.qb ? `봉인 조각 ${_num(p.qb.ch, 11)}/11${p.qb.clears ? ` · 완주 ${p.qb.clears}` : ''}` : '강원 해안 11마을 이야기', p.qb && p.qb.ch != null ? '' : 'NEW', 'quest')}
-      ${card(0,'🛡️','해변 수호', p.df ? `최고 ${_num(p.df.best, 15)}/15 라운드${_num(p.df.clears, 9999) ? ` · 수호 ${_num(p.df.clears, 9999)}` : ''}` : '바다 골칫거리를 막아요', p.df ? '' : 'NEW', 'defend')}
+      ${card(0,'🛡️','해변 수호', p.df ? `⭐ ${(Array.isArray(p.df.st) ? p.df.st : []).slice(0, 3).reduce((a, v) => a + _num(v, 3), 0)}/9 · 최고 ${_num(p.df.best, 15)}/15 라운드` : '해변 3곳 · 레벨 업 기술', p.df ? '' : 'NEW', 'defend')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
@@ -785,10 +790,10 @@ const UPG = [
   { k:'j_mag',    g:'jump',   ic:'🧲', n:'자석 시간+',    s:'자석',   d:'조개 자석이 2초씩 더 길게', max:4 },
   { k:'j_item',   g:'jump',   ic:'🎁', n:'아이템 등장↑',  s:'아이템', d:'쉬움에도 아이템이 나오고, 어려움은 더 자주', max:3 },
   { k:'j_val',    g:'jump',   ic:'🐚', n:'조개 가치↑',    s:'조개',   d:'조개 하나에 +2점씩 더', max:5 },
-  { k:'d_atk',    g:'defend', ic:'💥', n:'시작 공격력',   s:'공격',   d:'공격력 카드를 단계만큼 들고 시작', max:3 },
+  { k:'d_atk',    g:'defend', ic:'💥', n:'기본 공격력',   s:'공격',   d:'모든 기술 피해 +8%씩', max:3 },
   { k:'d_sch',    g:'defend', ic:'🏫', n:'학교 체력',     s:'학교',   d:'학교 HP +10%씩', max:4 },
   { k:'d_shell',  g:'defend', ic:'🐚', n:'시작 조개',     s:'조개',   d:'정비용 조개 +3개씩 들고 시작', max:4 },
-  { k:'d_free',   g:'defend', ic:'🎟️', n:'첫 카드 무료',  s:'무료',   d:'정비 상점 카드 단계만큼 공짜', max:3 },
+  { k:'d_free',   g:'defend', ic:'🎟️', n:'첫 카드 무료',  s:'무료',   d:'정비 보급 단계만큼 공짜', max:3 },
   { k:'q_hp',     g:'quest',  ic:'❤️', n:'원정대 체력',   s:'체력',   d:'최대 체력 +8씩', max:5 },
   { k:'q_atk',    g:'quest',  ic:'⚔️', n:'원정대 공격',   s:'공격',   d:'공격력 +1씩', max:5 },
   { k:'r_mul',    g:'surf',   ic:'🌊', n:'라인업 점수 배율', s:'점수', d:'세션 점수 +3%씩', max:5 },

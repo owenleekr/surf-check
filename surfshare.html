@@ -360,6 +360,20 @@ body.game-on{ overflow:hidden }
 .d-card em{ font-style:normal; font-size:10.5px; font-weight:800; color:#1F6FB8 } .d-card u{ text-decoration:none; font-size:12.5px; font-weight:800; margin-top:2px }
 .d-card:disabled{ opacity:.5; cursor:default } .d-card.on{ background:#E6FBEF; opacity:.8 }
 .d-row{ display:flex; gap:6px; margin-top:8px } .d-row .btn{ flex:1; min-height:42px }
+/* 해변 수호 — 스테이지 고르기·레벨 업 카드·결과 별 */
+.d-stgs{ display:flex; flex-direction:column; gap:6px; margin:10px 0 }
+.d-stg{ display:grid; grid-template-columns:34px 1fr auto; align-items:center; column-gap:8px; row-gap:1px; text-align:left; padding:8px 10px; min-height:54px; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); cursor:pointer }
+.d-stg i{ grid-row:1 / 3; font-style:normal; font-size:24px; font-family:sans-serif; text-align:center } .d-stg b{ font-size:14.5px }
+.d-stg em{ font-style:normal; font-size:13px; font-weight:800; color:#E0A000; letter-spacing:1px } .d-stg small{ grid-column:2 / 4; font-size:11.5px; color:#5B6275; font-weight:700; word-break:keep-all }
+.d-stg[aria-pressed="true"]{ background:#FFF3C4; box-shadow:inset 0 0 0 2px #FFB020 } .d-stg:disabled{ opacity:.55; cursor:default; background:#EEF1F5 }
+.d-bar.pick{ top:50%; bottom:auto; transform:translateY(-50%); border-color:#7FE3FF } .d-cards.n4{ grid-template-columns:repeat(2,1fr) }
+.d-card.evo{ background:linear-gradient(180deg,#FFF3C4,#FFD86B); border-color:#B45309 } .d-card.new em{ color:#15803D }
+.d-stars{ font-size:34px; line-height:1.1; letter-spacing:4px; color:#FFB020; margin:2px 0 4px; font-family:sans-serif } .d-stars s{ text-decoration:none; color:#D5DCE6 }
+.d-stars span{ display:inline-block; animation:dStar .5s cubic-bezier(.2,1.5,.4,1) both } .d-stars span:nth-child(2){ animation-delay:.18s } .d-stars span:nth-child(3){ animation-delay:.36s }
+@keyframes dStar{ from{ transform:scale(0) rotate(-40deg); opacity:0 } }
+.d-build{ display:flex; flex-wrap:wrap; justify-content:center; gap:4px; margin:2px 0 6px } .d-build span{ font-size:12px; font-weight:800; background:#F0F4F9; border:1.5px solid var(--ink); padding:2px 6px }
+.d-new{ font-size:13.5px; font-weight:900; color:#15803D; margin:0 0 6px }
+@media (prefers-reduced-motion: reduce){ .d-stars span{ animation:none } }
 #q-cv{ display:block; width:100%; height:auto; image-rendering:pixelated }
 .q-ctl{ display:flex; gap:8px; margin-top:8px } .q-ctl .btn{ flex:1; min-height:42px }
 .q-log{ margin-top:8px; min-height:96px; padding:8px 10px; background:#0E2A4A; border:2px solid var(--ink); color:#EAF6FF; font-size:13px; font-weight:700; line-height:1.55 }
