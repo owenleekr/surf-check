@@ -347,13 +347,13 @@ body.game-on{ overflow:hidden }
 #quest .game-box{ width:min(100%, calc((100dvh - 284px - env(safe-area-inset-bottom)) + 28px)) }
 /* 해변 수호 (defend.js) — 액션 아케이드. 캔버스 240×360 세로 + 아래 게임 패드(왼쪽 스틱 · 오른쪽 👊 공격 · 💨 대시 · 🌊 필살기).
    패드를 캔버스 밖 아래에 둬서 엄지가 화면(학교·적)을 가리지 않는다. 캔버스 폭은 남은 높이(패드 172px 뺀 값)에 맞춘다 */
-#defend{ --ar:.6667 } #defend .game-box{ width:min(100%, calc((100dvh - 78px - 172px - env(safe-area-inset-bottom)) * .6667 + 12px)); min-width:min(100%, 300px); padding-bottom:calc(6px + env(safe-area-inset-bottom)) }
+#defend{ --ar:.6667 } #defend .game-box{ width:min(100%, calc((100dvh - 78px - 176px - env(safe-area-inset-bottom)) * .6667 + 12px)); min-width:min(100%, 200px); padding-bottom:calc(6px + env(safe-area-inset-bottom)) }
 #defend .game-hd{ padding-bottom:6px }
 #d-cv{ display:block; width:100%; height:auto; touch-action:none; -webkit-touch-callout:none }
-#defend .game-ov{ z-index:5 }
+#defend .game-ov{ z-index:5; touch-action:pan-y }   /* 카드가 길면 손가락으로 스크롤(무대의 touch-action:none 을 여기서 끊는다) */
 .d-top{ position:absolute; top:6px; right:6px; z-index:2; display:flex; gap:6px }
 .d-top .btn{ min-width:44px; min-height:40px; padding:0 8px; font-size:15px; font-weight:900; background:rgba(11,37,64,.78); color:#fff; border-color:#fff }
-.d-pad{ position:relative; display:flex; gap:8px; height:166px; margin-top:8px; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; transition:opacity .2s }
+.d-pad{ position:relative; display:flex; gap:8px; flex:none; width:min(calc(100vw - 12px), 440px); align-self:center; height:166px; margin-top:8px; touch-action:none; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; transition:opacity .2s }
 .d-pad.off{ opacity:.4 } .d-pad.off.show{ opacity:1 } .d-pad.show .d-b{ filter:none }
 .d-joy{ position:relative; flex:1; min-width:0; border-radius:20px; background:rgba(255,255,255,.07); border:1.5px dashed rgba(255,255,255,.22); touch-action:none; overflow:hidden }
 .d-joy::before{ content:''; position:absolute; left:var(--bx,50%); top:var(--by,50%); width:104px; height:104px; margin:-52px 0 0 -52px; border-radius:50%; border:2px solid rgba(255,255,255,.4); background:rgba(255,255,255,.08); pointer-events:none }
@@ -366,7 +366,7 @@ body.game-on{ overflow:hidden }
 .d-atk{ right:2px; bottom:4px; width:94px; height:94px; background:radial-gradient(circle at 35% 30%, #FFB07A, #E8453C) } .d-atk b{ font-size:34px }
 .d-dash{ right:104px; bottom:2px; width:66px; height:66px; background:radial-gradient(circle at 35% 30%, #9FF0D0, #1FA67A) } .d-dash b{ font-size:22px }
 .d-dash::after{ content:''; position:absolute; inset:-3px; border-radius:50%; background:conic-gradient(rgba(11,37,64,.72) calc(var(--cd,0) * 1turn), transparent 0); pointer-events:none }
-.d-sp{ right:16px; bottom:104px; width:66px; height:66px; border:5px solid transparent; background:radial-gradient(circle at 35% 30%, #8FD8FF, #1F5FA8) padding-box, conic-gradient(#FFD24A calc(var(--g,0) * 1turn), rgba(255,255,255,.28) 0) border-box } .d-sp b{ font-size:22px }
+.d-sp{ right:16px; bottom:100px; width:66px; height:66px; border:5px solid transparent; background:radial-gradient(circle at 35% 30%, #8FD8FF, #1F5FA8) padding-box, conic-gradient(#FFD24A calc(var(--g,0) * 1turn), rgba(255,255,255,.28) 0) border-box } .d-sp b{ font-size:22px }
 .d-sp.full{ background:radial-gradient(circle at 35% 30%, #FFF2A8, #FF9A1F) padding-box, linear-gradient(#FFD24A, #FFD24A) border-box; animation:dPulse .7s infinite alternate }
 .d-b.nudge, .d-joy.nudge{ animation:dPulse .6s infinite alternate }
 @keyframes dPulse{ to{ box-shadow:0 0 0 7px rgba(255,226,122,.6), 0 4px 0 rgba(0,0,0,.4) } }
@@ -382,6 +382,14 @@ body.game-on{ overflow:hidden }
 .d-score em{ font-style:normal; font-size:12px; font-weight:800; color:#5B6275 } .d-score em.nb{ color:#E8453C }
 .d-bar.pick .d-card{ min-height:132px; border-radius:14px } .d-bar.pick .d-card i{ font-size:34px; margin-bottom:2px } .d-bar.pick .d-card b{ font-size:13.5px }
 @media (prefers-reduced-motion: reduce){ .d-b.nudge, .d-joy.nudge, .d-sp.full{ animation:none; box-shadow:0 0 0 5px rgba(255,226,122,.8) } }
+/* 키 작은 폰(SE·320) — 패드를 줄여 캔버스·패드가 겹치지 않게. 해변 고르기·결과 화면(dmenu)은 패드를 걷고 카드에 자리를 다 준다 */
+@media (max-height:700px){ #defend .game-box{ width:min(100%, calc((100dvh - 78px - 158px - env(safe-area-inset-bottom)) * .6667 + 12px)) } .d-pad{ height:150px } .d-btns{ width:158px } .d-atk{ width:84px; height:84px } .d-atk b{ font-size:30px } .d-dash{ right:94px; width:60px; height:60px } .d-sp{ right:14px; bottom:90px; width:60px; height:60px } .d-joy::before{ width:96px; height:96px; margin:-48px 0 0 -48px } }
+#defend.dmenu .d-pad, #defend.dmenu .d-top, #defend.dhow .d-top{ display:none } #defend.dmenu .game-ov{ background:rgba(11,37,64,.72) } #defend.dmenu .game-box, #defend.dhow .game-box{ width:100%; max-width:460px; min-width:0 }
+#defend.dmenu .game-stage, #defend.dhow .game-stage{ flex:1 1 auto; min-height:0; overflow:hidden; background:#0B2540 } #defend.dmenu #d-cv, #defend.dhow #d-cv{ position:absolute; inset:0; height:100%; object-fit:cover; object-position:50% 100% }
+#defend .go-d{ word-break:keep-all } #defend .go-card{ max-width:340px } #defend .d-row .btn{ white-space:nowrap; padding-left:6px; padding-right:6px }
+@media (max-height:700px){ #defend .d-how{ gap:5px; margin:4px 0 6px } #defend .d-how li{ padding:6px 8px } #defend .d-mini{ width:40px; height:40px; font-size:20px } #defend .d-goal{ font-size:19px } #defend .d-goal2{ margin-bottom:6px } #defend .go-card{ padding:12px 12px } }
+.d-bar.pick{ animation:dIn .22s cubic-bezier(.2,1.3,.4,1) } .d-bar.arm .d-card{ pointer-events:none } @keyframes dIn{ from{ transform:translateY(-50%) scale(.85); opacity:0 } }
+@media (prefers-reduced-motion: reduce){ .d-bar.pick{ animation:none } }
 .d-bar{ position:absolute; left:6px; right:6px; bottom:6px; z-index:3; padding:8px; background:rgba(11,37,64,.93); border:2px solid #fff; color:#fff } .d-bar[hidden]{ display:none }
 .d-sh{ display:flex; justify-content:space-between; font-size:13.5px; margin-bottom:6px } .d-sh b{ font-weight:800 }
 .d-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px }
@@ -1283,6 +1291,10 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .bd-burst{ position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden } .bd-burst i{ position:absolute; top:-12px; width:8px; height:13px; border-radius:2px; animation:bdFall2 2.4s ease-in forwards }
 @keyframes bdFall2{ 0%{ transform:translateY(0) rotate(0) } 100%{ transform:translateY(105vh) rotate(720deg) } }
 @media (prefers-reduced-motion: reduce){ .bday-bar > i, .bd-av, .bd-conf i{ animation:none } .bd-conf{ display:none } }
+/* 신호 실패로 목록을 비워 두면 빈 상자만 덩그러니 남았다 — 위의 '다시' 줄만 보이게 */
+#rides:empty, #stays:empty, #bolts:empty{ display:none }
+.rs-open{ display:block; margin:6px auto 0; min-height:44px; padding:0 12px; border:0; background:none; font:inherit; font-size:13.5px; color:var(--deep); text-decoration:underline; cursor:pointer }
+.rs-box{ margin-top:4px; padding:12px; border:2px dashed var(--ink); border-radius:10px; background:#FFFDF3 }
 </style>
 </head>
 <body>
@@ -1316,7 +1328,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
       <button type="button" id="m-new" aria-pressed="false">새 계정</button>
     </div>
     <div class="note" id="mode-note" style="margin:0 0 4px">아이디와 비밀번호로 들어와요.</div>
-    <label for="uid">아이디</label><input id="uid" autocapitalize="off" placeholder="영문·숫자 2~16자">
+    <label for="uid">아이디</label><input id="uid" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username" placeholder="영문·숫자 2~16자" enterkeyhint="next">
     <div id="new-only" hidden>
       <label for="uroster">이름 — 6기 명단에서 찾기</label>
       <select id="uroster"></select>
@@ -1344,6 +1356,15 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
         <a href="/privacy" target="_blank" rel="noopener">개인정보처리방침</a>에 동의합니다</span></label>
     <div class="err" id="lerr"></div>
     <button class="btn blue big" id="go" style="width:100%">들어가기</button>
+    <!-- 비밀번호 재설정 — 가입 때 적은 생년월일로. 같은 계정표(accounts)라 라인업과 같은 서버 함수(reset_pw)를 쓴다 -->
+    <button type="button" class="rs-open" id="rs-open">비밀번호를 잊었어요</button>
+    <div class="rs-box" id="rs-box" hidden>
+      <div class="note" style="margin:0">위 <b>아이디</b> 칸을 채우고, 가입할 때 적은 <b>생년월일 6자리</b>로 새 비밀번호를 정해요.</div>
+      <label for="rs-birth">생년월일 6자리</label><input id="rs-birth" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="예) 881102" enterkeyhint="next">
+      <label for="rs-new">새 비밀번호</label><input id="rs-new" type="password" placeholder="4자 이상" autocomplete="new-password" autocapitalize="off" enterkeyhint="go">
+      <div class="err" id="rs-err"></div>
+      <button type="button" class="btn mint" id="rs-go" style="width:100%">새 비밀번호로 바꾸고 들어가기</button>
+    </div>
   </div>
 
   <!-- 첫 화면 바닥 — 빈 하늘만 남기지 않는다 -->
@@ -1886,6 +1907,10 @@ async function rpc(fn, args){
   return b;
 }
 
+/* 신호 문제인지 — 크롬은 'Failed to fetch', 아이폰 사파리는 'Load failed', 시간 초과는 TimeoutError(영문 문구)라
+   e.message 를 그대로 띄우면 영어가 나오고, 'Failed to fetch' 만 비교하면 아이폰에선 엉뚱한 안내가 떴다 */
+const isNetErr = e => !!e && (e.name === 'TypeError' || e.name === 'TimeoutError' || e.name === 'AbortError'
+  || /Failed to fetch|Load failed|NetworkError|network connection|timed out|signal/i.test(String(e.message || '')));
 /* ── 로그인 ─────────────────────────────────────────────── */
 /* SurfShare 입장 비밀번호 — 앱(학교)과 다른 코드다.
    cohort_codes 의 'share' 행. 같은 RPC 를 쓰되 기수 키만 다르다.
@@ -1911,13 +1936,15 @@ $('gate-ok').onclick = async ()=>{
     if(ok !== true){ e.textContent = '비밀번호가 달라요'; return; }
     try{ localStorage.setItem('lineup.share.invited', '1'); }catch(err){}
     passGate();
-  }catch(err){ e.textContent = err.message==='Failed to fetch' ? '서버에 닿지 않아요' : '아직 준비 중이에요 (코치에게 문의)'; }
+  }catch(err){ e.textContent = isNetErr(err) ? '서버에 닿지 않아요 · 신호를 확인하고 다시 눌러 주세요'
+      : /^오류 5/.test(err.message) ? '서버가 잠시 바빠요 · 조금 뒤 다시 눌러 주세요' : '아직 준비 중이에요 (단톡방에 물어봐 주세요)'; }
   finally{ btn.disabled = false; btn.textContent = '들어가기'; }
 };
 $('gate-code').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('gate-ok').click(); } });
 /* 가입 칸 — 엔터로 다음 칸 · 마지막 칸(비밀번호)에서 엔터 = 들어가기 */
 $('uname')?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('ubirth')?.focus(); } });
 $('ubirth')?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('upw')?.focus(); } });
+$('uid')?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); (mode === 'new' ? $('uroster') : $('upw'))?.focus(); } });
 $('upw')?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('go')?.click(); } });
 
 let mode = 'in';
@@ -1940,9 +1967,32 @@ const setMode = m => { mode = m;
   $('mode-note').textContent = m==='in' ? '전에 만든 아이디와 비밀번호로 들어와요.'
     : '처음이시죠? 6기 명단에서 본인을 찾고 비밀번호만 정하면 끝이에요.';
   $('go').textContent = m==='in' ? '들어가기' : '★ 계정 만들고 시작';
+  $('rs-open').hidden = m!=='in'; if(m!=='in') $('rs-box').hidden = true;
   $('lerr').textContent = ''; };
 $('m-in').onclick = ()=>setMode('in'); $('m-new').onclick = ()=>setMode('new');
 fillRoster();
+/* 비밀번호 재설정 — 서버가 실패를 글자로 돌려준다(ok·nouser·nobirth·wrongbirth·badpw·locked). 예전 서버는 true */
+$('rs-open').onclick = ()=>{ const b = $('rs-box'); b.hidden = !b.hidden; $('rs-err').textContent = '';
+  if(!b.hidden) setTimeout(()=>{ ($('uid').value.trim() ? $('rs-birth') : $('uid')).focus({ preventScroll:true }); b.scrollIntoView({ block:'nearest', behavior:'smooth' }); }, 60); };
+$('rs-birth').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('rs-new').focus(); } });
+$('rs-new').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.isComposing && e.keyCode !== 229){ e.preventDefault(); $('rs-go').click(); } });
+$('rs-go').onclick = async ()=>{
+  const id = $('uid').value.trim().toLowerCase(), birth = $('rs-birth').value.replace(/\D/g,''), pw = $('rs-new').value, E = t=>{ $('rs-err').textContent = t; }, btn = $('rs-go');
+  E('');
+  if(!/^[a-z0-9_]{2,16}$/.test(id)) return E('위 아이디 칸에 아이디를 넣어 주세요');
+  if(!/^\d{6}$/.test(birth)) return E('생년월일 6자리를 적어 주세요 (예: 881102)');
+  if(pw.length < 4) return E('새 비밀번호는 4자 이상');
+  btn.disabled = true; btn.textContent = '바꾸는 중…';
+  try{
+    const res = await rpc('reset_pw', { p_id:id, p_birth:birth, p_new:pw });
+    if(res !== true && res !== 'ok') return E({ nouser:'없는 아이디예요', nobirth:'이 계정은 생년월일이 없어요 — 단톡방에서 운영자에게 알려 주세요',
+      wrongbirth:'생년월일이 달라요', badpw:'새 비밀번호는 4자 이상', locked:'여러 번 틀려서 잠겼어요 — 내일 다시 해 주세요' }[res] || '바꾸지 못했어요 — 단톡방에 알려 주세요');
+    $('upw').value = pw; $('rs-box').hidden = true; $('rs-birth').value = ''; $('rs-new').value = '';
+    toast('비밀번호를 바꿨어요 · 들어갈게요'); setMode('in'); $('go').click();
+  }catch(e){ E(isNetErr(e) ? '서버에 닿지 않아요 · 신호를 확인하고 다시 눌러 주세요'
+      : /function|404|schema cache/i.test(e.message) ? '재설정 기능이 아직 서버에 없어요 — 단톡방에 알려 주세요' : '바꾸지 못했어요 — 잠시 뒤 다시 해 주세요'); }
+  finally{ btn.disabled = false; btn.textContent = '새 비밀번호로 바꾸고 들어가기'; }
+};
 $('pw-eye').onclick = ()=>{ const i = $('upw');
   i.type = i.type==='password' ? 'text' : 'password'; $('pw-eye').textContent = i.type==='password' ? '👁' : '🙈'; };
 
@@ -1987,16 +2037,19 @@ $('go').onclick = async ()=>{
       try{ token = await rpc('signup', { p_id:id, p_name:name, p_pw:pw, p_profile:profile }); }
       finally{ $('go').disabled = false; }
       ME = { id, name, profile, token, cohort: sel === '__etc' ? 'open' : '6기' };
+      /* 방금 가입한 사람에게 'NEW 37 · 업데이트'는 소음이다 — 예전 화면을 본 적이 없다. 지금까지 소식은 본 걸로 친다 */
+      try{ const u0 = window.UPDATES?.[0]?.id; if(u0){ localStorage.setItem('lineup.share.upd', u0); localStorage.setItem('lineup.share.updhide', u0); } window.updCard?.(); }catch(e){}
     } else {
       const r = await rpc('login', { p_id:id, p_pw:pw });
-      ME = { id, name:r.name, profile:r.profile||{}, token:r.token, cohort:r.cohort || 'open' };
+      ME = { id, name:r.name, profile:r.profile||{}, token:r.token, cohort:r.cohort || 'open', pull:1 };   // pull — 이 기기는 처음이니 서버의 모습·도감을 먼저 받는다(syncMe)
     }
     try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME));
          localStorage.removeItem('lineup.share.out'); }catch(e){}
     start();                    // 처음이면 start() 안에서 안내가 뜬다
-  }catch(e){ E({ nouser:'없는 아이디예요 · "새 계정"으로 만들어 주세요', wrongpw:'비밀번호가 달라요',
-      exists:'이미 있는 아이디예요', badid:'아이디는 영문 소문자·숫자·_ 2~16자', badpw:'비밀번호는 4자 이상' }[e.message]
-    || (e.message==='Failed to fetch' ? '서버에 닿지 않아요' : e.message)); }
+  }catch(e){ E({ nouser:'없는 아이디예요 · "새 계정"으로 만들어 주세요', wrongpw:'비밀번호가 달라요 · 기억이 안 나면 아래 「비밀번호를 잊었어요」',
+      exists:'이미 있는 아이디예요 · 방금 만드셨다면 위 「로그인」으로 들어와 주세요', kakao_only:'카카오로 만든 계정이에요 — 라인업 앱에서 카카오로 들어가 주세요', badid:'아이디는 영문 소문자·숫자·_ 2~16자', badpw:'비밀번호는 4자 이상' }[e.message]
+    || (isNetErr(e) ? '서버에 닿지 않아요 · 신호를 확인하고 다시 눌러 주세요'
+       : /^오류 5/.test(e.message) ? '서버가 잠시 바빠요 · 조금 뒤 다시 눌러 주세요' : e.message)); }
 };
 /* 나가기가 안 먹던 이유 — lineup.share.me 만 지우면 아래 boot() 의 "학교 세션으로 자동 입장"
    경로가 곧바로 다시 들여보낸다. 화면이 깜빡이고 제자리로 돌아온다.
@@ -2078,6 +2131,7 @@ function saveProfile(){
        localStorage.setItem('lineup.share.dressed', '1'); }catch(e){}
   clearTimeout(saveT);                       // 버튼을 연달아 누르면 요청이 그만큼 나간다
   saveT = setTimeout(async ()=>{
+    if(!meSynced) return;                    // 서버 것을 아직 못 읽었다 — 덮어쓰지 않는다(읽고 나면 syncMe 가 함께 올린다)
     /* PATCH 가 아니라 upsert 다 — 행이 없으면 PATCH 는 0행을 고치고 조용히 성공한다 */
     try{ await api('surfers', { method:'POST', body:JSON.stringify({
       id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) }); }
@@ -2592,7 +2646,7 @@ $('b-save').onclick = async ()=>{
     $('b-note').value = ''; document.querySelector('#pane-bolt details').open = false;
     await pullBolts(); toast('번개를 올렸어요');
   }catch(err){ e.textContent = err.code==='notable' ? '번개 표가 아직 없어요 — 운영자에게 알려 주세요'
-      : err.message && err.message !== 'Failed to fetch' ? `올리지 못했어요 — ${String(err.message).slice(0,70)}`
+      : err.message && !isNetErr(err) ? `올리지 못했어요 — ${String(err.message).slice(0,70)}`
       : '올리지 못했어요 · 신호 확인'; }
   finally{ $('b-save').disabled = false; }
 };
@@ -3001,8 +3055,8 @@ async function saveMood(text, quiet){
 
 async function pullChat(){
   try{ const rows = await api('chat?select=*&order=created_at.desc&limit=80');
-    state.chat = rows.reverse().filter(m=>!isTest(m.user_id)); state.chatOk = true; }
-  catch(e){ if(e.code==='notable') state.chatOk = false; }
+    state.chat = rows.reverse().filter(m=>!isTest(m.user_id)); state.chatOk = true; state.chatNet = false; }
+  catch(e){ if(e.code==='notable') state.chatOk = false; else state.chatNet = true; }
   renderChat();
 }
 function renderChat(){
@@ -3015,7 +3069,7 @@ function renderChat(){
         ${esc(m.text)}<small>${new Date(m.created_at).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
           ${m.user_id===ME.id ? `· <a href="#" data-cdel="${esc(m.id)}" style="color:#C2303A">지우기</a>` : ''}</small>
         ${state.reactsOk!==false ? reactBar('chat:'+m.id, m.user_id) : ''}</div></div>`).join('')
-    || `<div class="empty">${state.chatOk===false?'채팅 표가 아직 없어요':'첫 메시지를 남겨봐요'}</div>`;
+    || `<div class="empty">${state.chatOk===false?'채팅 표가 아직 없어요':state.chatNet?'📶 채팅을 못 불러왔어요 — 신호가 잡히면 저절로 다시 불러와요':'첫 메시지를 남겨봐요'}</div>`;
   state.chat.forEach(m=>{ const cv = box.querySelector(`canvas[data-cav="${CSS.escape(m.id)}"]`);
     if(cv && typeof drawSpr==='function'){ const q = withLook(m.profile, m.name); drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); } });
   if(atBottom || chatLast !== state.chat.length){ box.scrollTop = box.scrollHeight; chatLast = state.chat.length; }
@@ -3060,16 +3114,16 @@ function stopTownPoll(){ clearInterval(townPoll); townPoll = 0; }
    RLS 정책을 하나도 열지 않았다 — anon 키는 브라우저에 그대로 내려가므로
    다른 표처럼 using(true) 로 두면 누구나 남의 쪽지를 전부 읽는다.
    함수는 accounts.token 을 확인하고, 그 토큰은 로그인할 때만 나온다. */
-let mailBox = { inbox:[], sent:[], unread:0 }, mailTo = null, mailPoll = 0;
+let mailBox = { inbox:[], sent:[], unread:0 }, mailTo = null, mailPoll = 0, mailNet = false;
 const canMail = () => !!(ME && ME.token);
 
 async function pullMail(quiet){
   if(!canMail()) return;
   try{ const r = await rpc('note_box', { p_id:ME.id, p_token:ME.token });
-    mailBox = { inbox:r.inbox||[], sent:r.sent||[], unread:+r.unread||0 };
+    mailBox = { inbox:r.inbox||[], sent:r.sent||[], unread:+r.unread||0 }; mailNet = false;
     const d = $('mail-dot'); d.textContent = mailBox.unread; d.hidden = !mailBox.unread;
     if(!$('mail-sheet').hidden) renderMail();
-  }catch(e){ if(!quiet && e.code==='norpc') toast('쪽지 표가 아직 없어요 — 운영자에게 알려 주세요'); }
+  }catch(e){ mailNet = true; if(!$('mail-sheet').hidden) renderMail(); if(!quiet && e.code==='norpc') toast('쪽지 표가 아직 없어요 — 운영자에게 알려 주세요'); }
 }
 const ago = t => { const m = Math.floor((Date.now()-new Date(t))/60000);
   return m<1?'방금':m<60?`${m}분 전`:m<1440?`${Math.floor(m/60)}시간 전`:`${Math.floor(m/1440)}일 전`; };
@@ -3080,6 +3134,7 @@ function renderMail(){
     <span class="note">예전에 가입하신 분은 기기에 인증 표가 없어요. 나가기 → 로그인이면 됩니다.</span></div>`; return; }
   const rows = [...mailBox.inbox.map(n=>({...n, dir:'in'})), ...mailBox.sent.map(n=>({...n, dir:'out'}))]
     .sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)).slice(0,120);
+  if(!rows.length && mailNet){ box.innerHTML = `<div class="empty">📶 쪽지함을 못 불러왔어요.<br><span class="note">신호가 잡히면 저절로 다시 불러와요.</span></div>`; return; }
   if(!rows.length){ box.innerHTML = `<div class="empty">아직 주고받은 쪽지가 없어요.<br>
     <span class="note">차·숙소 글에서 올린 사람 옆 <b>✉️</b>를 누르면 여기로 옵니다.</span></div>`; return; }
   box.innerHTML = rows.map(n=>{
@@ -3822,8 +3877,8 @@ const PF = [
   ['url','네이버지도 링크'], ['note','한마디'],
 ];
 async function pullPlaces(){
-  try{ state.places = await api('places?select=*&order=name.asc&limit=200'); }
-  catch(e){ state.places = null; }
+  try{ state.places = await api('places?select=*&order=name.asc&limit=200'); state.placesNet = false; }
+  catch(e){ state.places = null; state.placesNet = e.code !== 'notable'; }
   try{ state.edits = await api('place_edits?select=*&order=created_at.desc&limit=200'); }
   catch(e){ state.edits = []; }
   renderPlaces(); renderNear(); renderMap();
@@ -3831,6 +3886,8 @@ async function pullPlaces(){
 const editsOf = id => (state.edits||[]).filter(e=>e.place_id===id);
 function renderPlaces(){
   const box = $('places'); if(!box) return;
+  if(state.places === null && state.placesNet){ box.innerHTML = `<div class="empty">📶 정보판을 못 불러왔어요. <button type="button" class="btn sm ghost" id="places-retry">다시</button></div>`;
+    $('places-retry').onclick = e=>{ e.currentTarget.disabled = true; pullPlaces(); }; return; }
   if(state.places === null){ box.innerHTML = `<div class="empty">아직 서버에 정보판이 없어요.<br>
     운영자가 서버를 설정하면 켜집니다.</div>`; return; }
   if(!state.places.length){ box.innerHTML = `<div class="empty">아직 등록된 숙소가 없어요.</div>`; return; }
@@ -4306,7 +4363,25 @@ function bindCards(box, kind){
    그래서 쉐어로만 가입한 사람은 마을에 아예 안 떴고, 꾸미기 저장도 조용히 실패했다 —
    PATCH surfers?id=eq.X 가 없는 행을 고치려다 0행에 걸렸을 뿐이라 오류도 안 났다.
    들어올 때 자리를 만들어 둔다. merge-duplicates 라 이미 있으면 이름·기수만 맞춘다. */
+/* 덮어쓰기 전에 먼저 읽는다 — 예전엔 들어오자마자 이 기기의 프로필로 행을 통째로 갈아 끼웠다.
+   새 기기·홈 화면 앱(사파리와 저장소가 따로다)·카톡 브라우저에서 로그인하면 가입 때 모습만 든 프로필이
+   다른 기기에서 꾸민 모습·조개·일지·레벨(play)을 지웠다. 도감은 합치고(playMerge),
+   방금 로그인한 기기(ME.pull)는 모습도 서버 것을 받는다. 서버 상태를 모르면(신호 실패) 쓰지 않는다. */
+let meSynced = false, meSyncTry = 0;      // 읽기 전에는 자동 저장(saveProfile·playPush)이 서버에 쓰지 않는다 — 로컬에만 두고, 읽은 뒤 한 번에 올린다
 async function syncMe(){
+  if(meSynced) return;
+  let rp = null;
+  try{ const r = await api(`surfers?id=eq.${encodeURIComponent(ME.id)}&select=id,profile`); rp = (Array.isArray(r) ? r : []).find(x=>x && x.id === ME.id)?.profile || null; }
+  catch(e){ if(e.code !== 'notable'){ if(++meSyncTry < 8) setTimeout(syncMe, 15000); return; } }
+  if(meSynced) return;
+  meSynced = true;
+  if(rp && typeof rp === 'object'){
+    if(ME.pull){ const birth = ME.profile?.birth;
+      ME.profile = { ...(ME.profile || {}), ..._drop(rp, ['play', 'birth', 'token', 'pw']) }; if(birth) ME.profile.birth = birth;
+      if(typeof drawSpr === 'function'){ const pr = withLook(ME.profile, ME.name); drawSpr($('me-av'), avatarRows(pr, false), avatarTintOf(pr, 0)); } }
+    if(rp.play && typeof rp.play === 'object' && typeof playMerge === 'function') playMerge(rp.play);
+  }
+  if(ME.pull){ delete ME.pull; try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){} }
   try{ await api('surfers', { method:'POST', body:JSON.stringify({
     id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) }); }
   catch(e){}
@@ -4359,7 +4434,7 @@ if(navigator.serviceWorker){ let had = !!navigator.serviceWorker.controller;
     b.onclick = ()=>location.reload(); document.body.appendChild(b); }); }
 { const off = ()=>{ const b = $('offbar'); if(b) b.hidden = navigator.onLine !== false; };
   addEventListener('offline', off);
-  addEventListener('online', ()=>{ off(); if(ME){ pullRides(); pullStays(); pullBolts(); pullNow(); pullMail(true); pullDrills?.(); } });   // 신호가 돌아오면 사람이 새로고침하지 않아도 된다
+  addEventListener('online', ()=>{ off(); if(ME){ pullRides(); pullStays(); pullBolts(); pullNow(); pullMail(true); pullDrills?.(); if(state.placesNet) pullPlaces(); if(!meSynced){ meSyncTry = 0; syncMe(); } } });   // 신호가 돌아오면 사람이 새로고침하지 않아도 된다
   addEventListener('DOMContentLoaded', off); off(); }
 (function boot(){
   if(!SUPA.url){ $('lerr').textContent = '서버 설정이 없어요 (config.js)'; return; }
@@ -4374,7 +4449,7 @@ if(navigator.serviceWorker){ let had = !!navigator.serviceWorker.controller;
     const users = JSON.parse(localStorage.getItem('surf.users')||'{}');
     const u = sid && users[sid];
     /* 토큰까지 들고 온다 — 이게 빠져 있어서 이 경로로 들어온 사람은 쪽지를 못 썼다 */
-    if(u){ ME = { id:sid, name:u.name, profile:u.profile||{}, token:u.token, cohort:u.cohort||'6기' }; return start(); }
+    if(u){ ME = { id:sid, name:u.name, profile:u.profile||{}, token:u.token, cohort:u.cohort||'6기', pull:1 }; return start(); }
   }catch(e){}
 })();
 </script>

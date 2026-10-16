@@ -3,6 +3,7 @@ import { open } from './mock.mjs';
 import fs from 'fs';
 const snap = (await import('../api/_naver-snapshot.js')).default;
 const fc = JSON.parse(fs.readFileSync(new URL('./fixture-forecast.json', import.meta.url)));
+fc.days.forEach((d, i)=>{ d.day = new Date(Date.now() + i * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); });   // 예보는 오늘부터 — 지난 날은 앱이 버린다
 const bad = [{ id:'x1', d:'2026-10-01', s:'<img src=x onerror=window.__f=1>', m:'9999', w:99, f:-5, t:'"><svg onload=window.__f=2>', h:'<b>' }, { id:'x2', d:'nope', s:'a' },
   /* 자세히 쓰기 칸 주입 + 범위 밖 개수 */
   { id:'x3', d:'2026-10-02', s:'죽도', m:60, wn:'500', good:'<img src=x onerror=window.__f=3>', bad:'</textarea><img src=x onerror=window.__f=4>', fb:'"><svg onload=window.__f=5>'.repeat(20) },

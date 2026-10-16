@@ -158,6 +158,35 @@ await Q(()=>{ while(!document.getElementById('pop').hidden) popClose(); document
 R.기록장 = await Q(()=>({ 가기:document.querySelectorAll('[data-rp]').length, 엔딩:!!document.getElementById('q-end') }));
 await Q(()=>_quest.town(10)); await Q(()=>document.getElementById('q-x').click()); await t.sleep(200);
 R.닫기 = await Q(()=>({ 숨김:document.getElementById('quest').hidden, 카드:document.querySelector('[data-hub="quest"]')?.textContent.replace(/\s+/g,' ').trim() }));
+// 견고함 — 새 프로필로 첫 마을부터: 보고 두 번 눌러도 부탁 하나 · 물건은 한 번만 · 보스 앞 뒤로가기 · 전투 중 뒤로가기·닫기 · 꽉 찬 팀의 새 동료 · 새로고침 · 회전
+const fresh = async (sg, fm) => { await Q((g, f)=>{ questClose(); const p = ME.profile.play; p.qb = { sg:g }; if(f) p.qb.fm = f; _quest.migrate(); questOpen(); document.getElementById('q-ov').hidden = true; }, sg, fm || null); await t.sleep(400); };
+await fresh(0);
+R.견고 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.qp = { g:0, a:1, n:0, w:3 }; q.npcTalk('a'); const d = q.T.done; d(); d(); const sg1 = P.sg;
+  q.npcTalk('a'); q.T.ch[0][1]();                                                  // ② 모으기 받기
+  const it = id => q.WK.ents.find(e=>e.id === id), e2 = it('i2'); q.interact(e2); q.interact(e2); const n1 = q.qpOf().n, ids1 = q.WK.ents.filter(e=>e.t === 'item').map(e=>e.id).join(',');
+  const e0 = it('i0'); q.WK.go = e0; q.interact(e0); q.interact(e0); const ids2 = q.WK.ents.filter(e=>e.t === 'item').map(e=>e.id).join(',');
+  return { 보고두번:sg1, 한번만:n1, 남은물건:ids1, 두개:q.qpOf().n, 남은물건2:ids2, 가던대상:q.WK.go }; });
+await fresh(3);
+R.견고.보스뒤로 = await Q(()=>{ const q = _quest; q.interact(q.WK.ents.find(e=>e.t === 'boss')); const talk = !!q.T; q.qBack(); return { 대화:talk, 전투없음:!q.S, 덮개닫힘:document.getElementById('q-ov').hidden, 마을:document.getElementById('quest').classList.contains('qw') }; });
+R.견고.전투뒤로 = await Q(()=>{ const q = _quest; q.fight('patrol', 1); q.begin(); for(let i = 0; i < 60; i++) q.step(q.FIX); const b = q.qBack(); return { 처리:b, 전투없음:!q.S, 열림:!document.getElementById('quest').hidden, 마을:document.getElementById('quest').classList.contains('qw') }; });
+R.견고.숨김 = await Q(()=>{ const q = _quest; q.fight('patrol', 1); q.begin(); Object.defineProperty(document, 'hidden', { value:true, configurable:true }); document.dispatchEvent(new Event('visibilitychange')); const pz = q.S.paused;
+  delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); return { 멈춤:pz, 다시:!q.S.paused }; });
+await Q(()=>{ questClose(); questOpen(); document.getElementById('q-ov').hidden = true; }); await t.sleep(400);
+R.견고.다시열기 = await Q(()=>({ 전투없음:!_quest.S, 마을:_quest.TV, 걷기:document.getElementById('quest').classList.contains('qw'), 보스:!!_quest.WK.ents.find(e=>e.t === 'boss' && !e.lock) }));
+await t.p.setViewport({ width:844, height:390, deviceScaleFactor:1, isMobile:true, hasTouch:true }); await t.sleep(500);
+R.견고.회전 = await Q(()=>({ 폭:_quest.WK.G.w, 사람:_quest.WK.ents.filter(e=>e.el && e.el.isConnected).length, 넘침:document.documentElement.scrollWidth > innerWidth }));
+await t.p.setViewport({ width:390, height:844, deviceScaleFactor:2, isMobile:true, hasTouch:true }); await t.sleep(500);
+// 꽉 찬 팀(4명)으로 낙산 보스를 넘으면 — 서핑 코치는 대기, 보상 카드에서 편성 열기 → 닫으면 지도
+await fresh(15, ['crab', 'me', 'gull', 'haenyeo']);
+R.새동료 = await Q(()=>{ const q = _quest; q.force(15, true); q.skip(); const b = document.querySelector('.q-bench'); document.getElementById('q-tmn')?.click();
+  const r = { 안내:b && b.textContent.includes('팀에서 바꿔 보세요'), 편성:document.getElementById('q-ov').classList.contains('qv-team'), NEW:!!document.querySelector('[data-hero="coach"] .qtm-new'), 상세:!!document.querySelector('.qtm-ft .qtm-d') };
+  document.querySelector('[data-sl="3"]').click(); r.자리 = q.fmGet().join(','); document.getElementById('q-tmx').click(); r.지도 = document.getElementById('q-ov').classList.contains('qv-map'); return r; });
+await fresh(15, ['crab', 'me', 'gull', '']);
+R.새동료.빈칸 = await Q(()=>{ const q = _quest; q.force(15, true); q.skip(); return { 자리:q.fmGet().join(','), 안내없음:!document.querySelector('.q-bench') }; });
+// 새로고침 — 받은 부탁·편성이 남는다
+await fresh(4); await Q(()=>{ const q = _quest; q.npcTalk('c'); q.T.ch[0][1](); q.place('gull', 1); }); await t.sleep(200);
+await t.p.reload({ waitUntil:'networkidle2' }); await t.sleep(2500);
+R.새로고침 = await Q(()=>({ qp:JSON.stringify(ME.profile.play.qb.qp), 편성:(ME.profile.play.qb.fm || []).join(',') }));
 for(const k in R) console.log(k, JSON.stringify(R[k]));
 const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 보낸 편지' && R.마을.걷기 && R.마을.마을 === 0 && R.마을.사람 === 'a,c,d,shop' && R.마을.보스잠김 && /해녀 할머니/.test(R.마을.알림판) && /①/.test(R.마을.길잡이) && R.마을.할머니표시 === '❗' && R.마을.메뉴 === 4 && !R.마을.넘침
   && R.걷기.눌러서 > 40 && R.걷기.방향키 < -20 && R.대화1.ov.includes('qv-talk') && R.타자 && R.고르기.n === '해녀 할머니' && R.고르기.ch.length === 2
@@ -176,6 +205,11 @@ const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 
   && R.옮기기.sg === 20 && R.옮기기.별1 === 20 && R.옮기기.레벨 > 1 && R.옮기기.꽃게 && R.옮기기.마을.마을 === 5 && R.옮기기.마을.표시 === '❗' && R.옮기기.중간.마을 === 1 && R.옮기기.중간.주는이 === 'c' && R.옮기기.중간.표시 === '❗'
   && R.합치기.sg === 44 && R.합치기.st === '3,0,3,2' && R.합치기.hx === 1e6 && !R.합치기.evil && R.합치기.eq === '{"b":7,"w":10}' && R.합치기.qp === '{"g":6,"a":1,"n":1,"w":2}' && R.합치기.it
   && R.균형.막힘 === -1 && R.균형.전설 === 1 && R.전설.마을 === 10 && R.전설.보스차례 === 3 && R.전설.전설 === 1 && R.전설.잠금 === null && R.전설.진행 === 44 && R.전설.조각 === 11 && R.전설후.마을 === 10 && /전설/.test(R.전설후.알림판) && R.전설후.순찰 === 2
-  && R.기록장.가기 === 11 && R.기록장.엔딩 && R.닫기.숨김;
+  && R.기록장.가기 === 11 && R.기록장.엔딩 && R.닫기.숨김
+  && R.견고.보고두번 === 1 && R.견고.한번만 === 1 && R.견고.남은물건 === 'i0,i1' && R.견고.두개 === 2 && R.견고.남은물건2 === 'i1' && R.견고.가던대상 === null
+  && R.견고.보스뒤로.대화 && R.견고.보스뒤로.전투없음 && R.견고.보스뒤로.덮개닫힘 && R.견고.보스뒤로.마을 && R.견고.전투뒤로.처리 && R.견고.전투뒤로.전투없음 && R.견고.전투뒤로.열림 && R.견고.전투뒤로.마을
+  && R.견고.숨김.멈춤 && R.견고.숨김.다시 && R.견고.다시열기.전투없음 && R.견고.다시열기.마을 === 0 && R.견고.다시열기.걷기 && R.견고.다시열기.보스 && R.견고.회전.폭 >= 300 && R.견고.회전.사람 >= 4 && !R.견고.회전.넘침
+  && R.새동료.안내 && R.새동료.편성 && R.새동료.NEW && R.새동료.상세 && R.새동료.자리 === 'crab,me,gull,coach' && R.새동료.지도 && R.새동료.빈칸.자리 === 'crab,me,gull,coach' && R.새동료.빈칸.안내없음
+  && /"g":4,"a":1/.test(R.새로고침.qp) && /gull/.test(R.새로고침.편성.split(',')[1]);
 console.log('판정', ok ? 'OK' : 'FAIL');
 console.log('errs', t.errs); await t.b.close(); process.exit(ok && !t.errs.length ? 0 : 1);

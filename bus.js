@@ -28,7 +28,7 @@ const say = m => { if(typeof toast === 'function') toast(m); };
 async function fetchDay(dir, date, force, to){
   to = to || 'ds'; const k = key(dir, date, to), c = cache[k];
   if(!force && c && Date.now() - c.at < 110e3) return c.data;
-  const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}`);
+  const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}`, AbortSignal.timeout ? { signal:AbortSignal.timeout(16000) } : undefined);
   if(!r.ok) throw new Error(r.status === 503 ? 'blocked' : 'upstream');
   const j = await r.json(); cache[k] = { at:Date.now(), data:j }; return j;
 }
@@ -187,7 +187,7 @@ function seatHTML(sm, b){
 async function fetchMap(to, dir, date, b){
   const sk = `${to}|${dir}|${date}|${b.t}`;
   if(typeof SEATS[sk] !== 'object') SEATS[sk] = 'loading';
-  try{ const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}&map=${encodeURIComponent(b.k)}`); if(!r.ok) throw 0;
+  try{ const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}&map=${encodeURIComponent(b.k)}`, AbortSignal.timeout ? { signal:AbortSignal.timeout(16000) } : undefined); if(!r.ok) throw 0;
     const j = await r.json(); SEATS[sk] = { rows:Array.isArray(j.rows) ? j.rows : [], at:Date.now() }; }catch(e){ if(typeof SEATS[sk] !== 'object') SEATS[sk] = 'err'; }
 }
 /* 🪟 창가 자리 보기 — 보이는 차들의 배치도를 한 번에 최대 10편, 한 편씩 0.35초 쉬어 가며 받는다(예매 사이트에 예의). 1분 안에 받은 건 다시 안 받는다 */

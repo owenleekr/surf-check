@@ -277,7 +277,8 @@ let _pt = 0;
 function playPush(){
   try{ localStorage.setItem('lineup.share.me', JSON.stringify(ME)); }catch(e){}
   clearTimeout(_pt);
-  _pt = setTimeout(async ()=>{ try{ await api('surfers', { method:'POST', body:JSON.stringify({
+  _pt = setTimeout(async ()=>{ if(typeof meSynced !== 'undefined' && !meSynced) return;   // 서버 도감을 읽기 전엔 올리지 않는다(새 기기에서 빈 도감이 덮어쓰던 문제) — syncMe 가 합쳐서 올린다
+    try{ await api('surfers', { method:'POST', body:JSON.stringify({
     id:ME.id, name:ME.name, cohort:ME.cohort || 'open', profile:pubSelf() }) }); }catch(e){} }, 1200);
 }
 
@@ -356,8 +357,10 @@ function playTick(){
   /* 이미 쓰던 사람에게 한 번만 알린다. 방금 시작한 사람은 환영 카드가 있으니 건너뛰고 본 걸로 친다. */
   const NEWS = 'play7';       // 버전 문자열 — 새 놀이가 생기면 올린다. 이전 소식을 본 사람에게도 한 번 더 뜬다
   let newsSeen = false; try{ newsSeen = localStorage.getItem('lineup.share.news') === NEWS; }catch(e){ newsSeen = true; }
+  /* 이 기기에서 처음(온보딩 전)인 사람에게 '업데이트'는 뜻이 없다 — 예전 화면을 본 적이 없다. first 는 playP() 가 먼저 불리면 false 가 되므로 이것도 같이 본다 */
+  const fresh0 = first || (typeof onbDone === 'function' && !onbDone());
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
-    if(!first){ const u = (window.UPDATES || [])[0];
+    if(!fresh0){ const u = (window.UPDATES || [])[0];
       _popQ.push({ ic:'🆕', t:u ? `업데이트 · ${u.t}` : '새로 생겼어요', d:u ? u.items.map(x=>`${x[0]} ${x[1].split(' — ')[0]}`).join('\n') : '놀이 탭에 새 게임이 생겼어요',
         go:()=>window.updOpen ? updOpen() : setTab('play'), btn:'자세히 보기', ok:'다시 보지 않기',
         onOk:()=>{ try{ if(u){ localStorage.setItem('lineup.share.updhide', u.id); localStorage.setItem('lineup.share.upd', u.id); } }catch(e){} window.updCard?.(); } }); }
@@ -565,6 +568,7 @@ function popNext(){
   /* 다른 시트가 열려 있거나 게임 중이면 기다린다 — 게임 도중에 카드가 덮으면 죽는다 */
   if(window._gameRun || ($('game') && !$('game').hidden)) return;
   if($('onb') && !$('onb').hidden) return;                    // 온보딩 중에는 미룬다 — onbEnd 가 다시 부른다
+  if(typeof onbDone === 'function' && !onbDone()) return;     // 온보딩이 곧 뜰 참이면(start 뒤 0.7초) 그 전에 카드가 먼저 덮지 않게 — 끝나면 onbEnd 가 부른다
   const c = _popQ.shift(); _popBusy = true;
   $('pop-ic').textContent = c.ic; $('pop-t').textContent = c.t; $('pop-d').textContent = c.d;
   const go = $('pop-go'); go.hidden = !c.go; _popGo = c.go || null; if(c.go) go.textContent = c.btn || '보러가기';

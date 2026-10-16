@@ -46,6 +46,7 @@ const bot = await S(()=>{ const g=window._game; const out={};
     return { 죽음:s.dead, 초:+(steps/60).toFixed(1), 점수:g.score(), 조개:s.shells, 속도:Math.round(s.speed) }; };
   out.안뛰면=sim(false,30); out.봇60초=sim(true,60); out.봇120초=sim(true,120); return out; });
 console.log('④ 시뮬', JSON.stringify(bot));
+await S(()=>{ const g=window._game, s=g.st; Object.assign(s,{ shield:0, invuln:0, y:0, vy:0, air:false, lives:1 }); s.fx.star=0; s.obs.push({k:'rock',w:12,h:10,y:0,x:44}); g.step(1/60); });   // 마지막 봇 판을 끝낸다 — 예전엔 첫 판의 늦은 끝내기 타이머가 새 판을 대신 끝냈다(이제는 판 번호로 막힘)
 await new Promise(r=>setTimeout(r,1500));
 console.log('⑤ 끝난 뒤', JSON.stringify(await S(()=>({ 모드:window._game.mode, 카드:document.querySelector('#g-ov .go-t')?.textContent, 점수:document.querySelector('#g-ov .go-s')?.textContent, 최고:ME.profile.play.best, 오늘게임:ME.profile.play.gn, xp:ME.profile.play.xp, gxp:ME.profile.play.gxp, 배지:Object.keys(ME.profile.play.badges) }))));
 await p.screenshot({path:'/tmp/pl_over.png'});

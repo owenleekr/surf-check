@@ -36,7 +36,7 @@ async function piLoad(list){
   if(piOff) return;
   const todo = list.filter(i=>!piOf(i)).slice(0, 40); if(!todo.length) return;
   let got = 0;
-  const one = async i => { try{ const r = await fetch(`/api/place-info?n=${encodeURIComponent(i.n)}&a=${encodeURIComponent(i.a || '')}&v=3`); if(!r.ok) return; const info = await r.json();
+  const one = async i => { try{ const r = await fetch(`/api/place-info?n=${encodeURIComponent(i.n)}&a=${encodeURIComponent(i.a || '')}&v=3`, AbortSignal.timeout ? { signal:AbortSignal.timeout(10000) } : undefined); if(!r.ok) return; const info = await r.json();
       if(info.enabled === false){ piOff = true; return; }
       PI[piKey(i)] = { at:Date.now(), info }; got++;
       const box = document.querySelector(`[data-pi="${CSS.escape(String(i.id))}"]`); if(box) box.innerHTML = piHTML(i);
@@ -64,7 +64,7 @@ async function load(force){
   const at = (()=>{ try{ return JSON.parse(localStorage.getItem(KEY) || 'null')?.at || 0; }catch(e){ return 0; } })();
   if(busy || (!force && data && folders('spot').length && Date.now() - at < FRESH)){ render(); badge(); return; }
   busy = true; render();
-  try{ const r = await fetch('/api/naver-list'); if(!r.ok) throw new Error('http'); const j = await r.json();
+  try{ const r = await fetch('/api/naver-list', AbortSignal.timeout ? { signal:AbortSignal.timeout(16000) } : undefined); if(!r.ok) throw new Error('http'); const j = await r.json();
     if(!j.folders?.length) throw new Error('empty'); data = j; failed = false;
     try{ localStorage.setItem(KEY, JSON.stringify({ at:Date.now(), data:j })); }catch(e){}
   }catch(e){ failed = true; }

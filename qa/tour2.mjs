@@ -3,6 +3,7 @@ import { open } from './mock.mjs';
 import fs from 'fs';
 const snap = (await import('../api/_naver-snapshot.js')).default;
 const fc = JSON.parse(fs.readFileSync(new URL('./fixture-forecast.json', import.meta.url)));
+fc.days.forEach((d, i)=>{ d.day = new Date(Date.now() + i * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); });   // 예보는 오늘부터 — 지난 날은 앱이 버린다
 const bus = u => ({ fetched:new Date().toISOString(), buses:[{ t:'23:50', co:'금강고속', dur:'2:40', grade:'일반', fare:21600, left:0, total:41 }, { t:'23:55', co:'동해상사고속', grade:'우등', left:12, total:28 }] });
 const t = await open({ surfers:[{ id:'u4', name:'이성현', cohort:'6기', profile:{} }, { id:'u0', name:'김도훈', cohort:'6기', profile:{ play:{ xp:200, best:300 } } }], __naver:{ folders:snap.folders }, __fc:fc, __bus:bus }, { id:'u4', name:'이성현', profile:{ gender:'f', birth:'1', dressed:1, hair:'bob', hairc:'n', play:{ base:50,bonus:0,badges:{drill1:1},qd:{},qall:0,best:420,gday:'',gxp:0,gn:{},lvSeen:1 } } }, { wait:3500 });
 let reqs = 0; t.p.on('request', ()=>reqs++);

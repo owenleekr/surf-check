@@ -43,7 +43,9 @@ function errBar(){ if(errShown || !document.body) return; errShown = true;
   const b = document.createElement('button'); b.type = 'button'; b.className = 'upd-bar err-bar'; b.innerHTML = '😵 문제가 생겼어요 · <b>눌러서 새로고침</b>';
   b.onclick = ()=>location.reload(); document.body.appendChild(b); setTimeout(()=>b.remove(), 12000); }
 window.addEventListener('error', e=>{ if(e.message && /ResizeObserver loop|Script error/.test(e.message)) return; if(ourErr(e.filename)) errBar(); });
-window.addEventListener('unhandledrejection', e=>{ const m = String(e.reason?.stack || e.reason || ''); if(/TypeError|ReferenceError/.test(m) && (!/https?:\/\//.test(m) || m.includes(location.origin))) errBar(); });
+window.addEventListener('unhandledrejection', e=>{ const m = String(e.reason?.stack || e.reason || '');
+  if(/Failed to fetch|Load failed|NetworkError|network connection|timed out|aborted/i.test(m) || /TimeoutError|AbortError/.test(e.reason?.name || '')) return;   // 신호가 끊긴 건 코드 오류가 아니다 — 바닷가에서 '문제가 생겼어요'가 뜨면 앱이 고장 난 줄 안다
+  if(/TypeError|ReferenceError/.test(m) && (!/https?:\/\//.test(m) || m.includes(location.origin))) errBar(); });
 window.undoToast = function(msg, onUndo, ms){
   let el = document.getElementById('undo-bar');
   if(!el){ el = document.createElement('div'); el.id = 'undo-bar'; el.className = 'undo-bar'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }

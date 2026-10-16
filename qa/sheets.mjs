@@ -2,6 +2,7 @@
 import { open } from './mock.mjs';
 import fs from 'fs';
 const fc = JSON.parse(fs.readFileSync(new URL('./fixture-forecast.json', import.meta.url)));
+fc.days.forEach((d, i)=>{ d.day = new Date(Date.now() + i * 864e5 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10); });   // 예보는 오늘부터 — 지난 날은 앱이 버린다
 const snap = (await import('../api/_naver-snapshot.js')).default;
 for(const W of [320, 390]){
 const t=await open({surfers:[{id:'u4',name:'이성현',cohort:'6기',profile:{}}], __fc:fc, __naver:{ folders:snap.folders }},{id:'u4',name:'이성현',profile:{gender:'f',birth:'1',dressed:1,play:{base:50,bonus:0,badges:{log1:1},qd:{},qall:0,best:0,gday:'',gxp:0,gn:{},lvSeen:1,shells:50,spent:0,own:{},log:[{id:'a',d:'2026-10-14',s:'낙산',m:60,w:2,f:2}]}}},{width:W,wait:3500});

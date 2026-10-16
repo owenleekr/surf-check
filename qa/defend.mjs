@@ -84,7 +84,7 @@ await D(()=>document.querySelector('#d-bar [data-pick="0"]').click()); await t.s
 const pk2 = await D(()=>({ up:JSON.stringify(_defend.S.up) + _defend.S.hp, w:_defend.S.w, 띠:document.getElementById('d-bar').hidden, ban:_defend.S.ban && _defend.S.ban.t }));
 console.log('고른 뒤', JSON.stringify(pk2)); ok(pk2.up !== up0 && pk2.w === 2 && pk2.띠 && /WAVE 2\/5/.test(pk2.ban || ''), '다음 웨이브');
 // 콤보 싸움 한복판(스크린샷) — 해파리·꽃게 떼 한가운데서 3타째
-await D(()=>{ _defend.skip(3); _defend.auto(9); const S = _defend.S, P = _defend.P; Object.assign(S.up, { atk:1, dolph:1 }); S.fire = 6; P.x = 120; P.y = 205; P.stun = 0; P.inv = 9;
+await D(()=>{ _defend.skip(3); _defend.auto(4); if(_defend.S.pick) _defend.pick(0); _defend.killAll(); const S = _defend.S, P = _defend.P; S.qi = S.q.length; Object.assign(S.up, { atk:1, dolph:1 }); S.fire = 6; P.x = 120; P.y = 205; P.stun = 0; P.inv = 9; P.sw = null; P.cwin = 0; P.acd = 0; P.dash = 0;
   for(const [dx, dy] of [[-22, -16], [20, -18], [-4, -26], [26, 4], [-26, 6], [10, -40], [-34, -34]]){ const f = _defend.spawn(dx % 2 ? 'jelly' : 'crab', P.x + dx, P.y + dy); if(f) f.hp = 400; }
   S.cb = 17; S.cbt = 2; S.sp = 64; _defend.BTN.atk = 1; for(let i = 0; i < 200; i++){ _defend.step(_defend.FIX); if(_defend.P.sw && _defend.P.sw.fin && _defend.P.sw.t > .1) break; } _defend.BTN.atk = 0; window._dfreeze = 1; }); await t.sleep(120);
 await shot('fight');
@@ -136,13 +136,72 @@ console.log('닫기', JSON.stringify(o11)); ok(o11.닫힘 && !o11.run && /⭐ 3\
 await D(()=>{ ME.profile.play.df = { best:'<b>99', clears:-3, st:'<img>', hd:'x', sb:[1e9] }; localStorage.setItem('lineup.share.dbest', '["<img>", 1e99]'); renderHub(); });
 const wv = await D(()=>{ defendOpen(); const r = { 카드:document.querySelector('[data-hub="defend"]')?.textContent.replace(/\s+/g,' ').trim(), 잠김:[...document.querySelectorAll('#d-ov [data-stage]')].map(b=>b.disabled).join(), 태그:!!document.querySelector('#d-ov img, #d-ov b b') }; defendClose(); return r; });
 console.log('이상한 값', JSON.stringify(wv)); ok(wv.잠김 === 'false,true,true' && !wv.태그, '이상한 값');
-// 390폭 — 패드가 화면 안, 버튼이 엄지 크기 · 320폭 넘침 없음
-await D(()=>defendOpen()); await t.sleep(300);
-const fit = await D(()=>{ const r = id => document.getElementById(id).getBoundingClientRect(); return { 패드아래:Math.round(r('d-pad').bottom), 높이:innerHeight, 공격:Math.round(r('d-atk').width), 대시:Math.round(r('d-dash').width), 필살:Math.round(r('d-sp').width), 겹침:r('d-sp').bottom > r('d-atk').top + 2 }; });
-console.log('390폭', JSON.stringify(fit)); ok(fit.패드아래 <= fit.높이 && fit.공격 >= 80 && fit.대시 >= 56 && fit.필살 >= 56 && !fit.겹침, '패드 배치');
+// 보스를 쓰러뜨리면 웨이브가 바로 끝난다(남은 졸개 줄이 나오지 않게) → 결과 화면
+await D(()=>{ defendOpen(); _defend.start(0, 3, {}); _defend.skip(5); _defend.fast(3.8); const S = _defend.S; S.boss.hp = 1; _defend.spawn('crab', 120, 200); _defend.special(); S.sp = 0; for(let i = 0; i < 5 && S.boss; i++) _defend.press('atk', 1); });
+const bz = await D(()=>{ const S = _defend.S; for(let i = 0; i < 600 && S.boss; i++){ _defend.BTN.atk = 1; const b = S.boss; if(b){ _defend.P.x = b.x; _defend.P.y = b.y + 24; } _defend.step(_defend.FIX); } _defend.BTN.atk = 0; const q = S.q.length - S.qi;
+  for(let i = 0; i < 400 && S.ph !== 'done'; i++) _defend.step(_defend.FIX); return { 남은줄:q, 결과:S.res }; });
+console.log('보스 격파', JSON.stringify(bz)); ok(bz.남은줄 === 0 && bz.결과 === 'win', '보스 격파 뒤 웨이브가 안 끝남');
 await D(()=>defendClose());
-await t.p.setViewport({ width:320, height:640, deviceScaleFactor:2, isMobile:true, hasTouch:true }); await D(()=>defendOpen()); await t.sleep(300);
-const nw = await D(()=>({ 넘침:document.documentElement.scrollWidth > innerWidth, 판:Math.round(document.querySelector('#defend .game-stage').getBoundingClientRect().right), 패드아래:Math.round(document.getElementById('d-pad').getBoundingClientRect().bottom), 높이:innerHeight }));
-console.log('320폭', JSON.stringify(nw)); ok(!nw.넘침 && nw.판 <= 320 && nw.패드아래 <= nw.높이, '320 넘침');
+// 몇 가지 폭에서 — 싸울 때 패드가 화면 안·캔버스와 안 겹침·버튼끼리 안 겹침·엄지 크기 / 해변 고르기·조작법·결과 카드가 스크롤 없이 다 보임
+for(const [w, h] of [[390, 844], [375, 667], [360, 740], [320, 640]]){
+  await t.p.setViewport({ width:w, height:h, deviceScaleFactor:2, isMobile:true, hasTouch:true }); await t.sleep(150);
+  const L = await D(()=>{ const r = id => document.getElementById(id).getBoundingClientRect(), ov = document.getElementById('d-ov'), fits = () => ov.scrollHeight <= ov.clientHeight + 2;
+    const hit = (a, b) => a.left < b.right - 1 && b.left < a.right - 1 && a.top < b.bottom - 1 && b.top < a.bottom - 1;
+    defendOpen(); const o = { 고르기:fits() }; document.getElementById('d-how').click(); o.조작법 = fits(); o.조작법버튼 = r('d-howok').bottom <= r('d-sp').top || r('d-howok').bottom <= ov.getBoundingClientRect().bottom;
+    _defend.start(0, 5, {}); const st = document.querySelector('#defend .game-stage').getBoundingClientRect(), pad = r('d-pad'), a = r('d-atk'), d = r('d-dash'), sp = r('d-sp'), j = r('d-joy');
+    Object.assign(o, { 패드아래:Math.round(pad.bottom), 높이:innerHeight, 캔버스겹침:sp.top < st.bottom - 1 || a.top < st.bottom - 1, 버튼겹침:hit(a, d) || hit(a, sp) || hit(d, sp), 공격:Math.round(a.width), 대시:Math.round(d.width), 필살:Math.round(sp.width), 스틱:Math.round(j.width), 넘침:document.documentElement.scrollWidth > innerWidth || Math.round(pad.right) > innerWidth || pad.left < 0 });
+    _defend.lose(); o.패배 = fits(); _defend.start(0, 5, {}); _defend.win(); o.승리 = fits(); o.승리버튼 = !!document.getElementById('d-close') && r('d-close').bottom <= ov.getBoundingClientRect().bottom + 1; defendClose(); return o; });
+  console.log(`${w}×${h}`, JSON.stringify(L));
+  ok(L.고르기 && L.조작법 && L.패배 && L.승리 && L.승리버튼, `${w} 카드가 잘림`); ok(L.패드아래 <= L.높이 && !L.캔버스겹침 && !L.버튼겹침 && !L.넘침, `${w} 패드 배치`);
+  ok(L.공격 >= 80 && L.대시 >= 56 && L.필살 >= 56 && L.스틱 >= 110, `${w} 버튼 크기`);
+}
+await t.p.setViewport({ width:390, height:844, deviceScaleFactor:2, isMobile:true, hasTouch:true }); await t.sleep(150);
+// 두 손가락 — 왼손 스틱을 끄는 채로 오른손 👊 꾹(터치 두 점 동시)
+await D(()=>{ defendOpen(); _defend.start(0, 9, {}); window._dfreeze = 1; _defend.killAll(); const P = _defend.P; P.x = 60; P.y = 250; _defend.spawn('crab', 150, 190).hp = 999; window._dfreeze = 0; });
+const cdp = await t.p.createCDPSession(), TE = (type, pts) => cdp.send('Input.dispatchTouchEvent', { type, touchPoints:pts.map(([x, y, i], id) => ({ x, y, id:i ?? id, radiusX:5, radiusY:5, force:1 })) });   // touchEnd 에는 뗀 손가락만
+const [j2x, j2y] = await ctr('#d-joy'), [a2x, a2y] = await ctr('#d-atk'), mt0 = await D(()=>({ x:_defend.P.x, a:_defend.S.atks }));
+await TE('touchStart', [[j2x, j2y]]); await TE('touchMove', [[j2x + 30, j2y - 20]]); await t.sleep(80);
+await TE('touchStart', [[j2x + 30, j2y - 20], [a2x, a2y]]); await t.sleep(400);
+const mt1 = await D(()=>({ 스틱:!!_defend.stick, 공격중:_defend.BTN.atk, x:_defend.P.x, a:_defend.S.atks }));
+await TE('touchMove', [[j2x + 40, j2y - 25], [a2x, a2y]]); await TE('touchEnd', [[a2x, a2y, 1]]); await t.sleep(60);   // 오른손만 뗌
+const mt2 = await D(()=>({ 스틱:!!_defend.stick, 공격중:_defend.BTN.atk }));
+await TE('touchEnd', [[j2x + 40, j2y - 25, 0]]); await t.sleep(60); const mt3 = await D(()=>({ 스틱:!!_defend.stick, 공격중:_defend.BTN.atk }));
+console.log('두 손가락', JSON.stringify({ mt0, mt1, mt2, mt3 })); ok(mt1.스틱 && mt1.공격중 === 1 && mt1.x > mt0.x + 10 && mt1.a > mt0.a && mt2.스틱 && !mt2.공격중 && !mt3.스틱, '스틱+공격 동시');
+// 탭이 뒤로 가면 저절로 멈춤 → 아무 버튼이나 누르면 계속
+await D(()=>{ Object.defineProperty(document, 'hidden', { configurable:true, get:()=>true }); document.dispatchEvent(new Event('visibilitychange')); });
+const vz = await D(()=>({ 멈춤:_defend.S.paused, t:_defend.S.t })); await t.sleep(300);
+await D(()=>{ delete document.hidden; document.dispatchEvent(new Event('visibilitychange')); }); const vz2 = await D(()=>({ 멈춤:_defend.S.paused, t:_defend.S.t, 버튼:document.getElementById('d-pause').textContent }));
+await tap('#d-atk'); await t.sleep(150); const vz3 = await D(()=>({ 멈춤:_defend.S.paused, 공격:_defend.BTN.atk }));
+console.log('백그라운드', JSON.stringify({ vz, vz2, vz3 })); ok(vz.멈춤 && vz2.멈춤 && vz2.t === vz.t && vz2.버튼 === '▶' && !vz3.멈춤 && !vz3.공격, '백그라운드 자동 멈춤');
+// 강화 카드 — 막 뜬 카드는 0.4초 동안 손가락이 눌러도 안 고른다 · 고르는 동안 멈춤 버튼은 잠김 · 연타해도 한 장만
+await D(()=>{ const S = _defend.S; S.qi = S.q.length; _defend.killAll(); for(let i = 0; i < 200 && !S.pick; i++) _defend.step(_defend.FIX); });
+await t.sleep(30); const w0 = await D(()=>_defend.S.w); await tap('#d-bar [data-pick="1"]');
+const ar = await D(()=>({ 고름:!!_defend.S.pick, 멈춤잠김:document.getElementById('d-pause').disabled })); await t.sleep(450);
+await tap('#d-bar [data-pick="1"]'); await tap('#d-bar [data-pick="1"]').catch(()=>{}); await t.sleep(100);
+const ar2 = await D(w0=>({ 고름:!!_defend.S.pick, 웨이브:_defend.S.w - w0, 멈춤잠김:document.getElementById('d-pause').disabled }), w0);
+console.log('카드 보호', JSON.stringify({ ar, ar2 })); ok(ar.고름 && ar.멈춤잠김 && !ar2.고름 && ar2.웨이브 === 1 && !ar2.멈춤잠김, '카드 보호·연타');
+// 싸우다 닫고 다시 열기 → 처음 화면, 남은 것 없음
+await D(()=>{ _defend.BTN.atk = 1; document.getElementById('d-x').click(); }); await t.sleep(200);
+const ro = await D(()=>{ defendOpen(); return { S:_defend.S, run:!!window._gameRun, 공격:_defend.BTN.atk, 고르기:!!document.querySelector('#d-ov [data-stage]'), 띠:document.getElementById('d-bar').hidden, 메뉴:document.getElementById('defend').classList.contains('dmenu') }; });
+console.log('닫고 다시', JSON.stringify(ro)); ok(ro.S === null && !ro.run && !ro.공격 && ro.고르기 && ro.띠 && ro.메뉴, '다시 열기');
+// 폰 뒤로 — 강화 카드 · 조작법 · 결과 화면에서도 닫힌다(멈춘 채 남지 않게)
+const backAt = async (n, f) => { await D(()=>{ if(document.getElementById('defend').hidden) defendOpen(); }); await t.sleep(150); await D(f); await t.sleep(150); await t.p.goBack(); await t.sleep(400);
+  const r = await D(()=>({ 닫힘:document.getElementById('defend').hidden, run:!!window._gameRun })); console.log('뒤로·' + n, JSON.stringify(r)); ok(r.닫힘 && !r.run, '뒤로 ' + n); };
+await backAt('카드', ()=>{ _defend.start(0, 4, {}); const S = _defend.S; S.qi = S.q.length; _defend.killAll(); for(let i = 0; i < 200 && !S.pick; i++) _defend.step(_defend.FIX); });
+await backAt('조작법', ()=>{ _defend.start(0, 4, {}); document.getElementById('d-help').click(); });
+await backAt('결과', ()=>{ _defend.start(0, 4, {}); _defend.lose(); });
+// 보상은 한 판에 한 번 — 끝난 뒤 더 굴려도·「한 판 더」를 연타해도 playDefendDone 은 판마다 한 번
+const rw = await D(async ()=>{ let n = 0; const f0 = window.playDefendDone; window.playDefendDone = (...a) => { n++; return f0(...a); };
+  defendOpen(); _defend.start(0, 6, {}); _defend.lose(); for(let i = 0; i < 30; i++) _defend.step(_defend.FIX); _defend.lose(); const n1 = n;
+  const g = document.getElementById('d-go'); g.click(); g.click(); document.getElementById('d-go')?.click(); const run = _defend.S.ph; _defend.lose(); const n2 = n;
+  window.playDefendDone = f0; defendClose(); return { n1, n2, run }; });
+console.log('보상 한 번', JSON.stringify(rw)); ok(rw.n1 === 1 && rw.n2 === 2 && rw.run === 'fight', '보상 중복');
+// 새로고침 뒤에도 기록(별·최고점)이 남는다
+const sv0 = await D(()=>({ st:ME.profile.play.df.st.join(), best:localStorage.getItem('lineup.share.dbest') }));
+await t.p.reload({ waitUntil:'networkidle2' }); await t.sleep(1500);
+const sv1 = await D(()=>{ const me = JSON.parse(localStorage.getItem('lineup.share.me') || '{}'); return { st:(me.profile?.play?.df?.st || []).join(), best:localStorage.getItem('lineup.share.dbest'), how:localStorage.getItem('lineup.share.dhow') }; });
+console.log('새로고침', JSON.stringify({ sv0, sv1 })); ok(sv1.st === sv0.st && sv1.best === sv0.best && sv1.how === '1', '새로고침 뒤 기록');
+const re = await D(()=>{ defendOpen(); const r = [...document.querySelectorAll('#d-ov [data-stage]')].map(b=>b.disabled).join(); defendClose(); return r; });
+ok(re.startsWith('false,false'), '새로고침 뒤 해변 열림');
 console.log('bad', bad); console.log('errs', t.errs);
 await t.b.close(); process.exit(bad.length || t.errs.length ? 1 : 0);

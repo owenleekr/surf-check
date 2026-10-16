@@ -8,13 +8,18 @@ const K = 'lineup.share.fc', FRESH = 30 * 60e3;
 const $w = id => document.getElementById(id);
 const DOW = ['일','월','화','수','목','금','토'];
 let fc = null, busy = false, failAt = 0;
-try{ const c = JSON.parse(localStorage.getItem(K) || 'null'); if(c && Date.now() - c.at < 6 * 3600e3) fc = c.data; }catch(e){}
+/* 지난 날은 뺀다 — 저녁에 받아 둔 예보(6시간 보관)를 새벽에 열면 어제가 '오늘'로 찍히고 "오늘 오전이 나아요"가 어제 얘기가 됐다 */
+const ymd = () => new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+const norm = d => { if(!d || !Array.isArray(d.days)) return null; const t = ymd(), days = d.days.filter(x=>x && x.day >= t); return days.length ? { ...d, days } : null; };
+try{ const c = JSON.parse(localStorage.getItem(K) || 'null'); if(c && Date.now() - c.at < 6 * 3600e3) fc = norm(c.data); }catch(e){}
 const fresh = () => { try{ const c = JSON.parse(localStorage.getItem(K) || 'null'); return c && Date.now() - c.at < FRESH; }catch(e){ return false; } };
 
 async function load(){
   if(busy || (fc && fresh()) || Date.now() - failAt < 5 * 60e3) return fc;      // 실패하면 5분은 다시 안 부른다(그리기→불러오기가 돌고 돌지 않게)
   busy = true; let ok = false;
-  try{ const r = await fetch('/api/forecast'); if(r.ok){ fc = await r.json(); ok = true; try{ localStorage.setItem(K, JSON.stringify({ at:Date.now(), data:fc })); }catch(e){} } }catch(e){}
+  /* 시간 제한 — 바닷가에서 응답이 안 오면 '예보 불러오는 중…'이 영영 떠 있었다 */
+  try{ const r = await fetch('/api/forecast', AbortSignal.timeout ? { signal:AbortSignal.timeout(15000) } : undefined);
+    if(r.ok){ const d = await r.json(); try{ localStorage.setItem(K, JSON.stringify({ at:Date.now(), data:d })); }catch(e){} fc = norm(d); ok = !!fc; } }catch(e){}
   if(!ok) failAt = Date.now();
   busy = false; if(ok) paintAll(); return fc;
 }
@@ -78,9 +83,9 @@ function homeCard(){
   if(!fc?.days?.length){ if(Date.now() - failAt < 5 * 60e3){ el.hidden = true; } else { el.hidden = false; el.innerHTML = '<div class="hsec">🌊 이번주의 파도 <small>예보 불러오는 중…</small></div><div class="wv-card"><div class="skel" aria-hidden="true"><i style="height:64px"></i><i style="height:70px;margin-top:8px"></i></div></div>'; } load().then(()=>{ if(!fc?.days?.length && Date.now() - failAt < 5 * 60e3) el.hidden = true; }); return; }
   el.hidden = false;
   /* 오늘 갈까? — 오늘 오전·오후 중 나은 쪽 한 줄 + 입을 것 + 해 뜸 */
-  const d0 = fc.days[0], rN = d0.regions.find(r=>r.k === 'north'), b0 = rN ? ['am', 'pm'].map(p=>({ r:rN, p, x:rN[p] })).filter(o=>o.x).sort((a, b)=>b.x.s - a.x.s)[0] || best(d0) : best(d0), sst = typeof state !== 'undefined' ? state.cond?.sst : null;
+  const d0 = fc.days[0], rN = d0.regions.find(r=>r.k === 'north'), pmOnly = new Date().getHours() >= 12, b0 = rN ? ['am', 'pm'].map(p=>({ r:rN, p, x:rN[p] })).filter(o=>o.x && !(pmOnly && o.p === 'am' && rN.pm)).sort((a, b)=>b.x.s - a.x.s)[0] || best(d0) : best(d0), sst = typeof state !== 'undefined' ? state.cond?.sst : null;
   const suit = typeof suitOf === 'function' && sst != null ? suitOf(+sst) : '';
-  const today = b0 ? `<button type="button" class="wv-today s${b0.x.s}" data-wvday="0"><b>오늘 ${b0.p === 'am' ? '오전' : '오후'}이 나아요 ${stars(b0.x.s)}</b>
+  const today = b0 ? `<button type="button" class="wv-today s${b0.x.s}" data-wvday="0"><b>${pmOnly && b0.p === 'pm' ? '오늘 오후는' : `오늘 ${b0.p === 'am' ? '오전이' : '오후가'} 나아요`} ${stars(b0.x.s)}</b>
       <span>${esc(b0.r.n)} ${b0.x.h}m · ${b0.x.p}초 — ${esc(b0.x.why)}</span>
       <small>${suit ? `🩱 ${esc(suit)}` : ''}${suit && d0.sun?.rise ? ' · ' : ''}${d0.sun?.rise && /^\d{2}:\d{2}$/.test(d0.sun.rise) ? `🌅 ${d0.sun.rise}` : ''}</small></button>` : '';
   el.innerHTML = `<div class="hsec">🌊 이번주의 파도 <small>예보 · 누르면 자세히</small></div>

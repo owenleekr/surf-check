@@ -46,7 +46,7 @@ const regionOfSpot = name => { const it = (typeof window.foodItems === 'function
 const WXC = {};
 async function fetchWx(d, s){
   const r = regionOfSpot(s), k = d + '|' + r; if(WXC[k]) return WXC[k];
-  try{ const res = await fetch(`/api/forecast?day=${encodeURIComponent(d)}&r=${r}`); if(!res.ok) throw 0; const j = await res.json(); WXC[k] = j; return j; }catch(e){ return null; }
+  try{ const res = await fetch(`/api/forecast?day=${encodeURIComponent(d)}&r=${r}`, AbortSignal.timeout ? { signal:AbortSignal.timeout(12000) } : undefined); if(!res.ok) throw 0; const j = await res.json(); WXC[k] = j; return j; }catch(e){ return null; }
 }
 function waveOf(d){
   const fc = window._wave?.fc; const day = fc?.days?.find(x=>x.day === d); if(!day) return null;

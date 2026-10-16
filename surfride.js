@@ -11,7 +11,7 @@
    와이프아웃 = 목숨 -1, 그 파도 점수는 40%만. 풀아웃·끝까지 타면 다 받는다. 목숨 3개.
    240×180 도트로 그리고 CSS 로 키운다. 물리는 1/60초 고정 — 기기마다 같은 손맛. */
 (function(){
-const W = 240, H = 240, TR = 200, RX = 92, FIX = 1 / 60, LIVES = 3, WAVES = 5;
+const W = 240, H = 240, TR = 200, RX = 92, FIX = 1 / 60, LIVES = 3, WAVES = 5, POP_LOCK = 0.25;
 const $s = id => document.getElementById(id);
 let cv, ctx, me = null, raf = 0, last = 0, acc = 0, held = false, tapQ = 0;
 let S = null;            // 세션
@@ -82,7 +82,7 @@ function step(dt){
   S.t += dt; S.pops.forEach(p=>{ p.t += dt; p.y -= 14 * dt; }); S.pops = S.pops.filter(p=>p.t < (p.life || 0.9));
   const taps = tapQ; tapQ = 0;
   if(S.phase === 'lineup'){
-    R.t += dt; R.meter = Math.max(0, R.meter - 0.32 * dt) + taps * 0.13; R.meter = Math.min(1.15, R.meter);
+    R.t += dt; R.meter = Math.max(0, R.meter - 0.32 * dt) + taps * (hardS ? 0.13 : 0.16); R.meter = Math.min(1.15, R.meter);
     if(taps) beep(220, 260, 0.05, 'sine', 0.03);
     if(R.t >= R.arrive){
       if(R.meter >= 0.65){ S.phase = 'pop'; R.popT = 0; beep(440, 660, 0.12); buzz(10); }
@@ -92,7 +92,7 @@ function step(dt){
     R.t += dt; if(R.t > 1.5){ S.wave++; if(S.wave >= WAVES) return over(); newWave(); }
   } else if(S.phase === 'pop'){
     R.popT += dt; R.needle = (Math.sin(R.popT * 4.2 - Math.PI / 2) + 1) / 2;
-    if(taps){
+    if(taps && R.popT > POP_LOCK){
       const off = Math.abs(R.needle - 0.5);
       const q = off < (hardS ? 0.1 : 0.15) ? 'perfect' : off < (hardS ? 0.24 : 0.34) ? 'good' : 'late';
       R.v = q === 'perfect' ? 118 : q === 'good' ? 100 : 82; R.vh = -0.9; R.h = 0.9; R.x = 0; R.curl = -26;
@@ -190,11 +190,11 @@ function over(){
   $s('s-ov').hidden = false;
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">${r.newBest && S.total > 0 ? '🎉 최고 기록!' : '🏁 세션 끝'}</div>
     <div class="go-s">${S.total}<small>점</small></div>
-    <div class="go-st"><span>사용한 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>베스트 라이드<b>${S.bestRide}</b></span><span>${hardS ? '어려움' : '쉬움'} 최고<b>${(hardS ? p.sbest : p.sebest) || S.total}</b></span></div>
+    <div class="go-st"><span>잃은 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>최고 파도<b>${S.bestRide}</b></span><span>${hardS ? '어려움' : '쉬움'} 최고<b>${(hardS ? p.sbest : p.sebest) || S.total}</b></span></div>
     <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}${r.shells ? ` · 🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''}${U.mul ? ` · 🔧 ×${(1 + .03 * U.mul).toFixed(2)}` : ''}</div>
-    ${typeof upNudge === 'function' ? upNudge('surf', { sc:S.total, best:r.newBest ? 0 : r.best, x2:r.x2, k:'r_mul', plus:Math.round(raw * .03) }) : ''}
-    <div style="display:flex;gap:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">🌊 한 판 더</button>
+    <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">🌊 한 판 더</button>
       <button class="btn ghost" id="s-exit" type="button" style="min-height:52px">닫기</button></div>
+    ${typeof upNudge === 'function' ? upNudge('surf', { sc:S.total, best:r.newBest ? 0 : r.best, x2:r.x2, k:'r_mul', plus:Math.round(raw * .03) }) : ''}
     ${S.total >= 300 && typeof sendChat === 'function' ? `<button class="btn ghost" id="s-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;
   $s('s-again').onclick = ()=>{ newSession(); $s('s-ov').hidden = true; window._gameRun = true; ui(); };
   $s('s-exit').onclick = surfClose;
@@ -214,16 +214,24 @@ function showResult(){
   $s('s-next').onclick = nextWave;
   ui();
 }
+let ftLast = null;
 function ui(){
-  const pb = $s('s-pull'); if(pb){ pb.hidden = !(S && S.phase === 'ride'); }
-  const ft = $s('s-ft'); if(ft) ft.textContent = !S ? '' : S.phase === 'lineup' ? '파도가 와요 — 화면을 빠르게 연타해서 패들!' : S.phase === 'pop' ? '바늘이 초록 칸에 오면 탭 — 팝업!' : S.phase === 'ride' ? '누르고 있으면 위로 · 떼면 아래로 · 🛑 풀아웃' : '';
+  const pb = $s('s-pull'); if(pb){ const h = !(S && S.phase === 'ride'); if(pb.hidden !== h) pb.hidden = h; }
+  const ft = $s('s-ft'), tx = !S ? '' : S.phase === 'lineup' ? '파도가 와요 — 화면을 빠르게 연타해서 패들!' : S.phase === 'pop' ? '바늘이 초록 칸에 오면 탭 — 팝업!' : S.phase === 'ride' ? '누르고 있으면 위로 · 떼면 아래로 · 🛑 풀아웃' : '';
+  if(ft && tx !== ftLast){ ftLast = tx; ft.textContent = tx; }
 }
 
 /* ── 그리기 ── */
+/* 캔버스 글씨 — 하늘·파도 어디에 놓여도 읽히게 어두운 띠를 깔고 11px 로 */
+function lab(t, x, y, col, al){ ctx.font = '11px Galmuri11, sans-serif'; ctx.textBaseline = 'top'; const w = Math.ceil(ctx.measureText(t).width);
+  let x0 = al === 'r' ? x - w : al === 'c' ? x - w / 2 : x; x0 = Math.round(Math.max(3, Math.min(W - w - 3, x0)));
+  Rr('rgba(10,22,40,.6)', x0 - 3, y - 2, w + 6, 15); ctx.fillStyle = col || '#FFFFFF'; ctx.fillText(t, x0, y); }
 function Rr(c, x, y, w, h){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
 const lipY = dx => dx < 0 ? 62 : Math.min(178, R.sz.lip + Math.max(0, dx - 150) * 0.15);
 function riderY(){ const ly = lipY(R.x - R.curl); return TR - R.h * (TR - ly) - (R.air ? R.ah * (TR - ly) : 0); }
 /* 다섯 파도 = 해돋이 정동진 → 아침 죽도 → 한낮 속초 → 해 질 녘 하조대 → 달 뜨는 경포 (예전 하늘색 순서 그대로) */
+const FACE = ['#BFF0FF','#7FD6F5','#4FBDE8','#36A6DC','#2A90CB','#2079B6','#1A66A0'], LY = new Array(W + 2);
+const ACT = new Set(['lineup', 'missed', 'pop', 'ride']);
 const BGS = [['정동진','sunrise'], ['죽도','morning'], ['속초','day'], ['하조대','golden'], ['경포','dusk']];
 function draw(){
   const sky = SKY[Math.min(SKY.length - 1, S ? S.wave : 0)];
@@ -236,22 +244,24 @@ function draw(){
   const t = S.t;
   if(S.phase === 'lineup' || S.phase === 'missed' || S.phase === 'pop'){ drawLineup(t); hud(); pops(); return; }
   // 파도 — 기둥마다 립 높이를 계산해 칠한다. 위(립)는 밝고 아래(골)는 어둡다 → 경사면처럼 보인다
-  const CX = R.cam || RX, ly = new Array(W + 2), cxs = CX - (R.x - R.curl);
-  const FACE = ['#BFF0FF','#7FD6F5','#4FBDE8','#36A6DC','#2A90CB','#2079B6','#1A66A0'];
-  for(let c = 0; c < W; c += 2){
-    const wx = R.x + (c - CX), dx = wx - R.curl, y0 = lipY(dx); ly[c] = ly[c + 1] = y0;
-    if(dx < 0){ // 화이트워터 — 무너진 뒤의 거품
-      Rr('#CFEFFF', c, 60, 2, TR - 60); Rr('#E9F8FF', c, 60, 2, 20);
-      const n = Math.abs((Math.sin(c * 12.9898 + Math.floor(t * 14) * 78.233) * 43758.5453) % 1);
-      Rr('#FFFFFF', c, 60 + n * 80, 2, 3); Rr('#A9DDF2', c, 70 + ((n * 7) % 1) * 70, 2, 2);
-      Rr('#FFFFFF', c, 56 + Math.round(Math.sin(c / 4 + t * 10) * 3), 2, 5);
-    } else {
-      const fh = TR - y0;
-      for(let i = 0; i < FACE.length; i++) Rr(FACE[i], c, y0 + fh * i / FACE.length, 2, Math.ceil(fh / FACE.length) + 1);
-      Rr('#FFFFFF', c, y0 - 1, 2, 2);
-      if(dx < 60) Rr('rgba(255,255,255,.5)', c, y0 - 3 - Math.round(Math.sin(c / 3 + t * 12) * 1.5), 2, 2);           // 포켓 근처 립 위 물보라
-    }
-  }
+  const CX = R.cam || RX, ly = LY, cxs = CX - (R.x - R.curl);
+  let ww0 = W, ww1 = -1;                                                       // 화이트워터 기둥 범위
+  for(let c = 0; c < W; c += 2){ const dx = R.x + (c - CX) - R.curl; ly[c] = ly[c + 1] = lipY(dx); if(dx < 0){ ww0 = Math.min(ww0, c); ww1 = c; } }
+  if(ww1 >= 0){ // 화이트워터 — 무너진 뒤의 거품(색마다 한 번에)
+    Rr('#CFEFFF', ww0, 60, ww1 + 2 - ww0, TR - 60); Rr('#E9F8FF', ww0, 60, ww1 + 2 - ww0, 20);
+    const ft = Math.floor(t * 14) * 78.233;
+    ctx.fillStyle = '#FFFFFF'; ctx.beginPath();
+    for(let c = ww0; c <= ww1; c += 2){ const n = Math.abs((Math.sin(c * 12.9898 + ft) * 43758.5453) % 1); ctx.rect(c, Math.round(60 + n * 80), 2, 3); ctx.rect(c, 56 + Math.round(Math.sin(c / 4 + t * 10) * 3), 2, 5); }
+    ctx.fill(); ctx.fillStyle = '#A9DDF2'; ctx.beginPath();
+    for(let c = ww0; c <= ww1; c += 2){ const n = Math.abs((Math.sin(c * 12.9898 + ft) * 43758.5453) % 1); ctx.rect(c, Math.round(70 + ((n * 7) % 1) * 70), 2, 2); }
+    ctx.fill(); }
+  for(let i = 0; i < FACE.length; i++){ ctx.fillStyle = FACE[i]; ctx.beginPath();
+    for(let c = ww1 + 2; c < W; c += 2){ const y0 = ly[c], fh = TR - y0; ctx.rect(c, Math.round(y0 + fh * i / FACE.length), 2, Math.ceil(fh / FACE.length) + 1); }
+    ctx.fill(); }
+  ctx.fillStyle = '#FFFFFF'; ctx.beginPath(); for(let c = ww1 + 2; c < W; c += 2) ctx.rect(c, Math.round(ly[c] - 1), 2, 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.beginPath();                    // 포켓 근처 립 위 물보라
+  for(let c = ww1 + 2; c < W; c += 2){ if(R.x + (c - CX) - R.curl >= 60) break; ctx.rect(c, Math.round(ly[c] - 3 - Math.round(Math.sin(c / 3 + t * 12) * 1.5)), 2, 2); }
+  ctx.fill();
   // 배럴 — 컬 자리에서 립이 앞으로 말려 떨어진다
   if(cxs > -40 && cxs < W + 10){
     const top = lipY(1), drop = TR - top;
@@ -284,12 +294,12 @@ function draw(){
   if(me) ctx.drawImage(me, -12, -22);
   ctx.restore();
   R.spray.forEach(p=>Rr('rgba(255,255,255,.85)', p.x, p.y, 2, 2));
-  if(R.tube > 0){ ctx.globalAlpha = 0.25; Rr('#0B3A5E', 0, 0, W, H); ctx.globalAlpha = 1; ctx.font = '9px Galmuri11, sans-serif'; ctx.fillStyle = '#7BE0FF'; ctx.fillText('🌀 튜브! ' + R.tube.toFixed(1) + '초', 80, 28); }
+  if(R.tube > 0){ ctx.globalAlpha = 0.25; Rr('#0B3A5E', 0, 0, W, H); ctx.globalAlpha = 1; lab('🌀 튜브! ' + R.tube.toFixed(1) + '초', W / 2, 40, '#7BE0FF', 'c'); }
   // 포켓 막대 — 컬과의 거리
   const d = R.x - R.curl, bx = 60, bw = 120;
   Rr('rgba(0,0,0,.35)', bx, H - 10, bw, 5); Rr('#FF6B6B', bx, H - 10, 10, 5); Rr('#4ADE80', bx + 10, H - 10, 40, 5); Rr('#FFE27A', bx + 50, H - 10, 40, 5); Rr('#9AA5B1', bx + 90, H - 10, 30, 5);
   const mx = bx + Math.max(0, Math.min(bw - 2, 10 + d / 240 * 80)); Rr('#FFFFFF', mx, H - 12, 2, 9);
-  ctx.font = '7px Galmuri11, sans-serif'; ctx.fillStyle = '#FFFFFF'; ctx.textBaseline = 'top'; ctx.fillText('컬', bx - 12, H - 11); ctx.fillText('숄더', bx + bw + 2, H - 11);
+  ctx.font = '11px Galmuri11, sans-serif'; ctx.fillStyle = '#FFFFFF'; ctx.textBaseline = 'top'; ctx.fillText('컬', bx - 16, H - 14); ctx.fillText('숄더', bx + bw + 4, H - 14);
   hud(); pops();
 }
 function drawLineup(t){
@@ -300,33 +310,33 @@ function drawLineup(t){
   for(let i = 0; i < 12; i++){ const x = ((i * 23 - t * 12) % W + W) % W; Rr('rgba(255,255,255,.3)', x, 150 + (i % 4) * 18, 9, 1); }
   const bob = Math.round(Math.sin(t * 3) * 1.5), py = S.phase === 'pop' ? 118 : 140 + bob;
   Rr('#FF6B6B', RX - 9, py + 2, 18, 3); if(me) ctx.drawImage(me, RX - 12, py - 20);
-  ctx.font = '9px Galmuri11, sans-serif'; ctx.textBaseline = 'top'; ctx.fillStyle = '#FFFFFF';
   if(S.phase === 'lineup'){
-    ctx.fillText(`🌊 ${R.sz.n} 다가와요`, 8, 168);
+    lab(`🌊 ${R.sz.n} 다가와요`, 8, 164);
     Rr('rgba(0,0,0,.35)', 8, 182, 140, 9); Rr('#4ADE80', 8 + 140 * 0.65, 182, 2, 9); Rr(R.meter >= 0.65 ? '#4ADE80' : '#FFE27A', 8, 183, Math.min(140, 140 * R.meter), 7);
-    ctx.fillStyle = '#FFFFFF'; ctx.fillText('패들 (연타!)', 154, 182);
+    lab(R.meter >= 0.65 ? '좋아요! 계속' : '👆 연타!', 156, 180, R.meter >= 0.65 ? '#4ADE80' : '#FFE27A');
     Rr('rgba(0,0,0,.3)', 8, 198, 140, 3); Rr('#FFFFFF', 8, 198, 140 * Math.min(1, R.t / R.arrive), 3);
   } else if(S.phase === 'pop'){
-    ctx.fillText('지금! 팝업 타이밍', 8, 168);
+    lab(R.popT > POP_LOCK ? '지금! 초록 칸에서 탭' : '손 떼고 — 바늘을 봐요', 8, 164, '#FFE27A');
     Rr('rgba(0,0,0,.35)', 8, 182, 160, 12); Rr('#FFE27A', 8 + 160 * 0.26, 182, 160 * 0.48, 12); Rr('#4ADE80', 8 + 160 * 0.4, 182, 160 * 0.2, 12);
     Rr('#FFFFFF', 8 + 160 * R.needle - 1, 179, 3, 18);
   }
 }
+let scLast = -1;
 function hud(){
+  Rr('rgba(10,22,40,.5)', 2, 2, LIVES * 11 + 3, 13);
   for(let i = 0; i < LIVES; i++){ const on = i < S.lives, x = 4 + i * 11, y = 4, c = on ? '#FF4D6D' : 'rgba(255,255,255,.4)';
     Rr(c, x + 1, y, 3, 2); Rr(c, x + 5, y, 3, 2); Rr(c, x, y + 2, 9, 3); Rr(c, x + 1, y + 5, 7, 2); Rr(c, x + 3, y + 7, 3, 2); }
-  ctx.font = '8px Galmuri11, sans-serif'; ctx.textBaseline = 'top'; ctx.fillStyle = '#1B1B2F';
-  ctx.fillText(`파도 ${Math.min(WAVES, S.wave + 1)}/${WAVES}`, W - 56, 4);
-  if(S.phase === 'ride'){ ctx.fillText(`이번 파도 ${Math.floor(R.pts)}`, 4, 15); ctx.fillText(`속도 ${Math.round(R.v)}`, W - 44, 15); }
-  const sc = $s('s-score'); if(sc) sc.textContent = S.total + (S.phase === 'ride' ? Math.floor(R.pts) : 0);
+  lab(`파도 ${Math.min(WAVES, S.wave + 1)}/${WAVES}`, W - 4, 4, '#FFFFFF', 'r');
+  if(S.phase === 'ride'){ lab(`이번 파도 ${Math.floor(R.pts)}`, 4, 21, '#FFE27A'); lab(`속도 ${Math.round(R.v)}`, W - 4, 21, R.v >= 135 ? '#4ADE80' : '#FFFFFF', 'r'); }
+  const v = S.total + (S.phase === 'ride' ? Math.floor(R.pts) : 0); if(v !== scLast){ scLast = v; const sc = $s('s-score'); if(sc) sc.textContent = v; }
 }
-function pops(){ ctx.font = '8px Galmuri11, sans-serif'; ctx.textBaseline = 'top';
-  S.pops.forEach(p=>{ ctx.globalAlpha = Math.max(0, 1 - p.t / (p.life || 0.9) + 0.25); ctx.fillStyle = '#1B1B2F'; ctx.fillText(p.v, Math.round(p.x) + 1, Math.round(p.y) + 1); ctx.fillStyle = '#FFE27A'; ctx.fillText(p.v, Math.round(p.x), Math.round(p.y)); ctx.globalAlpha = 1; }); }
+function pops(){
+  for(const p of S.pops){ ctx.globalAlpha = Math.max(0, Math.min(1, 1 - p.t / (p.life || 0.9) + 0.25)); lab(p.v, p.x, Math.round(p.y), '#FFE27A'); } ctx.globalAlpha = 1; }
 
 function loop(ts){
   raf = requestAnimationFrame(loop);
   if(!last) last = ts; let dt = (ts - last) / 1000; last = ts; dt = Math.min(dt, 0.033);
-  if(S && ['lineup', 'missed', 'pop', 'ride'].includes(S.phase)){ acc += dt; let n = 0; while(acc >= FIX && n++ < 6){ step(FIX); acc -= FIX; if(!['lineup', 'missed', 'pop', 'ride'].includes(S.phase)) break; } ui(); }
+  if(S && ACT.has(S.phase)){ acc += dt; let n = 0; while(acc >= FIX && n++ < 6){ step(FIX); acc -= FIX; if(!ACT.has(S.phase)) break; } ui(); }
   else if(S) S.t += dt;
   draw();
 }
@@ -356,12 +366,13 @@ function surfClose(){
   if(typeof playTick === 'function') playTick();
   if(typeof renderHub === 'function' && typeof state !== 'undefined' && state.tab === 'play') renderHub();
 }
+/* 다른 앱을 보다 오면 — 패들·팝업 중이어도 멈춘다(돌아오자마자 바늘이 지나가 펄링하지 않게) */
 function pause(){
-  if(!S || S.phase !== 'ride') return;
-  S.phase = 'paused'; held = false;
+  if(!S || !ACT.has(S.phase)) return;
+  S.prev = S.phase; S.phase = 'paused'; held = false;
   $s('s-ov').hidden = false;
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">⏸ 잠깐 멈췄어요</div><button class="btn blue" id="s-resume" type="button" style="width:100%;min-height:52px;font-size:16px">이어서</button></div>`;
-  $s('s-resume').onclick = ()=>{ S.phase = 'ride'; last = 0; $s('s-ov').hidden = true; };
+  $s('s-resume').onclick = ()=>{ if(!S || S.phase !== 'paused') return; S.phase = S.prev || 'ride'; last = 0; acc = 0; tapQ = 0; $s('s-ov').hidden = true; };
 }
 function wire(){
   if(wire.done || !$s('surf')) return; wire.done = true;
