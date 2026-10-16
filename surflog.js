@@ -91,7 +91,7 @@ function sheet(){
     sh.innerHTML = '<div class="sheet-dim" data-slclose></div><div class="sheet-in"><div class="sheet-hd"><span class="t" id="sl-t">📒 서핑 기록</span><button class="btn sm ghost" data-slclose>닫기</button></div><div id="sl-body"></div></div>';
     document.body.appendChild(sh);
     sh.addEventListener('click', onClick);
-    sh.addEventListener('change', e=>{ if(!cur || !e.target.matches('[data-sldate]')) return; const v = e.target.value; if(/^\d{4}-\d{2}-\d{2}$/.test(v) && v <= todayS()){ cur.d = v; cur.wx = null; cur.h = null; const b = e.target.parentNode.querySelector('[data-slk="d"][data-slv="2"]'); if(b) b.textContent = `📅 ${+v.slice(5, 7)}.${+v.slice(8)}`; loadWx(); } });
+    sh.addEventListener('change', e=>{ if(!cur || !e.target.matches('[data-sldate]')) return; const v = e.target.value; if(/^\d{4}-\d{2}-\d{2}$/.test(v) && v <= todayS()){ cur.d = v; cur.wx = null; cur.h = null; const b = e.target.parentNode.querySelector('[data-slk="d"][data-slv="2"]'); if(b) b.textContent = `🗓️ ${+v.slice(5, 7)}.${+v.slice(8)}`; loadWx(); } });
     sh.addEventListener('input', e=>{ if(!cur) return; const k = e.target.dataset.slin; if(k === 't') cur.t = e.target.value.slice(0, 60); if(NOTE.some(n=>n[0] === k)) cur[k] = e.target.value.slice(0, 120); if(k === 's'){ cur.s = e.target.value.slice(0, 20); cur.sOther = 1; } }); }
   return sh;
 }
@@ -110,7 +110,7 @@ function paintForm(edit){
   const td = todayS(), y = new Date(Date.now() - 864e5); y.setMinutes(y.getMinutes() - y.getTimezoneOffset()); const yd = y.toISOString().slice(0, 10);
   $l('sl-body').innerHTML = `
     ${voiceOK() ? `<button type="button" class="btn sm blue sl-mic" data-slmic>🎤 말로 기록하기</button><div class="sl-heard" id="sl-heard">예) "오늘 낙산에서 두 시간 탔고 파도 다섯 개, 최고였어"</div>` : ''}
-    <div class="sl-lb">언제</div>${chips('d', ['오늘', '어제', cur.d !== td && cur.d !== yd ? `📅 ${+cur.d.slice(5, 7)}.${+cur.d.slice(8)}` : '📅 다른 날'], cur.d === td ? 0 : cur.d === yd ? 1 : 2)}
+    <div class="sl-lb">언제</div>${chips('d', ['오늘', '어제', cur.d !== td && cur.d !== yd ? `🗓️ ${+cur.d.slice(5, 7)}.${+cur.d.slice(8)}` : '🗓️ 다른 날'], cur.d === td ? 0 : cur.d === yd ? 1 : 2)}
     <input type="date" class="sl-date" data-sldate value="${esc(cur.d)}" max="${td}" min="${(()=>{ const x = new Date(Date.now() - 60 * 864e5); x.setMinutes(x.getMinutes() - x.getTimezoneOffset()); return x.toISOString().slice(0, 10); })()}" ${cur.d !== td && cur.d !== yd ? '' : 'hidden'} aria-label="날짜">
     ${chips('tm', ['오전', '오후'], cur.tm)}
     <div class="sl-lb">어디서</div><div class="food-chips sl-chips" role="group">${names.slice(0, 10).map(n=>`<button type="button" data-slspot="${esc(n)}" aria-pressed="${cur.s === n}">${esc(n)}</button>`).join('')}</div>

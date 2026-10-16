@@ -42,7 +42,7 @@ window.__bootFail = (files) => {
       <div style="background:#FFF9E6;border:4px solid #1B1B2F;box-shadow:5px 5px 0 #1B1B2F;padding:20px;max-width:420px">
         <div style="font-size:19px;font-weight:800">파일을 다 받지 못했어요</div>
         <div style="font-size:14px;line-height:1.65;margin-top:8px;color:#1B1B2F">
-          신호가 약하거나 잠시 막혔을 수 있어요. <b>새로고침</b>하면 대개 됩니다.</div>
+          신호가 약하거나 잠시 막혔을 수 있어요. <b>새로고침</b>하면 대개 돼요.</div>
         <div style="font-size:12px;color:#5A5F7A;margin-top:8px">못 받은 것 · ${files.join(', ')}</div>
         <button onclick="location.reload()" style="margin-top:14px;width:100%;border:4px solid #1B1B2F;background:#FFD23F;
           padding:11px;font-weight:800;font-size:15px;box-shadow:3px 3px 0 #1B1B2F;font-family:inherit">↻ 새로고침</button>
@@ -421,7 +421,7 @@ body.game-on{ overflow:hidden }
 .q-pick{ display:flex; flex-direction:column; gap:6px; margin-top:8px } .q-b{ display:grid; grid-template-columns:auto 1fr; grid-template-rows:auto auto; column-gap:8px; align-items:center; padding:8px 10px; text-align:left; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); cursor:pointer } .q-b i{ grid-row:1/3; font-style:normal; font-size:24px; font-family:sans-serif } .q-b b{ font-size:14px } .q-b small{ font-size:12px; color:#5B6275; font-weight:700 } #surf{ --ar:1 } #skate{ --ar:calc(180 / 240) }
 #surf .game-box{ width:min(100%, calc((100dvh - 210px - env(safe-area-inset-bottom)) * var(--ar) + 28px)) }
 .game-hd{ display:flex; align-items:center; gap:10px; color:#fff; padding:4px 2px 10px; font-size:15px }
-.game-hd > b{ flex:1; font-family:"Galmuri11",sans-serif }
+.game-hd > b{ flex:1; min-width:0; font-weight:900; letter-spacing:-.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }   /* 다섯 게임 머리줄을 같은 글꼴·같은 닫기 단추로 */
 .game-sc{ font-family:"Galmuri11",sans-serif; font-size:20px; color:#FFE27A } .game-sc small{ font-size:12px; color:#9FC4E4 }
 .game-stage{ position:relative; width:100%; flex:0 1 auto; border:2px solid var(--ink); background:#000; touch-action:none; -webkit-user-select:none; user-select:none }
 #k-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none }
@@ -437,6 +437,7 @@ body.game-on{ overflow:hidden }
 .sk-dr{ display:flex; align-items:center; gap:8px; width:100%; margin-top:6px; padding:8px 10px; text-align:left; font-family:inherit; background:#fff; border:2px solid var(--ink); cursor:pointer } .sk-dr i{ font-style:normal; font-size:20px; font-family:sans-serif } .sk-dr span{ flex:1; display:flex; flex-direction:column } .sk-dr b{ font-size:14px } .sk-dr small{ font-size:11.5px; color:#5B6275; font-weight:700; line-height:1.4 } .sk-dr em{ font-style:normal; font-weight:800; font-size:13px; color:#B45309 }
 #s-cv{ display:block; width:100%; height:auto; image-rendering:pixelated; image-rendering:crisp-edges; touch-action:none; -webkit-touch-callout:none }
 .surf-pull{ margin-top:10px; min-height:52px; font-size:16px; background:#FF6B6B; color:#fff } .surf-pull[hidden]{ display:none }
+#surf .go-card, #skate .go-card{ word-break:keep-all }   /* 「팝/업」「한/번에」처럼 낱말 가운데서 줄이 꺾이지 않게 */ #skate .go-st span{ text-align:center } .go-st.two{ grid-template-columns:1fr 1fr }
 #g-cv{ display:block; width:100%; height:auto; touch-action:none; -webkit-touch-callout:none }
 .game-ov{ position:absolute; inset:0; display:flex; align-items:flex-start; justify-content:center; padding:10px; background:rgba(11,37,64,.55); overflow:auto; overscroll-behavior:contain }
 .game-ov > .go-card{ margin:auto }       /* 카드가 화면보다 길면 잘리지 않고 스크롤 */
@@ -453,9 +454,9 @@ body.game-on{ overflow:hidden }
 .go-v{ font-size:13px; line-height:1.6; font-weight:700; margin:0 0 12px; color:#14304F; word-break:keep-all } .go-v small{ display:block; color:#5B6275; margin-top:2px }
 /* 파도 점프 새 단장 — 도트 대신 원정처럼 둥근 카드·부드러운 글꼴(그림은 캔버스가 기기 해상도로 그린다) */
 #game.game{ background:radial-gradient(120% 80% at 50% 0%, #1F5487, #0B2540 70%) }
-#game .game-hd > b, #game .game-sc{ font-family:inherit; font-weight:900; letter-spacing:-.01em }
+#game .game-sc{ font-family:inherit; font-weight:900; letter-spacing:-.01em }
 #game .game-sc{ display:none }
-#game .game-hd .btn, #game .game-hd .who{ border:0; border-radius:12px; box-shadow:none; background:rgba(255,255,255,.14); color:#fff }
+.game .game-hd .btn, #game .game-hd .who{ border:0; border-radius:12px; box-shadow:none; background:rgba(255,255,255,.14); color:#fff; flex:0 0 auto; min-width:42px }
 #game .game-stage{ border:0; border-radius:20px; overflow:hidden; background:#0B2540; box-shadow:0 10px 30px rgba(0,0,0,.35), 0 0 0 1.5px rgba(255,255,255,.14) }
 #game .game-ov{ background:linear-gradient(180deg, rgba(8,24,46,.25), rgba(8,24,46,.62)) }
 #game .go-card{ border:0; border-radius:22px; background:#FFFDF7; box-shadow:0 14px 34px rgba(8,24,46,.38); padding:18px 16px 16px; animation:jpIn .34s cubic-bezier(.2,1.3,.4,1) }
@@ -1298,6 +1299,28 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 #rides:empty, #stays:empty, #bolts:empty{ display:none }
 .rs-open{ display:block; margin:6px auto 0; min-height:44px; padding:0 12px; border:0; background:none; font:inherit; font-size:13.5px; color:var(--deep); text-decoration:underline; cursor:pointer }
 .rs-box{ margin-top:4px; padding:12px; border:2px dashed var(--ink); border-radius:10px; background:#FFFDF3 }
+/* ── 출시일 다듬기(10/17) ── */
+/* 한국어는 낱말 단위로 꺾는다 — 「낚/시」「오/프쇼어」「26,300/원」「끝이에/요」처럼 글자 하나가 다음 줄로 떨어지지 않게.
+   너무 긴 낱말(링크·아이디)은 그래도 칸 안에서 꺾인다(break-word 는 칸 최소 폭을 늘리지 않는다) */
+body{ word-break:keep-all; overflow-wrap:break-word }
+/* 탭이 옆에서 미끄러져 들어오는 0.24초 동안(숙소 지도·마을 그림은 특히) 화면이 15px 넓어진 채 남아, 휴대폰에서 좌우로 흔들리고
+   아래 탭·기타 시트 오른쪽이 잘렸다. clip 은 스크롤 상자를 만들지 않아 sticky(꾸미기 미리보기)는 그대로 붙는다 */
+.wrap{ overflow-x:clip }
+/* 홈 첫 카드가 날씨 줄과 26px 떨어져 다른 칸(14px)보다 붕 떠 보였다 */
+#pane-home:not([hidden]){ padding-top:2px }
+/* 내 일정 — 노란 강조 줄이 왼쪽으로만 삐져나와 오른쪽이 16px 짧았다 */
+.mrow{ width:calc(100% + 16px) }
+/* 업데이트 카드 ✕ — 추천 카드 ✕ 처럼 테두리에서 한 뼘 띄운다 */
+.upd-x{ right:8px; top:8px }
+/* 같이 가요 머리글 — 다른 홈 섹션처럼 작은 설명을 옆에 */
+.grp > .t small{ font-family:inherit; font-size:12px; color:#1D3566; text-shadow:none; opacity:.85; margin-left:6px }
+/* 숙소 탭 지도 링크가 브라우저 기본 파랑·보라였다 — 앱 글자색으로, 손가락 닿는 높이도 */
+#pane-stay a:not(.btn){ color:var(--deep); font-weight:800; padding:6px 0; text-underline-offset:3px }
+/* 접는 칸 머리 — 22~36px 이던 누르는 높이를 44px 로 (겉 크기는 그대로) */
+.dmonth summary{ min-height:44px }
+#bld-fold > summary{ padding:11px 0; margin:-11px 0 }
+/* 아주 좁은 폰(320) — 주간 파도 칸의 「0.4m」가 테두리에 닿았다 */
+@media (max-width:359px){ .wv-d .wv-h{ font-size:10.5px; letter-spacing:-.3px } .wv-d b{ font-size:14px } }
 </style>
 </head>
 <body>
@@ -1352,7 +1375,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
       <input id="upw" type="password" placeholder="4자 이상" style="flex:1" autocomplete="current-password" autocapitalize="off" enterkeyhint="go">
       <button type="button" class="btn sm ghost" id="pw-eye" aria-label="비밀번호 보기" style="flex:0 0 auto">👁</button>
     </div>
-    <div class="note" id="pw-note" style="margin-top:4px" hidden>다음에 이 아이디와 비밀번호로 다시 들어옵니다. <b>기억해 두세요.</b></div>
+    <div class="note" id="pw-note" style="margin-top:4px" hidden>다음에 이 아이디와 비밀번호로 다시 들어와요. <b>꼭 기억해 두세요.</b></div>
     <label class="agree" id="agree-wrap" hidden>
       <input type="checkbox" id="agree">
       <span><a href="/terms-of-service" target="_blank" rel="noopener">이용약관</a>과
@@ -1417,6 +1440,11 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
         <button type="button" data-qa="checkin"><i>📍</i>체크인</button><button type="button" data-qa="cam"><i>📹</i>캠</button>
         <button type="button" data-qa="slog"><i>📒</i>일지 쓰기</button><button type="button" data-qa="bus"><i>🚌</i>버스 좌석</button>
       </div>
+      <!-- 내 일정 — 곧 시작하는 번개·카풀·숙소(「2시간 뒤」)는 내게 가장 급한 정보라 맨 아래가 아니라 빠른 실행 바로 밑. 일정이 없으면 숨는다 -->
+      <section class="mine" id="mine" aria-label="내 일정" hidden>
+        <h3>📌 내 일정</h3>
+        <div id="mine-list"></div>
+      </section>
       <!-- 오늘 갈까? 가 홈의 첫 정보 — 추천·소식 카드보다 위 -->
       <section class="hwave" id="home-wave" aria-label="이번주의 파도" hidden></section>
       <section id="home-rec" hidden></section>
@@ -1436,24 +1464,20 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
           <summary id="board-sub">🏆 동기들 순위</summary>
           <div class="dtabs" role="group" aria-label="순위 기준">
             <button type="button" id="dt-streak" aria-pressed="true">🔥 연속</button>
-            <button type="button" id="dt-week" aria-pressed="false">📅 최근 7일</button>
+            <button type="button" id="dt-week" aria-pressed="false">🗓️ 최근 7일</button>
           </div>
           <div class="dhead"><span></span><span>이름</span><span></span><span class="dd" id="dd-head"></span></div>
           <div id="drill-list"></div>
           <button class="dlink" type="button" id="board-more" hidden></button>
           <div class="dnone" id="board-none" hidden></div>
         </details>
-        <details class="dmonth" id="dmonth"><summary id="dmonth-sum">📅 이번 달 달력</summary><div class="dmgrid" id="dmgrid"></div></details>
+        <details class="dmonth" id="dmonth"><summary id="dmonth-sum">🗓️ 이번 달 달력</summary><div class="dmgrid" id="dmgrid"></div></details>
       </section>
       <section class="hgame" id="home-games" aria-label="오늘 한 판"></section>
       <section class="hfood" id="home-food" aria-label="맛집·서핑 스팟" hidden></section>
       <div class="a2" id="a2hs" hidden></div>
       <button type="button" class="todo" id="todo" hidden></button>
-      <section class="mine" id="mine" aria-label="내 일정" hidden>
-        <h3>📌 내 일정</h3>
-        <div id="mine-list"></div>
-      </section>
-      <div class="grp" id="here-grp"><span class="t">같이 가요 — 번개 · 카풀 · 숙소</span><div class="px" id="home-sum"></div></div>
+      <div class="grp" id="here-grp"><span class="t">🤙 같이 가요 <small>번개 · 카풀 · 숙소</small></span><div class="px" id="home-sum"></div></div>
       <button type="button" class="voice" id="voice" hidden>
         <span class="vh">🎙 코치님들의 목소리</span>
         <span class="vt" id="voice-t"></span>
@@ -1482,7 +1506,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
         </div>
         <label for="r-note">한마디 (선택)</label><input id="r-note" maxlength="60" placeholder="예) 기름값 1/n · 휴게소 한 번">
         <label for="r-contact">연락 방법 (선택)</label><input id="r-contact" maxlength="80" placeholder="오픈채팅 링크 등">
-        <div class="note">전화번호는 적지 마세요. 이 글은 <b>같은 기수 전원</b>이 봅니다.</div>
+        <div class="note">전화번호는 적지 마세요. 이 글은 <b>같은 기수 전원</b>이 봐요.</div>
         <div class="err" id="r-err"></div>
         <button class="btn mint" id="r-save" style="width:100%;margin-top:6px">올리기</button>
       </details>
@@ -1510,13 +1534,14 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
         <div class="err" id="s-err"></div>
         <button class="btn mint" id="s-save" style="width:100%;margin-top:6px">올리기</button>
       </details>
+      <!-- 같이 쓸 숙소(지금 고를 수 있는 것)가 먼저, 지도·정보판은 참고라 그 아래 -->
+      <div class="grp"><span class="t">올라온 숙소 쉐어</span><div class="loadbar" id="stays-bar" role="status" hidden></div><div class="px" id="stays"></div></div>
       <div class="grp"><span class="t">학교 기준 지도</span><div class="px white" id="map"></div></div>
       <div class="grp"><span class="t">숙소 정보판</span>
         <div class="px" id="places"></div>
         <div class="note onsea">
-          누구나 고칠 수 있어요. 대신 <b>누가 무엇을 고쳤는지 다 보입니다.</b></div>
+          누구나 고칠 수 있어요. 대신 <b>누가 무엇을 고쳤는지 다 보여요.</b></div>
       </div>
-      <div class="grp"><span class="t">올라온 숙소 쉐어</span><div class="loadbar" id="stays-bar" role="status" hidden></div><div class="px" id="stays"></div></div>
     </div>
 
     <!-- 서핑번개 -->
@@ -1531,7 +1556,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
         <input id="b-note" maxlength="60" placeholder="예) 선셋 서핑해요 · 초보 환영">
         <div class="err" id="b-err"></div>
         <button class="btn mint" id="b-save" style="width:100%;margin-top:6px">번개 올리기</button>
-        <div class="note">이렇게 올라갑니다 — <b>⚡ 선셋 서핑해요 / 9월 29일 월요일 · 인구 · 오후 5시</b><br>
+        <div class="note">이렇게 올라가요 — <b>⚡ 선셋 서핑해요 / 9월 29일 월요일 · 인구 · 오후 5시</b><br>
           몇 명이 모이는지는 사람들이 눌러서 채워요.</div>
       </details>
       <div class="grp"><span class="t">다가오는 번개</span><div class="loadbar" id="bolts-bar" role="status" hidden></div><div class="px" id="bolts"></div></div>
@@ -1566,7 +1591,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
           <a href="https://www.wsbfarm.com/wavecam/WaveCamList" target="_blank" rel="noopener">전체 캠</a>
           <a href="https://www.badatime.com/cctv" target="_blank" rel="noopener">바다타임 CCTV</a>
         </div>
-        <div class="note">WSB FARM 웨이브캠 실시간 · 소리 없음 · <b>데이터를 꽤 씁니다</b></div>
+        <div class="note">WSB FARM 웨이브캠 실시간 · 소리 없음 · <b>데이터를 꽤 써요</b></div>
       </div>
     </div>
 
@@ -1600,7 +1625,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 
     <!-- 이 안내는 차·숙소 글에만 해당한다. 캠·마을·꾸미기에서는 뜻 없는 말이 된다 -->
     <div class="note onsea" id="trust">
-      올린 사람만 지울 수 있어요. 자리는 아무나 넣고 뺄 수 있습니다 — 서로 믿고 쓰는 곳이에요.
+      올린 사람만 지울 수 있어요. 자리는 누구나 넣고 뺄 수 있어요 — 서로 믿고 쓰는 곳이에요.
     </div>
 
     <div class="px sand" id="school" style="margin-top:10px">
@@ -1742,7 +1767,7 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
       <button type="button" class="more-it" data-more="shop"><i>🛍️</i><b>소품샵</b><small>서핑 용품 · 소품 · 옷</small></button>
       <button type="button" class="more-it" data-more="a2hs"><i>📲</i><b>홈 화면에 추가</b><small>아이콘으로 바로 열기</small></button>
       <button type="button" class="more-it" data-more="settings"><i>⚙️</i><b>설정</b><small>진동 · 소리 · 글씨 크게</small></button>
-      <button type="button" class="more-it" data-more="homeedit"><i>🏠</i><b>홈 편집</b><small>안 쓰는 섹션 숨기기</small></button>
+      <button type="button" class="more-it" data-more="homeedit"><i>🧩</i><b>홈 편집</b><small>안 쓰는 섹션 숨기기</small></button>
       <button type="button" class="more-it" data-more="help" id="help"><i>💡</i><b>처음 안내 다시 보기</b><small>탭마다 뭐가 있는지</small></button>
       <button type="button" class="more-it" id="out"><i>🚪</i><b>로그아웃</b><small>이 기기에서 나가기</small></button>
     </div>
@@ -2361,7 +2386,7 @@ function renderNow(){
     sel.onchange = ()=>{ setSea(sel.value); renderNow(); pullCond(); }; }
   sel.value = mySea(); if(!sel.value){ sel.value = '낙산'; setSea('낙산'); }
   if(nowRows === null){ $('now-t').textContent = '체크인 표가 아직 없어요';
-    $('now-else').textContent = '운영자가 서버를 설정하면 켜집니다.';
+    $('now-else').textContent = '운영자가 서버를 설정하면 켜져요.';
     $('now-avs').innerHTML = ''; $('now-btn').disabled = true; return; }
   const beach = sel.value, here = nowRows.filter(c=>c.beach===beach), mine = myNow();
   /* 한 줄 요약도 같이 갱신 — 두 군데가 다른 말을 하면 안 된다 */
@@ -2382,7 +2407,7 @@ function renderNow(){
   const ks = Object.keys(el);
   $('now-else').innerHTML = ks.length
     ? '다른 바다 · ' + ks.map(k=>`<b>${esc(k)}</b> ${el[k]}`).join(' · ')
-    : (here.length ? '' : '바다 도착하면 체크인하세요. 4시간 뒤 저절로 풀립니다.');
+    : (here.length ? '' : '바다 도착하면 체크인하세요. 4시간 뒤 저절로 풀려요.');
   const atHere = mine && mine.beach === beach;
   $('now-btn').disabled = false;
   /* 캠에서 다른 바다를 보다 오면 고른 해변이 바뀌어 있다(둘이 같은 값을 쓴다).
@@ -2573,12 +2598,12 @@ function renderBolts(){
   if(!sel.options.length){ sel.innerHTML = SEAS.map(([n])=>`<option value="${n}">${n}</option>`).join(''); sel.value = mySea(); }
   if(!$('b-date').value) $('b-date').value = nextWeekend();
   loadBar('bolts', pullBolts);
-  if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜집니다.</div>`; return; }
+  if(bolts === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜져요.</div>`; return; }
   if(LD.bolts === 0 && !bolts.length){ box.innerHTML = SKEL; return; }
   if(LD.bolts === 2 && !bolts.length){ box.innerHTML = ''; return; }
   refreshDots(); if(state.tab==='home') renderHome();
   if(!bolts.length){ box.innerHTML = `<div class="empty">아직 잡힌 번개가 없어요.<br>
-    시간과 바다만 정하면 사람이 모입니다.<br>
+    시간과 바다만 정하면 사람이 모여요.<br>
     <button class="btn sm mint" type="button" data-first="bolt" style="margin-top:9px">⚡ 번개 열기</button></div>`;
     bindFirst(box); return; }
   let head = false;
@@ -2589,7 +2614,7 @@ function renderBolts(){
       return ga ? (kb < ka ? -1 : 1) : (ka < kb ? -1 : 1);
     }).map(b=>{
     const gone = boltGone(b), list = b.joins || [], mine = list.some(x=>x.id===ME.id);
-    const hd = gone && !head ? (head = true, `<div class="gone-hd">지난 번개 — 기록으로 남겨둡니다</div>`) : '';
+    const hd = gone && !head ? (head = true, `<div class="gone-hd">지난 번개 — 기록으로 남겨 둬요</div>`) : '';
     /* "오늘 인구 오후 5시 선셋 서핑해요" 처럼 한 줄로 읽히게 쓴다.
        한마디가 제목이 되고, 언제·어디는 그 밑에. 태그로 쪼개면 문장이 안 된다. */
     return hd + `<div class="card k-bolt ${gone?'gone':''}">
@@ -3148,12 +3173,12 @@ const ago = t => { const m = Math.floor((Date.now()-new Date(t))/60000);
 function renderMail(){
   const box = $('mail-list');
   if(!canMail()){ box.innerHTML = `<div class="empty">쪽지를 쓰려면 한 번 다시 로그인해 주세요.<br>
-    <span class="note">예전에 가입하신 분은 기기에 인증 표가 없어요. 나가기 → 로그인이면 됩니다.</span></div>`; return; }
+    <span class="note">예전에 가입하신 분은 기기에 인증 표가 없어요. 나가기 → 로그인하면 돼요.</span></div>`; return; }
   const rows = [...mailBox.inbox.map(n=>({...n, dir:'in'})), ...mailBox.sent.map(n=>({...n, dir:'out'}))]
     .sort((a,b)=> new Date(b.created_at) - new Date(a.created_at)).slice(0,120);
   if(!rows.length && mailNet){ box.innerHTML = `<div class="empty">📶 쪽지함을 못 불러왔어요.<br><span class="note">신호가 잡히면 저절로 다시 불러와요.</span></div>`; return; }
   if(!rows.length){ box.innerHTML = `<div class="empty">아직 주고받은 쪽지가 없어요.<br>
-    <span class="note">차·숙소 글에서 올린 사람 옆 <b>✉️</b>를 누르면 여기로 옵니다.</span></div>`; return; }
+    <span class="note">차·숙소 글에서 올린 사람 옆 <b>✉️</b>를 누르면 여기로 와요.</span></div>`; return; }
   box.innerHTML = rows.map(n=>{
     const out = n.dir==='out', who = out ? n.to_name : n.from_name, wid = out ? n.to_id : n.from_id;
     return `<div class="note-row ${!out && !n.read_at ? 'new' : ''}">
@@ -3217,13 +3242,13 @@ const ONB = [
   { tab:'home', at:'prof-lv', t:'🏄 내 캐릭터 · 레벨',
     d:'훈련·서핑 일지·번개·한마디·게임으로 <b>XP</b>가 쌓이고, 레벨이 오르면 별눈·해달 같은 꾸미기가 열려요.<br><b>내 캐릭터 그림을 누르면</b> 꾸미기 · 🛍️ 소품샵 · 📸 카드 저장.' },
   { tab:'home', at:'drill-btn', t:'✅ 하루 한 번 테이크오프 체크',
-    d:'오늘 했으면 눌러요. 연속일수가 쌓이고 동기들과 <b>이번 주 목표</b>를 같이 채웁니다.' },
+    d:'오늘 했으면 눌러요. 연속일수가 쌓이고 동기들과 <b>이번 주 목표</b>를 같이 채워요.' },
   { tab:'home', at:'home-log', t:'📒 서핑 일지', skip:()=>$('home-log')?.hidden,
     d:'바다 다녀오면 <b>스팟 · 시간 · 탄 파도 · 기분</b>만 눌러 10초 기록. 그날 파도 예보도 같이 남고, <b>이번 주 바다 간 동기</b>가 보여요.' },
   { tab:'food', at:'t-food', t:'🍜 맛집 · 🏄 서핑 스팟',
     d:'양서학 네이버 리스트가 자동으로 들어와요. 가 본 곳이 없으면 <b>➕ 등록하기</b>(네이버 링크 + 한줄평) — <b>바로 목록에 올라가요</b>.<br>카드마다 👍 추천 · 🙋 가봤어요 · 💬 댓글(내 기수가 같이 보여요).' },
   { tab:'play', at:'t-play', t:'🎮 놀이 — 게임과 훈련',
-    d:'🏄 <b>파도 점프</b>(메인 게임 · 매일 📅 오늘의 챌린지) · 🌊 라인업 서핑 · 🛹 서프스케이트 훈련 · 코치 퀴즈 · 운세 · 스탬프 · 🛍️ 소품샵(서핑 용품·옷).' },
+    d:'🏄 <b>파도 점프</b>(메인 게임 · 매일 🗓️ 오늘의 챌린지) · 🌊 라인업 서핑 · 🛹 서프스케이트 훈련 · 코치 퀴즈 · 운세 · 스탬프 · 🛍️ 소품샵(서핑 용품·옷).' },
   { tab:'cam', at:'t-cam', t:'📹 라이브캠',
     d:'나가기 전에 그 해변을 <b>눈으로</b> 봐요. 데이터를 꽤 써서 다른 탭으로 가면 알아서 꺼져요.' },
   { tab:'ride', at:'t-ride', t:'🚌 버스 — 남은 좌석 · 좌석 배치도',
@@ -3466,8 +3491,8 @@ function renderTodo(){
       ()=>{ const d = $('bld-fold'); d.open = true; d.scrollIntoView({block:'start',behavior:'smooth'}); }],
     [!mine, '📍', '바다에 나오셨다면 체크인', '누가 있는지 서로 보이게 — 4시간 뒤 저절로 풀려요',
       ()=>{ $('now').scrollIntoView({ block:'center', behavior:'smooth' }); $('now-btn').focus({preventScroll:true}); }],
-    [!upBolt, '⚡', '서핑번개를 열어보세요', '시간과 바다만 정하면 사람이 모입니다', ()=>setTab('bolt')],
-    [!myMood, '💬', '마을에 한마디 남겨보세요', '오늘 어땠는지 — 동기들이 반응합니다', ()=>setTab('town')],
+    [!upBolt, '⚡', '서핑번개를 열어보세요', '시간과 바다만 정하면 사람이 모여요', ()=>setTab('bolt')],
+    [!myMood, '💬', '마을에 한마디 남겨보세요', '오늘 어땠는지 — 동기들이 반응해요', ()=>setTab('town')],
   ];
   const hit = steps.find(x=>x[0]);
   /* 내 일정이 이미 떠 있으면 노란 띠를 하나 더 얹지 않는다 — 홈이 안내판이 된다 */
@@ -3561,7 +3586,7 @@ function renderDrill(){
       if(on) cnt++;
       html += `<div class="d${on?' on':''}${key===dayOf(0)?' today':''}${fut?' fut':''}"><span>${d}</span><em>${on?'✔':''}</em></div>`; }
     $('dmgrid').innerHTML = html;
-    $('dmonth-sum').textContent = `📅 ${m+1}월 달력 · ${cnt}일 했어요`; }
+    $('dmonth-sum').textContent = `🗓️ ${m+1}월 달력 · ${cnt}일 했어요`; }
   $('dd-head').innerHTML = DAYS.map(d=>`<span>${DOW[dow(d)]}</span>`).join('');
   $('dt-streak').setAttribute('aria-pressed', String(drillView==='streak'));
   $('dt-week').setAttribute('aria-pressed', String(drillView==='week'));
@@ -3684,7 +3709,7 @@ function homeGames(){
   const skDays = Object.keys(p.sk?.real || {}).length;
   const g = (id, ic, t, sub, fn) => `<button type="button" class="hg" data-hg="${id}"><span class="hg-ic">${ic}</span><b>${t}</b><small>${sub}</small></button>`;
   el.innerHTML = `<div class="hsec">🎮 오늘 한 판 <small>게임·훈련으로 XP</small></div>
-    <button type="button" class="hg hg-main" data-hg="game"><span class="hg-ic">🏄</span><span class="hg-mm"><b>파도 점프</b><small>${dsc != null ? `📅 오늘의 챌린지 ${dsc}점 · 다시 도전!` : '📅 오늘의 챌린지 — 모두 같은 코스'}</small><small>쉬움 최고 ${p.best || 0} · 어려움 ${p.hbest || 0}</small></span><span class="hg-go">▶</span></button>
+    <button type="button" class="hg hg-main" data-hg="game"><span class="hg-ic">🏄</span><span class="hg-mm"><b>파도 점프</b><small>${dsc != null ? `🗓️ 오늘의 챌린지 ${dsc}점 · 다시 도전!` : '🗓️ 오늘의 챌린지 — 모두 같은 코스'}</small><small>쉬움 최고 ${p.best || 0} · 어려움 ${p.hbest || 0}</small></span><span class="hg-go">▶</span></button>
     <div class="hgrid two">
     ${g('quest', '🗺️', '전설의 보드 원정', p.qb?.best != null ? `최고 ${p.qb.best + 1}/10${p.qb.legend ? ' · 🏄' : ''}` : '자동 모험 · 독도까지')}
     ${g('skate', '🛹', '서프스케이트', skDays ? `${skDays}일 탐` : '땅에서 펌핑')}</div>`;
@@ -3719,7 +3744,7 @@ function renderHome(){
   const bs    = (bolts||[]).filter(b=>!boltGone(b) && !mineIn(b.joins));
   const line = (ic, ko, n, tab, text) => `<button type="button" class="hrow" data-go="${tab}">
       <span class="hic">${ic}</span>
-      <span class="hko">${ko}${n > 1 ? ` <b>+${n-1}</b>` : ''}<small>${text}</small></span>
+      <span class="hko">${ko}${n > 1 ? ` <b>외 ${n-1}건</b>` : ''}<small>${text}</small></span>
       <span class="hgo">›</span></button>`;
   const rows = [];
   if(bs.length)    rows.push(line('⚡','번개', bs.length, 'bolt', `${dShort(bs[0].date)} ${hLabel(bs[0].time)} · ${esc(bs[0].beach)} · ${(bs[0].joins||[]).length}명`));
@@ -3768,7 +3793,7 @@ function renderRides(){
   const box = $('rides'); loadBar('rides', pullRides);
   if(state.rides !== null && LD.rides === 0 && !state.rides.length){ box.innerHTML = SKEL; return; }
   if(state.rides && LD.rides === 2 && !state.rides.length){ box.innerHTML = ''; return; }
-  if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜집니다.</div>`; return; }
+  if(state.rides === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜져요.</div>`; return; }
   /* "아직 없어요" 한 줄로 끝내면 첫 사람이 아무것도 안 한다. 여기가 첫 행동 자리다. */
   if(!state.rides.length){ box.innerHTML = `<div class="empty">아직 올라온 차가 없어요.<br>
     <button class="btn sm mint" type="button" data-first="ride" style="margin-top:9px">🚗 첫 차 올리기</button></div>`;
@@ -3830,7 +3855,7 @@ function renderStays(){
   const box = $('stays'); loadBar('stays', pullStays);
   if(state.stays !== null && LD.stays === 0 && !state.stays.length){ box.innerHTML = SKEL; return; }
   if(state.stays && LD.stays === 2 && !state.stays.length){ box.innerHTML = ''; return; }
-  if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜집니다.</div>`; return; }
+  if(state.stays === null){ box.innerHTML = `<div class="empty">아직 서버에 표가 없어요.<br>운영자가 서버를 설정하면 켜져요.</div>`; return; }
   if(!state.stays.length){ box.innerHTML = `<div class="empty">아직 올라온 숙소가 없어요.<br>
     <button class="btn sm mint" type="button" data-first="stay" style="margin-top:9px">🏠 첫 숙소 올리기</button></div>`;
     bindFirst(box); return; }
@@ -3906,8 +3931,8 @@ function renderPlaces(){
   if(state.places === null && state.placesNet){ box.innerHTML = `<div class="empty">📶 정보판을 못 불러왔어요. <button type="button" class="btn sm ghost" id="places-retry">다시</button></div>`;
     $('places-retry').onclick = e=>{ e.currentTarget.disabled = true; pullPlaces(); }; return; }
   if(state.places === null){ box.innerHTML = `<div class="empty">아직 서버에 정보판이 없어요.<br>
-    운영자가 서버를 설정하면 켜집니다.</div>`; return; }
-  if(!state.places.length){ box.innerHTML = `<div class="empty">아직 등록된 숙소가 없어요.</div>`; return; }
+    운영자가 서버를 설정하면 켜져요.</div>`; return; }
+  if(!state.places.length){ box.innerHTML = `<div class="empty">정보판에 적힌 숙소가 아직 없어요.</div>`; return; }
   const withXY = p => p.lat && p.lon;
   /* 순서 — ① 내가 별 단 곳 ② 해변 도보·주차·취사가 되는 곳 ③ 가까운 곳 ④ 핀 없는 곳은 아래로.
      시설이 많아도 멀면 뒤로 가야 해서, 시설은 같은 거리대 안에서만 힘을 쓰게 0.6km 단위로 묶는다. */
@@ -4295,7 +4320,7 @@ function renderMap(){
         <div style="color:var(--ink2);margin-left:14px">학교에서 ${km.toFixed(1)}km · ${travel(km)}
           · <a href="${esc(mapLink(s.name,s.lat,s.lon,s.url))}" target="_blank" rel="noopener">지도에서 보기 ↗</a></div></div>`; }).join('')}</div>
     <div class="note">해안선과 남대천은 OpenStreetMap 자료예요. 점선은 학교에서 숙소까지 직선이라
-      실제로 걷는 길은 조금 더 깁니다. <b>지도에서 보기</b>를 누르면 네이버지도에서 그 숙소가 열려요.</div>`;
+      실제로 걷는 길은 조금 더 길어요. <b>지도에서 보기</b>를 누르면 네이버지도에서 그 숙소가 열려요.</div>`;
 }
 $('s-save').onclick = async ()=>{
   const e = $('s-err'); e.textContent = '';

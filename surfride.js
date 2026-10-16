@@ -171,7 +171,8 @@ const cmbM = n => n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1.5 : 1;
 function trick(r, base, name, y, life){
   r.cmb++; r.cmbT = CMB_T; r.cmax = Math.max(r.cmax, r.cmb); S.cmax = Math.max(S.cmax, r.cmb);
   const m = cmbM(r.cmb), v = Math.round(base * m); r.pts += v;
-  S.pops.push({ x:RX - 16, y:Math.max(y, 64), t:0, life:life || .9, v:`${name} +${v}${m > 1 ? ' ×' + m : ''}` });   // 점수줄(위 두 줄) 아래에서 떠오른다
+  const pv = { nm:name, x:RX - 16, y:Math.max(y, 64), t:0, life:life || .9, v:`${name} +${v}${m > 1 ? ' ×' + m : ''}` };   // 점수줄(위 두 줄) 아래에서 떠오른다
+  { const i = S.pops.findIndex(p=>p.nm === name); if(i >= 0) S.pops[i] = pv; else S.pops.push(pv); }   // 같은 기술(바텀턴 연타)은 한 줄을 고쳐 쓴다 — 네 줄씩 쌓여 서퍼를 가리지 않게
   if(m > 1 && m !== cmbM(r.cmb - 1)){ S.fl = Math.max(S.fl, .25); beep(660 + m * 220, 0, .12); buzz(10);
     if(!S.cmbHint){ S.cmbHint = true; S.pops.push({ x:RX - 60, y:96, t:0, life:2, v:'🔗 기술을 쉬지 않고 이으면 점수 배수!' }); } }
 }
@@ -211,7 +212,7 @@ function over(){
     ${goal ? `<div class="go-d" style="margin:-2px 0 8px;word-break:keep-all">${goal}</div>` : ''}
     <div class="go-st"><span>잃은 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>최고 파도<b>${S.bestRide}</b></span><span>${hardS ? '어려움' : '쉬움'} 최고<b>${(hardS ? p.sbest : p.sebest) || S.total}</b></span></div>
     <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${S.cmax >= 3 ? ` · 🔗 최대 콤보 ${S.cmax}` : ''}${S.pmax >= 2 ? ` · ✨ 완벽 ${S.pmax}연속` : ''}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}${r.shells ? ` · 🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''}${U.mul ? ` · 🔧 ×${(1 + .03 * U.mul).toFixed(2)}` : ''}</div>
-    <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">🌊 한 판 더</button>
+    <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">↻ 한 판 더</button>
       <button class="btn ghost" id="s-exit" type="button" style="min-height:52px">닫기</button></div>
     ${typeof upNudge === 'function' ? upNudge('surf', { sc:S.total, best:r.newBest ? 0 : r.best, x2:r.x2, k:'r_mul', plus:Math.round(raw * .03) }) : ''}
     ${S.total >= 300 && typeof sendChat === 'function' ? `<button class="btn ghost" id="s-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;
@@ -232,7 +233,7 @@ function showResult(){
     <div class="go-d">${esc(d.why)}${d.kind === 'wipe' ? ` — 이 파도 점수는 ${hardS ? 40 : 60}%만 (${d.raw} → ${d.got})` : ''}</div>
     <div class="go-s">+${d.got}<small>점</small></div>
     <div class="go-b">🌀 ${R.trick.tube} · 🚀 ${R.trick.air} · 탑턴 ${R.trick.top}${R.cmax >= 3 ? ` · 🔗 최대 콤보 ${R.cmax}` : ''}${R.set ? ' · 🌊 세트 ×1.5' : ''} · 합계 <b>${S.total}</b></div>
-    <div class="go-st"><span>목숨<b>${'❤️'.repeat(Math.max(0, S.lives))}${'🤍'.repeat(LIVES - Math.max(0, S.lives))}</b></span><span>파도<b>${S.wave + 1}/${WAVES}</b></span></div>
+    <div class="go-st two"><span>목숨<b>${'❤️'.repeat(Math.max(0, S.lives))}${'🤍'.repeat(LIVES - Math.max(0, S.lives))}</b></span><span>파도<b>${S.wave + 1}/${WAVES}</b></span></div>
     <button class="btn blue" id="s-next" type="button" style="width:100%;min-height:52px;font-size:16px">${S.lives <= 0 || S.wave + 1 >= WAVES ? '결과 보기' : '다음 파도 기다리기'}</button></div>`;
   $s('s-next').onclick = nextWave;
   ui();

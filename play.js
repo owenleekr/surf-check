@@ -196,7 +196,7 @@ const BADGES = [
   { id:'log1',    ic:'📒', n:'첫 서핑 일지',   d:'바다에 다녀와 일지를 처음 남겼어요',  t:(s, p)=>(p.log || []).length >= 1 },
   { id:'log10',   ic:'🌊', n:'바다 10번',      d:'서핑 일지를 10번 남겼어요',          t:(s, p)=>(p.log || []).length >= 10, xp:50 },
   { id:'streak3', ic:'🔥', n:'3일 연속',       d:'훈련을 3일 연속으로 했어요',        t:s=>s.bestStreak >= 3 },
-  { id:'streak7', ic:'📅', n:'한 주 개근',     d:'훈련을 7일 연속으로 했어요',        t:s=>s.bestStreak >= 7, xp:40 },
+  { id:'streak7', ic:'🗓️', n:'한 주 개근',     d:'훈련을 7일 연속으로 했어요',        t:s=>s.bestStreak >= 7, xp:40 },
   { id:'streak14',ic:'🌟', n:'2주 개근',       d:'훈련을 14일 연속으로 했어요',       t:s=>s.bestStreak >= 14, xp:60 },
   { id:'streak30',ic:'🏆', n:'한 달 개근',     d:'훈련을 30일 연속으로 했어요',       t:s=>s.bestStreak >= 30, xp:100 },
   { id:'drill10', ic:'💪', n:'열 번째 훈련',   d:'훈련을 누적 10일 했어요',           t:s=>s.drillDays >= 10 },
@@ -213,7 +213,7 @@ const BADGES = [
   { id:'quiz30',  ic:'🎓', n:'코치님 제자',     d:'코치 퀴즈에서 정답을 30개 맞혔어요', t:(s,p)=>(p.qz||0) >= 30, xp:40 },
   { id:'goal1',    ic:'🤝', n:'함께 채운 한 주',  d:'6기 이번 주 목표를 같이 채웠어요',     t:(s,p)=>(p.goalN||0) >= 1 },
   { id:'goal4',    ic:'🌈', n:'한 달 팀워크',     d:'6기 주간 목표를 4주 채웠어요',         t:(s,p)=>(p.goalN||0) >= 4, xp:50 },
-  { id:'daily7',   ic:'📅', n:'7일 챌린저',       d:'오늘의 챌린지에 7일 참여했어요',       t:(s,p)=>(p.dN||0) >= 7, xp:40 },
+  { id:'daily7',   ic:'🗓️', n:'7일 챌린저',       d:'오늘의 챌린지에 7일 참여했어요',       t:(s,p)=>(p.dN||0) >= 7, xp:40 },
   { id:'stamp3',   ic:'🗺️', n:'해변 탐험가',      d:'서로 다른 해변 3곳에서 체크인했어요',   t:(s,p)=>Object.keys(p.stamps||{}).length >= 3, xp:20 },
   { id:'stampAll', ic:'🧭', n:'양양 마스터',      d:'모든 해변에서 체크인했어요',            t:(s,p)=>typeof SEAS !== 'undefined' && Object.keys(p.stamps||{}).length >= SEAS.length, xp:80 },
   { id:'secret1',  ic:'🥚', n:'비밀 발견',        d:'SurfShare 제목을 연달아 눌러 숨은 걸 찾았어요', t:(s,p)=>!!p.secret, xp:30 },
@@ -651,7 +651,7 @@ function renderHub(enter){
     ${rivalHtml()}${coopHtml()}
     <div class="pt" style="margin-top:16px">놀이 메뉴</div>
     <div class="hubgrid">
-      ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
+      ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 🗓️ 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
       ${card(0,'🗺️','전설의 보드 원정', qSg(p.qb) ? `마을 주민 부탁 RPG · 마을 ${Math.min(11, Math.floor(qSg(p.qb) / 4) + 1)}/11 · ⭐${qStars(p.qb)}` : '마을을 걷고 주민 부탁을 들어주는 RPG', qSg(p.qb) ? '' : 'NEW', 'quest')}
       ${card(0,'🛡️','해변 수호', p.df ? `⭐ ${(Array.isArray(p.df.st) ? p.df.st : []).slice(0, 3).reduce((a, v) => a + _num(v, 3), 0)}/9 · 웨이브 ${_num(p.df.best, 15)}/15${dfInf(p.df.inf).w ? `<br><span style="white-space:nowrap">🌀 무한 웨이브 ${dfInf(p.df.inf).w}</span>` : ''}` : '학교를 지켜라 · 액션', p.df ? '' : 'NEW', 'defend')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
@@ -679,7 +679,7 @@ function renderHub(enter){
       <button type="button" data-set="guide"><span>📖 사용 가이드</span><b>열기</b></button>
       <button type="button" data-set="share"><span>🔗 친구에게 앱 알리기</span><b>공유</b></button>
     </div>
-    ${(()=>{ const top = dailyTop(); return top.length ? `<div class="dtop"><h4>📅 오늘의 챌린지 TOP ${top.length}</h4>${top.map((r,i)=>`<div class="${r.id===ME.id?'me':''}"><span>${['🥇','🥈','🥉'][i]} ${esc(r.name)}</span><b>${r.s}점</b></div>`).join('')}</div>` : ''; })()}
+    ${(()=>{ const top = dailyTop(); return top.length ? `<div class="dtop"><h4>🗓️ 오늘의 챌린지 TOP ${top.length}</h4>${top.map((r,i)=>`<div class="${r.id===ME.id?'me':''}"><span>${['🥇','🥈','🥉'][i]} ${esc(r.name)}</span><b>${r.s}점</b></div>`).join('')}</div>` : ''; })()}
     ${_hubFort && fortOpen ? (()=>{ const f = fortune(); return `<div class="fort" style="margin-top:12px"><div class="fs">서핑 컨디션 <b>${'★'.repeat(f.star)}${'☆'.repeat(5 - f.star)}</b></div>
       <div>🌊 행운의 해변 <b>${esc(f.beach)}</b></div><div>⏰ 행운의 시간 <b>${f.time}</b></div><div>🎨 행운의 보드 색 <b>${esc(f.color)}</b></div><div>🐚 행운의 조개 <b>${f.n}개</b></div>
       ${f.voice ? `<div class="fv">“${esc(f.voice[0])}”<small>— ${esc(f.voice[1])}</small></div>` : ''}</div>`; })() : ''}`;
@@ -774,7 +774,7 @@ function renderPlay(){
         <i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
 
     <div class="pt">🎮 파도 점프 <small>내 최고 ${p.best || 0}점 · 🐚 ${shellBal()}</small></div>
-    <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">📅 오늘의 챌린지 · 점프하러 가기</button>
+    <button type="button" class="btn blue" id="pg-start" style="width:100%;min-height:48px">🗓️ 오늘의 챌린지 · 점프하러 가기</button>
 
     <div class="pt">🔮 오늘의 서핑 운세</div>
     ${p.fortDay === today() ? (()=>{ const f = fortune(); return `<div class="fort"><div class="fs">서핑 컨디션 <b>${'★'.repeat(f.star)}${'☆'.repeat(5 - f.star)}</b></div>
@@ -896,7 +896,7 @@ function upFor(g, quiet){
 }
 window.upFor = upFor; window.playUp = playUp;
 function upShopHtml(){
-  return `<div class="note" style="margin-top:8px">🔧 한 번 사면 계속 — 다음 판부터 자동 적용. <b>📅 오늘의 챌린지</b>는 모두 같은 조건(강화 없음)이에요.</div>`
+  return `<div class="note" style="margin-top:8px">🔧 한 번 사면 계속 — 다음 판부터 자동 적용. <b>🗓️ 오늘의 챌린지</b>는 모두 같은 조건(강화 없음)이에요.</div>`
     + Object.keys(UPGK).map(g=>`<div class="uph">${UPGK[g]}</div><div class="uplist">${UPG.filter(u=>u.g === g).map(u=>{ const lv = upLv(u.k), c = UPC[lv], mx = lv >= u.max;
       return `<div class="upit"><i>${u.ic}</i><span><b>${u.n}</b> <em class="pips" aria-label="${lv}/${u.max}단계">${'●'.repeat(lv)}${'○'.repeat(u.max - lv)}</em><small>${u.d}</small></span>
         <button type="button" class="btn sm ${mx ? 'ghost' : shellBal() >= c ? 'blue' : 'ghost'}" data-up="${u.k}" ${mx ? 'disabled' : ''}>${mx ? '최고' : `🐚 ${c}`}</button></div>`; }).join('')}</div>`).join('');
@@ -992,7 +992,7 @@ function upNudge(g, o){
   { const r = rivLine(g); if(r) L.push(r); }
   if(o.x2) L.push(`🌅 오늘 첫 판 보너스 · 조개 ×2 (+${_num(o.x2, 999)})`);
   if(best > 0 && sc < best && sc >= best * .75) L.push(`🔥 아깝다! 최고 기록까지 ${best - sc}${o.u || '점'} — 한 판 더?`);
-  if(o.daily) L.push('📅 챌린지는 강화 없이 모두 같은 조건으로 겨뤄요');
+  if(o.daily) L.push('🗓️ 챌린지는 강화 없이 모두 같은 조건으로 겨뤄요');
   else{
     const u = (o.k && UPG.find(x=>x.k === o.k && upLv(x.k) < x.max)) || UPG.filter(x=>x.g === g && upLv(x.k) < x.max).sort((a, b)=>upLv(a.k) - upLv(b.k))[0];
     if(u){ const c = UPC[upLv(u.k)], plus = u.k === o.k ? _num(o.plus, 1e6) : 0;
@@ -1028,7 +1028,7 @@ function metaHub(p){
   const at = attState(p), ms = missions(p), m = dmOf(p), nC = ms.filter(q=>m.c[q.id]).length;
   const cal = ATT_RW.map((r, i)=>{ const d = i + 1, got = at.claimed ? d <= at.slot : d < at.slot, now = !at.claimed && d === at.slot;
     return `<span class="at-d${got ? ' on' : ''}${now ? ' now' : ''}"><small>${d}일</small><b>${got ? '✔' : d === 7 ? '🎁' : '🐚'}</b><i>${r}</i></span>`; }).join('');
-  return `<div class="pt" style="margin-top:18px">📅 7일 출석 <small>${at.claimed ? `${at.n}일 연속 · 오늘 받았어요` : at.n > 1 ? `${at.n - 1}일 연속 중 — 오늘 받으면 이어져요` : '하루라도 거르면 1일부터'}</small></div>
+  return `<div class="pt" style="margin-top:18px">🗓️ 7일 출석 <small>${at.claimed ? `${at.n}일 연속 · 오늘 받았어요` : at.n > 1 ? `${at.n - 1}일 연속 중 — 오늘 받으면 이어져요` : '하루라도 거르면 1일부터'}</small></div>
     <div class="atcal">${cal}</div>
     ${at.claimed ? '' : `<button type="button" class="btn blue" data-att style="width:100%;min-height:46px;margin-top:8px">🎁 ${at.slot}일째 출석 보상 받기 · 🐚 ${ATT_RW[at.slot - 1]}${at.slot === 7 ? ' + 소품 선물' : ''}</button>`}
     <div class="pt" style="margin-top:18px">🎯 오늘의 미션 <small>${nC}/3 · 하나에 🐚${MIS_RW} · 모두 받으면 🎁 상자</small></div>
@@ -1041,7 +1041,7 @@ function metaWire(root){
     if(!q.done) return q.go();
     if(misClaim(q.id)){ if(typeof burst === 'function') burst(b, 12); renderHub(); } });
   const at = root.querySelector('[data-att]'); if(at) at.onclick = ()=>{ const r = attClaim(); if(!r) return; if(typeof burst === 'function') burst(at, 18);
-    _popQ.push({ ic:r.slot === 7 ? '🎁' : '📅', t:`${r.slot}일째 출석!`, d:`🐚 +${r.n}${r.gift ? `\n${r.gift.ic} ${r.gift.n}을(를) 선물로 받았어요 — 소품샵에서 입어 봐요` : ''}${r.slot < 7 ? `\n내일 오면 🐚 ${ATT_RW[r.slot]}` : '\n내일부터 새 7일이 시작돼요'}`, up:r.slot === 7 });
+    _popQ.push({ ic:r.slot === 7 ? '🎁' : '🗓️', t:`${r.slot}일째 출석!`, d:`🐚 +${r.n}${r.gift ? `\n${r.gift.ic} ${r.gift.n}을(를) 선물로 받았어요 — 소품샵에서 입어 봐요` : ''}${r.slot < 7 ? `\n내일 오면 🐚 ${ATT_RW[r.slot]}` : '\n내일부터 새 7일이 시작돼요'}`, up:r.slot === 7 });
     renderHub(); popNext(); };
   rivWire(root);
   const bx = root.querySelector('[data-box]'); if(bx) bx.onclick = ()=>{ const n = misBox(); if(!n) return;

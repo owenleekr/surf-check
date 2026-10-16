@@ -95,7 +95,7 @@ function homeCard(){
 }
 function spotSection(){
   if(!fc?.days?.length){ load(); return ''; }
-  return `<div class="wv-spot"><div class="wv-spot-h"><b>📅 요일별 추천 스팟</b><small>이번주 파도 예보로 골랐어요 · 날짜를 누르면 자세히</small></div>${strip()}</div>`;
+  return `<div class="wv-spot"><div class="wv-spot-h"><b>🗓️ 요일별 추천 스팟</b><small>이번주 파도 예보로 골랐어요 · 날짜를 누르면 자세히</small></div>${strip()}</div>`;
 }
 
 function detail(i){

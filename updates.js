@@ -129,7 +129,7 @@ function card(){
   const u = UPDATES[0], n = unseen();
   if(!n || hiddenFor() === u.id){ el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
-  el.innerHTML = `<button type="button" class="upd" id="upd-open"><span class="upd-h"><b>🆕 업데이트 · ${u.date}</b>${n ? `<em>NEW ${n}</em>` : ''}</span>
+  el.innerHTML = `<button type="button" class="upd" id="upd-open"><span class="upd-h"><b>🆕 업데이트 · ${u.date}</b>${n ? `<em>NEW${n > 9 ? '' : ' ' + n}</em>` : ''}</span>
     <span class="upd-t">${u.t}</span><span class="upd-l">${u.items.slice(0, 2).map(i=>`${i[0]} ${i[1].split(' — ')[0]}`).join('<br>')}</span><span class="upd-more">전체 보기 ›</span></button>
     <button type="button" class="upd-x" id="upd-x" aria-label="다시 보지 않기" title="다시 보지 않기">다시 보지 않기</button>`;
   $u('upd-open').onclick = openAll;

@@ -119,8 +119,8 @@ function finish(stalled){
     <div class="sk-tip"><b>${D.ic} 실제로 해 보기 — ${esc(D.n)}</b><ul>${D.tips.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>
     ${r.gain || r.shells ? `<div class="go-b" style="text-align:center">${[r.gain ? `+${r.gain} XP` : '', r.shells ? `🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''].filter(Boolean).join(' · ')}</div>` : ''}
     <button class="btn mint" id="k-real" type="button" style="width:100%;min-height:48px" ${r.real ? 'disabled' : ''}>${r.real ? '✅ 오늘 실제로 탔어요' : '🛹 오늘 실제로 10분 탔어요 (+5 XP)'}</button>
-    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn blue" id="k-again" type="button" style="flex:1;min-height:48px">한 판 더</button>
-      ${ni < ORDER.length ? `<button class="btn blue" id="k-next" type="button" style="flex:1;min-height:48px">다음: ${esc(DRILLS[ORDER[ni]].n)}</button>` : ''}
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn blue" id="k-again" type="button" style="flex:1;min-height:48px">↻ 한 판 더</button>
+      ${ni < ORDER.length ? `<button class="btn blue" id="k-next" type="button" style="flex:1.4;min-height:48px;font-size:13px;line-height:1.25;padding:4px 8px">다음 ▶<br>${esc(DRILLS[ORDER[ni]].n)}</button>` : ''}
       <button class="btn ghost" id="k-menu" type="button" style="min-height:48px">목록</button></div></div>`;
   $k('k-again').onclick = ()=>start(g.kind);
   if($k('k-next')) $k('k-next').onclick = ()=>start(ORDER[ni]);

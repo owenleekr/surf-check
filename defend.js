@@ -873,7 +873,7 @@ function over(){
     <div class="go-b">보상 <b>🐚${R && R.shells || S.earned}</b> · XP +${R && R.gain || 0}</div>
     ${R && R.first ? `<div class="d-new">🎉 첫 클리어 보너스 🐚+${R.first}${S.stg < 2 ? ` · ${esc(STG[S.stg + 1].n)} 열림!` : ''}</div>` : ''}
     ${typeof upNudge === 'function' ? upNudge('defend', { sc:S.score, best:S.best, u:'점', x2:R && R.x2 }) : ''}
-    <div class="d-row">${nx ? '<button class="btn" id="d-next" type="button">다음 해변 ▶</button>' : ''}<button class="btn${nx ? ' ghost' : ''}" id="d-go" type="button">🔁 한 판 더</button></div>
+    <div class="d-row">${nx ? '<button class="btn" id="d-next" type="button">다음 해변 ▶</button>' : ''}<button class="btn${nx ? ' ghost' : ''}" id="d-go" type="button">↻ 한 판 더</button></div>
     <div class="d-row"><button class="btn ghost" id="d-sel" type="button">🗺️ 해변 고르기</button><button class="btn ghost" id="d-close" type="button">닫기</button></div></div>`;
   $d('d-close').onclick = defendClose;
   $d('d-sel').onclick = () => { S = null; R = null; barUI(); ctlKey = ''; ctl(); over(); };
@@ -894,7 +894,7 @@ function overInf(){
     <div class="go-st"><span>웨이브<b>${S.w}${S.newW ? ' 🎉' : S.bestW ? `<small> / ${S.bestW}</small>` : ''}</b></span><span>처치<b>${S.kills}</b></span><span>👑 왕관<b>${S.crs}</b></span><span>최고 콤보<b>${S.cbm}</b></span></div>
     ${tip ? `<div class="go-d">${tip}</div>` : ''}
     <div class="go-b">보상 <b>🐚${R && R.shells || S.earned}</b> · XP +${R && R.gain || 0}</div>
-    <div class="d-row"><button class="btn" id="d-go" type="button">🔁 한 판 더</button></div>
+    <div class="d-row"><button class="btn" id="d-go" type="button">↻ 한 판 더</button></div>
     <div class="d-row"><button class="btn ghost" id="d-sel" type="button">🗺️ 해변 고르기</button><button class="btn ghost" id="d-close" type="button">닫기</button></div></div>`;
   $d('d-close').onclick = defendClose;
   $d('d-sel').onclick = () => { S = null; R = null; barUI(); ctlKey = ''; ctl(); over(); };
