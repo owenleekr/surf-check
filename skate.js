@@ -57,7 +57,8 @@ function slope(s){ return (xAt(s + 2) - xAt(s - 2)) / 4; }
 function start(kind){
   if(typeof upFor === 'function') upFor('skate');               // 🔧 강화 적용 표시
   const tr = build(kind);
-  G = { kind, ...tr, s:0, v:DRILLS[kind].v0, t:0, maxV:DRILLS[kind].v0, done:false, i:0, pops:[], trail:[], comp:0, stalled:0 };
+  G = { kind, ...tr, s:0, v:DRILLS[kind].v0, t:0, maxV:DRILLS[kind].v0, done:false, i:0, pops:[], trail:[], comp:0, stalled:0,
+        stk:0, smax:0, np:0, gr:{ k:'', t:9, sub:'' }, spin:0, fl:0 };            // stk: 연속(좋아요 이상) · gr: 큰 판정 글자 · spin: 360 돌기
   $k('k-ov').hidden = true; held = false; window._gameRun = true;
 }
 
@@ -78,7 +79,12 @@ function step(dt){
       const dv = (seg.q - 0.42) * (seg.lab === '꾹' ? 34 : 42); g.v += g.i < WARM ? Math.max(0, dv) : dv;
       if(seg.q > 0.5) g.ok = (g.ok || 0) + 1;
       const msg = seg.q > 0.8 ? (seg.lab === '꾹' ? '완벽한 펌핑!' : `완벽한 ${seg.lab}!`) : seg.q > 0.5 ? '좋아요' : hit < 0.3 && miss < 0.2 ? '더 꾹 눌러요' : miss > 0.4 ? '너무 오래 눌렀어요' : '타이밍!';
-      g.pops.push({ t:0, v:msg, good:seg.q > 0.5 }); if(seg.q > 0.8){ beep(660, 990, 0.1); buzz(8); }
+      g.pops.push({ t:0, v:msg, good:seg.q > 0.5 });
+      /* 판정 — 완벽!/좋아!/놓침 이 크게 튀어나오고 소리가 다르다. 좋아요 이상이 이어지면 연속, 4연속마다 360 돌기 */
+      const k = seg.q > 0.8 ? 'p' : seg.q > 0.5 ? 'g' : 'm'; g.gr.k = k; g.gr.t = 0; g.gr.sub = '';
+      if(k === 'm'){ if(g.stk >= 4) g.gr.sub = `${g.stk}연속 끊김`; g.stk = 0; beep(220, 140, 0.14); }
+      else { g.stk++; g.smax = Math.max(g.smax, g.stk); if(k === 'p'){ g.np++; beep(880, 1320, 0.1); buzz(8); } else beep(660, 880, 0.08);
+        if(g.stk % 4 === 0){ g.spin = SPIN; g.fl = .25; sparkle(xAt(g.s), PY - 10); g.gr.sub = `🌀 ${g.stk}연속 — 360!`; [784, 988, 1175, 1568].forEach((f, j)=>setTimeout(()=>beep(f, 0, .1, .04), j * 70)); buzz([8, 20, 8]); } }
       g.i++;
     }
   }
@@ -86,19 +92,30 @@ function step(dt){
   if(g.v < 12){ g.stalled += dt; if(g.stalled > 1.2) return finish(true); } else g.stalled = 0;
   g.trail.push({ s:g.s, x:xAt(g.s) }); if(g.trail.length > 60) g.trail.shift();
   g.pops.forEach(p=>p.t += dt); g.pops = g.pops.filter(p=>p.t < 0.9);
+  g.gr.t += dt; g.spin = Math.max(0, g.spin - dt); g.fl = Math.max(0, g.fl - dt);
+  for(const p of SPK){ if(!p.on) continue; p.t += dt; if(p.t > .5){ p.on = false; continue; } p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; }
   if(g.s >= g.end) finish(false);
 }
 
+/* 반짝이 — 미리 만든 24개를 돌려 쓴다(매 프레임 새 객체 없음) */
+const SPIN = 0.55, SPK = Array.from({ length:24 }, ()=>({ on:false, x:0, y:0, vx:0, vy:0, t:0 }));
+let spI = 0;
+function sparkle(x, y){ for(let i = 0; i < 12; i++){ const p = SPK[spI]; spI = (spI + 1) % SPK.length; const a = i / 12 * Math.PI * 2; p.on = true; p.x = x; p.y = y; p.vx = Math.cos(a) * 60; p.vy = Math.sin(a) * 60 - 20; p.t = 0; } }
+const RM = (()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){ return false; } })();
+const GRADE = { p:['완벽!', '#FFE27A'], g:['좋아!', '#4ADE80'], m:['놓침', '#FF8A8A'] };
 function finish(stalled){
   const g = G; g.done = true; window._gameRun = false;
   const qs = g.segs.filter(s=>s.q != null).map(s=>s.q), accP = qs.length ? Math.round(qs.reduce((a,b)=>a + b, 0) / qs.length * 100) : 0;
   const sc = stalled ? Math.round(accP * qs.length / g.segs.length) : accP;      // 멈추면 탄 만큼만 — 화면에도 같은 숫자를 보여 준다
+  let prev = null; try{ const b = ME.profile.play && ME.profile.play.sk && ME.profile.play.sk.best; if(b && b[g.kind] != null) prev = +b[g.kind] || 0; }catch(e){}
   const r = typeof playSkateDone === 'function' ? playSkateDone(g.kind, sc) : { gain:0, best:sc, real:false };
+  const nb = !stalled && sc > 0 && (prev == null ? false : sc > prev), goal = nb ? '🎉 이 드릴 최고 기록!' : r.best > sc ? `🎯 내 최고 ${r.best}%까지 <b>${r.best - sc}%</b>` : '';
   const D = DRILLS[g.kind], ni = ORDER.indexOf(g.kind) + 1;
   $k('k-ov').hidden = false;
   $k('k-ov').innerHTML = `<div class="go-card" style="text-align:left"><div class="go-t" style="text-align:center">${stalled ? '🛑 멈췄어요' : accP >= 80 ? '🔥 몸에 붙었어요!' : '🛹 드릴 끝'}</div>
     ${stalled ? `<div class="go-d" style="text-align:center">속도가 다 빠졌어요 — 노란 칸에서만 꾹, 칸을 지나면 바로 떼요</div>` : ''}
-    <div class="go-st"><span>점수<b>${sc}%</b></span><span>턴<b>${qs.length}/${g.segs.length}</b></span><span>최고 속도<b>${Math.round(g.maxV)}</b></span><span>내 최고<b>${r.best}%</b></span></div>
+    <div class="go-st"><span>점수<b><i id="k-cnt" style="font-style:normal">${sc}</i>%</b></span><span>최대 연속<b>${g.smax}</b></span><span>완벽<b>${g.np}/${g.segs.length}</b></span><span>내 최고<b>${r.best}%</b></span></div>
+    ${goal ? `<div class="go-d" style="text-align:center;margin:0 0 8px">${goal}</div>` : ''}
     <div class="sk-tip"><b>${D.ic} 실제로 해 보기 — ${esc(D.n)}</b><ul>${D.tips.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>
     ${r.gain || r.shells ? `<div class="go-b" style="text-align:center">${[r.gain ? `+${r.gain} XP` : '', r.shells ? `🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''].filter(Boolean).join(' · ')}</div>` : ''}
     <button class="btn mint" id="k-real" type="button" style="width:100%;min-height:48px" ${r.real ? 'disabled' : ''}>${r.real ? '✅ 오늘 실제로 탔어요' : '🛹 오늘 실제로 10분 탔어요 (+5 XP)'}</button>
@@ -110,7 +127,11 @@ function finish(stalled){
   $k('k-menu').onclick = menu;
   $k('k-real').onclick = ()=>{ const ok = typeof playSkateReal === 'function' && playSkateReal(); const b = $k('k-real'); b.disabled = true; b.textContent = '✅ 오늘 실제로 탔어요'; if(ok) toast('훈련 기록했어요 +5 XP 🛹'); };
   beep(523, 1046, 0.25);
+  if(nb) [523, 659, 784, 1047].forEach((f, j)=>setTimeout(()=>beep(f, 0, .12, .04), 200 + j * 90));
+  countUp($k('k-cnt'), sc);
 }
+function countUp(el, to){ if(!el || RM || to <= 0) return; const t0 = performance.now(), D = 600; el.textContent = '0';
+  const f = now=>{ if(!el.isConnected) return; const k = Math.min(1, (now - t0) / D), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(to * e); if(k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }
 
 /* ── 그리기 ── 위에서 본 산책로: 왼쪽은 바다, 오른쪽은 잔디·야자 */
 function Rk(c, x, y, w, h){ ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), w, h); }
@@ -118,6 +139,10 @@ function lab(t, x, y, col, al, bg){ ctx.font = '11px Galmuri11, sans-serif'; ctx
   let x0 = al === 'r' ? x - w : al === 'c' ? x - w / 2 : x; x0 = Math.round(Math.max(3, Math.min(W - w - 3, x0)));
   if(bg !== 0) Rk(bg || 'rgba(10,22,40,.62)', x0 - 3, y - 2, w + 6, 15); ctx.fillStyle = col || '#FFFFFF'; ctx.fillText(t, x0, Math.round(y)); }
 const TRAIL = Array.from({ length:61 }, (_, i)=>`rgba(30,30,40,${(i / 120).toFixed(3)})`);   // 바퀴 자국 색 — 매 프레임 문자열을 만들지 않게
+const TRAILG = Array.from({ length:61 }, (_, i)=>`rgba(255,200,40,${(i / 70).toFixed(3)})`);   // 5연속부터 — 금빛 자국(플로우)
+/* 큰 판정 글자 — 톡 커졌다 제자리로, 어두운 테두리로 어디서든 읽히게 */
+function big(t, x, y, col, sz, sc){ ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(sc, sc); ctx.font = `${sz}px Galmuri11, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,22,40,.85)'; ctx.strokeText(t, 0, 0); ctx.fillStyle = col; ctx.fillText(t, 0, 0); ctx.restore(); ctx.textAlign = 'left'; }
 const sy = s => PY - (s - G.s) * 1.0;                                                // 앞(진행 방향)이 화면 위
 function draw(){
   // 바닷가 산책로 한 장(scenery.js) — 세로로 이어 붙여 달린 만큼 흘려 보낸다. 바다 물결·가운데 점선은 그 위에 그대로
@@ -136,9 +161,10 @@ function draw(){
   }
   for(const seg of G.segs){ const y = sy(seg.apex); if(y < 28 || y > PY - 24 || seg.q != null) continue; lab(seg.lab, xAt(seg.apex) + seg.side * 9, y - 6, '#FFE27A', seg.side < 0 ? 'r' : 'l'); }
   // 바퀴 자국
-  for(let i = 0; i < G.trail.length; i++){ const p = G.trail[i], y = sy(p.s), c = TRAIL[i] || TRAIL[59]; Rk(c, p.x - 3, y, 1, 2); Rk(c, p.x + 3, y, 1, 2); }
+  const TC = G.stk >= 5 ? TRAILG : TRAIL, tw = G.stk >= 5 ? 2 : 1;
+  for(let i = 0; i < G.trail.length; i++){ const p = G.trail[i], y = sy(p.s), c = TC[i] || TC[59]; Rk(c, p.x - 3, y, tw, 2); Rk(c, p.x + 3, y, tw, 2); }
   // 스케이터 — 진행 방향으로 기울고, 누르는 동안 웅크린다
-  const x = xAt(G.s), ang = Math.atan(slope(G.s)) * 0.9, k = 1 - G.comp * 0.18;
+  const x = xAt(G.s), ang = Math.atan(slope(G.s)) * 0.9 + (G.spin > 0 && !RM ? (1 - G.spin / SPIN) * Math.PI * 2 : 0), k = 1 - G.comp * 0.18;
   ctx.save(); ctx.translate(x, PY); ctx.rotate(ang);
   Rk('#3B2F2F', -3, -9, 6, 18); Rk('#F7B500', -2, -8, 4, 16); Rk('#1B1B2F', -4, -7, 2, 3); Rk('#1B1B2F', 2, -7, 2, 3); Rk('#1B1B2F', -4, 4, 2, 3); Rk('#1B1B2F', 2, 4, 2, 3);
   if(me){ ctx.scale(1, k); ctx.drawImage(me, -12, -22 / k - 4); }
@@ -153,6 +179,11 @@ function draw(){
   if(G.i < WARM && cs && !G.done){ const inW = G.s >= cs.w0 && G.s <= cs.w1, soon = !inW && G.s < cs.w0 && cs.w0 - G.s < 70;
     const t = inW ? (held ? '좋아요, 꾹!' : '👇 지금 꾹 누르기!') : held ? '떼요!' : soon ? '노란 칸이 와요' : G.i === 0 ? '노란 칸에서만 꾹 누르기' : '';
     if(t) lab(t, x, PY + 18, inW ? '#FFE27A' : '#FFFFFF', 'c'); }
+  for(const p of SPK){ if(!p.on) continue; ctx.globalAlpha = Math.max(0, 1 - p.t / .5); Rk(p.t < .25 ? '#FFFFFF' : '#FFE27A', p.x - 1, p.y - 1, 2, 2); } ctx.globalAlpha = 1;
+  if(G.stk >= 2) lab(G.stk >= 5 ? `🔥 플로우 ${G.stk}연속` : `🔥 ${G.stk}연속`, 4, 29, G.stk >= 5 ? '#FFD84A' : '#FFFFFF');
+  if(G.gr.t < .7 && G.gr.k){ const [t, col] = GRADE[G.gr.k], e = G.gr.t < .1 ? .6 + G.gr.t / .1 * .6 : G.gr.t < .18 ? 1.2 - (G.gr.t - .1) / .08 * .2 : 1;
+    ctx.globalAlpha = G.gr.t > .5 ? (.7 - G.gr.t) / .2 : 1; big(t, CX, 64, col, 20, e); if(G.gr.sub) big(G.gr.sub, CX, 84, '#FFFFFF', 11, 1); ctx.globalAlpha = 1; }
+  if(G.fl > 0 && !RM){ ctx.globalAlpha = G.fl * 1.6; Rk('#FFFFFF', 0, 0, W, H); ctx.globalAlpha = 1; }
   for(const p of G.pops){ ctx.globalAlpha = Math.max(0, 1 - p.t / 0.9); lab(p.v, x, PY - 44 - p.t * 20, p.good ? '#4ADE80' : '#FFE27A', 'c'); } ctx.globalAlpha = 1;
   const v = Math.round(G.v); if(v !== G.scShown){ G.scShown = v; const sc = $k('k-score'); if(sc) sc.textContent = v; }
 }

@@ -21,7 +21,7 @@ async function pullPeers(){
   if(typeof api !== 'function' || !hasMe()) return;
   try{ const rows = await api('surfers?select=id,name,cohort,play:profile->play&limit=300');
     peers = (rows || []).filter(x=>x && x.id !== ME.id && !(typeof isTest === 'function' && isTest(x.id))).map(x=>{
-      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat, hbest:pp.hbest, hbat:pp.hbat, sbest:pp.sbest, sbat:pp.sbat, log:(window._slog && Array.isArray(x.play?.log)) ? x.play.log.slice(-8).map(window._slog.clean).filter(Boolean) : [] } : (window._slog && Array.isArray(x.play?.log) && x.play.log.length ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, log:x.play.log.slice(-8).map(window._slog.clean).filter(Boolean) } : null); }).filter(Boolean);
+      const pp = typeof peerPlay === 'function' ? peerPlay(x.play) : null; return pp ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, best:pp.best, bat:pp.bat, hbest:pp.hbest, hbat:pp.hbat, sbest:pp.sbest, sbat:pp.sbat, pass:pp.pass, log:(window._slog && Array.isArray(x.play?.log)) ? x.play.log.slice(-8).map(window._slog.clean).filter(Boolean) : [] } : (window._slog && Array.isArray(x.play?.log) && x.play.log.length ? { id:x.id, name:String(x.name || '').slice(0, 12), cohort:x.cohort, log:x.play.log.slice(-8).map(window._slog.clean).filter(Boolean) } : null); }).filter(Boolean);
   }catch(e){}
   pulledAt = Date.now();
 }
@@ -41,6 +41,10 @@ function collect(){
       out.push({ ts:p.hbat, ic:'🔥', who:`${p.name}(${tag(p.cohort)})`, text:`님이 파도 점프 어려움 ${tierOf(p.hbest)}점 돌파! (${p.hbest}점)`, go:'game' });
     if(p.sbest >= 100 && p.sbat > now - 72 * 3600e3 && p.sbat <= now + 6e4)
       out.push({ ts:p.sbat, ic:'🌊', who:`${p.name}(${tag(p.cohort)})`, text:`님이 라인업 서핑 ${p.sbest}점 기록!`, go:'surf' }); });
+  /* 🥊 라이벌 — 누가 누구의 이번 주 기록을 넘었는지(play.pass, peerPass 로 걸러짐). 나를 넘었으면 「되찾기」로 */
+  const PG = { j:['파도 점프', 'game'], d:['해변 수호', 'defend'], r:['라인업 서핑', 'surf'], q:['원정', 'quest'] }, myId = hasMe() ? ME.id : '';
+  peers.forEach(p=>{ const x = p.pass; if(!x || !PG[x.k] || !(x.t > now - 72 * 3600e3 && x.t <= now + 6e4)) return;
+    out.push({ ts:x.t, ic:'🥊', who:`${p.name}(${tag(p.cohort)})`, text:x.i && x.i === myId ? `님이 ${PG[x.k][0]}에서 나를 넘었어요! 되찾아 볼까요?` : `님이 ${PG[x.k][0]}에서 ${x.n}님을 넘었어요 🔥`, go:PG[x.k][1] }); });
   const wk = now - 14 * 864e5;
   ['food', 'spot'].forEach(k=>{ (window.foodItems ? window.foodItems(k) : []).forEach(it=>{ const t = +it.t; if(t > wk && t <= now + 6e4)
     out.push({ ts:t, ic:k === 'food' ? '🍜' : '🏄', who:'', text:`새 ${k === 'food' ? '맛집' : '서핑 스팟'} ‘${it.n}’ 등록!`, go:k }); }); });
@@ -77,6 +81,8 @@ function go(){
   try{ localStorage.setItem(SEEN, String(Date.now())); }catch(err){}
   if(g === 'game' && typeof gameOpen === 'function') gameOpen();
   else if(g === 'surf' && typeof surfOpen === 'function') surfOpen();
+  else if(g === 'defend' && typeof window.defendOpen === 'function') window.defendOpen();
+  else if(g === 'quest' && typeof questOpen === 'function') questOpen();
   else if(g === 'upd' && typeof updOpen === 'function') updOpen();
   else if(g === 'rec' && typeof recGo === 'function') recGo();
   else if(g === 'slog'){ if(typeof setTab === 'function') setTab('home'); setTimeout(()=>document.getElementById('home-log')?.scrollIntoView({ block:'center', behavior:'smooth' }), 120); }
@@ -98,5 +104,7 @@ function start(){
   first();
 }
 window.feedRefresh = ()=>paint(false);
+window.feedEvents = ()=>collect();                                  // 시험용 — 지금 돌릴 소식 목록
+window.feedShow = n=>{ if(n >= 0) i = n; paint(false); };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

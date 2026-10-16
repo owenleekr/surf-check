@@ -515,7 +515,7 @@ function heroStat(k, U){
 }
 const power = (k, U) => { const s = heroStat(k, U); return Math.round(s.hp * .25 + s.atk * 4); };
 const ovEl = cls => { const L = $q('q-fx'); if(L && L.firstChild) L.innerHTML = ''; const ov = $q('q-ov'); ov.className = 'game-ov' + (cls ? ' ' + cls : ''); ov.hidden = false; ov.onclick = ov.onkeydown = null; return ov; };
-function clearT(){ clearTimeout(tmr); tmr = 0; if(T){ clearInterval(T.iv); T = null; } cineStop(); const L = $q('q-fx'); if(L) L.innerHTML = ''; }   // 화면이 바뀌면 남은 컷인·띠도 걷는다
+function clearT(){ clearTimeout(tmr); tmr = 0; if(T){ clearInterval(T.iv); T = null; } cineStop(); fishStop(); const L = $q('q-fx'); if(L) L.innerHTML = ''; }   // 화면이 바뀌면 남은 컷인·띠도 걷는다
 
 /* ── 장면 엔진 — 오프닝·엔딩. 장면마다 {bg:[장, 바뀐 하늘], dur, cam:[[배율,x%,y%] 시작, 끝], lines:[[ms, 자막]], fx(), cue()}.
    배경은 마을 장면 SVG(#q-bg)를 그대로 쓰고 카메라만 천천히 민다(CSS transition 한 번 — 매 프레임 그리지 않는다).
@@ -661,10 +661,12 @@ function codex(){
   clearT(); S = null; window._gameRun = false; wMode(true);
   const got = qbOf().legend ? N : gotN(), ov = ovEl('qv-cdx'), seen = {}, ppl = [], top = Math.floor(openTo() / 4);
   CH.forEach((c, i)=>{ [...c.pre, ...(BEATS[i] || []).flat(), ...c.post].forEach(([w])=>{ const p = w === 'a' || w === 'b' ? c[w] : CAST[w]; if(!p || seen[p.n]) return; seen[p.n] = 1; ppl.push({ p, i }); });
-    ['c', 'd'].forEach(k=>{ const o = VIL[i][k]; if(o && !seen[o.n]){ seen[o.n] = 1; ppl.push({ p:o, i }); } }); });
+    ['c', 'd'].forEach(k=>{ const o = VIL[i][k]; if(o && !seen[o.n]){ seen[o.n] = 1; ppl.push({ p:o, i, rk:i + k }); } }); });
+  const hv = hvOf(), fun = funOn();
   const it = (u, ic, n, sm, ex) => `<div class="qx-it${u ? '' : ' lk'}"><i aria-hidden="true">${u ? esc(ic) : '❔'}</i><span><b>${u ? esc(n) : '???'}</b><small>${esc(sm)}</small></span>${ex || ''}</div>`;
   ov.innerHTML = `<div class="qx"><div class="qx-hd"><b>📖 원정 기록</b><span>만난 이 ${ppl.filter(x=>x.i < got).length}/${ppl.length}</span><button class="btn sm ghost" id="q-cx" type="button">🗺️ 지도</button></div>
-    <h4>만난 이들</h4><div class="qx-g">${ppl.map(({ p, i })=>it(i < got, p.ic, p.n, `제${i + 1}장 ${short(i)}`)).join('')}</div>
+    ${fun ? dexHtml() : ''}
+    <h4>만난 이들</h4><div class="qx-g">${ppl.map(({ p, i, rk })=>it(i < got, p.ic, p.n, `제${i + 1}장 ${short(i)}${fun && rk && hv[rk] ? ` · ${hv[rk] >= 5 ? '💖 단짝' : '♥' + hv[rk]}` : ''}`)).join('')}</div>
     <h4>지나온 곳</h4><div class="qx-l">${CH.map((c, i)=>it(i <= top, c.lm, c.n, i < got ? `제${i + 1}장 · ${c.s} · ${TOD[c.tod].nm}` : i <= top ? `제${i + 1}장 · 지금 머무는 마을` : `제${i + 1}장 · 아직 못 가 봤어요`, i <= top ? `<button class="btn sm" type="button" data-rp="${i}" aria-label="${esc(ro(c.n))} 가기">🚶 가기</button>` : '')).join('')}</div>
     ${got >= N ? '<button class="btn ghost" id="q-end" type="button" style="width:100%;margin-top:10px">🎬 엔딩 다시 보기</button>' : ''}</div>`;
   $q('q-cx').onclick = ()=>map();
@@ -943,12 +945,12 @@ function end(win, tmo){
   s.res = win ? 'win' : 'lose'; s.mode = 'done'; window._gameRun = false; tutOff();
   const stars = win ? (s.deaths === 0 ? 3 : s.deaths === 1 ? 2 : 1) : 0, prev = starOf(g);
   const sh = kind === 'patrol' ? (win ? 2 + Math.floor(g / 6) + s.bonus : 1) : win ? 3 + Math.floor(g / 4) + (first && boss ? 23 : 0) + (boss ? Math.max(0, stars - prev) * 2 : 0) + s.bonus : 1 + Math.floor(g / 8);
-  const xp = kind === 'patrol' ? (win ? 14 + g * 3 : 6 + g) : win ? 20 + g * 4 : 8 + g, team = s.heroes.map(h=>h.k), before = team.map(heroLv);
+  const xp = kind === 'patrol' ? (win ? 14 + g * 3 : 6 + g) : win ? 20 + g * 4 : 8 + g, team = s.heroes.map(h=>h.k), before = team.map(heroLv), pw0 = pwOf(fmGet(), s.U);
   let r = { gain:0, shells:sh };
   try{ if(typeof playQuestDone === 'function') r = playQuestDone(v, boss && win && last, sh, boss && win, { g, won:boss && win, stars:boss ? stars : 0, xp, team }) || r; }catch(e){}
   if(kind === 'hunt' && win && g === sgN()) qpSet({ a:1, w:Math.max(qpOf().w, stars) });
   if(kind === 'patrol' && win && s.pid) DEAD[v + s.pid] = Date.now();
-  s.r = r; s.stars = stars; s.newSt = boss && stars > prev; s.lv = team.map((k, i)=>[k, before[i], heroLv(k)]);
+  s.r = r; s.stars = stars; s.newSt = boss && stars > prev; s.lv = team.map((k, i)=>[k, before[i], heroLv(k)]); s.pw = [pw0, pwOf(fmGet(), s.U)];
   if(first && boss){ s.bench = HK.filter(k=>HERO[k].j === v).filter(k=>{ NEWH.add(k); return !autoPlace(k); });   /* 빈 칸이 있으면 바로 출전, 가득 찼으면 보상 카드에서 편성으로 안내 */ const p = ME && ME.profile && ME.profile.play; if(p && p.qb) p.qb.qp = { g:sgN(), a:0, n:0, w:0 }; }   // 새 동료는 빈 칸에 바로
   log(win ? `✅ 승리 ${'★'.repeat(stars)}` : `💤 ${tmo ? '시간 초과' : '전멸'}`);
   s.banQ = win ? [`🏆 승리! ${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}`, 'win'] : [tmo ? '⏱ 시간 초과…' : '💤 전멸…', 'bad'];
@@ -958,7 +960,7 @@ function end(win, tmo){
 }
 const starsHtml = n => `<div class="q-stars" aria-label="별 ${n}개">${[0, 1, 2].map(i=>`<i class="${i < n ? '' : 'off'}" style="animation-delay:${.15 + i * .22}s">★</i>`).join('')}</div>`;
 const stats = () => `<div class="go-st"><span>처치<b>${S.killed}</b></span><span>조개<b>${S.r && S.r.shells || 0}${S.r && S.r.x2 ? ' ×2' : ''}</b></span><span>XP<b>+${S.r && S.r.gain || 0}</b></span></div>`;
-const lvRow = () => lvHtml(S.lv || []);
+const lvRow = () => lvHtml(S.lv || []) + (S.pw ? pwHtml(S.pw[0], S.pw[1]) : '');
 function result(){
   const s = S, ov = ovEl(''), hunt = s.kind === 'hunt', q = VIL[s.v].q[s.s], by = hunt && q ? whoN(q.by) : ''; s.mode = 'card';
   ov.innerHTML = `<div class="go-card"><div class="go-t">🏆 승리!</div>${starsHtml(s.stars)}
@@ -1233,12 +1235,15 @@ function wEnts(){
   if(I.q && I.p.a && I.q.k === 'get') for(const i of [0, 1, 2].filter(j=>gotOk(I) ? !GOT.s.includes(j) : j >= I.p.n).slice(0, 3 - I.p.n)) L.push({ t:'item', id:'i' + i, x:Math.round(150 + hs(v * 3 + i, 61) * 840), d:f1(.25 + hs(v * 3 + i, 62) * .7), ic:I.q.it, n:I.q.itn });
   if(cleared || (I.here && I.s >= 1)) ['p1', 'p2'].forEach(id=>{ if(!(DEAD[v + id] > Date.now() - 4e4)) mob(id, MOB[id][0], MOB[id][1], v * 4 + 1, 0); });
   if(!cleared) L.push({ t:'boss', id:'boss', x:BX[0], d:BX[1], lock:!(I.here && I.s === 3), n:BOSS[v].n, ic:BOSS[v].ic });
+  if(funOn()){ L.push({ t:'fish', id:'fish', x:v === 9 ? 760 : 505, d:.1, n:'낚시터', ic:'🎣', nw:!fSeen() });   // 첫 마을을 넘으면 — 물가 낚시터, 하루 한 번 보물
+    if(!fdOf().c){ const c = chestSpot(v, L); L.push({ t:'chest', id:'chest', x:c.x, d:c.d, n:'오늘의 보물', ic:'🎁' }); } }
   return L;
 }
 function eEl(e){
   const b = document.createElement('button'); b.type = 'button'; b.className = 'qe ' + e.t + (e.lock ? ' lk' : ''); b.dataset.i = e.id;
-  const lab = e.t === 'npc' ? e.n : e.t === 'mob' ? (e.quest ? '📜 ' : '⚔️ ') + e.n : e.t === 'boss' ? '👑 ' + e.n : '';
-  b.setAttribute('aria-label', e.t === 'npc' ? `${e.n}에게 말 걸기` : e.t === 'item' ? `${e.n} 줍기` : e.t === 'boss' ? `보스 ${e.n}` : `${e.n}와 싸우기`);
+  const lab = e.t === 'npc' ? e.n : e.t === 'mob' ? (e.quest ? '📜 ' : '⚔️ ') + e.n : e.t === 'boss' ? '👑 ' + e.n : e.t === 'fish' ? '🎣 낚시터' : e.t === 'chest' ? '✨ 오늘의 보물' : '';
+  if(e.nw) b.classList.add('nw');
+  b.setAttribute('aria-label', e.t === 'npc' ? `${e.n}에게 말 걸기` : e.t === 'item' ? `${e.n} 줍기` : e.t === 'boss' ? `보스 ${e.n}` : e.t === 'fish' ? '낚시하기' : e.t === 'chest' ? '오늘의 보물 열기' : `${e.n}와 싸우기`);
   b.innerHTML = `<i class="qe-sh" aria-hidden="true"></i><span class="qe-b" aria-hidden="true">${e.t !== 'item' ? '<i class="qe-m"></i>' : ''}${lab ? `<span class="qe-n${e.t === 'mob' || e.t === 'boss' ? ' bad' : ''}${e.quest ? ' q' : ''}">${esc(lab)}</span>` : ''}${e.img ? `<img src="${e.img}" alt="" draggable="false">` : `<span class="qe-e">${esc(e.ic)}</span>`}</span>`;
   e.el = b; e.mk = b.querySelector('.qe-m'); return b;
 }
@@ -1259,6 +1264,7 @@ function wMarks(){
       else m = e.id === 'shop' ? '🛒' : '💬';
     } else if(e.t === 'mob') m = e.quest ? '❗' : '';
     else if(e.t === 'boss'){ m = e.lock ? '🔒' : '❗'; hot = !e.lock; }
+    else if(e.t === 'chest'){ m = '✨'; hot = true; }
     e.mk.textContent = m; e.mk.className = 'qe-m' + (hot ? ' hot' : ''); e.el.classList.toggle('hot', hot); }
 }
 function wRefresh(){
@@ -1340,6 +1346,8 @@ function interact(e){
   if(e.t === 'item') return grab(e);
   if(e.t === 'mob') return fight(e.quest ? 'hunt' : 'patrol', e.g, e);
   if(e.t === 'boss') return bossTalk();
+  if(e.t === 'fish') return fishOpen();
+  if(e.t === 'chest') return chestOpen(e);
 }
 /* 한 프레임 — 이동(키보드·눌러 이동), 동료 따라오기, 물건 줍기, 카메라·배경 시차, 가까운 대상 버튼 */
 function wTick(dt){
@@ -1371,7 +1379,7 @@ function wTick(dt){
     const bg = $q('q-bg'), r = WW > G.w ? WK.cam / (WW - G.w) : .5; if(bg && !CN) bg.style.transform = `translate3d(${f1((.5 - r) * G.w * .5)}px,0,0)`; }
   let nb = null, nd = 70; if(!busy) for(const e of WK.ents){ if(e.t === 'item') continue; const dd = Math.hypot(e.x - P.x, (e.d - P.d) * DY); if(dd < nd){ nd = dd; nb = e; } }
   if(nb !== WK.near){ WK.near = nb; const a = $q('q-act'); if(a){ a.hidden = !nb;
-    if(nb) a.textContent = nb.t === 'npc' ? `💬 ${nb.n}` : nb.t === 'boss' ? (nb.lock ? `🔒 ${nb.n}` : `👑 보스와 싸우기`) : `⚔️ ${nb.n}와 싸우기`; } }
+    if(nb) a.textContent = nb.t === 'npc' ? `💬 ${nb.n}` : nb.t === 'boss' ? (nb.lock ? `🔒 ${nb.n}` : `👑 보스와 싸우기`) : nb.t === 'fish' ? '🎣 낚시하기' : nb.t === 'chest' ? '✨ 보물 열기' : `⚔️ ${nb.n}와 싸우기`; } }
   if((WK.dirT -= dt) <= 0){ WK.dirT = .25; wDir(); }
   if(WK.tu && (WK.tuT -= dt) <= 0){ WK.tuT = .15; wTutPos(); }
 }
@@ -1390,7 +1398,9 @@ function npcTalk(id){
     }
   }
   const V = VIL[TV][id];
-  if(V && V.say){ const k = WK.say[id] = ((WK.say[id] ?? -1) + 1) % V.say.length; return talk([[id, V.say[k]]]); }
+  if(V && V.say){ const ls = funOn() ? [chatOf(TV, id), ...V.say] : V.say, k = WK.say[id] = ((WK.say[id] ?? -1) + 1) % ls.length;   // 처음 말을 걸면 날마다 바뀌는 수다부터
+    if(canGift(id)) return talk([[id, ls[k]]], null, { ch:[[`🎁 물고기 선물 ${hearts(hvOf()[rKey(id)] || 0)}`, ()=>giftPick(id)], ['또 봐요', wBack]] });
+    return talk([[id, ls[k]]]); }
   if(I.s === 4) return talk([[id, '덕분에 마을이 다시 평화로워졌어. 고마워!']]);
   if(I.s === 3) return talk([[id, `해변 끝에 ${jo(BOSS[TV].n, '이', '가')} 나타났어! 준비되면 가 봐.`]]);
   return talk([[id, `${jo(whoN(q.by), '이', '가')} 널 찾던데? 머리 위에 ❗나 ❓가 뜬 사람을 찾아봐.`]]);
@@ -1412,14 +1422,14 @@ function grab(e){
 }
 function qComplete(g0){
   const I = vInfo(); if(!(I.here && I.q && I.s < 3) || (g0 != null && g0 !== I.g)) return wBack();   // 같은 보고가 두 번 와도 다음 부탁까지 끝내 버리지 않게
-  const q = I.q, g = I.g, team = fmGet().filter(Boolean), before = team.map(heroLv), stars = q.k === 'hunt' ? Math.max(1, I.p.w) : 3, sh = 11 + Math.floor(g / 4), xp = qXp(g);
+  const q = I.q, g = I.g, team = fmGet().filter(Boolean), before = team.map(heroLv), U0 = typeof upFor === 'function' ? upFor('quest', true) : {}, pw0 = pwOf(team, U0), stars = q.k === 'hunt' ? Math.max(1, I.p.w) : 3, sh = 11 + Math.floor(g / 4), xp = qXp(g);
   let r = { gain:0, shells:sh };
   try{ if(typeof playQuestDone === 'function') r = playQuestDone(TV, false, sh, false, { g, won:true, stars, xp, team }) || r; }catch(e){}
   const p = ME && ME.profile && ME.profile.play; if(p && p.qb){ p.qb.qp = { g:sgN(), a:0, n:0, w:0 }; if(typeof playPush === 'function') playPush(); }
   const lv = team.map((k, i)=>[k, before[i], heroLv(k)]), nx = vInfo(), first = g === 0;
   const ov = ovEl('');
   ov.innerHTML = `<div class="go-card"><div class="qpc" aria-hidden="true">📜</div><div class="go-t">부탁 완료!</div><div class="go-d"><b>${esc(q.t)}</b></div>${starsHtml(stars)}
-    <div class="go-st"><span>조개<b>+${nm(r.shells, 999)}${r.x2 ? ' ×2' : ''}</b></span><span>동료 경험치<b>+${xp}</b></span><span>XP<b>+${nm(r.gain, 99)}</b></span></div>${lvHtml(lv)}
+    <div class="go-st"><span>조개<b>+${nm(r.shells, 999)}${r.x2 ? ' ×2' : ''}</b></span><span>동료 경험치<b>+${xp}</b></span><span>XP<b>+${nm(r.gain, 99)}</b></span></div>${lvHtml(lv)}${pwHtml(pw0, pwOf(team, U0))}
     <div class="go-b">${nx.s === 3 ? `👑 해변 끝에 <b>${esc(BOSS[TV].n)}</b>${fin(BOSS[TV].n) ? '이' : '가'} 나타났어요!` : nx.q ? `다음 부탁 — ${esc(nx.q.t)} (${esc(whoN(nx.q.by))})` : ''}</div>
     ${first ? '<p class="go-d" style="margin:0 0 8px">👍 이렇게 마을 사람의 부탁을 들어주며 강해져요. 🎒 내 정보에서 장비도 강화해 보세요!</p>' : ''}
     <button class="btn blue" id="q-ok" type="button" style="width:100%;min-height:50px">계속 ▶</button></div>`;
@@ -1478,20 +1488,214 @@ function bag(){
     return `<div class="qb-eq"><i aria-hidden="true">${E.ic}</i><span><b>${E.n} Lv${l}/10</b><small>${E.d} +${l * E.per}%${l < 10 ? ` → +${(l + 1) * E.per}%` : ''}</small></span><button type="button" class="btn sm ${l < 10 && bal >= c ? 'blue' : 'ghost'}" data-eq="${k}"${l >= 10 ? ' disabled' : ''}>${l >= 10 ? '최고' : `강화 🐚${c}`}</button></div>`; };
   const items = CH.slice(0, got).filter(c=>c.gift).map(c=>[c.gift.ic, c.gift.n, short(CH.indexOf(c)) + '에서 받은 선물']);
   if(qbOf().legend) items.unshift(['🏄', '전설의 보드', '봉인을 풀고 얻은 보드']);
+  const hv = hvOf(), fun = funOn(), fi = fiOf(); Object.keys(hv).filter(k=>hv[k] >= 5).forEach(k=>{ const o = VIL[+k.slice(0, -1)][k.slice(-1)]; if(o) items.push([o.ic, `${o.n}의 보물`, '💖 단짝의 선물']); });
   if(I.q && I.p.a && I.q.k !== 'hunt') items.unshift([I.q.it, I.q.itn + (I.q.k === 'get' ? ` ${I.p.n}/3` : ''), '퀘스트 물건']);
   ov.innerHTML = `<div class="qb"><div class="qb-hd"><b>🎒 내 정보</b><span>🐚 ${bal}</span><button class="btn sm ghost" id="q-bx" type="button">✕ 닫기</button></div>
     <div class="qb-me">${walkImg ? `<img src="${walkImg}" alt="내 캐릭터">` : '<i aria-hidden="true">🏄</i>'}<div><b>${esc(ME.name || '나')}</b><small>Lv${s.l} · ${'★'.repeat(s.st)}${'☆'.repeat(5 - s.st)} · 딜러</small>
       <span class="qtm-xp" role="progressbar" aria-label="경험치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct.toFixed(0)}%"></i></span><small>${s.l >= 30 ? '최고 레벨' : `다음 레벨까지 ${b - x} XP`}</small></div></div>
-    <div class="qb-st"><span>❤️ 체력<b>${s.hp}</b></span><span>⚔️ 공격<b>${s.atk}</b></span><span>💪 팀 전투력<b>${pw}</b></span><span>🧩 봉인 조각<b>${got}/${N}</b></span></div>
+    <div class="qb-st"><span>❤️ 체력<b>${s.hp}</b></span><span>⚔️ 공격<b>${s.atk}</b></span><span>💪 팀 전투력<b>${pw}</b></span><span>🧩 봉인 조각<b>${got}/${N}</b></span>${fun ? `<span>🐟 물고기 도감<b>${Object.keys(fsOf()).length}/${FISH.length}</b></span><span>💖 단짝<b>${Object.values(hv).filter(h=>h >= 5).length}명</b></span>` : ''}</div>
     <h4>🛠️ 장비 — 동료 모두에게 적용</h4>${eqRow('b')}${eqRow('w')}
     <h4>👥 동료 ${HK.filter(unl).length}/${HK.length}</h4><div class="qb-tm">${HK.filter(unl).map(k=>`<span class="${fm.includes(k) ? 'in' : ''}"><i aria-hidden="true">${HERO[k].ic}</i><b>${esc(HERO[k].n)}</b><small>Lv${heroLv(k)} ${'★'.repeat(heroSt(k))}${fm.includes(k) ? ' · 출전' : ''}</small></span>`).join('')}</div>
     <button class="btn" id="q-btm" type="button" style="width:100%;min-height:46px">👥 편성 · ⭐ 성급 강화</button>
+    ${fun ? `<h4>🧺 물고기 바구니</h4>${Object.keys(fi).length ? `<div class="qb-it">${FISH.filter(f=>fi[f.k]).map(f=>`<span style="border-color:${RAR[f.r].c}"><i aria-hidden="true" style="${f.fl ? `filter:${f.fl}` : ''}">${f.ic}</i><b>${esc(f.n)}</b><small>×${fi[f.k]} · ${RAR[f.r].n}</small></span>`).join('')}</div><p class="qb-tip" style="margin-top:0">💬 주민에게 말을 걸면 하루 한 번 선물할 수 있어요</p>` : '<p class="qb-tip" style="margin-top:0">비어 있어요 — 마을 물가의 🎣 낚시터에서 낚아 보세요</p>'}` : ''}
     <h4>🎁 가방</h4>${items.length ? `<div class="qb-it">${items.map(([ic, n, d])=>`<span><i aria-hidden="true">${esc(ic)}</i><b>${esc(n)}</b><small>${esc(d)}</small></span>`).join('')}</div>` : '<p class="qb-tip">아직 비어 있어요 — 마을 보스를 넘으면 선물을 받아요</p>'}
     <p class="qb-tip">💡 강해지는 법 — 부탁을 들어주고 해변 순찰 몬스터(⚔️)와 싸워 레벨 업 · 🐚 조개로 장비·⭐ 성급 강화${U.tag ? ` · 🔧 강화소 ${esc(U.tag)}` : ' · 놀이 메뉴 🔧 강화소 보너스도 붙어요'}</p></div>`;
   $q('q-bx').onclick = wBack;
   $q('q-btm').onclick = ()=>{ TB = 'bag'; teamUp(); };
   ov.querySelectorAll('[data-eq]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.eq; if(eqBuy(k)){ beep(523, 1047, .3, .05); if(typeof toast === 'function') toast(`${EQ[k].ic} ${EQ[k].n} Lv${eqOf(k)}! ${EQ[k].d} +${eqOf(k) * EQ[k].per}%`); } const y = ov.scrollTop; bag(); ov.scrollTop = y; });
 }
+/* ══ 바닷가 놀이 — 🎣 낚시·물고기 도감 · 💗 주민 호감(물고기 선물) · ✨ 하루 한 번 보물 · 날마다 바뀌는 주민 수다 ══════════
+   첫 마을 보스를 넘으면 열린다(첫 마을 길잡이를 어지럽히지 않게). 저장은 qb 안 —
+   fs 도감{물고기: 잡은 수} · fi 바구니{물고기: 가진 수} · hv 호감{'0c': ♥0~5} · fk 도감 보상 받은 단계(0~3) · fd 오늘{d 날짜, c 보물 열었나, g{주민:1} 오늘 선물 줬나}.
+   조개는 처음 잡은 물고기·도감 단계·♥3/♥5·하루 한 번 보물에서만 나온다 — 같은 물고기를 또 잡아도 조개는 없다(경제를 부풀리지 않게). */
+const FISH = [
+  { k:'mack', ic:'🐟', n:'고등어', r:0, d:'등이 푸른 동해의 단골손님' },
+  { k:'nore', ic:'🐠', n:'노래미', r:0, d:'갯바위 틈에 숨어 사는 얼룩무늬', fl:'hue-rotate(150deg) saturate(.7)' },
+  { k:'bori', ic:'🐟', n:'보리멸', r:0, d:'모래 바닥을 좋아하는 은빛 물고기', fl:'grayscale(.8) brightness(1.15)' },
+  { k:'shrimp', ic:'🦐', n:'꽃새우', r:1, d:'톡 튀어 오르는 분홍 새우' },
+  { k:'flat', ic:'🐟', n:'가자미', r:1, d:'두 눈이 한쪽에 몰린 납작이', fl:'sepia(.8) saturate(1.4)' },
+  { k:'rock', ic:'🐟', n:'우럭', r:1, d:'바위 밑에서 꿈쩍 않는 고집쟁이', fl:'grayscale(.6) brightness(.75)' },
+  { k:'squid', ic:'🦑', n:'오징어', r:1, v:[2, 6], d:'밤바다 집어등의 주인공 — 속초·주문진에서만' },
+  { k:'doru', ic:'🐟', n:'도루묵', r:2, v:[0, 1, 2], d:'겨울 동해의 별미, 알이 톡톡 — 고성·속초에서만', fl:'hue-rotate(60deg)' },
+  { k:'yell', ic:'🐟', n:'방어', r:2, d:'겨울이면 살이 오르는 힘센 물고기', fl:'hue-rotate(200deg) saturate(1.3)' },
+  { k:'oct', ic:'🐙', n:'문어', r:2, v:[8, 9, 10], d:'동해 문어는 덩치가 남달라요 — 정동진·망상·장호항에서만' },
+  { k:'crab', ic:'🦀', n:'대게', r:2, v:[6], d:'다리가 대나무처럼 곧은 게 — 주문진에서만' },
+  { k:'lim', ic:'🐟', n:'임연수어', r:3, v:[3, 4, 5, 7], d:'껍질 쌈이 유명한 물고기 — 양양·경포에서만', fl:'hue-rotate(300deg) saturate(1.2)' },
+  { k:'puff', ic:'🐡', n:'복어', r:3, v:[4, 5], d:'화나면 빵빵하게 부풀어요 — 죽도·하조대에서만' },
+  { k:'pol', ic:'🐟', n:'명태', r:3, v:[0, 1], d:'동해에서 귀해진 고성의 자랑 — 고성에서만', fl:'grayscale(1) brightness(1.05)' },
+  { k:'gold', ic:'🐠', n:'금빛 윤슬어', r:4, d:'윤슬의 보드 빛을 닮은 전설의 물고기 — 어느 바다에서나 아주 가끔', fl:'sepia(1) saturate(4) hue-rotate(-12deg) brightness(1.1)' },
+];
+const JUNK = [{ k:'', ic:'🥾', n:'낡은 장화', r:0, d:'바다에 버려진 장화 — 건져 내서 바다가 조금 깨끗해졌어요' }, { k:'', ic:'🥫', n:'빈 깡통', r:0, d:'쓰레기도 건져 올리면 바다가 고마워해요' }];
+/* 희귀도 — w 나올 비율(%) · z 초록 칸 폭(%) · p 막대가 한 번 지나가는 시간(ms). 드문 물고기일수록 칸이 좁고 막대가 빠르다 */
+const RAR = [{ n:'흔함', o:'⚪', c:'#8C95A8', w:52, z:40, p:1250 }, { n:'보통', o:'🟢', c:'#2FA55A', w:30, z:33, p:1100 }, { n:'귀함', o:'🔵', c:'#2F7FD0', w:13, z:27, p:980 },
+  { n:'아주 귀함', o:'🟣', c:'#8A4CD0', w:4, z:21, p:860 }, { n:'전설', o:'🌟', c:'#E8A317', w:1, z:16, p:760 }];
+const DEXR = [2, 3, 5, 10, 30], FKS = [[5, 10], [10, 20], [FISH.length, 40]];               // 처음 잡으면 🐚(희귀도별) · 도감 5·10·전부 단계 보상
+const FKEY = new Set(FISH.map(f=>f.k)), RKEY = /^(10|[0-9])[cd]$/;
+const funOn = () => gotN() >= 1 || !!qbOf().legend;
+const dayN = () => { const d = new Date(); return Math.floor((d.getTime() - d.getTimezoneOffset() * 6e4) / 864e5); };
+const dayK = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const objOf = (o, mx, ok) => { const r = {}; if(o && typeof o === 'object' && !Array.isArray(o)) for(const k of Object.keys(o)) if(ok(k)){ const v = nm(o[k], mx); if(v) r[k] = v; } return r; };
+const fsOf = () => objOf(qbOf().fs, 9999, k=>FKEY.has(k));                        // 도감 — 남의 기기 값이 섞여도 아는 물고기·숫자만
+const fiOf = () => objOf(qbOf().fi, 99, k=>FKEY.has(k));
+const hvOf = () => objOf(qbOf().hv, 5, k=>RKEY.test(k));
+const fdOf = () => { const f = qbOf().fd, d = dayK(); return f && typeof f === 'object' && f.d === d ? { d, c:nm(f.c, 1), g:objOf(f.g, 1, k=>RKEY.test(k)) } : { d, c:0, g:{} }; };
+function qbPut(o){ const p = ME && ME.profile && ME.profile.play; if(!p) return false; Object.assign((p.qb ||= {}), o); if(typeof playPush === 'function') playPush(); return true; }
+function shellAdd(n){ const p = ME && ME.profile && ME.profile.play; if(!p || !(n > 0)) return 0; p.shells = (p.shells || 0) + n; try{ if(typeof playTick === 'function') playTick(); }catch(e){} return n; }
+const fishOf = k => FISH.find(f=>f.k === k);
+const fPool = v => FISH.filter(f=>!f.v || f.v.includes(v));
+const fOfDay = v => { const a = fPool(v).filter(f=>f.r === 1 || f.r === 2); return a[Math.floor(hs(dayN(), v + 77) * a.length)] || FISH[0]; };   // 오늘의 물고기 — 마을마다 날마다 바뀐다
+function fRoll(v, noJunk, maxR){                                                 // 희귀도를 먼저 뽑고(희귀도 확률이 마을마다 같게) 그 안에서 고른다. 오늘의 물고기는 같은 희귀도 안에서 세 배
+  if(!noJunk && rnd() < .06) return pick(JUNK);
+  const pool = fPool(v).filter(f=>f.r <= (maxR == null ? 4 : maxR)), od = fOfDay(v), tiers = [...new Set(pool.map(f=>f.r))];
+  let x = rnd() * tiers.reduce((t, r)=>t + RAR[r].w, 0), r = tiers[0]; for(const t of tiers){ x -= RAR[t].w; if(x <= 0){ r = t; break; } }
+  const a = pool.filter(f=>f.r === r), ws = a.map(f=>f === od ? 3 : 1); let y = rnd() * ws.reduce((t, w)=>t + w, 0);
+  for(let i = 0; i < a.length; i++){ y -= ws[i]; if(y <= 0) return a[i]; } return a[0];
+}
+/* 잡은 물고기 적기 — 도감·바구니. 처음 잡은 종류면 🐚, 도감 단계를 넘으면 단계 보상(fk 로 한 번만) */
+function fGet(f){
+  if(!f || !FKEY.has(f.k)) return { junk:1 };
+  const fs = fsOf(), fi = fiOf(), nw = !fs[f.k]; fs[f.k] = Math.min(9999, (fs[f.k] || 0) + 1); fi[f.k] = Math.min(99, (fi[f.k] || 0) + 1);
+  let sh = nw ? DEXR[f.r] : 0, ms = null; const kinds = Object.keys(fs).length, fk = nm(qbOf().fk, 3); let fk2 = fk;
+  while(fk2 < FKS.length && kinds >= FKS[fk2][0]){ ms = FKS[fk2]; sh += FKS[fk2][1]; fk2++; }
+  qbPut({ fs, fi, fk:fk2 }); shellAdd(sh);
+  return { nw, sh, ms, kinds, n:fs[f.k], held:fi[f.k] };
+}
+
+/* ── 🎣 낚시 — 찌를 던지고(1~3초 기다림) 입질이 오면 왔다 갔다 하는 막대가 초록 칸에 있을 때 누른다.
+   막대는 Web Animations 로 돌리고 누른 순간의 currentTime 으로 위치를 계산한다(매 프레임 JS 없음) ── */
+let FS = null;
+const FNK = 'lineup.share.qfn';
+const fSeen = () => { try{ return localStorage.getItem(FNK) === '1'; }catch(e){ return true; } };
+function fishStop(){ if(!FS) return; clearTimeout(FS.t1); clearTimeout(FS.t2); try{ FS.an && FS.an.cancel(); }catch(e){} FS = null; }
+function fishOpen(cast){
+  clearT(); const v = TV, od = fOfDay(v), ov = ovEl('qv-fish'), kinds = Object.keys(fsOf()).length, nw = !fSeen();
+  ov.innerHTML = `<div class="qf"><div class="qf-hd"><b>🎣 ${esc(short(v))} 낚시터</b><span>📖 ${kinds}/${FISH.length}</span><button class="btn sm ghost" id="q-fcl" type="button">✕ 닫기</button></div>
+    <div class="qf-sea" id="q-fsea" aria-hidden="true"><i class="qf-sun"></i><i class="qf-wv"></i><i class="qf-wv b"></i><i class="qf-sh" id="q-fsh"></i><i class="qf-line" id="q-fln"></i><i class="qf-bob" id="q-fbob"></i><i class="qf-rp" id="q-frp"></i></div>
+    <p class="qf-msg" id="q-fmsg" role="status" aria-live="polite">${nw ? '찌를 던지고 기다렸다가, 찌가 쏙 들어가면 막대가 초록 칸에 올 때 「낚아채기」!' : '찌를 던져 볼까요?'}</p>
+    <div class="qf-bar" id="q-fbar" hidden aria-hidden="true"><i class="qf-zn" id="q-fzn"></i><i class="qf-cw" id="q-fcw"><i class="qf-cur"></i></i></div>
+    <button class="btn blue qf-go" id="q-fgo" type="button">🎣 던지기</button>
+    <p class="qf-od">오늘의 물고기 <b>${od.ic} ${esc(od.n)}</b> — 오늘 ${esc(short(v))}에서 잘 잡혀요</p></div>`;
+  FS = { st:'idle', v };
+  $q('q-fcl').onclick = wBack; $q('q-fgo').onclick = fishTap;
+  $q('q-fsea').onclick = fishTap;                                                  // 바다 아무 데나 눌러도 같은 버튼
+  if(cast) fishTap();
+}
+function fMsg(t){ const m = $q('q-fmsg'); if(m) m.textContent = t; }
+function fBtn(t, cls){ const b = $q('q-fgo'); if(b){ b.textContent = t; b.className = 'btn qf-go ' + (cls || 'blue'); } }
+function fSea(cls){ const s = $q('q-fsea'); if(s) s.className = 'qf-sea ' + (cls || ''); }
+function fishTap(){
+  if(!FS) return; const s = FS;
+  if(s.st === 'idle'){ s.st = 'wait'; fSea('cast'); fMsg('찌를 던졌어요… 숨죽이고 기다려요'); fBtn('⏳ 기다리는 중…', 'ghost'); beep(330, 220, .15, .03);
+    s.t1 = setTimeout(fishBite, 1100 + rnd() * 2100); return; }
+  if(s.st === 'wait'){ clearTimeout(s.t1); s.st = 'idle'; fSea(''); fMsg('앗, 너무 일찍 당겼어요! 찌가 쏙 들어갈 때까지 기다려요'); fBtn('🎣 다시 던지기'); return; }
+  if(s.st === 'bite'){ const an = s.an; let pos = 0; try{ const t = +an.currentTime || 0, u = (t % (2 * s.p)) / s.p; pos = (u > 1 ? 2 - u : u) * 100; }catch(e){}
+    s.pos = pos; if(pos >= s.zl - 2.5 && pos <= s.zl + s.z + 2.5) fishCatch(); else fishMiss('놓쳤어요… 막대가 초록 칸에 있을 때 눌러요'); }
+}
+function fishBite(){
+  if(!FS || FS.st !== 'wait') return; const s = FS, f = fRoll(s.v), r = f.r, R = RAR[r];
+  s.f = f; s.st = 'bite'; s.z = R.z; s.p = R.p; s.zl = Math.round(6 + rnd() * (88 - R.z));
+  fSea('bite' + (r >= 3 ? ' big' : r >= 2 ? ' mid' : ''));
+  fMsg(r >= 3 ? '✨ 엄청난 힘이에요! 놓치지 마세요!' : r >= 2 ? '❗❗ 묵직한 입질! 초록 칸에서 낚아채요' : '❗ 입질! 막대가 초록 칸에 올 때 눌러요');
+  fBtn('⚡ 낚아채기!', 'blue hot'); beep(880, 660, .12, .05); try{ vib(r >= 3 ? [40, 30, 40, 30, 60] : [30, 20, 40]); }catch(e){}
+  const bar = $q('q-fbar'), zn = $q('q-fzn'), cw = $q('q-fcw'); if(bar){ bar.hidden = false; zn.style.left = s.zl + '%'; zn.style.width = s.z + '%';
+    try{ s.an = cw.animate([{ transform:'translateX(0%)' }, { transform:'translateX(100%)' }], { duration:s.p, iterations:Infinity, direction:'alternate', easing:'linear' }); }catch(e){ s.an = { currentTime:s.p * (s.zl + s.z / 2) / 100, cancel(){} }; } }   // 애니메이션을 못 쓰는 브라우저 — 늘 칸 안(놓치지 않게)
+  s.t2 = setTimeout(()=>{ if(FS === s && s.st === 'bite') fishMiss('물고기가 도망갔어요… 입질이 오면 바로 눌러요'); }, 4600);
+}
+function fishMiss(t){
+  const s = FS; if(!s) return; clearTimeout(s.t2); try{ s.an && s.an.cancel(); }catch(e){} s.an = null; s.st = 'idle';
+  const bar = $q('q-fbar'); if(bar) bar.hidden = true; fSea('miss'); fMsg(t); fBtn('🎣 다시 던지기'); beep(300, 180, .2, .03);
+}
+function fishCatch(){
+  const s = FS; if(!s || s.st !== 'bite') return; clearTimeout(s.t2); try{ s.an && s.an.cancel(); }catch(e){} s.st = 'done';
+  const f = s.f, g = fGet(f), R = RAR[f.r], ov = ovEl('qv-fcat'), first = !fSeen(); try{ localStorage.setItem(FNK, '1'); }catch(e){}
+  FS = { st:'done', v:s.v, f };
+  beep(g.junk ? 440 : 660, g.junk ? 330 : 1320, .3, .05); try{ vib(g.nw ? [30, 40, 30, 40, 80] : 25); }catch(e){}
+  ov.innerHTML = `<div class="go-card qf-cat${f.r >= 3 ? ' rare' : ''}" style="--rc:${R.c}"><div class="qf-big" aria-hidden="true"><i style="${f.fl ? `filter:${f.fl}` : ''}">${f.ic}</i>${g.nw ? '<b class="qf-new">NEW!</b>' : ''}</div>
+    <div class="go-t">${g.junk ? '쓰레기를 건졌어요!' : `${esc(f.n)}${g.nw ? ' — 도감 등록!' : ''}`}</div>
+    ${g.junk ? `<div class="go-d">${esc(f.ic)} ${esc(f.n)} — ${esc(f.d)}</div>` : `<div class="qf-rr" style="color:${R.c}">${R.o} ${R.n}</div><div class="go-d">${esc(f.d)}</div>
+    <div class="go-st" style="grid-template-columns:repeat(3,1fr)"><span>도감<b>${g.kinds}/${FISH.length}</b></span><span>바구니<b>${g.held}</b></span><span>조개<b>${g.sh ? '+' + g.sh : '–'}</b></span></div>`}
+    ${g.ms ? `<div class="q-gift"><i aria-hidden="true">📖</i><span><b>🎉 도감 ${g.ms[0] >= FISH.length ? '완성' : g.ms[0] + '종'} 달성!</b><small>단계 보상 🐚 +${g.ms[1]} 포함</small></span></div>` : ''}
+    ${!g.junk && (first || nm(qbOf().fk, 3) === 0 && g.kinds <= 2) ? '<p class="go-d" style="margin:0 0 8px">💡 잡은 물고기는 💬 마을 주민에게 선물할 수 있어요 — 친해지면 선물을 줘요</p>' : ''}
+    <div class="q-ctl" style="margin-top:0"><button class="btn blue" id="q-fag" type="button">🎣 한 번 더</button><button class="btn ghost" id="q-fhm" type="button">🏘️ 마을로</button></div></div>`;
+  $q('q-fag').onclick = ()=>fishOpen(true); $q('q-fhm').onclick = wBack;
+  if(g.ms && typeof toast === 'function') toast(`📖 물고기 도감 ${g.kinds}종! 🐚 +${g.ms[1]}`);
+}
+
+/* ── 💗 주민 호감 — 마을 주민(c·d)에게 하루 한 번 물고기 선물. 좋아하는 물고기나 아주 귀한 물고기는 ♥2.
+   ♥3 이면 🐚5, ♥5(단짝)면 🐚15 + 가방에 그 사람의 보물. 좋아하는 물고기는 그 마을에서 잡히는 것 중에서(꼭 구할 수 있게) ── */
+const rKey = id => TV + id;
+const favOf = (v, id) => { const a = fPool(v).filter(f=>f.r === 1 || f.r === 2); return a[Math.floor(hs(v * 7 + (id === 'd' ? 3 : 1), 53) * a.length)] || FISH[3]; };
+const hearts = h => '♥'.repeat(h) + '♡'.repeat(5 - h);
+const CHAT = [
+  f=>`오늘은 ${jo(f.n, '이', '가')} 잘 잡힌대. 바닷가 🎣 낚시터에 가 봐!`,
+  ()=>'오늘 바람 좋다. 이런 날은 파도가 예쁘게 서지.',
+  ()=>'새벽에 해 뜨는 거 봤어? 바다가 온통 금빛이더라.',
+  ()=>'요즘 갈매기들이 유난히 수다스러워. 무슨 일이 있나 봐.',
+  ()=>'해변 어딘가에 ✨ 반짝이는 게 떨어져 있대. 하루에 딱 한 번 나타난다나?',
+  ()=>'물 온도가 딱 좋아. 오늘 서핑하기 좋겠다!',
+  f=>`어제 옆집에서 ${jo(f.n, '을', '를')} 엄청 큰 걸 낚았대. 부럽다~`,
+  ()=>'오늘은 파도 소리가 꼭 자장가 같네.',
+  ()=>'요즘 해파리가 많이 줄었어. 다 네 덕분이야!',
+  ()=>'점심 뭐 먹지? 바닷가에서 먹는 라면이 최고인데.',
+  ()=>'금빛 물고기 얘기 들어 봤어? 윤슬의 보드 빛을 닮았대.',
+];
+const FRIEND = ['왔구나! 너 오면 괜히 기분이 좋아.', '오늘도 바다 지켜 줘서 고마워. 내가 응원할게!', '너랑 얘기하면 시간 가는 줄 모르겠어.'];
+function chatOf(v, id){
+  const d = dayN(), h = hvOf()[v + id] || 0, x = hs(d, v * 3 + (id === 'd' ? 2 : 1));
+  if(h >= 3 && x < .4) return FRIEND[Math.floor(hs(d, v + 41) * FRIEND.length)];
+  return CHAT[Math.floor(x * CHAT.length)](fOfDay(v));
+}
+const canGift = id => funOn() && (id === 'c' || id === 'd') && !!(VIL[TV] || {})[id] && (hvOf()[rKey(id)] || 0) < 5 && !fdOf().g[rKey(id)] && Object.keys(fiOf()).length > 0;
+function giftPick(id){
+  clearT(); const V = VIL[TV][id], key = rKey(id), h = hvOf()[key] || 0, fv = favOf(TV, id), fi = fiOf(), ov = ovEl('qv-gift');
+  const list = FISH.filter(f=>fi[f.k]).sort((a, b)=>(h ? (b === fv) - (a === fv) : 0) || b.r - a.r);   // 좋아하는 걸 알게 된 뒤에만 맨 앞으로
+  ov.innerHTML = `<div class="qb"><div class="qb-hd"><b>🎁 ${esc(V.n)}에게 선물</b><button class="btn sm ghost" id="q-gx" type="button">✕ 그만두기</button></div>
+    <div class="qg-hv"><i aria-hidden="true">${esc(V.ic)}</i><span><b class="qg-h" aria-label="호감 ${h}/5">${hearts(h)}</b><small>${h ? `좋아하는 것: ${fv.ic} ${esc(fv.n)} — 주면 ♥2` : '좋아하는 물고기를 주면 ♥가 두 배! (한 번 주면 알 수 있어요)'}</small><small>♥3 · ♥5가 되면 답례를 받아요 · 하루 한 번</small></span></div>
+    <div class="qg-l">${list.map(f=>`<button type="button" class="qg-f${f === fv && h ? ' fav' : ''}" data-gf="${f.k}" style="--rc:${RAR[f.r].c}"><i aria-hidden="true" style="${f.fl ? `filter:${f.fl}` : ''}">${f.ic}</i><b>${esc(f.n)}</b><small>×${fi[f.k]}${f === fv && h ? ' · 좋아해요' : ''}</small></button>`).join('')}</div></div>`;
+  $q('q-gx').onclick = wBack;
+  ov.querySelectorAll('[data-gf]').forEach(b=>b.onclick = ()=>giftGive(id, b.dataset.gf));
+}
+function giftGive(id, k){
+  const key = rKey(id), V = VIL[TV][id], f = fishOf(k), fi = fiOf(), fd = fdOf(), hv = hvOf(), h = hv[key] || 0;
+  if(!V || !f || !fi[k] || fd.g[key] || h >= 5) return wBack();                   // 하루 한 번 · 단짝이면 끝 — 같은 선물이 두 번 세지 않게
+  const fav = f === favOf(TV, id), up = fav || f.r >= 3 ? 2 : 1, h2 = Math.min(5, h + up);
+  fi[k]--; if(!fi[k]) delete fi[k]; fd.g[key] = 1; hv[key] = h2;
+  const sh = (h < 3 && h2 >= 3 ? 5 : 0) + (h < 5 && h2 >= 5 ? 15 : 0);
+  qbPut({ fi, fd, hv }); shellAdd(sh); beep(784, 1175, .25, .05); try{ vib([20, 30, 20]); }catch(e){}
+  const say = fav ? `우와, ${f.ic} ${f.n}! 내가 제일 좋아하는 거야! 어떻게 알았어?` : f.r >= 3 ? `이렇게 귀한 ${jo(f.n, '을', '를')}…! 정말 받아도 돼?` : `${f.ic} ${f.n}${fin(f.n) ? '이네' : '네'}! 고마워, 잘 먹을게.`;
+  const L = [[id, say], ['n', `💗 ${V.n}의 호감 ${hearts(h2)} (${h2}/5)${sh ? ` · 답례 🐚 +${sh}` : ''}`]];
+  if(h < 3 && h2 >= 3) L.splice(1, 0, [id, '너 참 좋은 서퍼구나. 이건 작은 답례야!']);
+  if(h2 >= 5) L.push([id, '이제 우리 단짝이야! 이건 내 보물인데… 너한테 줄게.'], ['n', `🎁 ${V.ic} ${V.n}의 보물 — 🎒 가방에 들어갔어요`]);
+  talk(L);
+}
+
+/* ── ✨ 오늘의 보물 — 하루 한 번, 지금 있는 마을 모래밭 어딘가(날마다 다른 자리)에 반짝인다. 🐚 5~15 + 가끔 물고기 ── */
+function chestSpot(v, L){
+  const d = f1(.24 + hs(dayN(), v + 92) * .6), i0 = Math.floor(hs(dayN(), v + 91) * 21);   // 자리 21곳 중 날마다 다른 곳에서 시작해, 사람·몬스터·낚시터와 겹치지 않는 첫 자리
+  for(let n = 0; n < 21; n++){ const x = 170 + ((i0 + n * 8) % 21) * 38; if(!L.some(e=>Math.abs(e.x - x) < 64 && Math.abs(e.d - d) < .32)) return { x, d }; }
+  return { x:170 + i0 * 38, d };
+}
+function chestOpen(e){
+  const fd = fdOf(); if(!funOn() || fd.c) return wBack();
+  fd.c = 1; const sh = 5 + Math.floor(rnd() * 6) + Math.min(4, gotN() >> 1), f = rnd() < .35 ? fRoll(TV, true, 2) : null, g = f ? fGet(f) : null;
+  qbPut({ fd }); shellAdd(sh); beep(523, 1568, .4, .05); try{ vib([30, 40, 60]); }catch(er){}
+  const ov = ovEl('');
+  ov.innerHTML = `<div class="go-card"><div class="qpc qf-chest" aria-hidden="true">🎁</div><div class="go-t">✨ 오늘의 보물!</div>
+    <div class="go-d"><b style="font-size:20px">🐚 ${sh}개</b>${f ? `<br>+ ${f.ic} ${esc(f.n)} 한 마리${g && g.nw ? ' <b class="qf-new sm">NEW!</b>' : ''}` : ''}</div>
+    <div class="go-b">내일은 또 다른 자리에 나타나요 — 하루 한 번</div>
+    <button class="btn blue" id="q-chk" type="button" style="width:100%;min-height:50px">좋아요!</button></div>`;
+  $q('q-chk').onclick = wBack;
+}
+
+/* ── 📖 물고기 도감(기록장 안) ── */
+function dexHtml(){
+  const fs = fsOf(), n = Object.keys(fs).length, nx = FKS.find(([k])=>n < k);
+  return `<h4>🐟 물고기 도감 ${n}/${FISH.length}${nx ? ` <small class="qx-sm">· ${nx[0] >= FISH.length ? '완성' : nx[0] + '종'}이면 🐚${nx[1]}</small>` : ' <small class="qx-sm">· 완성! 🎉</small>'}</h4>
+    <div class="qx-fd">${FISH.map(f=>{ const c = fs[f.k], R = RAR[f.r]; return `<span class="${c ? '' : 'lk'}" style="--rc:${R.c}"><i aria-hidden="true" style="${c && f.fl ? `filter:${f.fl}` : ''}">${c ? f.ic : '❔'}</i><b>${c ? esc(f.n) : '???'}</b><small>${R.o} ${c ? `×${c}` : R.n}</small></span>`; }).join('')}</div>`;
+}
+/* 💪 전투력 오름 — 결과 카드에 「1,240 → 1,380」 */
+const pwOf = (team, U) => team.filter(Boolean).reduce((t, k)=>t + power(k, U), 0);
+const pwHtml = (a, b) => b > a ? `<div class="q-pw">💪 팀 전투력 ${a.toLocaleString('ko-KR')} → <b>${b.toLocaleString('ko-KR')}</b> <i>▲${(b - a).toLocaleString('ko-KR')}</i></div>` : '';
 /* 뒤로가기(안드로이드) — 대화·지도·가방 같은 덮개부터 닫고, 전투 중이면 마을로. 걷기 화면이면 false(원정을 닫는다) */
 function qBack(){
   if(CN){ const d = CN.done; cineStop(); if(d) d(); return true; }
@@ -1578,7 +1782,50 @@ function wCss(){
 .q-bench{ display:flex; flex-direction:column; gap:4px; margin:6px 0; padding:10px; text-align:left; background:#FFF3C4; border:2px solid #1F2A44; border-radius:12px; word-break:keep-all } .q-bench b{ font-size:14.5px } .q-bench small{ font-size:12px; font-weight:700; color:#5B6275 } .q-bench .btn{ min-height:46px; margin-top:4px }
 .qtm-new{ position:absolute; left:-5px; top:-8px; padding:0 5px; font-size:9.5px; font-weight:900; font-style:normal; text-decoration:none; line-height:15px; color:#fff; background:#E25A4A; border-radius:8px }
 .qtm-ft .qtm-d{ margin:0 0 6px; box-shadow:0 -2px 10px rgba(0,0,0,.18) } .qtm-dh{ margin:0 0 4px !important; color:#FFE27A; font-weight:800 }
-@media (prefers-reduced-motion:reduce){ .qw-ring::before,.qw-trk.nw,.qw-fm,.qe img,.qe-e,.qe-m.hot,.qe.item .qe-e,.qe.item .qe-b::after,.qw-tap.on,.qw-got{ animation:none !important } }`;
+.qe.fish .qe-e{ font-size:38px } .qe.nw .qe-n::after{ content:' NEW'; color:#E25A4A; font-weight:900 }
+.qe.chest .qe-e{ font-size:34px; animation:qwit 1s ease-in-out infinite alternate; filter:drop-shadow(0 0 8px #FFE27A) drop-shadow(0 0 2px #FFFFFF) }
+.qe.chest .qe-b::after{ content:'✨'; position:absolute; right:-16px; top:-6px; font-size:16px; animation:qwtw 1.1s ease-in-out infinite alternate }
+#q-ov.qv-fish,#q-ov.qv-gift{ display:block; padding:0; background:#FFF7E3; overflow:auto }
+.qf{ display:flex; flex-direction:column; gap:10px; padding:12px 12px 18px; color:var(--ink) }
+.qf-hd{ display:flex; align-items:center; gap:8px } .qf-hd b{ flex:1; min-width:0; font-family:"Galmuri11",sans-serif; font-size:17px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .qf-hd span{ font-weight:800; white-space:nowrap }
+.qf-sea{ position:relative; height:clamp(180px,36vh,300px); overflow:hidden; border:2px solid #1F2A44; border-radius:14px; background:linear-gradient(#8FD8FF,#D4F4FF 33%,#47ADDD 34%,#2A86C0 62%,#1C5F94); cursor:pointer; -webkit-tap-highlight-color:transparent }
+.qf-sea::after{ content:'🎣'; position:absolute; left:2%; top:4%; font-size:44px; line-height:1; font-family:sans-serif; transform:scaleX(-1) rotate(-8deg) }
+.qf-sun{ position:absolute; right:12%; top:9%; width:34px; height:34px; border-radius:50%; background:#FFF3B0; box-shadow:0 0 22px #FFE27A }
+.qf-wv{ position:absolute; left:-40px; right:-40px; top:40%; height:10px; background:radial-gradient(ellipse 14px 4px at 20px 10px,rgba(255,255,255,.55) 98%,transparent) 0 0/40px 10px repeat-x; animation:qfwv 3.4s linear infinite; will-change:transform } .qf-wv.b{ top:66%; opacity:.6; animation-duration:5s; animation-direction:reverse }
+@keyframes qfwv{ to{ transform:translateX(40px) } }
+.qf-line{ position:absolute; left:15%; top:16%; width:44%; height:2px; background:rgba(255,255,255,.85); transform-origin:0 50%; transform:rotate(30deg) scaleX(0); transition:transform .35s ease-out }
+.qf-bob{ position:absolute; left:56%; top:55%; width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%; background:linear-gradient(#E9473A 50%,#FFFFFF 50%); border:2px solid #1F2A44; opacity:0; transform:translateY(-60px) scale(.4); transition:opacity .2s, transform .45s cubic-bezier(.3,1.5,.5,1) }
+.qf-sh{ position:absolute; left:56%; top:64%; width:40px; height:14px; margin-left:-20px; border-radius:50%; background:rgba(10,30,60,.45); opacity:0; transition:opacity .4s }
+.qf-rp{ position:absolute; left:56%; top:55%; width:0; height:0 } .qf-rp::before{ content:''; position:absolute; left:-20px; top:-7px; width:40px; height:14px; border:2px solid rgba(255,255,255,.9); border-radius:50%; opacity:0 }
+.qf-sea.cast .qf-line,.qf-sea.bite .qf-line{ transform:rotate(30deg) scaleX(1) }
+.qf-sea.cast .qf-bob{ opacity:1; transform:none; animation:qfbb 1.5s .45s ease-in-out infinite alternate } @keyframes qfbb{ to{ margin-top:-6px } }
+.qf-sea.cast .qf-sh{ opacity:.35; animation:qfsw 2.4s ease-in-out infinite alternate } @keyframes qfsw{ from{ transform:translateX(-50px) } to{ transform:translateX(40px) scaleX(-1) } }
+.qf-sea.bite .qf-bob{ opacity:1; transform:none; animation:qfdp .16s ease-in-out infinite alternate } @keyframes qfdp{ to{ margin-top:0; transform:translateY(7px) } }
+.qf-sea.bite .qf-sh{ opacity:.6 } .qf-sea.mid .qf-sh{ width:62px; margin-left:-31px } .qf-sea.big .qf-sh{ width:96px; height:24px; margin-left:-48px; opacity:.75 }
+.qf-sea.bite .qf-rp::before{ animation:qfrp .7s ease-out infinite } @keyframes qfrp{ from{ opacity:.9; transform:scale(.4) } to{ opacity:0; transform:scale(2.4) } }
+.qf-sea.big{ animation:qfsk .1s linear infinite alternate } @keyframes qfsk{ to{ transform:translateX(2px) } }
+.qf-msg{ min-height:42px; margin:0; font-size:14.5px; font-weight:800; line-height:1.45; text-align:center; word-break:keep-all }
+.qf-bar{ position:relative; height:30px; overflow:hidden; background:#FFE0DC; border:2px solid #1F2A44; border-radius:15px } .qf-bar[hidden]{ display:none }
+.qf-zn{ position:absolute; top:0; bottom:0; background:#5FDDA6; border-left:2px solid #1F8A4C; border-right:2px solid #1F8A4C }
+.qf-cw{ position:absolute; left:0; top:0; width:100%; height:100%; pointer-events:none; will-change:transform }
+.qf-cur{ position:absolute; left:-4px; top:-2px; width:8px; height:34px; background:#1F2A44; border-radius:4px; box-shadow:0 0 0 2px #FFFFFF }
+.qf-go{ min-height:58px; font-size:18px } .qf-go.hot{ animation:qfgo .35s ease-in-out infinite alternate } @keyframes qfgo{ to{ transform:scale(1.04) } }
+.qf-od{ margin:0; font-size:12.5px; font-weight:700; line-height:1.5; text-align:center; color:#5B6275; word-break:keep-all }
+.qf-big{ position:relative; display:inline-flex; align-items:center; justify-content:center; width:100px; height:100px; margin:2px auto 6px; border-radius:50%; background:#FFFFFF; border:4px solid var(--rc); box-shadow:0 0 18px var(--rc); animation:qpop .5s ease-out both }
+.qf-big i{ font-size:58px; font-style:normal; line-height:1; font-family:sans-serif }
+.qf-cat.rare .qf-big::before{ content:''; position:absolute; inset:-14px; border-radius:50%; background:conic-gradient(from 0deg,transparent,var(--rc),transparent 30%,var(--rc) 50%,transparent 60%,var(--rc) 80%,transparent); opacity:.45; z-index:-1; animation:qfrot 3s linear infinite } @keyframes qfrot{ to{ transform:rotate(360deg) } }
+.qf-new{ position:absolute; right:-18px; top:-6px; padding:1px 7px; font-size:12px; font-weight:900; color:#FFFFFF; background:#E25A4A; border:1.5px solid #1F2A44; border-radius:9px; animation:qfnw .5s ease-in-out infinite alternate } .qf-new.sm{ position:static; display:inline-block; font-size:11px } @keyframes qfnw{ to{ transform:scale(1.12) } }
+.qf-rr{ margin:0 0 4px; font-size:14px; font-weight:900 }
+.qf-chest{ animation:qfch .7s ease-out both } @keyframes qfch{ 0%{ transform:scale(.3) rotate(-14deg) } 50%{ transform:scale(1.25) rotate(8deg) } 75%{ transform:rotate(-5deg) } 100%{ transform:none } }
+.qg-hv{ display:flex; align-items:center; gap:12px; margin-top:10px; padding:10px; background:#FFFFFF; border:2px solid #1F2A44; border-radius:12px } .qg-hv > i{ font-size:40px; font-style:normal } .qg-hv span{ flex:1; min-width:0 }
+.qg-h{ display:block; font-size:21px; letter-spacing:2px; color:#E25A7A } .qg-hv small{ display:block; font-size:12px; font-weight:700; line-height:1.5; color:#5B6275; word-break:keep-all }
+.qg-l{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:10px }
+.qg-f{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:88px; padding:6px 4px; font:inherit; color:#1F2A44; background:#FFFFFF; border:2px solid var(--rc); border-radius:12px; cursor:pointer } .qg-f i{ font-size:32px; font-style:normal; font-family:sans-serif } .qg-f b{ font-size:12.5px; word-break:keep-all } .qg-f small{ font-size:11px; font-weight:700; color:#5B6275 }
+.qg-f.fav{ background:#FFF0F4; box-shadow:0 0 0 2px #E25A7A } .qg-f:active{ transform:scale(.96) }
+.qx-fd{ display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin-bottom:8px } .qx-fd span{ display:flex; flex-direction:column; align-items:center; padding:5px 2px; text-align:center; background:#FFFFFF; border:2px solid var(--rc); border-radius:10px }
+.qx-fd span.lk{ border-color:#C9CED8; background:#F4F5F8 } .qx-fd i{ font-size:24px; font-style:normal; font-family:sans-serif } .qx-fd b{ font-size:11.5px; line-height:1.3; word-break:keep-all } .qx-fd small{ font-size:10.5px; white-space:nowrap; font-weight:700; color:#5B6275 } .qx-sm{ font-size:12px; color:#5B6275 }
+.q-pw{ margin:0 0 8px; font-size:13px; font-weight:800 } .q-pw b{ font-size:15.5px; color:#1F6FE0 } .q-pw i{ font-style:normal; color:#1F8A4C }
+@media (prefers-reduced-motion:reduce){ .qw-ring::before,.qw-trk.nw,.qw-fm,.qe img,.qe-e,.qe-m.hot,.qe.item .qe-e,.qe.item .qe-b::after,.qw-tap.on,.qw-got,.qe.chest .qe-e,.qe.chest .qe-b::after,.qf-wv,.qf-sea.cast .qf-bob,.qf-sea.cast .qf-sh,.qf-sea.big,.qf-go.hot,.qf-cat.rare .qf-big::before,.qf-new,.qf-chest{ animation:none !important } }`;
   document.head.appendChild(st);
 }
 
@@ -1740,7 +1987,7 @@ function wire(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 window.questOpen = questOpen; window.questClose = questClose;
-window._quest = { TUNE, get S(){ return S; }, get CN(){ return CN; }, get auto(){ return auto; }, set auto(v){ auto = v; ctl(); }, get WK(){ return WK; }, qXp, get TV(){ return TV; }, get T(){ return T; }, step, session, town, bag, fight, vInfo, qpOf, eqOf, eqBuy, goTo, interact, npcTalk, qBack, wTick, VIL, EQC, begin, teamUp, ult, end, map, codex, opening, place, fmGet, migrate, wavesOf, power, recPow, heroStat, heroLv, heroSt, starOf, sgN, CH, HERO, BOSS, N, NS, FIX, scene,
+window._quest = { TUNE, get S(){ return S; }, get FS(){ return FS; }, FISH, RAR, fishOpen, fishTap, fRoll, fGet, fOfDay, giftPick, giftGive, chestOpen, favOf, canGift, fsOf, fiOf, hvOf, fdOf, funOn, get CN(){ return CN; }, get auto(){ return auto; }, set auto(v){ auto = v; ctl(); }, get WK(){ return WK; }, qXp, get TV(){ return TV; }, get T(){ return T; }, step, session, town, bag, fight, vInfo, qpOf, eqOf, eqBuy, goTo, interact, npcTalk, qBack, wTick, VIL, EQC, begin, teamUp, ult, end, map, codex, opening, place, fmGet, migrate, wavesOf, power, recPow, heroStat, heroLv, heroSt, starOf, sgN, CH, HERO, BOSS, N, NS, FIX, scene,
   sim(g, cap, kind){ session(g); if(kind === 'patrol'){ S.kind = kind; S.waves = S.waves.map(w=>w.filter(k=>k !== 'BOSS')); } begin(); const s = S; s.tutT = 0; let n = 0; while(S === s && !s.res && n++ < (cap || 60 * 200)) step(FIX); clearTimeout(tmr); return { res:s.res, stars:s.stars, t:Math.round(s.t), deaths:s.deaths, ults:s.ults || 0 }; },
   force(g, win){ session(g); S.heroes = fmGet().map((k, i)=>k ? mkHero(k, i) : null).filter(Boolean); S.mode = 'go'; end(win); },
   skip(){ for(let n = 0; n < 6; n++){                                              // 결과 띠 → 뒷이야기 → (엔딩) 순서로 끝까지 넘긴다

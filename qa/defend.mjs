@@ -203,5 +203,81 @@ const sv1 = await D(()=>{ const me = JSON.parse(localStorage.getItem('lineup.sha
 console.log('새로고침', JSON.stringify({ sv0, sv1 })); ok(sv1.st === sv0.st && sv1.best === sv0.best && sv1.how === '1', '새로고침 뒤 기록');
 const re = await D(()=>{ defendOpen(); const r = [...document.querySelectorAll('#d-ov [data-stage]')].map(b=>b.disabled).join(); defendClose(); return r; });
 ok(re.startsWith('false,false'), '새로고침 뒤 해변 열림');
+// ── 재미 더하기: 🌀 무한 파도 · 오늘의 바다 · 👑 왕관 적 · ✨ 시너지 · 연속 처치 외침 · 마지막 한 마리 슬로 모션 ──
+const FOUT = process.env.FSHOT || OUT;
+const fshot = async n => { await t.S(()=>{ const o = document.getElementById('offbar'); if(o) o.hidden = true; }); await t.p.screenshot({ path:`${FOUT}/fun-d-${n}.png` }); };
+// 잠김 — 낙산을 못 지켰으면 한 줄 안내만
+const lk = await D(()=>{ const st = ME.profile.play.df.st; ME.profile.play.df.st = [0, 0, 0]; defendOpen(); const r = { 버튼:!!document.getElementById('d-inf'), 안내:document.querySelector('#d-ov .d-inf0')?.textContent }; defendClose(); ME.profile.play.df.st = st; return r; });
+console.log('무한 잠김', JSON.stringify(lk)); ok(!lk.버튼 && /낙산을 지키면 열려요/.test(lk.안내 || ''), '무한 파도 잠김 안내');
+// 열림 — 오늘의 바다(날짜로 정해짐)와 최고 기록
+const sea = await D(()=>({ a:_defend.seaOf().k, b:_defend.seaOf().k, f:_defend.seaOf('shark').k, n:_defend.SEA.length }));
+await D(()=>{ localStorage.removeItem('lineup.share.dinf'); defendOpen(); }); await t.sleep(200);
+const iv = await D(()=>({ 버튼:document.getElementById('d-inf')?.textContent.replace(/\s+/g,' ').trim(), 해변:document.querySelectorAll('#d-ov [data-stage]').length }));
+console.log('무한 열림', JSON.stringify({ sea, iv })); ok(sea.a === sea.b && sea.f === 'shark' && sea.n === 6 && /무한 파도/.test(iv.버튼 || '') && /오늘의 바다/.test(iv.버튼 || '') && /NEW/.test(iv.버튼 || '') && iv.해변 === 3, '무한 파도 줄');
+await fshot('menu');
+await D(()=>document.getElementById('d-inf').click()); await t.sleep(250);
+const i1 = await D(()=>({ inf:_defend.S.inf, w:_defend.S.w, ban:_defend.S.ban && _defend.S.ban.t, sub:_defend.S.ban && _defend.S.ban.s, run:!!window._gameRun, 덮개:document.getElementById('d-ov').hidden }));
+console.log('무한 시작', JSON.stringify(i1)); ok(i1.inf === 1 && i1.w === 1 && /🌀 WAVE 1/.test(i1.ban || '') && /오늘의 바다/.test(i1.sub || '') && i1.run && i1.덮개, '무한 파도 시작');
+// 웨이브 5·10은 보스, 6은 보스 아님 · 웨이브가 갈수록 단단해진다 · 카드를 다 모아도 멈추지 않는다
+const iw = await D(()=>{ const S = _defend.S, o = {}; _defend.skip(5); _defend.fast(2.6); o.b5 = S.boss && S.boss.k; _defend.skip(6); o.b6 = !!S.boss; const h6 = _defend.spawn('crab', 100, 200).max; _defend.skip(12); const h12 = _defend.spawn('crab', 100, 200).max; o.세짐 = h12 > h6 * 2; _defend.skip(10); _defend.fast(2.6); o.b10 = S.boss && S.boss.k; o.해변그림 = S.stg;
+  for(const u of _defend.UPS) if(u.k !== 'heal') S.up[u.k] = u.max; S.hp = S.max; S.qi = S.q.length; _defend.killAll(true); for(let i = 0; i < 300 && !S.pick; i++) _defend.step(_defend.FIX); o.다모음 = S.pick && S.pick.join(); _defend.pick(0); o.다음 = S.w; return o; });
+console.log('무한 웨이브', JSON.stringify(iw)); ok(iw.b5 === 'king' && !iw.b6 && iw.b10 === 'jaws' && iw.세짐 && iw.해변그림 === 1 && iw.다모음 === 'heal' && iw.다음 === 11, '무한 웨이브 진행');
+// 👑 왕관 적 — 체력 3배, 처음엔 한 줄 안내, 잡으면 아이템·조개 3개
+const cr = await D(()=>{ _defend.start(0, 11, {}); const S = _defend.S; _defend.skip(2); S.qi = S.q.length; _defend.killAll(); window._dfreeze = 1; S.ban = null; const P = _defend.P; P.x = 120; P.y = 230;
+  const f = _defend.spawn('crab', 120, 205); const h0 = f.max; _defend.crownIt(f); const o = { 배:Math.round(f.max / h0), 표시:f.cr }; S.cb = 0; S.ks = 0;
+  for(let i = 0; i < 4; i++){ const g = _defend.spawn('jelly', 60 + i * 30, 180); if(g) g.hp = 1; }
+  _defend.step(_defend.FIX); o.안내 = S.ban && S.ban.k === 'tip' && S.ban.t;
+  return o; });
+await D(()=>{ const S = _defend.S; S.fire = 4; _defend.P.inv = 9; for(let i = 0; i < 20; i++) _defend.step(_defend.FIX); }); await t.sleep(100);
+await fshot('crown');
+const cr2 = await D(()=>{ const S = _defend.S, c0 = S.crs, s0 = S.shells; window._dfreeze = 1; _defend.killAll(); let pu = 0, sh = 0; for(const d of _defend.drops) if(d.on){ if(d.ty === 2) pu++; else sh++; } return { 왕관잡음:S.crs - c0, 아이템:pu, 조개:sh }; });
+console.log('왕관 적', JSON.stringify({ cr, cr2 })); ok(cr.배 === 3 && cr.표시 === 1 && /왕관 적/.test(cr.안내 || '') && cr2.왕관잡음 === 1 && cr2.아이템 >= 1 && cr2.조개 >= 3, '왕관 적');
+// 연속 처치 외침 · 마지막 한 마리 슬로 모션 — killAll 은 한꺼번이라 하나씩 잡아 본다
+const ks = await D(()=>{ const S = _defend.S; S.qi = S.q.length; S.call = null; S.ks = 0; S.kst = 9; S.slow = 0; const out = [];
+  const fs = []; for(let i = 0; i < 6; i++){ const g = _defend.spawn('jelly', 40 + i * 30, 200); g.hp = 1; fs.push(g); }
+  for(const g of fs){ _defend.P.x = g.x; _defend.P.y = g.y + 20; _defend.press('atk', 1); for(let i = 0; i < 20 && g.on; i++) _defend.step(_defend.FIX); _defend.press('atk', 0); out.push(S.ks); }
+  return { ks:out.join(), 외침:S.call && S.call.s, 슬로:+S.slow.toFixed(2), 단계:S.ph }; });
+console.log('연속 처치', JSON.stringify(ks)); ok(/연속 처치 5/.test(ks.외침 || '') && ks.슬로 > 0 && ks.단계 === 'clear', '연속 처치·슬로 모션');
+await D(()=>{ window._dfreeze = 0; });
+// ✨ 시너지 — 짝 카드엔 표시, 고르면 「시너지!」, 3타째가 토네이도를 남긴다
+await D(()=>{ const S = _defend.S; S.up.fin = 1; for(let i = 0; i < 300 && !S.pick; i++) _defend.step(_defend.FIX); S.pick = ['spd', 'atk', 'boot']; S.pickT = 'wave'; }); await t.sleep(500);
+const sy = await D(()=>({ 표시:[...document.querySelectorAll('#d-bar [data-pick]')].map(b=>b.classList.contains('syn')).join(), 글:document.querySelector('#d-bar .d-card.syn em')?.textContent, 머리:document.querySelector('#d-bar .d-sh')?.textContent }));
+await fshot('syncard');
+await D(()=>document.querySelector('#d-bar [data-pick="0"]').click()); await t.sleep(150);
+const sy2 = await D(()=>{ const S = _defend.S, P = _defend.P, o = { syn:S.syn.tor, 외침:S.call && S.call.s }; window._dfreeze = 1; _defend.killAll(); S.qi = S.q.length; P.x = 120; P.y = 220; P.cwin = 0; P.acd = 0; P.sw = null; P.stun = 0;
+  for(let i = 0; i < 5; i++){ const g = _defend.spawn(i % 2 ? 'crab' : 'jelly', 100 + i * 10, 200 - i * 3); g.hp = 900; }
+  _defend.BTN.atk = 1; for(let i = 0; i < 200 && !(S.tor.t > 0); i++) _defend.step(_defend.FIX); _defend.BTN.atk = 0; o.토네이도 = S.tor.t > 0; for(let i = 0; i < 12; i++) _defend.step(_defend.FIX); return o; }); await t.sleep(100);
+await fshot('tornado');
+console.log('시너지', JSON.stringify({ sy, sy2 })); ok(sy.표시 === 'true,false,false' && /토네이도/.test(sy.글 || '') && /시너지/.test(sy.머리 || '') && sy2.syn === 1 && /시너지! 🌪️ 토네이도/.test(sy2.외침 || '') && sy2.토네이도, '시너지 토네이도');
+// 🐬 돌고래 해일 — 필살기가 두 번(두 번째는 절반)
+const ts = await D(()=>{ const S = _defend.S; _defend.killAll(); S.syn.tsu = 1; const g = _defend.spawn('elite', 120, 160); g.hp = g.max = 5000; const h0 = g.hp; S.sp = 100; _defend.special(); let n2 = 0; for(let i = 0; i < 200; i++){ _defend.step(_defend.FIX); if(S.big2) n2 = 1; } return { 두번:n2, 깎임:Math.round(h0 - g.hp) }; });
+console.log('돌고래 해일', JSON.stringify(ts)); ok(ts.두번 === 1 && ts.깎임 > 0, '돌고래 해일');
+await D(()=>{ window._dfreeze = 0; _defend.killAll(true); defendClose(); });
+// 무한 파도 끝 — 결과(웨이브·점수·왕관), 기록은 이 기기에, 보상은 한 번·해변 기록/별은 그대로
+const ie = await D(()=>{ let n = 0, args = null; const f0 = window.playDefendDone; window.playDefendDone = (...a) => { n++; args = a; return f0(...a); };
+  const df0 = JSON.stringify({ st:ME.profile.play.df.st, best:ME.profile.play.df.best, sb:ME.profile.play.df.sb, clears:ME.profile.play.df.clears });
+  defendOpen(); _defend.start(3, 21, {}); _defend.skip(7); _defend.S.score = 12345; _defend.lose(); for(let i = 0; i < 20; i++) _defend.step(_defend.FIX); _defend.lose();
+  const o = { n, args:args && args.join(), 결과:document.querySelector('#d-ov .go-t')?.textContent, 점수:document.querySelector('#d-ov .d-score')?.textContent, 통계:document.querySelector('#d-ov .go-st')?.textContent.replace(/\s+/g,' '), 기록:localStorage.getItem('lineup.share.dinf'),
+    df:JSON.stringify({ st:ME.profile.play.df.st, best:ME.profile.play.df.best, sb:ME.profile.play.df.sb, clears:ME.profile.play.df.clears }) === df0 };
+  window.playDefendDone = f0; return o; });
+await fshot('infend');
+console.log('무한 끝', JSON.stringify(ie)); ok(ie.n === 1 && /^5,false,\d+,0,0$/.test(ie.args || '') && +ie.args.split(',')[2] <= 40 && /웨이브 7까지/.test(ie.결과 || '') && /12,345/.test(ie.점수 || '') && /왕관/.test(ie.통계 || '') && /"s":12345/.test(ie.기록 || '') && /"w":7/.test(ie.기록 || '') && ie.df, '무한 파도 결과·보상');
+const ie2 = await D(()=>{ document.getElementById('d-go').click(); const a = _defend.S.inf; _defend.S.score = 50; _defend.lose(); const r = { 다시:a, 기록:localStorage.getItem('lineup.share.dinf'), 최고:document.querySelector('#d-ov .d-score em')?.textContent }; document.getElementById('d-sel').click(); r.메뉴 = document.getElementById('d-inf')?.textContent.replace(/\s+/g,' '); defendClose(); return r; });
+console.log('무한 다시', JSON.stringify(ie2)); ok(ie2.다시 === 1 && /"s":12345/.test(ie2.기록) && /최고 12,345/.test(ie2.최고 || '') && /최고 웨이브 7/.test(ie2.메뉴 || ''), '무한 파도 기록 유지');
+// 봇 — 무한 파도는 언젠가 끝난다
+const ib = await D(()=>_defend.run(3, 9, false, {}, 'casual', 'shark'));
+console.log('봇(무한·가볍게)', JSON.stringify(ib)); ok(ib.res === 'lose' && ib.w >= 5, '무한 파도 봇');
+// 이상한 기록값
+const wv2 = await D(()=>{ localStorage.setItem('lineup.share.dinf', '{"s":"<img>","w":1e99}'); defendOpen(); const r = { 글:document.getElementById('d-inf')?.textContent, 태그:!!document.querySelector('#d-ov img') }; defendClose(); localStorage.setItem('lineup.share.dinf', '{"s":12345,"w":7}'); return r; });
+console.log('이상한 기록', JSON.stringify(wv2)); ok(wv2.글 && !wv2.태그 && /최고 웨이브 999/.test(wv2.글), '이상한 기록값');
+// 폭마다 — 열린 무한 파도 줄이 있어도 해변 고르기·무한 결과가 스크롤 없이 보이고 버튼이 화면 안
+for(const [w, h] of [[390, 844], [375, 667], [360, 740], [320, 640]]){
+  await t.p.setViewport({ width:w, height:h, deviceScaleFactor:2, isMobile:true, hasTouch:true }); await t.sleep(150);
+  const L = await D(()=>{ const ov = document.getElementById('d-ov'), fits = () => ov.scrollHeight <= ov.clientHeight + 2, r = id => document.getElementById(id).getBoundingClientRect();
+    defendOpen(); const o = { 고르기:fits(), 무한줄:!!document.getElementById('d-inf') && r('d-inf').right <= innerWidth }; _defend.start(3, 5, {}); _defend.skip(4); _defend.lose(); o.결과 = fits(); o.닫기 = r('d-close').bottom <= ov.getBoundingClientRect().bottom + 1; o.넘침 = document.documentElement.scrollWidth > innerWidth; defendClose(); return o; });
+  console.log(`무한 ${w}×${h}`, JSON.stringify(L)); ok(L.고르기 && L.무한줄 && L.결과 && L.닫기 && !L.넘침, `무한 ${w} 배치`);
+  if(w === 360){ await D(()=>defendOpen()); await t.sleep(150); await fshot('menu360'); await D(()=>defendClose()); }
+}
+await t.p.setViewport({ width:390, height:844, deviceScaleFactor:2, isMobile:true, hasTouch:true });
 console.log('bad', bad); console.log('errs', t.errs);
 await t.b.close(); process.exit(bad.length || t.errs.length ? 1 : 0);

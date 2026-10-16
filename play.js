@@ -17,7 +17,15 @@ const PLV = [[0,'모래알','🐚'],[50,'물장구','💦'],[150,'패들러','�
 const _num = (v, max) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(max, x)) : 0; };
 const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000), bat:_num(pl.bat, 4e12), sebest:_num(pl.sebest, 1000000), hbest:_num(pl.hbest, 100000), hbat:_num(pl.hbat, 4e12), sbest:_num(pl.sbest, 1000000), sbat:_num(pl.sbat, 4e12),
   dbest:(pl.dbest && typeof pl.dbest === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.dbest.day))) ? { day:String(pl.dbest.day), score:_num(pl.dbest.score, 100000) } : null,
-  wk:(pl.wk && typeof pl.wk === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.wk.w))) ? { w:String(pl.wk.w), j:_num(pl.wk.j, 1000000), d:_num(pl.wk.d, 15), r:_num(pl.wk.r, 1000000), q:_num(pl.wk.q, 11) } : null } : null;   // 이번 주 기록(주간 순위)
+  wk:(pl.wk && typeof pl.wk === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.wk.w))) ? { w:String(pl.wk.w), j:_num(pl.wk.j, 1000000), d:_num(pl.wk.d, 15), r:_num(pl.wk.r, 1000000), q:_num(pl.wk.q, 11) } : null,   // 이번 주 기록(주간 순위)
+  pass:peerPass(pl.pass) } : null;                // 최근에 동기를 넘은 기록(라이벌 소식)
+/* 「누가 누구를 넘었다」 — 남이 쓴 값이라 게임 키·시각·이름·아이디를 모두 거른다. 이름은 화면에서 esc/textContent 로만 쓴다 */
+const _nm12 = v => String(v == null ? '' : v).replace(/[\u0000-\u001f\u007f<>]/g, '').slice(0, 12);
+function peerPass(x){
+  if(!x || typeof x !== 'object' || !['j', 'd', 'r', 'q'].includes(x.k)) return null;
+  const t = _num(x.t, 4e12), n = _nm12(x.n), i = /^[\w-]{1,40}$/.test(String(x.i || '')) ? String(x.i) : '';
+  return t && n ? { t, k:x.k, n, i, v:_num(x.v, 1000000) } : null;
+}
 const lvOf = xp => { let i = 0; PLV.forEach((l,k)=>{ if(xp >= l[0]) i = k; }); return i; };
 
 /* ── 레벨 보상 ── 새 꾸미기 아이템은 여기서만 정의한다.
@@ -312,7 +320,13 @@ function playMerge(remote){
     if(R.eq && typeof R.eq === 'object'){ const e = (q.eq && typeof q.eq === 'object') ? q.eq : (q.eq = {}); ['b', 'w'].forEach(k=>{ const v = _num(R.eq[k], 10); if(v > _num(e[k], 10)){ e[k] = v; ch = true; } }); }
     if(R.qp && typeof R.qp === 'object'){ const r = { g:_num(R.qp.g, 44), a:_num(R.qp.a, 1), n:_num(R.qp.n, 3), w:_num(R.qp.w, 3) }, l = (q.qp && typeof q.qp === 'object') ? q.qp : null;
       if(!l || r.g > _num(l.g, 44)){ q.qp = r; ch = true; }
-      else if(r.g === _num(l.g, 44)) ['a', 'n', 'w'].forEach(k=>{ if(r[k] > _num(l[k], 9)){ l[k] = r[k]; ch = true; } }); } }
+      else if(r.g === _num(l.g, 44)) ['a', 'n', 'w'].forEach(k=>{ if(r[k] > _num(l[k], 9)){ l[k] = r[k]; ch = true; } }); }
+    /* 낚시 도감(fs)·바구니(fi)·주민 호감(hv)은 칸마다 큰 쪽, 도감 보상 단계(fk)도 큰 쪽, 오늘 상태(fd)는 더 늦은 날 + 같은 날이면 합집합 */
+    [['fs', 9999, /^[a-z]{2,8}$/], ['fi', 99, /^[a-z]{2,8}$/], ['hv', 5, /^(10|[0-9])[cd]$/]].forEach(([f, mx, re])=>{ const r = R[f]; if(!r || typeof r !== 'object') return; const o = (q[f] && typeof q[f] === 'object') ? q[f] : (q[f] = {}); Object.keys(r).forEach(k=>{ if(!re.test(k)) return; const v = _num(r[k], mx); if(v > _num(o[k], mx)){ o[k] = v; ch = true; } }); });
+    { const rk = _num(R.fk, 3); if(rk > _num(q.fk, 3)){ q.fk = rk; ch = true; } }
+    if(R.fd && typeof R.fd === 'object' && typeof R.fd.d === 'string' && /^\d{4}-\d\d-\d\d$/.test(R.fd.d)){ const l = (q.fd && typeof q.fd === 'object') ? q.fd : null;
+      if(!l || R.fd.d > (l.d || '')){ q.fd = { d:R.fd.d, c:_num(R.fd.c, 1), g:{} }; ch = true; }
+      if(q.fd.d === R.fd.d){ if(_num(R.fd.c, 1) > _num(q.fd.c, 1)){ q.fd.c = 1; ch = true; } Object.keys((R.fd.g && typeof R.fd.g === 'object') ? R.fd.g : {}).forEach(k=>{ if(/^(10|[0-9])[cd]$/.test(k) && !(q.fd.g ||= {})[k]){ q.fd.g[k] = 1; ch = true; } }); } } }
   if(remote.df && typeof remote.df === 'object'){ const d = (p.df ||= { best:0, clears:0 }), rb = _num(remote.df.best, 15), rc = _num(remote.df.clears, 9999), rh = _num(remote.df.hd, 3); if(rb > _num(d.best, 15)){ d.best = rb; ch = true; } if(rc > _num(d.clears, 9999)){ d.clears = rc; ch = true; } if(rh > _num(d.hd, 3)){ d.hd = rh; ch = true; }
     for(const [k, mx] of [['st', 3], ['sb', 15]]) if(Array.isArray(remote.df[k])){ const a = Array.isArray(d[k]) ? d[k] : (d[k] = [0, 0, 0]); for(let i = 0; i < 3; i++){ const v = _num(remote.df[k][i], mx); if(v > _num(a[i], mx)){ a[i] = v; ch = true; } } } }   // 해변별 별·최고 라운드 — 칸마다 큰 값
   if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
@@ -617,6 +631,7 @@ function renderHub(enter){
       <div class="hh-chips"><span>${stk ? `🔥 ${stk}일` : '🔥 —'}</span><span>🐚 ${shellBal()}</span><span>🏅 ${got}/${BADGES.length}</span></div>
       <div class="xpbar big" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${enter ? 0 : pct}%" data-w="${pct}"></i></div>
     </div>
+    ${rivalHtml()}${coopHtml()}
     <div class="pt" style="margin-top:16px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
@@ -881,7 +896,9 @@ function x2(g, sh){ const m = dmOf(playP()); if(!(sh > 0) || m.f[g]) return 0; m
 function wkNote(k, v){
   if(typeof weekKey !== 'function') return; const p = playP(), w = weekKey(today()), mx = { j:1000000, d:15, r:1000000, q:11 }[k];
   if(!p.wk || p.wk.w !== w) p.wk = { w, j:0, d:0, r:0, q:0 };
-  p.wk[k] = Math.max(_num(p.wk[k], mx), _num(v, mx));
+  const b = _num(p.wk[k], mx);
+  p.wk[k] = Math.max(b, _num(v, mx));
+  rivPass(k, b, p.wk[k]);
 }
 
 /* 오늘의 미션 — 게임 둘 + 바다·마을 활동 하나. 날짜로 고르니 모두 같은 미션(단톡방에서 이야기거리) */
@@ -944,6 +961,8 @@ function metaMerge(p, r){
       ['c', 'f'].forEach(k=>{ const o = r.dm[k]; if(o && typeof o === 'object') Object.keys(o).filter(x=>/^[a-z]{1,8}$/.test(x)).slice(0, 12).forEach(x=>{ if(!m[k][x]){ m[k][x] = 1; ch = true; } }); }); } }
   if(r.att && typeof r.att === 'object' && _isDay(r.att.d)){ const rd = String(r.att.d), rn = _num(r.att.n, 9999), a = p.att || {};
     if(rd > String(a.d || '') || (rd === a.d && rn > _num(a.n, 9999))){ p.att = { d:rd, n:rn }; ch = true; } }
+  { const rp = peerPass(r.pass); if(rp && rp.t > _num(p.pass?.t, 4e12)){ p.pass = rp; ch = true; } }
+  if(typeof r.cwk === 'string' && _isDay(r.cwk) && r.cwk > String(p.cwk || '')){ p.cwk = r.cwk; ch = true; }
   if(r.wk){ const w = peerPlay({ wk:r.wk }).wk;
     if(w && (!p.wk || w.w > String(p.wk.w || ''))){ p.wk = w; ch = true; }
     else if(w && w.w === p.wk.w) ['j', 'd', 'r', 'q'].forEach(k=>{ if(w[k] > (p.wk[k] || 0)){ p.wk[k] = w[k]; ch = true; } }); }
@@ -953,6 +972,7 @@ function metaMerge(p, r){
 /* 결과 화면 한 줄 — 아깝게 놓친 기록(near-miss) · 강화 예고 · 오늘 첫 판 ×2. 문구는 전부 고정값(사람 이름 없음) */
 function upNudge(g, o){
   o = o || {}; const L = [], sc = _num(o.sc, 1e7), best = _num(o.best, 1e7);
+  { const r = rivLine(g); if(r) L.push(r); }
   if(o.x2) L.push(`🌅 오늘 첫 판 보너스 · 조개 ×2 (+${_num(o.x2, 999)})`);
   if(best > 0 && sc < best && sc >= best * .75) L.push(`🔥 아깝다! 최고 기록까지 ${best - sc}${o.u || '점'} — 한 판 더?`);
   if(o.daily) L.push('📅 챌린지는 강화 없이 모두 같은 조건으로 겨뤄요');
@@ -984,7 +1004,7 @@ function weekHtml(){
     const i = t.findIndex(r=>r.id === ME.id), top = t[0];
     const mine = i < 0 ? '나는 아직 기록 없음' : i === 0 ? '👑 내가 1위!' : `나 ${i + 1}위 · 1위까지 ${top.w[k] - t[i].w[k]}${u}`;
     return `<div class="${i === 0 ? 'me' : ''}"><span>${n}<small>${mine}</small></span><b>🥇 ${esc(top.name)} ${top.w[k]}${u}</b></div>`; }).join('');
-  return `<div class="pt" style="margin-top:18px">🏆 이번 주 ${co ? esc(co) + ' ' : ''}랭킹 <small>월요일마다 새로 · 강화도 실력</small></div><div class="wkb">${lines}</div>`;
+  return `<div class="pt" style="margin-top:18px">🏆 이번 주 ${co ? esc(co) + ' ' : ''}랭킹 <small>⏳ ${wkLeft()} 뒤 새로 · 강화도 실력</small></div><div class="wkb">${lines}</div>`;
 }
 const isTestId = id => typeof isTest === 'function' ? isTest(id) : false;
 function metaHub(p){
@@ -1006,9 +1026,105 @@ function metaWire(root){
   const at = root.querySelector('[data-att]'); if(at) at.onclick = ()=>{ const r = attClaim(); if(!r) return; if(typeof burst === 'function') burst(at, 18);
     _popQ.push({ ic:r.slot === 7 ? '🎁' : '📅', t:`${r.slot}일째 출석!`, d:`🐚 +${r.n}${r.gift ? `\n${r.gift.ic} ${r.gift.n}을(를) 선물로 받았어요 — 소품샵에서 입어 봐요` : ''}${r.slot < 7 ? `\n내일 오면 🐚 ${ATT_RW[r.slot]}` : '\n내일부터 새 7일이 시작돼요'}`, up:r.slot === 7 });
     renderHub(); popNext(); };
+  rivWire(root);
   const bx = root.querySelector('[data-box]'); if(bx) bx.onclick = ()=>{ const n = misBox(); if(!n) return;
     _popQ.push({ ic:'🎁', t:'미션 상자를 열었어요!', d:`🐚 +${n}\n내일 새 미션 세 개가 기다려요`, up:true }); renderHub(); popNext(); };
 }
+/* ── 🥊 라이벌 · 🤝 함께 목표 ─────────────────────────────────────────
+   혼자 하는 게임도 「동기가 하니까」 재미있게. 새 표는 없다 — 이미 공개된 프로필의 이번 주 기록(play.wk)만 쓴다.
+   · 라이벌: 같은 기수에서 이번 주 기록이 나보다 바로 위인 한 명(차이가 가장 작은 게임). 누가 나를 넘었으면 그게 먼저.
+   · 넘었을 때: 결과 화면에 「OO님 기록을 넘었어요!」, 내 프로필에 pass 한 칸 → 동기들 소식줄에 「진님이 OO님을 넘었어요」.
+   · 함께 목표: 기수 전원의 이번 주 파도 점프 최고점 합계. 채우면 참여한(한 판이라도 한) 사람만 주 1번 🐚 받기.
+   남의 이름은 _nm12 로 자르고 화면에는 esc 로만 넣는다. 숫자는 peerPlay 가 이미 가뒀다. */
+const RIV = { j:['🏄', '파도 점프', '점', 'game'], d:['🛡️', '해변 수호', '웨이브', 'defend'], r:['🌊', '라인업 서핑', '점', 'surf'], q:['🗺️', '원정', '장', 'quest'] };
+const RIVG = { jump:'j', defend:'d', surf:'r', quest:'q' };
+const COOP_PER = 700, COOP_RW = 20;
+let _pass = null;
+const wkNow = () => typeof weekKey === 'function' ? weekKey(today()) : '';
+const myCo = () => ME?.cohort && ME.cohort !== 'open' ? ME.cohort : '';
+/* 같은 기수 동기들(나 빼고) — 유령·시험 계정 제외 */
+const coPeers = () => { const co = myCo(); return (state.town || []).filter(x=>x && x.id !== ME.id && !x.ghost && !isTestId(x.id) && (!co || x.cohort === co)); };
+function wkPeers(){
+  const wk = wkNow(); if(!wk) return [];
+  return coPeers().map(x=>({ id:String(x.id), name:_nm12(x.name), pr:x.profile || {}, w:peerPlay(x.profile?.play)?.wk, pass:peerPlay(x.profile?.play)?.pass })).filter(r=>r.w && r.w.w === wk);
+}
+const myWk = () => { const w = ME?.profile?.play?.wk, wk = wkNow(); return w && w.w === wk ? w : { w:wk, j:0, d:0, r:0, q:0 }; };
+/* 월요일 0시까지 남은 시간 */
+function wkLeft(){ const n = new Date(), dow = (n.getDay() + 6) % 7, nx = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 7 - dow), h = Math.max(1, Math.ceil((nx - n) / 36e5));
+  return h >= 24 ? `${Math.floor(h / 24)}일 ${h % 24}시간` : `${h}시간`; }
+
+/* 기록이 오를 때(wkNote) — 이번 판으로 제친 동기를 센다. 여러 명이면 가장 높던 사람을 소식에 */
+function rivPass(k, before, after){
+  _pass = null; if(!(after > before) || !ME?.profile?.play) return;
+  const ps = wkPeers().filter(r=>r.w[k] > 0 && r.w[k] >= before && r.w[k] < after).sort((a, b)=>b.w[k] - a.w[k]); if(!ps.length) return;
+  const rank = 1 + wkPeers().filter(r=>r.w[k] > after).length;
+  _pass = { k, t:Date.now(), names:ps.map(r=>r.name), rank };
+  ME.profile.play.pass = { t:Date.now(), k, n:ps[0].name, i:ps[0].id, v:after };
+  if(k === 'q' && typeof toast === 'function') setTimeout(()=>toast(`🎉 ${ps[0].name}님 원정 기록을 넘었어요! · 이번 주 ${rank}위`), 900);
+}
+/* 결과 화면 한 줄 — 방금 넘었으면 축하, 아니면 바로 위 한 명까지 남은 점수 */
+function rivLine(g){
+  const k = RIVG[g]; if(!k) return '';
+  if(_pass && _pass.k === k && Date.now() - _pass.t < 20000){ const more = _pass.names.length - 1;
+    return `🎉 <b>${esc(_pass.names[0])}</b>님 기록을 넘었어요!${more > 0 ? ` (외 ${more}명)` : ''} · 이번 주 ${_pass.rank}위`; }
+  const mine = myWk()[k], up = wkPeers().filter(r=>r.w[k] > mine).sort((a, b)=>a.w[k] - b.w[k])[0];
+  return up ? `🥊 이번 주 바로 위 <b>${esc(up.name)}</b>님까지 ${up.w[k] - mine}${RIV[k][2]}` : '';
+}
+/* 허브 카드에 올릴 라이벌 하나 — ① 48시간 안에 나를 넘은 사람 ② 차이가 가장 작은 바로 위 ③ 내가 1위면 쫓아오는 2위 */
+function rivalPick(){
+  const ps = wkPeers(), me = myWk(), now = Date.now();
+  const hit = ps.filter(r=>r.pass && r.pass.i === ME.id && now - r.pass.t < 48 * 36e5 && r.pass.t <= now + 6e4 && r.w[r.pass.k] > me[r.pass.k]).sort((a, b)=>b.pass.t - a.pass.t)[0];
+  if(hit) return { kind:'hit', k:hit.pass.k, r:hit, gap:hit.w[hit.pass.k] - me[hit.pass.k] };
+  let best = null;
+  Object.keys(RIV).forEach(k=>{ const up = ps.filter(r=>r.w[k] > me[k]).sort((a, b)=>a.w[k] - b.w[k])[0]; if(!up) return;
+    const c = { kind:'up', k, r:up, gap:up.w[k] - me[k], rel:(up.w[k] - me[k]) / Math.max(1, up.w[k]) + (me[k] ? 0 : 1) };       // 해 본 게임을 먼저
+    if(!best || c.rel < best.rel) best = c; });
+  if(best) return best;
+  Object.keys(RIV).forEach(k=>{ if(best || !(me[k] > 0)) return; const nx = ps.filter(r=>r.w[k] > 0).sort((a, b)=>b.w[k] - a.w[k])[0]; if(nx) best = { kind:'top', k, r:nx, gap:me[k] - nx.w[k] }; });
+  return best;
+}
+function rivalHtml(){
+  if(typeof weekKey !== 'function') return '';
+  const c = rivalPick(), me = myWk();
+  if(!c) return `<div class="pt" style="margin-top:16px">🥊 이번 주 라이벌 <small>바로 위 한 명</small></div>
+    <button type="button" class="rival none" data-hub="game"><span class="rv-t"><b>아직 이번 주 기록이 없어요</b><small>먼저 한 판 해서 기록을 남기면 동기들이 나를 쫓아와요</small></span><em>시작 ›</em></button>`;
+  const [ic, gn, u, hub] = RIV[c.k], nm = esc(c.r.name), rank = 1 + wkPeers().filter(r=>r.w[c.k] > me[c.k]).length;
+  const head = c.kind === 'hit' ? `😤 ${nm}님이 나를 넘었어요!` : c.kind === 'top' ? `👑 1위 지키는 중!` : `${nm}님까지 ${c.gap}${u}!`;
+  const sub = c.kind === 'hit' ? `${ic} ${gn} · ${c.gap}${u} 차이 — 되찾으러 가요` : c.kind === 'top' ? `${ic} ${gn} · 2위 ${nm}님이 ${c.gap}${u} 차이로 추격 중` : `${ic} ${gn} · 나 ${me[c.k]} · ${nm} ${c.r.w[c.k]} · 지금 ${rank}위`;
+  return `<div class="pt" style="margin-top:16px">🥊 이번 주 라이벌 <small>바로 위 한 명</small></div>
+    <button type="button" class="rival ${c.kind}" data-hub="${hub}" aria-label="${esc(head.replace(/<[^>]+>/g, ''))} ${esc(sub)}. 누르면 게임을 열어요">
+      <span class="rv-vs"><canvas data-rvme></canvas><i>VS</i><canvas data-rvp="${esc(c.r.id)}"></canvas></span>
+      <span class="rv-t"><b>${head}</b><small>${sub}</small></span><em>${c.kind === 'top' ? '지키기' : '도전'} ›</em></button>`;
+}
+
+/* 🤝 함께 목표 — 기수 전원의 이번 주 파도 점프 최고점 합계. 목표는 인원 × 700점(5~30명으로 가둠) */
+function coopState(){
+  const co = coPeers(), ps = wkPeers(), me = myWk(), n = Math.max(5, Math.min(30, co.length + 1));
+  const sum = ps.reduce((a, r)=>a + r.w.j, 0) + me.j, joined = ps.filter(r=>r.w.j > 0).length + (me.j > 0 ? 1 : 0);
+  return { sum, goal:n * COOP_PER, joined, me:me.j, claimed:ME?.profile?.play?.cwk === wkNow() };
+}
+function coopHtml(){
+  if(typeof weekKey !== 'function') return '';
+  const s = coopState(), pct = Math.min(100, Math.round(s.sum / s.goal * 100)), done = s.sum >= s.goal;
+  const tail = s.claimed ? '✔ 이번 주 보상 받았어요' : done ? (s.me > 0 ? '' : '한 판만 하면 나도 받아요') : s.me > 0 ? `내 기록 ${s.me}점이 들어갔어요` : '한 판만 해도 내 점수가 더해져요';
+  return `<div class="pt" style="margin-top:16px">🤝 함께 파도 점프 <small>⏳ ${wkLeft()}</small></div>
+    <div class="coop${done ? ' done' : ''}"><small class="coop-h">${myCo() ? esc(myCo()) + ' ' : '우리 '}모두의 이번 주 파도 점프 최고점을 더해요</small><div class="coop-bar" role="progressbar" aria-label="함께 목표" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Math.max(3, pct)}%"></i></div>
+      <div class="coop-t"><b>${s.sum.toLocaleString()} / ${s.goal.toLocaleString()}점</b><span>참여 ${s.joined}명 · 채우면 참여한 모두 🐚${COOP_RW}</span></div>
+      ${done && s.me > 0 && !s.claimed ? `<button type="button" class="btn mint" data-coop style="width:100%;min-height:46px;margin-top:8px">🎉 다 같이 채웠어요! 🐚 ${COOP_RW} 받기</button>` : `<small class="coop-s">${tail}</small>`}</div>`;
+}
+function coopClaim(){
+  const p = ME?.profile?.play, s = coopState(); if(!p || s.claimed || s.sum < s.goal || !(s.me > 0)) return 0;
+  p.cwk = wkNow(); p.shells = (p.shells || 0) + COOP_RW; playPush(); vib([30, 50, 30]); return COOP_RW;
+}
+function rivWire(root){
+  const cb = root.querySelector('[data-coop]'); if(cb) cb.onclick = ()=>{ const n = coopClaim(); if(!n) return; if(typeof burst === 'function') burst(cb, 18);
+    _popQ.push({ ic:'🤝', t:'함께 목표 달성!', d:`우리 기수가 이번 주 파도 점프 목표를 채웠어요\n🐚 +${n}`, up:true }); renderHub(); popNext(); };
+  if(typeof drawSpr !== 'function' || typeof withLook !== 'function') return;
+  const draw = (cv, pr, nm)=>{ try{ const q = withLook(pr || {}, nm); drawSpr(cv, avatarRows(q, false), avatarTintOf(q, 0)); }catch(e){} };
+  const m = root.querySelector('[data-rvme]'); if(m) requestAnimationFrame(()=>draw(m, ME.profile, ME.name));
+  const o = root.querySelector('[data-rvp]'); if(o){ const x = coPeers().find(r=>String(r.id) === o.dataset.rvp); if(x) requestAnimationFrame(()=>draw(o, x.profile, x.name)); }
+}
+window.rivalPick = rivalPick; window.coopState = coopState;
 /* 화면 조각 스타일 — 이 기능 것만 여기 둔다(본 CSS 를 건드리지 않게) */
 (function metaCss(){
   if(document.getElementById('meta-css')) return; const s = document.createElement('style'); s.id = 'meta-css';
@@ -1028,6 +1144,18 @@ function metaWire(root){
 .upit>i{font-style:normal;font-size:24px}.upit>span{flex:1;min-width:0}.upit small{display:block;font-size:12px;color:var(--ink2)}
 .upit .pips{font-style:normal;letter-spacing:1px;font-size:11px;color:var(--sea)}.upit .btn{white-space:nowrap}
 .up-nudge{border:2px dashed currentColor;border-radius:10px;padding:6px 10px;margin:8px 0;font-size:13px;line-height:1.5;text-align:center}
-.up-nudge .btn{margin-top:4px}`;
+.up-nudge .btn{margin-top:4px}
+.rival{display:flex;align-items:center;gap:10px;width:100%;min-height:76px;padding:10px 12px;border:2px solid var(--ink);background:linear-gradient(#FFE7E0,#FFD4C7);color:var(--ink);font-family:inherit;text-align:left;box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.rival:active{transform:translateY(3px);box-shadow:none}
+.rival.top{background:linear-gradient(#FFF3C4,#FFE58A)}.rival.hit{background:linear-gradient(#FFD9E8,#FFB8CF)}.rival.none{background:#fff;min-height:64px}
+.rv-vs{display:flex;align-items:center;flex:0 0 auto}.rv-vs canvas{width:38px;height:38px;image-rendering:pixelated}
+.rv-vs i{font-style:normal;font-weight:900;font-size:11px;color:#E0452B;margin:0 1px}
+.rv-t{flex:1;min-width:0}.rv-t b{display:block;font-size:15.5px;overflow-wrap:anywhere}.rv-t small{display:block;font-size:12px;color:var(--ink2);line-height:1.4;overflow-wrap:anywhere}
+.rival>em{font-style:normal;font-weight:800;font-size:13px;white-space:nowrap;color:#C2361C}
+.coop{border:2px solid var(--ink);background:#fff;padding:10px 12px;color:var(--ink)}
+.coop-bar{height:14px;border:2px solid var(--ink);background:#EAF4FF;overflow:hidden}.coop-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--sea),var(--mint));transition:width .6s}
+.coop.done .coop-bar i{background:linear-gradient(90deg,var(--sun),#FF9D5C)}
+.coop-t{display:flex;justify-content:space-between;flex-wrap:wrap;gap:2px 8px;margin-top:6px;font-size:13px}.coop-t span{color:var(--ink2);font-size:12px}
+.coop-s{display:block;margin-top:4px;font-size:12px;color:var(--ink2)}.coop-h{display:block;margin-bottom:6px;font-size:12.5px;font-weight:700;color:var(--ink2)}`;
   (document.head || document.documentElement).appendChild(s);
 })();

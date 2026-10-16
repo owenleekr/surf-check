@@ -2,6 +2,7 @@
    조작은 넷뿐 — 왼쪽 스틱(이동) · 👊 공격(가까운 적 자동 조준, 꾹 누르면 3단 콤보, 3타째가 제일 세다) · 💨 대시(잠깐 무적) · 🌊 필살기(때릴수록 차는 게이지, 화면 전체).
    해변 3곳(낙산 → 죽도 → 하조대) × 웨이브 5(마지막은 보스). 웨이브 사이에 큰 그림 카드 3장 중 하나로 강해지고, 싸우는 중엔 🔥🛡️🧲❤️ 아이템이 떨어진다.
    나는 쓰러지지 않는다 — 학교 HP가 0이 되면 끝. 남은 학교 HP로 별 1~3개.
+   재미 더하기: 🌀 무한 파도(낙산을 지키면 열림 · 오늘의 바다 · 이 기기 최고 기록) · 👑 왕관 적 · ✨ 카드 시너지 2종 · 연속 처치 외침 · 마지막 한 마리 슬로 모션.
    예전 판(서바이버류 자동 기술 12장·진주 레벨 업·정비 상점)은 「무엇을 하는 게임인지 모르겠다」는 말을 듣고 걷어냈다.
    논리 화면 240×360. 고정 간격(FIX)으로 굴려 봇 시험에서도 결과가 같다. 객체는 미리 만든 칸(pool)을 돌려 쓴다. */
 (function(){
@@ -62,6 +63,25 @@ const UPS = [
 const UK = {}; UPS.forEach(u => UK[u.k] = u);
 /* 싸우는 중 떨어지는 아이템 — 밟으면 바로 */
 const PU = { fire:{ ic:'🔥', n:'공격력 2배', c:'#FF7A3D' }, shield:{ ic:'🛡️', n:'학교 방패', c:'#7FD3FF' }, mag:{ ic:'🧲', n:'조개 자석', c:'#FFE27A' }, heal:{ ic:'❤️', n:'학교 회복', c:'#FF6B8A' } };
+/* 시너지 — 두 카드를 함께 가지면 한 번 「✨ 시너지!」 하고 새 힘이 생긴다. 카드 고를 때 짝이 맞는 카드엔 미리 표시 */
+const SYN = [
+  { k:'tor', a:'fin', b:'spd', ic:'🌪️', n:'토네이도', d:'3타째 회오리가 토네이도를 남겨요' },
+  { k:'tsu', a:'dolph', b:'sp', ic:'🐬', n:'돌고래 해일', d:'필살기 파도가 한 번 더 밀려와요' }
+];
+/* 🌀 무한 파도 — 낙산을 지키면 열린다. 웨이브가 끝없이 세지고(5마다 보스) 점수·웨이브 최고 기록에 도전. 기록은 이 기기에만(LI) */
+const LI = 'lineup.share.dinf', INB = ['king', 'jaws', 'storm'];
+const INF = { n:'무한 파도', ic:'🌀', d:'끝없이 세지는 파도 · 기록 도전', hp:.8, sp:1.05, bite:1, sch:120, boss:'king', W:[] };
+/* 오늘의 바다 — 무한 파도에만. 날짜로 정해져 그날은 모두 같은 바다(6일에 한 바퀴, 이틀 연속 같은 날 없음) */
+const SEA = [
+  { k:'shark', ic:'🦈', n:'빠른 상어의 날', d:'상어가 자주·빠르게 와요 · 상어 점수 2배' },
+  { k:'jelly', ic:'💗', n:'거대 해파리의 날', d:'해파리가 크고 단단해요 · 조개를 꼭 떨궈요' },
+  { k:'crown', ic:'👑', n:'왕관의 날', d:'왕관 적이 3배 자주 — 아이템이 쏟아져요' },
+  { k:'fire',  ic:'🔥', n:'불꽃의 날', d:'아이템이 2배 자주 떨어져요' },
+  { k:'dolph', ic:'🐬', n:'돌고래의 날', d:'돌고래 친구와 함께 시작해요' },
+  { k:'gull',  ic:'🕊️', n:'갈매기 떼의 날', d:'갈매기가 몰려와요 · 갈매기 점수 2배' }
+];
+function seaOf(k){ if(k){ const s = SEA.find(x => x.k === k); if(s) return s; } const d = new Date(), n = Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); return SEA[(n * 5 + 3) % SEA.length]; }
+const CRK = { jelly:1, crab:1, urch:1, gull:1, puff:1, shark:1, hermit:1, trash:1 };   // 왕관이 붙을 수 있는 졸개
 
 /* 칸(pool) — 꺼낼 때 on=1, 다 쓰면 on=0. 가득 차면 새로 안 만든다(폰에서 60fps 유지) */
 const pool = (n, mk) => { const a = []; for(let i = 0; i < n; i++) a.push(mk()); return a; };
@@ -76,16 +96,17 @@ let S = null, P = null, cv, ctx, K = 2, raf = 0, last = 0, acc = 0, cur = 0, meI
 const IN = [0, 0], KEYS = {}, BTN = { atk:0 }, TG = [];
 try{ const v = +localStorage.getItem(LS); if(v >= 0 && v <= 2) cur = v; }catch(e){}
 
-function start(stg, sd, Uo){
-  if(stg != null) cur = Math.max(0, Math.min(2, stg | 0)); const G = STG[cur];
+function start(stg, sd, Uo, seaK){
+  const inf = stg === 3; if(stg != null && !inf) cur = Math.max(0, Math.min(2, stg | 0)); const G = inf ? INF : STG[cur];
   rnd = mul(sd == null ? (Math.random() * 1e9) | 0 : sd);
   for(const a of ALL) for(const o of a) o.on = 0;
-  S = { stg:cur, w:0, ph:'fight', t:0, ft:0, wt:0, q:[], qi:0, hp:G.sch, max:G.sch, lag:G.sch, lagT:0, bacc:0, shells:0, kills:0, score:0, cb:0, cbt:0, cbm:0,
+  S = { stg:inf ? 0 : cur, inf:inf ? 1 : 0, sea:inf ? seaOf(seaK) : null, syn:{}, tor:{ t:0, x:0, y:0, c:0 }, big2:0, ks:0, kst:9, call:null, slow:0, tipQ:null, crs:0, w:0, ph:'fight', t:0, ft:0, wt:0, q:[], qi:0, hp:G.sch, max:G.sch, lag:G.sch, lagT:0, bacc:0, shells:0, kills:0, score:0, cb:0, cbt:0, cbm:0,
         sp:0, big:-1, bigId:0, shake:0, hs:0, paused:false, res:null, ban:null, boss:null, sw:null, swc:4, nid:1, stars:0, up:{}, pick:null, pickN:0, pickT:'',
         fire:0, mag:0, wall:0, cl:0, hurt:0, earned:0, dashId:0, qa:0, qd:0, qs:0, hits:0, atks:0, dashes:0, sps:0, seen:{}, guards:[], ua:0, ush:0, mvd:0, flash:0, bt:0, btT:0, bd:{} };
   P = { x:SX, y:H - 100, face:1, ax:0, ay:-1, stun:0, kx:0, ky:0, mv:0, inv:0, dash:0, dcd:0, dx:0, dy:0, acd:0, cmb:2, cwin:0, sw:null, lt:0, lvx:0, lvy:0, tr:[] };
   { const U = Uo || ((!botOn && typeof upFor === 'function') ? upFor('defend') : {}) || {};   // 🔧 강화소 — 균형 시험(봇)에는 따로 넘긴 값만
     S.ua = U.atk || 0; if(U.sch) S.max = S.hp = S.lag = Math.round(G.sch * (1 + .1 * U.sch)); S.ush = U.shell || 0; S.pickN = U.free || 0; }
+  if(S.sea && S.sea.k === 'dolph') S.up.dolph = 1;
   BTN.atk = 0; stick = null; window._gameRun = true; padStick(); menu(false);
   const ov = $d('d-ov'); if(ov){ ov.hidden = true; ov.innerHTML = ''; }
   if(S.pickN > 0){ S.pickT = 'free'; openPick(); } else startWave();
@@ -99,28 +120,49 @@ const mult = () => 1 + Math.min(2, Math.floor(S.cb / 10) * .5);   // 콤보 10�
 function banner(k, t, s, d){ S.ban = { k, t, s:s || '', d:d || 1.8, tm:0 }; }
 function preview(Wv){ return Wv.filter(g => g[0] !== 'swarm').map(g => `${NM[g[0]] || g[0]} ${g[1]}`).slice(0, 3).join(' · '); }
 
+const gS = () => S.inf ? INF : STG[S.stg];
+const bossW = () => S.inf ? S.w % 5 === 0 : S.w === NW;
+/* 무한 파도 웨이브 w — 갈수록 종류·수·체력·속도가 늘고, 5마다 보스(대왕 해파리 → 백상아리 → 폭풍 너울 → 다시). 해변 그림도 5마다 바뀐다 */
+function infWave(w){
+  INF.hp = .8 * Math.pow(1.2, w - 1); INF.sp = Math.min(1.85, 1.02 + .045 * w); INF.bite = Math.min(5, 1 + .2 * (w - 1));
+  S.stg = Math.floor((w - 1) / 5) % 3; const sk = S.sea ? S.sea.k : '', out = [];
+  if(w % 5 === 0){ const b = INB[(w / 5 - 1) % 3]; INF.boss = b; out.push([b, 1], ['crab', 4 + w / 5 * 2], ['jelly', 4 + w / 5 * 2]); if(w >= 15) out.push(['shark', 3]); return out; }
+  const P0 = [['jelly', sk === 'jelly' ? 4 : 3], ['crab', 3]];
+  if(w >= 2) P0.push(['urch', 1], ['gull', sk === 'gull' ? 3.5 : 1.2]); if(w >= 3) P0.push(['puff', 1], ['shark', sk === 'shark' ? 3.5 : 1.2]); if(w >= 4) P0.push(['hermit', 1], ['trash', .8]);
+  const tot = P0.reduce((a, g) => a + g[1], 0), cnt = {}, n = Math.min(54, 12 + w * 3);
+  for(let i = 0; i < n; i++){ let r = rnd() * tot, j = 0; for(; j < P0.length - 1; j++){ r -= P0[j][1]; if(r < 0) break; } cnt[P0[j][0]] = (cnt[P0[j][0]] || 0) + 1; }
+  for(const k in cnt) out.push([k, cnt[k]]);
+  if(w % 5 === 4) out.push(['elite', w >= 14 ? 2 : 1]);
+  if(w % 3 === 2) out.push(['swarm', Math.min(24, 8 + w)]);
+  return out;
+}
+/* 👑 왕관 적 — 체력 3배, 대신 아이템·조개를 꼭 떨군다. 무한 파도에서 자주, 해변은 둘째 웨이브부터 가끔 */
+const crP = () => S.inf ? (S.w < 2 ? 0 : S.sea && S.sea.k === 'crown' ? .14 : .05) : (S.w < 2 ? 0 : .03);
 function startWave(){
   S.w++; S.ph = 'fight'; S.wt = 0; S.q.length = 0; S.qi = 0; S.pick = null;
-  const Wv = STG[S.stg].W[S.w - 1], T = 12 + S.w * 3;
+  const Wv = S.inf ? infWave(S.w) : STG[S.stg].W[S.w - 1], T = 12 + Math.min(S.w, 8) * 3, cp = crP();
   for(const [k, n] of Wv){
     if(k === 'swarm'){ const t0 = 4 + T * .4; for(let i = 0; i < n; i++) S.q.push({ t:t0 + i * .1, k:'sj', ban:!i }); continue; }   // 떼 — 배너 뒤 한쪽에서 쏟아진다
     const big = FO[k].boss || FO[k].elite;
-    for(let i = 0; i < n; i++) S.q.push({ t:big ? 2.2 + i * 5 : 1.5 + (i + rnd() * .8) / n * T, k }); }
+    for(let i = 0; i < n; i++) S.q.push({ t:big ? 2.2 + i * 5 : 1.5 + (i + rnd() * .8) / n * T, k, cr:cp > 0 && CRK[k] && rnd() < cp ? 1 : 0 }); }
   S.q.sort((a, b) => a.t - b.t);
   const bs = Wv.find(g => g[0] !== 'swarm' && FO[g[0]].boss), nw = Wv.map(g => g[0]).find(k => TIP[k] && !S.seen[k]);
   Wv.forEach(g => S.seen[g[0]] = 1);
   if(bs) banner('boss', `⚠️ 보스 · ${FO[bs[0]].n}`, TIP[bs[0]], 2.8);
+  else if(S.inf) banner('wave', `🌀 WAVE ${S.w}`, S.w === 1 ? `오늘의 바다 — ${S.sea.ic} ${S.sea.n}` : nw ? TIP[nw] : preview(Wv), S.w === 1 ? 2.8 : 2.4);
   else banner('wave', `WAVE ${S.w}/${NW}`, nw ? TIP[nw] : preview(Wv), 2.4);
   sfx('wave'); barUI();
 }
+function crownIt(f){ f.cr = 1; f.hp = f.max = f.lag = f.max * 3; f.spm *= .85;
+  if(!S.seen.crown){ S.seen.crown = 1; S.tipQ = ['👑 왕관 적!', '단단하지만 아이템을 꼭 떨궈요']; } }
 function spawn(k, x, y){
-  const f = take(FOES); if(!f) return null; const F = FO[k], G = STG[S.stg], sc = F.boss ? G.hp : G.hp * (1 + .1 * (S.w - 1));   // 웨이브마다 10%씩 단단해진다
-  f.k = k; f.id = S.nid++; f.hp = f.max = f.lag = F.hp * sc; f.lagT = 0; f.spm = G.sp * (.9 + rnd() * .2);
+  const f = take(FOES); if(!f) return null; const F = FO[k], G = gS(), sc = F.boss || S.inf ? G.hp : G.hp * (1 + .1 * (S.w - 1));   // 웨이브마다 10%씩 단단해진다(무한 파도는 G.hp 가 웨이브마다 커진다)
+  f.k = k; f.id = S.nid++; f.hp = f.max = f.lag = F.hp * sc * (S.sea && S.sea.k === 'jelly' && k === 'jelly' ? 1.6 : 1); f.lagT = 0; f.spm = G.sp * (.9 + rnd() * .2); f.cr = 0;
   f.t = 0; f.o = rnd() * 6.28; f.sl = 0; f.hit = 0; f.hst = 0; f.kx = 0; f.ky = 0; f.bite = 0; f.ph = 0; f.se = F.se || 0; f.dc = 0; f.dh = 0; f.brk = 0; f.dsh = 0; f.bw = 0;
-  f.ri = 0; f.stn = 0; f.tk = 0; f.cs = 0; f.cc = 1.5 + rnd() * 2; f.cv = k === 'jaws' ? 230 : 190; f.fc = 1 + rnd(); f.sy = SH + 5 + rnd() * 35; f.bp = 1; f.ax = 0; f.ay = 1; f.cl = 0; f.ct = 0; f.tw = 0;
+  f.ri = 0; f.stn = 0; f.tk = 0; f.cs = 0; f.cc = 1.5 + rnd() * 2; f.cv = (k === 'jaws' ? 230 : 190) * (k === 'shark' && S.sea && S.sea.k === 'shark' ? 1.25 : 1); f.fc = 1 + rnd(); f.sy = SH + 5 + rnd() * 35; f.bp = 1; f.ax = 0; f.ay = 1; f.cl = 0; f.ct = 0; f.tw = 0;
   f.tx = SX - 60 + rnd() * 120;   // 학교 앞 넓게 퍼져서 온다 — 한 자리에 서서는 다 못 막게
   if(x != null){ f.x = x; f.y = y; }
-  else if(F.boss){ f.x = SX; f.y = 92; S.boss = f; f.cc = 3; f.fc = 3; f.ri = RISE;   // 바다 가운데서 솟아오른다 — 1.4초 동안 커지며 물기둥
+  else if(F.boss){ f.x = SX; f.y = 92; S.boss = f; S.sw = null; S.swc = 4; f.cc = 3; f.fc = 3; f.ri = RISE;   // 바다 가운데서 솟아오른다 — 1.4초 동안 커지며 물기둥
     if(!RM) S.shake = Math.max(S.shake, .5); ring(f.x, f.y, 46, '#FFFFFF'); ring(f.x, f.y, 30, '#9FE3FF'); burst(f.x, f.y + 6, '#BFE9FF', 16); sfx('boom'); buzz([30, 30, 60]); }
   else if(k === 'sj'){ f.x = S.side < 0 ? -6 : W + 6; f.y = 30 + rnd() * 90; }
   else if(F.fly){ f.x = rnd() < .5 ? -8 : W + 8; f.y = 50 + rnd() * 100; }
@@ -133,6 +175,9 @@ function spawn(k, x, y){
 function step(dt){
   if(!S || S.ph === 'done' || S.pick) return;   // 카드 고르는 동안은 세상이 멈춘다
   if(S.hs > 0){ S.hs -= dt; fx(dt * .25); return; }   // 히트스톱 — 세게 맞힌 순간 아주 잠깐 멈칫(타격감)
+  if(S.slow > 0){ S.slow -= dt; dt *= .3; }   // 마지막 한 마리 — 슬로 모션(적이 없을 때만 걸려 균형엔 영향 없다)
+  S.kst += dt; if(S.call){ S.call.tm += dt; if(S.call.tm > S.call.d) S.call = null; }
+  if(S.tipQ && (!S.ban || S.ban.k === 'swarm')){ banner('tip', S.tipQ[0], S.tipQ[1], 2.4); S.tipQ = null; }
   S.t += dt; S.shake = Math.max(0, S.shake - dt); S.flash = Math.max(0, S.flash - dt); S.hurt = Math.max(0, S.hurt - dt);
   if(S.cbt > 0){ S.cbt -= dt; if(S.cbt <= 0) S.cb = 0; }
   if(S.ban){ S.ban.tm += dt; if(S.ban.tm > S.ban.d) S.ban = null; }
@@ -140,35 +185,39 @@ function step(dt){
   if(S.lagT > 0) S.lagT -= dt; else if(S.lag > S.hp) S.lag = Math.max(S.hp, S.lag - S.max * .5 * dt);
   if(S.ph === 'clear'){ S.cl -= dt; if(S.cl <= 0){ afterClear(); if(S.ph === 'done' || S.pick) return; } }
   else { S.ft += dt; S.wt += dt;
-    while(S.qi < S.q.length && S.q[S.qi].t <= S.wt){ const o = S.q[S.qi++]; if(o.ban){ S.side = rnd() < .5 ? -1 : 1; banner('swarm', S.side < 0 ? '← 해파리 떼!' : '해파리 떼! →', '', 1.4); } spawn(o.k); } }
+    while(S.qi < S.q.length && S.q[S.qi].t <= S.wt){ const o = S.q[S.qi++]; if(o.ban){ S.side = rnd() < .5 ? -1 : 1; banner('swarm', S.side < 0 ? '← 해파리 떼!' : '해파리 떼! →', '', 1.4); } const f = spawn(o.k); if(f && o.cr) crownIt(f); } }
   player(dt); foes(dt); esh(dt); boss(dt); helpers(dt); bigWave(dt); drops(dt); fx(dt);
   if(S.hp <= 0){ S.hp = 0; return end(false); }
   if(S.ph === 'fight' && S.qi >= S.q.length && !alive()) waveClear();
 }
 const alive = () => { let n = 0; for(const f of FOES) if(f.on) n++; return n; };
 function waveClear(){
-  S.ph = 'clear'; S.cl = 1.8; const bonus = Math.round(S.hp / S.max * 200); S.score += bonus;
+  const fin = !S.inf && S.w >= NW; S.ph = 'clear'; S.cl = 1.8; const bonus = Math.round(S.hp / S.max * 200); S.score += bonus;
   for(const d of DROPS) if(d.on && d.ty === 0) d.fly = 1;   // 남은 조개는 알아서 날아온다
   for(const e of ESH) e.on = 0;
-  confetti(S.w >= NW ? 60 : 34);
-  banner('clear', S.w >= NW ? `🎉 ${STG[S.stg].n} 해변을 지켰어요!` : `WAVE ${S.w} 클리어!`, `🏫 학교 보너스 +${bonus}점`, 1.8);
+  confetti(fin ? 60 : 34);
+  banner('clear', fin ? `🎉 ${STG[S.stg].n} 해변을 지켰어요!` : `WAVE ${S.w} 클리어!`, `🏫 학교 보너스 +${bonus}점`, 1.8);
   sfx('clear');
 }
-function afterClear(){ if(S.w >= NW) return end(true); S.pickN = 1; S.pickT = 'wave'; openPick(); }
+function afterClear(){ if(!S.inf && S.w >= NW) return end(true); S.pickN = 1; S.pickT = 'wave'; openPick(); }
 
 /* 강화 카드 — 체력이 낮을수록 🏫 수리가 잘 나온다 */
 function choices(){
   const L = UPS.filter(u => (S.up[u.k] || 0) < u.max && (u.k !== 'heal' || (S.pickT !== 'free' && S.hp < S.max * .9))), out = [];
   const wt = u => u.k === 'heal' ? (S.hp < S.max * .5 ? 6 : 2) : u.k === 'atk' || u.k === 'spd' ? 1.4 : 1;
   while(out.length < 3 && L.length){ let r = rnd() * L.reduce((a, u) => a + wt(u), 0), i = 0; for(; i < L.length - 1; i++){ r -= wt(L[i]); if(r < 0) break; } out.push(L.splice(i, 1)[0].k); }
+  if(!out.length) out.push('heal');   // 무한 파도 — 카드를 다 모으면 수리만 남는다
   return out;
 }
+const synFor = k => SYN.find(q => !S.syn[q.k] && ((q.a === k && S.up[q.b]) || (q.b === k && S.up[q.a])));
 function openPick(){ S.pick = choices(); S.ph = 'pick'; BTN.atk = 0; stick = null; padStick(); barUI(); ctl(); }
 function pick(i){
   if(!S || !S.pick) return false; const k = S.pick[i]; if(!k) return false;
   if(k === 'heal') S.hp = S.lag = Math.min(S.max, S.hp + S.max * .4); else S.up[k] = (S.up[k] || 0) + 1;
   if(k === 'guard') S.guards = [[SX - 50, BY - 12], [SX + 50, BY - 12]].slice(0, S.up.guard).map(([x, y]) => ({ x, y, cd:.5 }));
-  S.pick = null; S.pickN--; sfx('pick');
+  const sy = SYN.find(q => !S.syn[q.k] && S.up[q.a] && S.up[q.b]);
+  if(sy){ S.syn[sy.k] = 1; S.call = { s:`✨ 시너지! ${sy.ic} ${sy.n}`, sub:sy.d, tm:0, d:2.8, col:'#F0D9FF' }; confetti(24); buzz([20, 30, 40]); }
+  S.pick = null; S.pickN--; sfx(sy ? 'syn' : 'pick');
   if(S.pickN > 0) openPick(); else startWave();
   barUI(); ctl(); return true;
 }
@@ -225,6 +274,7 @@ function resolve(){
     if(d > w.r + R0) continue; if(!full && d > R0 + 5 && (dx * ax + dy * ay) / d < ca) continue;
     hurt(f, dm, rnd() < .08, dx, dy, w.fin ? 2 : 1); n++; }
   if(full) ring(P.x, P.y - 4, w.r, '#FFE27A');
+  if(full && S.syn.tor){ const T = S.tor; T.t = 1.3; T.c = .2; T.x = P.x + ax * 12; T.y = P.y - 4 + ay * 12; }   // 🌪️ 시너지 — 회오리 자리에 토네이도
   if(n){ S.hs = Math.max(S.hs, w.fin ? .075 : .03); if(w.fin && !RM) S.shake = Math.max(S.shake, .16); sfx(w.fin ? 'hitb' : 'hit'); if(w.fin) buzz(15); }
 }
 /* 💨 대시 — 움직이는 쪽(없으면 가까운 적 쪽)으로 휙. 0.32초 무적, 부딪힌 적은 튕겨 난다 */
@@ -240,16 +290,17 @@ function dashHits(){
 /* 🌊 필살기 — 학교에서 바다 쪽으로 큰 파도가 화면을 쓸고 간다. 보스는 체력 일부 + 뒤로 밀림 */
 function special(){
   if(!S || S.ph !== 'fight' || S.sp < 100 || S.big >= 0) return false;
-  S.sp = 0; S.big = 0; S.bigId++; S.sps++; S.hs = .12; S.flash = .25; if(!RM) S.shake = .45; P.inv = Math.max(P.inv, 1.2);
+  S.sp = 0; S.big = 0; S.big2 = 0; S.bigId++; S.sps++; S.hs = .12; S.flash = .25; if(!RM) S.shake = .45; P.inv = Math.max(P.inv, 1.2);
   for(const e of ESH) if(e.on){ e.on = 0; burst(e.x, e.y, '#E9D8FF', 2); }
   txt(SX, 170, '🌊 필살기!', 9); sfx('sp'); buzz([30, 40, 60]); return true;
 }
 function bigWave(dt){
   if(S.big < 0) return; S.big += dt; const fy = H - S.big / 1.1 * (H + 90);
   for(const f of FOES){ if(!f.on || f.bw === S.bigId || f.y < fy) continue; f.bw = S.bigId; const F = FO[f.k];
-    if(F.boss){ hurt(f, B() * 4 + f.max * .07, false, 0, -1, 4); f.y = Math.max(92, f.y - 40); }
-    else { hurt(f, B() * 6, false, 0, -1, 4); if(f.on){ f.ky = -170; f.stn = Math.max(f.stn, .9); } } }
-  if(S.big > 1.1) S.big = -1;
+    const hm = S.big2 ? .5 : 1;
+    if(F.boss){ hurt(f, (B() * 4 + f.max * .07) * hm, false, 0, -1, 4); f.y = Math.max(92, f.y - 40); }
+    else { hurt(f, B() * 6 * hm, false, 0, -1, 4); if(f.on){ f.ky = -170; f.stn = Math.max(f.stn, .9); } } }
+  if(S.big > 1.1){ if(S.syn.tsu && !S.big2){ S.big2 = 1; S.big = 0; S.bigId++; P.inv = Math.max(P.inv, 1.2); txt(SX, 170, '🐬 한 번 더!', 9); sfx('sp'); } else S.big = -1; }   // 🐬 시너지 — 돌고래가 파도를 한 번 더
 }
 function hurt(f, dmg, cr, dx, dy, kd){
   const F = FO[f.k]; if(cr) dmg *= 1.8;
@@ -267,17 +318,22 @@ function hurt(f, dmg, cr, dx, dy, kd){
 }
 function kill(f){
   if(!f.on) return; f.on = 0; S.kills++; const F = FO[f.k], big = F.boss || F.elite;
-  const pts = Math.round(F.pt * mult()); S.score += pts; if((big || mult() > 1) && !S.casc) txt(f.x, f.y - F.r - 14, '+' + pts, 7);
-  burst(f.x, f.y, F.col, F.boss ? 34 : big ? 18 : 9); ring(f.x, f.y, F.r * 2.6, '#FFFFFF'); pop(f);
-  if(S.big < 0) S.sp = Math.min(100, S.sp + (big ? 12 : 3) * spMul());
-  const n = F.sh >= 1 ? F.sh : rnd() < F.sh ? 1 : 0; for(let i = 0; i < n; i++) drop(f.x + (rnd() - .5) * (big ? 30 : 8), f.y + (rnd() - .5) * (big ? 22 : 8), 0);
-  if(F.elite || (F.boss && S.w < NW) || (!F.boss && rnd() < .05 && pups() < 2)) dropPU(f.x, f.y);
+  const sk = S.sea ? S.sea.k : '', pts = Math.round(F.pt * mult() * (f.cr ? 5 : 1) * ((sk === 'shark' && f.k === 'shark') || (sk === 'gull' && f.k === 'gull') ? 2 : 1)); S.score += pts;
+  if((big || f.cr || mult() > 1) && !S.casc) txt(f.x, f.y - F.r - 14, f.cr ? `👑 +${pts}` : '+' + pts, 7);
+  burst(f.x, f.y, f.cr ? '#FFD24A' : F.col, F.boss ? 34 : big || f.cr ? 18 : 9); ring(f.x, f.y, F.r * 2.6, f.cr ? '#FFD24A' : '#FFFFFF'); pop(f);
+  if(S.big < 0) S.sp = Math.min(100, S.sp + (big || f.cr ? 12 : 3) * spMul());
+  const n = f.cr ? 3 : F.sh >= 1 ? F.sh : sk === 'jelly' && f.k === 'jelly' ? 1 : rnd() < F.sh ? 1 : 0; for(let i = 0; i < n; i++) drop(f.x + (rnd() - .5) * (big || f.cr ? 30 : 8), f.y + (rnd() - .5) * (big || f.cr ? 22 : 8), 0);
+  if(F.elite || f.cr || (F.boss && (S.inf || S.w < NW)) || (!F.boss && rnd() < (sk === 'fire' ? .1 : .05) && pups() < 2)) dropPU(f.x, f.y);
+  if(f.cr) S.crs++;
+  if(!S.casc){ S.ks = S.kst < 1.6 ? S.ks + 1 : 1; S.kst = 0; const k = S.ks;   // 연속 처치 — 1.6초 안에 이어 잡으면 쌓인다. 5·10·15·20·30… 에 외침 + 보너스 점수
+    if(k === 5 || k === 10 || k === 15 || k === 20 || (k >= 30 && k % 10 === 0)){ S.score += k * 10; S.call = { s:`${k >= 30 ? '🌟' : k >= 20 ? '⚡' : k >= 10 ? '🔥' : '👍'} 연속 처치 ${k}!`, sub:`+${k * 10}점`, tm:0, d:1.3, col:k >= 20 ? '#FF9E7A' : k >= 10 ? '#FFB020' : '#FFE27A' }; sfx('streak'); } }
   if(F.split){ spawn('bag', f.x - 6, f.y); spawn('bag', f.x + 6, f.y); }
   sfx(big ? 'boom' : 'kill');
   if(f === S.boss){ S.boss = null; S.sw = null; S.hs = .3; if(!RM) S.shake = .55; S.flash = .3; for(const e of ESH) e.on = 0;
     S.qi = S.q.length;   // 아직 안 나온 졸개도 취소 — 「격파!」 뒤에 적이 또 나오면 끝난 줄 모른다
     S.casc = 1; for(const g of FOES) if(g.on) kill(g); S.casc = 0;   // 보스가 쓰러지면 졸개도 함께 — 시원하게 끝낸다(점수 글자는 생략해 화면을 비운다)
-    banner('clear', `🎉 ${F.n} 격파!`, '', 1.6); buzz([40, 60, 80]); }
+    banner('clear', `🎉 ${F.n} 격파!`, '', 1.6); buzz([40, 60, 80]); S.slow = 1.1; }
+  else if(!S.casc && S.ph === 'fight' && S.qi >= S.q.length && !alive()){ S.slow = .8; ring(f.x, f.y, 40, '#FFE27A'); }   // 웨이브의 마지막 한 마리 — 슬로 모션
 }
 function hurtSchool(d, x){
   if(S.wall > 0){ const a = Math.min(S.wall, d); S.wall -= a; d -= a; if(x != null && a > 0) txt(x, BY - 6, '🛡️', 5); } if(d <= 0) return;
@@ -288,7 +344,7 @@ function hurtSchool(d, x){
 function stunP(t, kx, ky, msg){ if(P.inv > 0 || P.dash > 0) return false; P.stun = t; P.kx = kx; P.ky = ky; P.inv = t + .5; P.sw = null; if(!RM) S.shake = Math.max(S.shake, .2); txt(P.x, P.y - 22, msg, 3); sfx('ouch'); return true; }
 function needle(x, y, tx, ty, v, dmg, st){ const e = take(ESH); if(!e) return; const dx = tx - x, dy = ty - y, m = Math.hypot(dx, dy) || 1; e.x = x; e.y = y; e.vx = dx / m * v; e.vy = dy / m * v; e.dmg = dmg; e.st = st; e.t = 0; }
 function foes(dt){
-  let bite = 0; const G = STG[S.stg];
+  let bite = 0; const G = gS();
   for(const f of FOES){ if(!f.on) continue;
     const F = FO[f.k]; f.t += dt; f.hit = Math.max(0, f.hit - dt); f.dc -= dt; f.sl -= dt; f.tk -= dt;
     if(f.ri > 0){ f.ri -= dt; continue; }   // 보스 등장 중 — 솟아오르는 동안은 움직이지도 물지도 않는다
@@ -331,7 +387,7 @@ function esh(dt){
 }
 function boss(dt){
   const b = S.boss; if(!b) return; if(!b.on){ S.boss = null; return; } if(b.ri > 0) return;
-  const F = FO[b.k], G = STG[S.stg], ph = b.hp > b.max * .66 ? 1 : b.hp > b.max * .33 ? 2 : 3;
+  const F = FO[b.k], G = gS(), ph = b.hp > b.max * .66 ? 1 : b.hp > b.max * .33 ? 2 : 3;
   if(ph > b.bp){ b.bp = ph; banner('phase', `${F.n} ${ph}단계!`, PH[b.k][ph - 2], 1.4); if(!RM) S.shake = .3; S.hs = .1; }
   b.se -= dt; if(b.se <= 0){ b.se = F.se * (ph === 3 ? .6 : ph === 2 ? .8 : 1); const n = ph === 3 && b.k !== 'jaws' ? 4 : b.k === 'jaws' ? (ph > 1 ? 2 : 1) : 3; for(let i = 0; i < n; i++) spawn(F.sum, b.x + (i - (n - 1) / 2) * 18, b.y + 12); }
   if(b.k === 'king'){ if(ph >= 2){ b.fc -= dt; b.tw = b.fc < .7 ? 1 : 0;   // 쏘기 0.7초 전부터 분홍 고리로 예고
@@ -346,6 +402,9 @@ function boss(dt){
 }
 /* 돌고래 친구 · 라이프가드 */
 function helpers(dt){
+  const T = S.tor; if(T.t > 0){ T.t -= dt; T.c -= dt; const tg = near(T.x, T.y, 70, 1)[0]; if(tg){ T.x += (tg.x - T.x) * .8 * dt; T.y += (tg.y - T.y) * .8 * dt; }   // 🌪️ 토네이도 — 가까운 적 쪽으로 천천히, 둘레를 끌어당기며 친다
+    for(const f of FOES){ if(!f.on || FO[f.k].boss) continue; const dx = T.x - f.x, dy = T.y - f.y, q = dx * dx + dy * dy; if(q < 1600 && q > 4){ const m = Math.sqrt(q); f.x += dx / m * 30 * dt; f.y += dy / m * 30 * dt; } }
+    if(T.c <= 0){ T.c = .25; for(const f of FOES){ if(!f.on) continue; const r = FO[f.k].r + 18; if((f.x - T.x) ** 2 + (f.y - T.y) ** 2 < r * r) hurt(f, B() * .35, false, f.x - T.x, f.y - T.y, 5); } } }
   const nD = S.up.dolph || 0;
   for(let i = 0; i < nD; i++){ const a = S.t * 3.6 + i * 6.283 / nD, x = P.x + Math.cos(a) * 28, y = P.y - 4 + Math.sin(a) * 21;
     for(const f of FOES){ if(!f.on || f.dc > 0) continue; const r = FO[f.k].r + 6; if((f.x - x) ** 2 + (f.y - y) ** 2 < r * r){ f.dc = .45; hurt(f, B() * .5, false, f.x - P.x, f.y - P.y, 5); } } }
@@ -373,6 +432,7 @@ function power(k){
 }
 function end(win){
   S.ph = 'done'; S.res = win ? 'win' : 'lose'; S.pick = null; window._gameRun = false; stick = null; BTN.atk = 0; padStick();
+  if(S.inf) return endInf();
   const r = S.hp / S.max; S.stars = win ? (r >= .7 ? 3 : r >= .35 ? 2 : 1) : 0;
   S.cw = win ? NW : S.w - 1;
   if(win) S.score += 500 * (S.stg + 1) + S.stars * 200;
@@ -383,6 +443,17 @@ function end(win){
     try{ if(typeof playDefendDone === 'function') R = playDefendDone(S.stg * NW + S.cw, win, S.earned, S.stg, S.stars) || null; }catch(e){} }   // 웨이브는 해변을 이어 센다(낙산 5 · 죽도 10 · 하조대 15)
   sfx(win ? 'win' : 'lose'); barUI(); ctl(); if(!botOn) over();
 }
+/* 무한 파도가 끝나면 — 기록은 이 기기(LI). 보상은 판마다 한 번: 조개(최대 40)와 「웨이브 5 깨기」 미션·XP 를 위해 깬 웨이브(최대 5)만 낙산 기준으로 넘긴다.
+   (낙산을 지켜야 열리므로 낙산 최고 5·별은 이미 있다 — 해변 기록·별·첫 클리어는 바뀌지 않는다) */
+function endInf(){
+  S.stars = 0; S.cw = S.w - 1; S.earned = Math.min(40, S.shells + S.cw + S.ush * 3);
+  const ib = infBest(); S.best = ib.s; S.bestW = ib.w; S.newBest = S.score > ib.s && S.score > 0; S.newW = S.w > ib.w && S.cw > 0;
+  R = null;
+  if(!noRw){ if(S.newBest || S.newW){ try{ localStorage.setItem(LI, JSON.stringify({ s:Math.max(ib.s, S.score), w:Math.max(ib.w, S.w) })); }catch(e){} }
+    try{ if(typeof playDefendDone === 'function') R = playDefendDone(Math.min(NW, S.cw), false, S.earned, 0, 0) || null; }catch(e){} }
+  sfx('lose'); barUI(); ctl(); if(!botOn) over();
+}
+function infBest(){ try{ const o = JSON.parse(localStorage.getItem(LI) || '{}') || {}, n = (v, m) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(m, x)) : 0; }; return { s:n(o.s, 9999999), w:n(o.w, 999) }; }catch(e){ return { s:0, w:0 }; } }
 function bests(){ try{ const a = JSON.parse(localStorage.getItem(LB) || '[]'); return [0, 1, 2].map(i => { const v = Math.floor(+(Array.isArray(a) ? a[i] : 0)); return Number.isFinite(v) ? Math.max(0, Math.min(9999999, v)) : 0; }); }catch(e){ return [0, 0, 0]; } }
 
 /* 효과 — 파편·고리·숫자 */
@@ -404,7 +475,7 @@ function fx(dt){
 /* 소리 — 놀이 탭 「🔊 게임 소리」가 켜져 있을 때만. 같은 소리는 45ms 안에 겹치지 않게 */
 let AC = null; const sndT = {};
 const sndOn = () => { try{ return typeof soundOn === 'function' ? soundOn() : localStorage.getItem('lineup.share.snd') === '1'; }catch(e){ return false; } };
-const SFX = { swing:[520, 300, .05, .02], fin:[420, 160, .09, .03], hit:[230, 110, .07, .045, 'square'], hitb:[170, 55, .15, .07, 'square'], kill:[700, 1050, .07, .035], boom:[130, 40, .35, .08, 'sawtooth'],
+const SFX = { syn:[440, 1760, .4, .06], streak:[880, 1320, .12, .05], swing:[520, 300, .05, .02], fin:[420, 160, .09, .03], hit:[230, 110, .07, .045, 'square'], hitb:[170, 55, .15, .07, 'square'], kill:[700, 1050, .07, .035], boom:[130, 40, .35, .08, 'sawtooth'],
   dash:[300, 900, .09, .035], sp:[110, 760, .5, .08, 'sawtooth'], pu:[660, 1320, .15, .05], ouch:[120, 80, .12, .045, 'square'], wave:[440, 880, .18, .04], clear:[523, 1046, .25, .05], pick:[600, 900, .08, .04], win:[523, 1568, .6, .06], lose:[300, 90, .6, .06] };
 function sfx(k){ if(botOn || !sndOn()) return; const now = performance.now(); if(now - (sndT[k] || 0) < 45) return; sndT[k] = now; const [f0, f1, dur, vol, ty] = SFX[k];
   try{ AC ||= new (window.AudioContext || window.webkitAudioContext)(); if(AC.state === 'suspended') AC.resume(); const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
@@ -618,17 +689,23 @@ function draw(){
       if(F.spit && f.y >= f.sy && f.fc < .45){ sx *= 1.25; sy *= 1.25; }   // 복어 — 쏘기 직전 부푼다
       if(f.cs === 1 && !RM){ sx *= 1 + Math.sin(t * 40) * .06; }
       if(f.hit > 0 && !RM){ sx *= 1.15; sy *= .87; }   // 맞는 순간 납작 · 그림은 폰에서 잘 보이게 VS배(맞는 범위는 그대로)
-      let vs = F.boss ? 1.25 : VS;
+      let vs = F.boss ? 1.25 : f.cr || (f.k === 'jelly' && S.sea && S.sea.k === 'jelly') ? VS * 1.3 : VS;
+      if(f.cr){ c.fillStyle = 'rgba(255,210,74,.3)'; c.beginPath(); c.arc(f.x, f.y, F.r * 2.1 + (RM ? 0 : Math.sin(t * 6 + f.o) * 1.5), 0, 7); c.fill(); }   // 👑 왕관 적 — 금빛 둘레
       if(F.boss){ const e = f.ri > 0 ? 1 - f.ri / RISE : 1, ez = RM ? 1 : 1 + 2.2 * (e - 1) ** 3 + 1.2 * (e - 1) ** 2;   // 솟아오를 때 살짝 넘쳤다가 자리 잡기
         vs *= Math.max(.15, ez); c.fillStyle = f.bp === 3 ? 'rgba(255,60,60,.2)' : 'rgba(255,255,255,.14)'; c.beginPath(); c.arc(f.x, f.y, F.r * (1.9 + (RM ? 0 : Math.sin(t * 5) * .15)) * Math.max(.3, e), 0, 7); c.fill();
         if(f.ri > 0){ c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 2; c.beginPath(); c.ellipse(f.x, f.y + 10, 30 * e + 8, (30 * e + 8) * .35, 0, 0, 7); c.stroke(); } }
       c.save(); c.translate(f.x, f.y); if(F.fly && f.ph >= 1.1) c.rotate(Math.atan2(BY - f.y, f.tx - f.x) - Math.PI / 2); c.scale(sx * vs, sy * vs); c.drawImage(f.hit > 0 ? sp.w : sp.n, -sp.s / 2, -sp.s / 2, sp.s, sp.s); c.restore();
       if(F.shell && f.brk){ c.strokeStyle = '#5E3A1E'; c.lineWidth = .9; c.beginPath(); c.moveTo(f.x - 3, f.y); c.lineTo(f.x, f.y + 4); c.lineTo(f.x + 3, f.y + 1); c.stroke(); } }
+    if(f.cr) emo(c, '👑', f.x, f.y - F.r * 2.1 - 3, 9);
     if(f.stn > 0) emo(c, '💫', f.x, f.y - F.r - 5, 7);
-    if(!F.boss && f.hp < f.max){ const w = Math.max(12, F.r * 2); bar(c, f.x - w / 2, f.y - F.r - 6, w, 2, f.hp / f.max, f.lag / f.max, F.elite ? '#FFB020' : '#7BD389'); } }
+    if(!F.boss && f.hp < f.max){ const w = Math.max(12, F.r * 2); bar(c, f.x - w / 2, f.y - F.r - 6, w, 2, f.hp / f.max, f.lag / f.max, F.elite || f.cr ? '#FFB020' : '#7BD389'); } }
   // 독침 · 라이프가드 탄
   for(const e of ESH){ if(!e.on) continue; const m = Math.hypot(e.vx, e.vy) || 1; c.strokeStyle = e.st ? '#B57CFF' : '#E0A800'; c.lineWidth = 2; c.beginPath(); c.moveTo(e.x, e.y); c.lineTo(e.x - e.vx / m * 6, e.y - e.vy / m * 6); c.stroke(); c.fillStyle = '#fff'; c.beginPath(); c.arc(e.x, e.y, 1.2, 0, 7); c.fill(); }
   for(const s of SHOTS){ if(!s.on) continue; c.fillStyle = '#FF9E9E'; c.strokeStyle = 'rgba(20,48,79,.6)'; c.lineWidth = .6; c.beginPath(); c.arc(s.x, s.y, 2.2, 0, 7); c.fill(); c.stroke(); }
+  // 🌪️ 토네이도 — 겹친 타원 셋이 돈다
+  if(S.tor.t > 0){ const T = S.tor, a = Math.min(1, T.t * 2.5); c.save(); c.globalAlpha = a; c.lineWidth = 2;
+    for(let i = 0; i < 4; i++){ const y = T.y + 6 - i * 7, w = 7 + i * 5, o = RM ? 0 : Math.sin(t * 14 + i * 1.3) * 3; c.strokeStyle = i % 2 ? 'rgba(255,226,122,.9)' : 'rgba(255,255,255,.9)'; c.beginPath(); c.ellipse(T.x + o, y, w, w * .32, 0, 0, 7); c.stroke(); }
+    c.restore(); }
   // 플레이어 — 대시 잔상, 🔥 불꽃, 무적 깜빡
   const drawMe = (x, y, al, sq, bob) => { c.save(); c.globalAlpha = al; c.translate(x, y + 9 - bob); c.scale(P.face * (2 - sq), sq);
     if(PS) c.drawImage(PS.c, -PS.w / 2, -PS.h, PS.w, PS.h);
@@ -683,8 +760,8 @@ function hud(c, t){
   if(S.wall > 0){ c.fillStyle = 'rgba(160,225,255,.9)'; c.fillRect(21, 6.5, 120 * Math.min(1, S.wall / S.max), 2.5); }
   c.font = 'bold 7px sans-serif'; outl(c, `${Math.ceil(S.hp)}`, 81, 11, '#fff');
   c.textAlign = 'left'; c.font = 'bold 6.5px sans-serif'; c.fillStyle = hr < .3 && !RM && Math.floor(t * 4) % 2 ? '#FF8A8A' : '#CFE3F5'; c.fillText('학교', 145, 11);
-  const left = S.ph === 'fight' ? alive() + S.q.length - S.qi : 0, bw = S.boss || (S.ph !== 'pick' && STG[S.stg].W[S.w - 1] && S.w === NW);
-  let x = 3 + chip(c, 3, 20, `WAVE ${S.w}/${NW}${bw ? ' · 보스' : ''}`, bw ? 'rgba(200,30,40,.92)' : 'rgba(255,203,61,.95)', bw ? '#fff' : '#14304F') + 3;
+  const left = S.ph === 'fight' ? alive() + S.q.length - S.qi : 0, bw = S.boss || (S.ph !== 'pick' && S.w > 0 && bossW());
+  let x = 3 + chip(c, 3, 20, S.inf ? `🌀 WAVE ${S.w}${bw ? ' · 보스' : ''}` : `WAVE ${S.w}/${NW}${bw ? ' · 보스' : ''}`, bw ? 'rgba(200,30,40,.92)' : 'rgba(255,203,61,.95)', bw ? '#fff' : '#14304F') + 3;
   if(S.ph === 'fight') x += chip(c, x, 20, `남은 적 ${left}`, 'rgba(11,37,64,.8)') + 3;
   let y2 = 35, x2 = 3;
   if(S.fire > 0) x2 += chip(c, x2, y2, `🔥 2배 ${Math.ceil(S.fire)}`, 'rgba(255,122,61,.95)') + 3;
@@ -693,13 +770,17 @@ function hud(c, t){
   // 콤보 — 오른쪽, 10마다 점수 배율
   if(S.cb >= 3){ const k = Math.min(1, (2.2 - S.cbt) * 8), sc = RM ? 1 : 1 + (1 - k) * .35, m = mult(); c.save(); c.translate(W - 6, 42); c.scale(sc, sc); c.textAlign = 'right';
     c.font = 'bold 15px sans-serif'; outl(c, `${S.cb}`, 0, 0, S.cb >= 30 ? '#FF7A59' : S.cb >= 10 ? '#FFB020' : '#FFE27A'); c.font = 'bold 7px sans-serif'; outl(c, m > 1 ? `콤보 ×${m}` : '콤보', 0, 11, '#fff'); c.restore(); }
+  // 외침 — 연속 처치 · 시너지(가운데 위, 톡 튀어나왔다 사라진다)
+  if(S.call){ const o = S.call, k = o.tm / o.d, a = k > .75 ? (1 - k) / .25 : 1, sc = RM ? 1 : 1 + Math.max(0, .14 - o.tm) * 4, y = S.boss ? 80 : 96;
+    c.save(); c.globalAlpha = Math.max(0, a); c.translate(SX, y - (RM ? 0 : k * 6)); c.scale(sc, sc); c.textAlign = 'center'; c.font = '900 15px sans-serif'; outl(c, o.s, 0, 0, o.col);
+    if(o.sub){ c.font = 'bold 8.5px sans-serif'; outl(c, o.sub, 0, 13, '#FFFFFF'); } c.restore(); }
   // 보스 이름·체력 — 단계 눈금
   if(S.boss){ const b = S.boss; c.textAlign = 'center'; c.font = 'bold 8px sans-serif'; outl(c, `${FO[b.k].n} · ${b.bp}단계`, SX, 53, '#FFD1D1'); bar(c, 40, 58, 160, 6, b.hp / b.max, b.lag / b.max, b.bp === 3 ? '#FF3D3D' : b.bp === 2 ? '#FF7A59' : '#FFB020');
     c.fillStyle = 'rgba(11,37,64,.9)'; c.fillRect(40 + 160 * .33, 57, 1, 8); c.fillRect(40 + 160 * .66, 57, 1, 8); }
   // 띠 배너 — WAVE n/5 · 보스 · 클리어
-  if(S.ban && (S.ban.k === 'phase' || S.ban.k === 'swarm')){ const b = S.ban, k = b.tm / b.d, a = k < .1 ? k / .1 : k > .8 ? (1 - k) / .2 : 1;   // 싸우는 중 띠는 얇고 비치게 — 나·보스를 가리지 않게 위쪽에
+  if(S.ban && (S.ban.k === 'phase' || S.ban.k === 'swarm' || S.ban.k === 'tip')){ const b = S.ban, k = b.tm / b.d, a = k < .1 ? k / .1 : k > .8 ? (1 - k) / .2 : 1;   // 싸우는 중 띠는 얇고 비치게 — 나·보스를 가리지 않게 위쪽에
     const by = S.boss ? (S.boss.y < 170 ? S.boss.y + 34 : S.boss.y - 64) : 82;   // 보스 단계 띠는 보스 바로 아래(위)에 — 보스를 가리지 않게
-    c.save(); c.globalAlpha = Math.max(0, a); c.fillStyle = b.k === 'phase' ? 'rgba(160,20,30,.78)' : 'rgba(70,30,110,.72)'; rr(c, 20, by, W - 40, b.s ? 26 : 17, 8); c.fill();
+    c.save(); c.globalAlpha = Math.max(0, a); c.fillStyle = b.k === 'phase' ? 'rgba(160,20,30,.78)' : b.k === 'tip' ? 'rgba(120,80,0,.8)' : 'rgba(70,30,110,.72)'; rr(c, 20, by, W - 40, b.s ? 26 : 17, 8); c.fill();
     c.textAlign = 'center'; c.font = '900 10px sans-serif'; outl(c, b.t, SX, by + 9, '#fff'); if(b.s){ c.font = 'bold 7.5px sans-serif'; c.fillStyle = '#FFE27A'; c.fillText(b.s, SX, by + 20); } c.restore(); }
   else if(S.ban){ const b = S.ban, k = b.tm / b.d, a = k < .1 ? k / .1 : k > .82 ? (1 - k) / .18 : 1, sl = RM ? 0 : (1 - Math.min(1, k / .1)) * -60, y = 150, bh = b.s ? 50 : 38;
     c.save(); c.globalAlpha = Math.max(0, a); c.translate(sl, 0);
@@ -768,13 +849,16 @@ function over(){
       <div class="d-keys" aria-label="조작"><span><i>🕹️</i>이동</span><span><i>👊</i>공격</span><span><i>💨</i>대시</span><span><i>🌊</i>필살기</span></div>
       <div class="d-stgs" role="group" aria-label="해변">${STG.map((g, i) => { const ok = opened(p, i);
         return `<button type="button" class="d-stg" data-stage="${i}" aria-pressed="${i === cur}" ${ok ? '' : 'disabled'}><i>${ok ? g.ic : '🔒'}</i><b>${i + 1}. ${esc(g.n)}</b><em>${stars(p.st[i])}</em><small>${ok ? `${esc(g.d)} · 웨이브 5 · 보스 ${esc(FO[g.boss].n)}${bs[i] ? ` · 최고 ${fmt(bs[i])}점` : ''}` : '앞 해변을 지키면 열려요'}</small></button>`; }).join('')}</div>
+      ${infRow(p)}
       <button class="btn" id="d-go" type="button" style="width:100%">▶ ${esc(STG[cur].n)} 시작</button>
       <button class="btn ghost sm" id="d-how" type="button" style="width:100%;margin-top:6px">❓ 조작법 보기</button></div>`;
     ov.querySelectorAll('[data-stage]').forEach(x => x.onclick = () => { if(x.disabled) return; cur = +x.dataset.stage; try{ localStorage.setItem(LS, cur); }catch(e){} over(); });
     $d('d-how').onclick = () => how();
     $d('d-go').onclick = () => seenHow() ? start(cur) : how(() => start(cur));
+    const ib = $d('d-inf'); if(ib) ib.onclick = () => seenHow() ? start(3) : how(() => start(3));
     return;
   }
+  if(S.inf) return overInf();
   const win = S.res === 'win', G = STG[S.stg], nx = win && S.stg < 2;
   const tip = win ? '' : S.sps === 0 ? '💡 게이지가 차면 🌊 <b>필살기</b> — 화면 전체를 쓸어요' : S.atks < 30 ? '💡 👊 공격 버튼을 <b>꾹 누르고</b> 있으면 3단 콤보' : S.stg > 0 && S.dashes < 2 ? '💡 빨간 줄이 보이면 💨 <b>대시</b>로 피해요' : '💡 웨이브 사이 카드로 💪 공격력 · 🛟 라이프가드를 골라 봐요';
   ov.innerHTML = `<div class="go-card"><div class="go-t">${win ? '🏆 학교를 지켰어요!' : '🌊 학교가 잠겼어요…'}</div><div class="d-goal2">${esc(G.n)} 해변 · 웨이브 ${S.cw}/${NW}${win ? ` · ${esc(FO[G.boss].n)} 격파` : ''}</div>
@@ -793,6 +877,26 @@ function over(){
   $d('d-go').onclick = () => start(S.stg);
 }
 
+/* 🌀 무한 파도 줄 — 잠겨 있으면 한 줄 안내만(첫 판을 어지럽히지 않게), 열리면 최고 기록과 오늘의 바다 */
+function infRow(p){
+  if(!p.st[0]) return '<div class="d-inf0">🔒 🌀 무한 파도 — 낙산을 지키면 열려요</div>';
+  const b = infBest(), sea = seaOf();
+  return `<button type="button" class="d-stg d-inf" id="d-inf" aria-label="무한 파도 시작"><i>🌀</i><b>무한 파도 ▶</b><em>${b.w ? `최고 웨이브 ${b.w}` : 'NEW'}</em><small>오늘의 바다 ${sea.ic} ${esc(sea.n)} — ${esc(sea.d)}${b.s ? ` · 최고 ${fmt(b.s)}점` : ''}</small></button>`;
+}
+function overInf(){
+  const ov = $d('d-ov'), tip = S.sps === 0 ? '💡 게이지가 차면 🌊 <b>필살기</b> — 화면 전체를 쓸어요' : S.syn.tor || S.syn.tsu ? '' : '💡 ✨ 표시 카드 두 장을 모으면 <b>시너지</b>가 생겨요';
+  ov.innerHTML = `<div class="go-card"><div class="go-t">🌀 웨이브 ${S.w}까지 버텼어요!</div><div class="d-goal2">오늘의 바다 ${S.sea.ic} ${esc(S.sea.n)}</div>
+    <div class="d-score"><small>점수</small><b>${fmt(S.score)}</b>${S.newBest ? '<em class="nb">🎉 최고 기록!</em>' : S.best ? `<em>최고 ${fmt(S.best)}</em>` : ''}</div>
+    <div class="go-st"><span>웨이브<b>${S.w}${S.newW ? ' 🎉' : S.bestW ? `<small> / ${S.bestW}</small>` : ''}</b></span><span>처치<b>${S.kills}</b></span><span>👑 왕관<b>${S.crs}</b></span><span>최고 콤보<b>${S.cbm}</b></span></div>
+    ${tip ? `<div class="go-d">${tip}</div>` : ''}
+    <div class="go-b">보상 <b>🐚${R && R.shells || S.earned}</b> · XP +${R && R.gain || 0}</div>
+    <div class="d-row"><button class="btn" id="d-go" type="button">🔁 한 판 더</button></div>
+    <div class="d-row"><button class="btn ghost" id="d-sel" type="button">🗺️ 해변 고르기</button><button class="btn ghost" id="d-close" type="button">닫기</button></div></div>`;
+  $d('d-close').onclick = defendClose;
+  $d('d-sel').onclick = () => { S = null; R = null; barUI(); ctlKey = ''; ctl(); over(); };
+  $d('d-go').onclick = () => start(3);
+}
+
 /* 웨이브 사이 강화 카드 */
 let barKey = '';
 function barUI(){
@@ -800,9 +904,10 @@ function barUI(){
   if(!S || !S.pick || S.ph === 'done'){ if(!el.hidden){ el.hidden = true; el.innerHTML = ''; el.classList.remove('pick'); } barKey = ''; return; }
   const key = S.w + S.pickT + S.pickN + S.pick.join(); if(key === barKey && !el.hidden) return; barKey = key;
   el.hidden = false; el.classList.add('pick', 'arm'); clearTimeout(barUI.tm); barUI.tm = setTimeout(() => el.classList.remove('arm'), 400);   // 막 뜬 카드는 0.4초 동안 안 눌린다 — 공격하던 손가락이 잘못 고르지 않게
-  el.innerHTML = `<div class="d-sh"><b>${S.pickT === 'free' ? '🎟️ 시작 강화 — 하나 골라요' : `✅ WAVE ${S.w} 클리어!`}</b><b>${S.pickT === 'free' ? '' : '강해질 카드 하나 ▼'}</b></div>
-    <div class="d-cards">${S.pick.map((k, i) => { const u = UK[k], l = S.up[k] || 0;
-      return `<button type="button" class="d-card${l ? '' : ' new'}" data-pick="${i}"><i>${u.ic}</i><b>${esc(u.n)}</b><small>${esc(u.d)}</small><em>${k === 'heal' ? `🏫 ${Math.ceil(S.hp)} → ${Math.ceil(Math.min(S.max, S.hp + S.max * .4))}` : l ? `Lv${l} → ${l + 1}` : 'NEW'}</em></button>`; }).join('')}</div>`;
+  const sy = S.pick.map(synFor);
+  el.innerHTML = `<div class="d-sh"><b>${S.pickT === 'free' ? '🎟️ 시작 강화 — 하나 골라요' : `✅ WAVE ${S.w} 클리어!`}</b><b>${sy.some(Boolean) ? '✨ 표시 = 시너지 카드' : S.pickT === 'free' ? '' : '강해질 카드 하나 ▼'}</b></div>
+    <div class="d-cards">${S.pick.map((k, i) => { const u = UK[k], l = S.up[k] || 0, q = sy[i];
+      return `<button type="button" class="d-card${q ? ' syn' : l ? '' : ' new'}" data-pick="${i}"><i>${u.ic}</i><b>${esc(u.n)}</b><small>${esc(u.d)}</small><em>${q ? `✨ ${q.ic} ${esc(q.n)}!` : k === 'heal' ? `🏫 ${Math.ceil(S.hp)} → ${Math.ceil(Math.min(S.max, S.hp + S.max * .4))}` : l ? `Lv${l} → ${l + 1}` : 'NEW'}</em></button>`; }).join('')}</div>`;
   el.querySelectorAll('[data-pick]').forEach(x => x.onclick = () => pick(+x.dataset.pick));
 }
 /* 아래 패드 — 대시 쿨타임 고리, 필살기 게이지, 코치가 가리키는 버튼은 반짝 */
@@ -914,14 +1019,14 @@ window.defendOpen = defendOpen; window.defendClose = defendClose;
 /* 시험·균형용 손잡이 */
 function killAll(withBoss){ for(let p = 0; p < 3; p++) for(const f of FOES) if(f.on && (withBoss || !FO[f.k].boss)) kill(f); }
 function skip(w){ if(!S) return; for(const a of [FOES, SHOTS, ESH]) for(const o of a) o.on = 0; S.boss = null; S.sw = null; S.pick = null; S.pickN = 0; S.w = w - 1; startWave(); }
-window._defend = { get S(){ return S; }, get P(){ return P; }, get stick(){ return stick; }, BTN, start, step, skip, killAll, pick, press, special, spawn, how, FIX, NW, STG, UPS,
+window._defend = { get S(){ return S; }, get P(){ return P; }, drops:DROPS, get stick(){ return stick; }, BTN, start, step, skip, killAll, pick, press, special, spawn, how, FIX, NW, STG, UPS, SYN, SEA, seaOf, infBest, crownIt,
   fast(sec){ for(let k = 0; S && S.ph !== 'done' && k < sec / FIX; k++){ if(S.pick) pick(0); step(FIX); } },
   auto(sec, mode){ const b0 = botOn; botOn = mode === 'casual' ? 2 : 1; for(let k = 0; S && S.ph !== 'done' && k < sec / FIX; k++){ if(S.pick) botPick(); step(FIX); } botOn = b0; BTN.atk = 0; },
   lose(){ if(S && S.ph !== 'done'){ S.pick = null; S.hp = 0; S.hs = 0; step(FIX); } },
   win(){ if(!S) return; skip(NW); S.qi = S.q.length; for(const o of S.q) spawn(o.k); killAll(true); S.pick = null; S.hs = 0; for(let i = 0; i < 200 && S.ph !== 'done'; i++) step(FIX); },
-  run(stg, sd, rw, U, mode){ noRw = !rw; botOn = mode === 'casual' ? 2 : 1; const o0 = S; start(stg, sd, U || {});
+  run(stg, sd, rw, U, mode, sea){ noRw = !rw; botOn = mode === 'casual' ? 2 : 1; const o0 = S; start(stg, sd, U || {}, sea);
     let n = 0; const tr = window._dtrace; while(S.ph !== 'done' && S.t < 900){ if(S.pick) botPick(); step(FIX); if(tr && ++n % 60 === 0) tr.push([S.w, Math.round(S.hp), alive(), +P.stun.toFixed(1), S.kills, Math.round(P.x), Math.round(P.y)].join(' ')); }
-    const o = { res:S.res, w:S.w, kills:S.kills, t:Math.round(S.ft), hp:Math.round(S.hp), stars:S.stars, score:S.score, cb:S.cbm, sps:S.sps, dashes:S.dashes, up:JSON.stringify(S.up) }; botOn = 0; noRw = false;
+    const o = { res:S.res, w:S.w, kills:S.kills, t:Math.round(S.ft), hp:Math.round(S.hp), stars:S.stars, score:S.score, cb:S.cbm, sps:S.sps, dashes:S.dashes, up:JSON.stringify(S.up), syn:Object.keys(S.syn).join(), crs:S.crs }; botOn = 0; noRw = false;
     if($d('defend') && !$d('defend').hidden && o0 !== undefined) over(); return o; }
 };
 })();

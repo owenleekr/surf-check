@@ -23,7 +23,7 @@ R.장제목 = await Q(()=>document.querySelector('.qtt b')?.textContent);
 await Q(()=>document.getElementById('q-ov').click()); await t.sleep(500);
 R.마을 = await Q(()=>({ 걷기:document.getElementById('quest').classList.contains('qw'), 마을:_quest.TV, 사람:_quest.WK.ents.filter(e=>e.t === 'npc').map(e=>e.id).join(','), 보스잠김:_quest.WK.ents.find(e=>e.t === 'boss')?.lock,
   알림판:document.getElementById('q-trk')?.textContent, 길잡이:!document.getElementById('q-tut')?.hidden && document.getElementById('q-tut')?.textContent, 할머니표시:_quest.WK.ents.find(e=>e.id === 'a').mk.textContent,
-  메뉴:document.querySelectorAll('#q-bar .btn').length, 넘침:document.documentElement.scrollWidth > innerWidth }));
+  메뉴:document.querySelectorAll('#q-bar .btn').length, 놀이없음:!_quest.WK.ents.some(e=>e.t === 'fish' || e.t === 'chest'), 넘침:document.documentElement.scrollWidth > innerWidth }));
 // 땅 누르기 → 걸어간다 / 방향키
 const x0 = await Q(()=>_quest.WK.p.x);
 const gp = await Q(()=>{ const r = document.getElementById('q-wv').getBoundingClientRect(); return [r.x + r.width * .8, r.y + r.height * .85]; });
@@ -66,7 +66,7 @@ await Q(()=>document.getElementById('q-home').click()); await t.sleep(400);
 R.보고전 = await Q(()=>({ 표시:_quest.WK.ents.find(e=>e.id === 'a').mk.textContent, 알림판:document.getElementById('q-trk').textContent, 길잡이:document.getElementById('q-tut')?.textContent }));
 const sh0 = await Q(()=>shellBal());
 await walkTo('a'); await skipTalk(); await skipTalk(); await t.sleep(100);
-R.완료 = await Q(()=>({ 카드:document.querySelector('#q-ov .go-t')?.textContent, sg:ME.profile.play.qb.sg, 별:ME.profile.play.qb.st[0], 다음:document.querySelector('#q-ov .go-b')?.textContent }));
+R.완료 = await Q(()=>({ 전투력:document.querySelector('#q-ov .q-pw')?.textContent, 카드:document.querySelector('#q-ov .go-t')?.textContent, sg:ME.profile.play.qb.sg, 별:ME.profile.play.qb.st[0], 다음:document.querySelector('#q-ov .go-b')?.textContent }));
 R.완료.조개 = (await Q(()=>shellBal())) - sh0;
 await Q(()=>document.getElementById('q-ok').click()); await t.sleep(300);
 // ② 모으기 — 받기 → 물건 셋 줍기 → 보고
@@ -187,6 +187,42 @@ R.새동료.빈칸 = await Q(()=>{ const q = _quest; q.force(15, true); q.skip()
 await fresh(4); await Q(()=>{ const q = _quest; q.npcTalk('c'); q.T.ch[0][1](); q.place('gull', 1); }); await t.sleep(200);
 await t.p.reload({ waitUntil:'networkidle2' }); await t.sleep(2500);
 R.새로고침 = await Q(()=>({ qp:JSON.stringify(ME.profile.play.qb.qp), 편성:(ME.profile.play.qb.fm || []).join(',') }));
+// 바닷가 놀이 — 첫 마을 보스를 넘으면 🎣 낚시터·✨ 오늘의 보물. 낚시(던지기 → 너무 일찍 → 입질 → 초록 칸에서 낚아채기 / 칸 밖 놓침),
+// 도감 보상은 처음 한 번·단계 한 번, 선물은 하루 한 번(♥ · ♥3 🐚5 · ♥5 🐚15 + 가방에 보물), 보물은 하루 한 번, 뒤로가기는 낚시터부터, 남의 값 가두기
+await fresh(9);
+R.놀이 = await Q(()=>{ const q = _quest, P = ME.profile.play; P.shells = 0; P.spent = 0; P.qb.fs = {}; P.qb.fi = {}; P.qb.hv = {}; P.qb.fk = 0; delete P.qb.fd; localStorage.removeItem('lineup.share.qfn'); q.town(2);
+  return { 열림:q.funOn(), 낚시터:!!q.WK.ents.find(e=>e.t === 'fish'), 보물:!!q.WK.ents.find(e=>e.t === 'chest'), NEW:!!document.querySelector('.qe.fish.nw') }; });
+await t.sleep(200);
+R.놀이.보물 = await Q(()=>{ const q = _quest, b0 = shellBal(); q.interact(q.WK.ents.find(e=>e.t === 'chest')); const card = document.querySelector('#q-ov .go-t')?.textContent, n = shellBal() - b0;
+  document.getElementById('q-chk').click(); q.chestOpen(); const n2 = shellBal() - b0; return { 카드:card, 조개:n, 두번:n2 === n, 사라짐:!q.WK.ents.find(e=>e.t === 'chest'), 오늘:q.fdOf().c }; });
+await Q(()=>_quest.goTo(_quest.WK.ents.find(e=>e.t === 'fish'))); await untilOv();
+R.낚시 = await Q(()=>(ME.profile.play.qb.fs = {}, { 화면:document.getElementById('q-ov').classList.contains('qv-fish'), 안내:document.getElementById('q-fmsg').textContent, 오늘:document.querySelector('.qf-od')?.textContent }));
+await Q(()=>document.getElementById('q-fgo').click()); await t.sleep(100);
+R.낚시.기다림 = await Q(()=>_quest.FS.st);
+await Q(()=>document.getElementById('q-fgo').click());
+R.낚시.일찍 = await Q(()=>({ 상태:_quest.FS.st, 글:document.getElementById('q-fmsg').textContent }));
+const bite = async () => { await Q(()=>document.getElementById('q-fgo').click()); for(let n = 0; n < 60 && await Q(()=>_quest.FS?.st !== 'bite'); n++) await t.sleep(100); };
+const tapWhen = async inside => { for(let n = 0; n < 300; n++){ const ok = await Q(w=>{ const s = _quest.FS; if(!s || s.st !== 'bite') return 2; const tt = +s.an.currentTime, u = (tt % (2 * s.p)) / s.p, pos = (u > 1 ? 2 - u : u) * 100, inz = pos > s.zl + 4 && pos < s.zl + s.z - 4, out = pos < s.zl - 8 || pos > s.zl + s.z + 8; return (w ? inz : out) ? 1 : 0; }, inside); if(ok){ await Q(()=>document.getElementById('q-fgo').click()); return ok; } await t.sleep(12); } return 0; };
+await bite(); R.낚시.입질 = await Q(()=>({ 상태:_quest.FS.st, 막대:!document.getElementById('q-fbar').hidden, 버튼:document.getElementById('q-fgo').textContent }));
+await tapWhen(false); R.낚시.놓침 = await Q(()=>({ 상태:_quest.FS.st, 글:document.getElementById('q-fmsg').textContent }));
+await bite(); await tapWhen(true); await t.sleep(200);
+R.낚시.잡음 = await Q(()=>({ 카드:document.getElementById('q-ov').classList.contains('qv-fcat'), 제목:document.querySelector('#q-ov .go-t')?.textContent, 잡은수:Object.values(_quest.fsOf()).reduce((a, b)=>a + b, 0) + document.querySelectorAll('.qf-cat').length * 0, 쓰레기:/쓰레기/.test(document.querySelector('#q-ov .go-t')?.textContent || '') }));
+await Q(()=>document.getElementById('q-fag').click()); await t.sleep(100);
+R.낚시.한번더 = await Q(()=>({ 화면:document.getElementById('q-ov').classList.contains('qv-fish'), 상태:_quest.FS.st }));
+R.낚시.뒤로 = await Q(()=>{ const b = _quest.qBack(); return { 처리:b, 닫힘:document.getElementById('q-ov').hidden, 멈춤:!_quest.FS, 열림:!document.getElementById('quest').hidden }; });
+R.도감 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb, F = k=>q.FISH.find(f=>f.k === k); P.fs = {}; P.fi = {}; P.fk = 0; const b0 = shellBal();
+  ['mack', 'nore', 'bori', 'shrimp', 'flat'].forEach(k=>q.fGet(F(k))); const n5 = shellBal() - b0; const r = q.fGet(F('mack'));
+  return { 조개:n5, 다시:r.sh, 단계:P.fk, 바구니:q.fiOf().mack, 종류:Object.keys(q.fsOf()).length }; });
+R.선물 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb, fav = q.favOf(2, 'c'); P.fi = { mack:2, [fav.k]:1 }; q.npcTalk('c'); const L = q.T.lines[0][1], ch = q.T.ch && q.T.ch[0][0];
+  q.T.ch[0][1](); const pick = { 화면:document.getElementById('q-ov').classList.contains('qv-gift'), 칸:document.querySelectorAll('[data-gf]').length };
+  document.querySelector(`[data-gf="${fav.k}"]`).click(); const h1 = q.hvOf()['2c'], again = q.canGift('c'); q.giftGive('c', 'mack');
+  return { 수다:!q.VIL[2].c.say.includes(L), 고르기:ch, ...pick, 좋아함:h1, 오늘또:again, 두번:q.hvOf()['2c'] === h1 && q.fiOf().mack === 2 }; });
+R.선물.단짝 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; q.skip && q.skip(); document.getElementById('q-ov').hidden = true; P.fd = { d:q.fdOf().d, c:1, g:{} }; P.hv = { '2c':2 }; const b0 = shellBal(); q.giftGive('c', 'mack'); const h3 = shellBal() - b0;
+  P.fd.g = {}; P.hv = { '2c':4 }; const b1 = shellBal(); q.giftGive('c', 'mack'); const h5 = shellBal() - b1; q.skip(); q.bag();
+  return { 셋:h3, 다섯:h5, 하트:q.hvOf()['2c'], 보물:[...document.querySelectorAll('.qb-it b')].some(b=>/갯배 사공의 보물/.test(b.textContent)), 끝:!q.canGift('c') }; });
+R.놀이가두기 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.fs = { mack:'9e9', evil:3, gold:-1, __proto__x:1 }; P.hv = { '2c':'<b>', '99z':5, '3d':9 }; P.fd = { d:'2000-01-01', c:1, g:{ '2c':1 } };
+  return { fs:JSON.stringify(q.fsOf()), hv:JSON.stringify(q.hvOf()), fd:q.fdOf().c + JSON.stringify(q.fdOf().g) }; });
+await Q(()=>{ document.getElementById('q-ov').hidden = true; questClose(); });
 for(const k in R) console.log(k, JSON.stringify(R[k]));
 const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 보낸 편지' && R.마을.걷기 && R.마을.마을 === 0 && R.마을.사람 === 'a,c,d,shop' && R.마을.보스잠김 && /해녀 할머니/.test(R.마을.알림판) && /①/.test(R.마을.길잡이) && R.마을.할머니표시 === '❗' && R.마을.메뉴 === 4 && !R.마을.넘침
   && R.걷기.눌러서 > 40 && R.걷기.방향키 < -20 && R.대화1.ov.includes('qv-talk') && R.타자 && R.고르기.n === '해녀 할머니' && R.고르기.ch.length === 2
@@ -210,6 +246,15 @@ const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 
   && R.견고.보스뒤로.대화 && R.견고.보스뒤로.전투없음 && R.견고.보스뒤로.덮개닫힘 && R.견고.보스뒤로.마을 && R.견고.전투뒤로.처리 && R.견고.전투뒤로.전투없음 && R.견고.전투뒤로.열림 && R.견고.전투뒤로.마을
   && R.견고.숨김.멈춤 && R.견고.숨김.다시 && R.견고.다시열기.전투없음 && R.견고.다시열기.마을 === 0 && R.견고.다시열기.걷기 && R.견고.다시열기.보스 && R.견고.회전.폭 >= 300 && R.견고.회전.사람 >= 4 && !R.견고.회전.넘침
   && R.새동료.안내 && R.새동료.편성 && R.새동료.NEW && R.새동료.상세 && R.새동료.자리 === 'crab,me,gull,coach' && R.새동료.지도 && R.새동료.빈칸.자리 === 'crab,me,gull,coach' && R.새동료.빈칸.안내없음
-  && /"g":4,"a":1/.test(R.새로고침.qp) && /gull/.test(R.새로고침.편성.split(',')[1]);
+  && /"g":4,"a":1/.test(R.새로고침.qp) && /gull/.test(R.새로고침.편성.split(',')[1])
+  && R.마을.놀이없음 && /→/.test(R.완료.전투력 || '')
+  && R.놀이.열림 && R.놀이.낚시터 && R.놀이.보물 && R.놀이.NEW && /보물/.test(R.놀이.보물.카드) && R.놀이.보물.조개 >= 5 && R.놀이.보물.두번 && R.놀이.보물.사라짐 && R.놀이.보물.오늘 === 1
+  && R.낚시.화면 && /초록 칸/.test(R.낚시.안내) && /오늘의 물고기/.test(R.낚시.오늘) && R.낚시.기다림 === 'wait' && R.낚시.일찍.상태 === 'idle' && /일찍/.test(R.낚시.일찍.글)
+  && R.낚시.입질.상태 === 'bite' && R.낚시.입질.막대 && /낚아채기/.test(R.낚시.입질.버튼) && R.낚시.놓침.상태 === 'idle' && /놓쳤/.test(R.낚시.놓침.글)
+  && R.낚시.잡음.카드 && (R.낚시.잡음.쓰레기 || R.낚시.잡음.잡은수 === 1) && R.낚시.한번더.화면 && R.낚시.한번더.상태 === 'wait' && R.낚시.뒤로.처리 && R.낚시.뒤로.닫힘 && R.낚시.뒤로.멈춤 && R.낚시.뒤로.열림
+  && R.도감.조개 === 22 && R.도감.다시 === 0 && R.도감.단계 === 1 && R.도감.바구니 === 2 && R.도감.종류 === 5
+  && R.선물.수다 && /선물/.test(R.선물.고르기) && R.선물.화면 && R.선물.칸 === 2 && R.선물.좋아함 === 2 && R.선물.오늘또 === false && R.선물.두번
+  && R.선물.단짝.셋 === 5 && R.선물.단짝.다섯 === 15 && R.선물.단짝.하트 === 5 && R.선물.단짝.보물 && R.선물.단짝.끝
+  && R.놀이가두기.fs === '{"mack":9999}' && R.놀이가두기.hv === '{"3d":5}' && R.놀이가두기.fd === '0{}';
 console.log('판정', ok ? 'OK' : 'FAIL');
 console.log('errs', t.errs); await t.b.close(); process.exit(ok && !t.errs.length ? 0 : 1);
