@@ -43,6 +43,7 @@ WEAR.stripe = { ko:'스트라이프 티', rows:_chest(['wwwwww','rrrrrr','wwwwww
 WEAR.heart  = { ko:'하트 티', rows:_chest(['rrrrrr','rwrrwr','rwwwwr','rrwwrr']) };
 WEAR.vest   = { ko:'구명조끼', rows:_chest(['oorroo','oorroo','okkkko','oorroo']) };
 WEAR.poncho = { ko:'서핑 판초', rows:['.....krrrrrrrrrrrrk.....','....krrrrrrrrrrrrrrk....','...krwrwrwrwrwrwrwrwk...','...kkkkkkkkkkkkkkkkkk...'].concat(LEGS) };
+Object.keys(WEAR).forEach(k=>{ if(!WEAR_KO[k] && WEAR[k]?.ko) WEAR_KO[k] = WEAR[k].ko; });   // 상점 옷도 이름표 — 꾸미기에 undefined 로 뜨던 것
 HAT.straw   = ['........................','.......kttttttttk.......','......kqqqqqqqqqqk......','.kttttttttttttttttttttk.','..kkkkkkkkkkkkkkkkkkkk..'];
 HAT.cat     = ['......kk........kk......','.....kepk......kpek.....','.....keek......keek.....','......kkkkkkkkkkkk......'];
 HAT.flower  = ['........................','........................','..............kyk.......','.............kypyk......','..............kyk.......'];

@@ -1904,22 +1904,22 @@ function renderBuilder(){
         : `<button type="button" class="perk ${cur[key]===v?'on':''}" data-k="${key}" data-v="${v}">${render?render(v,t):t}</button>`; }).join('')}</div></div>`;
   const keys = o => Object.keys(o);
   const G = {
-    hair: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k]]))
+    hair: opt('머리 모양', 'hair', keys(HAIR).map(k=>[k,HAIR_KO[k] || k]))
         + opt('머리 색', 'hairc', keys(HAIRC).map(k=>[k,HAIRC_KO[k]]), sw(HAIRC)),
     face: opt('피부 톤', 'skin', keys(SKIN).map(k=>[k,SKIN_KO[k]]), sw(SKIN))
         + opt('표정', 'face', keys(FACE).map(k=>[k,FACE_KO[k]]))
         + mo('얼굴형', 'fshape') + mo('눈', 'eye') + mo('눈썹', 'brow') + mo('얼굴 소품', 'acc'),
-    wear: opt('상의', 'wear', keys(WEAR).map(k=>[k,WEAR_KO[k]]))
+    wear: opt('상의', 'wear', keys(WEAR).map(k=>[k,WEAR_KO[k] || WEAR[k]?.ko || k]))
         + (cur.wear==='bare' ? '' : opt('상의 색', 'top', keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)))
         + opt('팬츠 · 웻수트', 'bottom', keys(BOTTOMS).map(k=>[k,BOTTOM_KO[k]]), sw(BOTTOMS))
-        + opt('모자', 'hat', keys(HAT).map(k=>[k,HAT_KO[k]]))
+        + opt('모자', 'hat', keys(HAT).map(k=>[k,HAT_KO[k] || k]))
         + (['cap','beanie','bucket','visor','wave','straw'].includes(cur.hat) ? opt('모자 색', 'hatc', keys(TOPS).map(k=>[k,TOP_KO[k]]), sw(TOPS)) : '')
         + mo('손 소품', 'hold'),
     board: opt('보드', 'board', [['long','롱보드'],['fun','펀보드'],['short','숏보드']])
-        + opt('보드 색', 'boardc', keys(BOARDC).map(k=>[k,BOARDC_KO[k]]), sw(BOARDC))
-        + (typeof BPAT === 'object' ? opt('보드 무늬', 'bpat', keys(BPAT).map(k=>[k,BPAT_KO[k]])) : '')
+        + opt('보드 색', 'boardc', keys(BOARDC).map(k=>[k,BOARDC_KO[k] || k]), sw(BOARDC))
+        + (typeof BPAT === 'object' ? opt('보드 무늬', 'bpat', keys(BPAT).map(k=>[k,BPAT_KO[k] || k])) : '')
         + mo('서핑 용품', 'gear'),
-    pet:  opt('같이 타는 친구', 'pet', keys(PET).map(k=>[k,PET_KO[k]]))
+    pet:  opt('같이 타는 친구', 'pet', keys(PET).map(k=>[k,PET_KO[k] || k]))
         + (cur.pet==='none' || !window.MOCHI_OPT?.petv?.[cur.pet] ? '' : opt('종류', 'petv', MOCHI_OPT.petv[cur.pet].map((t, i)=>[String(i), t])))
         + (cur.pet==='none' ? '' : opt('친구 색', 'petc', keys(PETC).map(k=>[k,PETC_KO[k]]), sw(PETC))),
   };
