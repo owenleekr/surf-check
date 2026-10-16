@@ -1168,6 +1168,11 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .qx-it b{ display:block; font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .qx-it small{ display:block; font-size:10.5px; font-weight:700; color:#5B6275; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
 .qx-it.lk{ color:#8A93A6; background:#EEF0F4; border-style:dashed } .qx-it .btn{ flex:none; min-height:34px; padding:0 10px; font-size:12px }
 @media (prefers-reduced-motion:reduce){ .qho,.qc-yun,.qc-glow,.qc-lt,.qc-me,.qc-gl,.qc-tm,.qc-ctl .btn,.q-reg,.q-cut,.q-ban,.q-mono,.qm-rt,.qm-me.mv,.q-skc{ animation:none !important } .qc-lt{ opacity:1; transform:translate(var(--x),var(--y)) } .qm-rt{ stroke-dashoffset:0 } .qc-fd{ transition:none } }
+/* 🚌 등급 거르기 · 🪟 창가만 */
+.bs-filt{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:10px } .bs-filt button{ min-height:40px; padding:0 10px; font-family:inherit; font-weight:800; font-size:13px; background:#fff; border:2px solid var(--ink); cursor:pointer } .bs-filt button[aria-pressed="true"]{ background:var(--sun); box-shadow:inset 0 -3px 0 rgba(27,27,47,.25) } .bs-filt .bs-gr{ margin:0 } .bs-filt .bs-wtg{ margin-left:auto }
+.bs-winbar{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:8px; font-size:13px; font-weight:800 } .bs-winbar small{ font-size:12px; color:#5B6275; font-weight:700 }
+.bs-wn{ display:inline-block; margin-left:6px; padding:0 5px; font-style:normal; font-size:12px; font-weight:800; color:var(--ink); background:var(--sun); border:2px solid var(--ink); border-radius:6px } .bs-wn.none{ background:#E3E6EE; color:#5B6275 }
+.bs-grid.win .bs-st:not(.w){ opacity:.4 } .bs-grid.win .bs-st.w.f{ box-shadow:0 0 0 3px var(--sun) }
 </style>
 </head>
 <body>

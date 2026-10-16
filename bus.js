@@ -10,11 +10,14 @@ const ROUTES = { ds:{ n:'동서울', kind:'시외', book:'https://txbus.t-money.
   gb:{ n:'서울경부', kind:'고속', book:'https://www.kobus.co.kr/main.do', bookN:'코버스(고속버스)', app:'고속버스티머니 앱' },
   ic:{ n:'인천', kind:'고속', book:'https://www.kobus.co.kr/main.do', bookN:'코버스(고속버스)', app:'고속버스티머니 앱' } };
 const GCLS = g => /프리미엄/.test(g) ? 'pr' : /심야/.test(g) ? 'nt' : /우등/.test(g) ? 'ud' : 'ip';
+/* 등급 거르기 — 등급 글자가 비어 있으면 좌석 수로 짐작(21=프리미엄, 28=우등, 41~45=일반) */
+const GN = { ud:'우등', pr:'프리미엄', ip:'일반', nt:'심야' }, GORD = ['ud', 'pr', 'ip', 'nt'];
+const gcl = b => b.grade ? GCLS(b.grade) : b.total === 21 ? 'pr' : b.total === 28 ? 'ud' : b.total >= 41 ? 'ip' : '';
 const read = (k, d) => { try{ return JSON.parse(localStorage.getItem(k) || 'null') || d; }catch(e){ return d; } };
 const write = (k, v) => { try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} };
 const ymd = off => { const d = new Date(Date.now() + off * 864e5); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const DOW = ['일','월','화','수','목','금','토'];
-const SEATS = {}; let seatOpen = '';                                   // 좌석도: 'to|dir|date|t' → { rows } | 'loading' | 'err'
+const SEATS = {}; let seatOpen = '', winRun = null;                                   // 좌석도: 'to|dir|date|t' → { rows } | 'loading' | 'err'
 let view = 'bus', pref = { to:'ds', ...read(PK, { dir:'out', day:0 }) }, cache = {}, loading = false, err = '', poll = 0;
 const key = (dir, date, to) => `${to || 'ds'}|${dir}|${date}`;
 const watches = () => read(WK, []).filter(w=>w.date >= ymd(0));                       // 지난 날짜는 버린다
@@ -50,7 +53,15 @@ function seatTag(b){
 function render(){
   const root = $b('bus-view'); if(!root || view !== 'bus') return;
   const date = ymd(pref.day), c = cache[key(pref.dir, date, pref.to)], d = c?.data, nowHM = new Date().toTimeString().slice(0, 5), RT = ROUTES[pref.to] || ROUTES.ds;
-  const list = (d?.buses || []).filter(b=>pref.day > 0 || b.t > nowHM);
+  const all = (d?.buses || []).filter(b=>pref.day > 0 || b.t > nowHM);
+  const present = [...new Set(all.map(gcl).filter(Boolean))], gr = GN[pref.gr] ? pref.gr : '';
+  const list = gr ? all.filter(b=>gcl(b) === gr) : all, skOf = b=>`${pref.to}|${pref.dir}|${date}|${b.t}`;
+  const need = list.filter(b=>b.k && !fresh(SEATS[skOf(b)])), canMap = list.some(b=>b.k);
+  const filt = all.length ? `<div class="bs-filt" role="group" aria-label="등급·좌석 거르기">${present.length > 1 || gr ? `<button type="button" data-bgr="" aria-pressed="${!gr}">전체</button>${GORD.filter(g=>present.includes(g) || g === gr).map(g=>`<button type="button" data-bgr="${g}" aria-pressed="${gr === g}"><i class="bs-gr ${g}">${GN[g]}</i></button>`).join('')}` : ''}<button type="button" class="bs-wtg" data-bwin aria-pressed="${!!pref.win}">🪟 창가만</button></div>
+    ${pref.win && list.length ? `<div class="bs-winbar">${!canMap ? '<small>이 노선은 좌석 배치를 못 불러와요 — 창가 자리는 예매 사이트에서 확인해 주세요</small>'
+      : winRun ? `<span>🪟 창가 자리 불러오는 중… ${+winRun.done}/${+winRun.n}</span>`
+      : need.length ? `<button type="button" class="btn sm ghost" id="bs-winload">🪟 창가 자리 보기 (${Math.min(10, need.length)}편)</button>` : '<span>🪟 시간 옆 「창가 n」이 빈 창가 자리 수예요</span>'}
+      ${canMap ? '<small>창가 = 줄 양 끝 자리 · 프리미엄 1인석도 창가로 세요</small>' : ''}</div>` : ''}` : '';
   const [a, z] = pref.dir === 'out' ? ['양양', RT.n] : [RT.n, '양양'];
   const ago = d ? Math.max(0, Math.round((Date.now() - new Date(d.fetched).getTime()) / 6e4)) : null;
   const W = watches();
@@ -62,11 +73,13 @@ function render(){
     ${W.length ? `<div class="bs-watching">🔔 알림 거는 중 ${W.length}편 · 앱이 열려 있는 동안 3분마다 확인해요${typeof Notification !== 'undefined' && Notification.permission !== 'granted' ? ' <button type="button" class="btn sm ghost" id="bs-perm">휴대폰 알림 켜기</button>' : ''}</div>` : ''}
     ${loading && !d ? '<div class="skel" aria-hidden="true"><i></i><i></i><i></i></div>' : ''}
     ${err ? `<div class="empty">${err}<br><button type="button" class="btn sm mint" id="bs-retry" style="margin-top:8px">다시 불러오기</button></div>` : ''}
+    ${d ? filt : ''}
     ${d ? (list.length ? `<div class="bs-list">${list.map(b=>{ const w = isWatched(pref.dir, date, b.t, pref.to), want = b.left === 0 || (b.left != null && b.left <= 3);
-        const sk = `${pref.to}|${pref.dir}|${date}|${b.t}`, so = seatOpen === sk, sm = SEATS[sk];
-        return `<div class="bs-row${b.left === 0 ? ' sold' : ''}${b.k ? ' tap' : ''}"${b.k ? ` data-seat="${esc(b.t)}" role="button" tabindex="0" aria-expanded="${so}"` : ''}><span class="bs-t">${b.t}</span><span class="bs-m"><b>${b.grade ? `<i class="bs-gr ${GCLS(b.grade)}">${esc(b.grade)}</i>` : ''}${esc(b.co)}</b><small>${b.total ? `${b.total}인승` : ''}${b.dur ? `${b.total ? ' · ' : ''}${esc(b.dur)} 소요` : ''}${b.fare ? ` · ${Number(b.fare).toLocaleString()}원` : ''}</small></span>
+        const sk = skOf(b), so = seatOpen === sk, sm = SEATS[sk], wn = pref.win && sm && typeof sm === 'object' ? winFree(sm).length : null;
+        return `<div class="bs-row${b.left === 0 ? ' sold' : ''}${b.k ? ' tap' : ''}"${b.k ? ` data-seat="${esc(b.t)}" role="button" tabindex="0" aria-expanded="${so}"` : ''}><span class="bs-t">${b.t}</span><span class="bs-m"><b>${b.grade ? `<i class="bs-gr ${GCLS(b.grade)}">${esc(b.grade)}</i>` : ''}${esc(b.co)}</b><small>${b.total ? `${b.total}인승` : ''}${b.dur ? `${b.total ? ' · ' : ''}${esc(b.dur)} 소요` : ''}${b.fare ? ` · ${Number(b.fare).toLocaleString()}원` : ''}${wn != null ? `<em class="bs-wn${wn ? '' : ' none'}">창가 ${+wn}</em>` : ''}</small></span>
           ${seatTag(b)}${want || w ? `<button type="button" class="bs-bell${w ? ' on' : ''}" data-bell="${esc(b.t)}" aria-pressed="${w}" aria-label="${esc(b.t)} 자리 나면 알림">${w ? '🔔' : '🔕'}</button>` : '<span class="bs-bell-sp"></span>'}</div>
           ${so ? seatHTML(sm, b) : ''}`; }).join('')}</div>`
+      : all.length ? `<div class="empty">${pref.day === 0 ? '오늘 남은' : '이날'} ${GN[gr]} 버스가 없어요<br><button type="button" class="btn sm mint" id="bs-gall" style="margin-top:8px">전체 보기</button></div>`
       : `<div class="empty">${pref.day === 0 ? '오늘은 더 떠날 버스가 없어요' : '이날은 배차가 없어요'}</div>`) : ''}
     <div class="bs-book"><a class="btn sm blue" href="${RT.book}" target="_blank" rel="noopener">🎫 ${RT.bookN}에서 예매 ↗</a><button type="button" class="btn sm ghost" id="bs-refresh">↻ 새로 보기</button></div>
     <div class="note" style="margin-top:6px">📱 휴대폰은 <b>${RT.app}</b>이 편해요(출발 60분 안 차는 앱에서만 예매돼요) · 등급: <i class="bs-gr ud">우등</i> 28인승 · <i class="bs-gr pr">프리미엄</i> 21인승 · <i class="bs-gr ip">일반</i> 41~45인승<br>출처: ${RT.bookN} · ${a} → ${z} · 좌석 수는 몇 분 늦을 수 있어요</div>
@@ -74,6 +87,10 @@ function render(){
   root.querySelectorAll('[data-bto]').forEach(b=>b.onclick = ()=>{ pref.to = b.dataset.bto; write(PK, pref); load(false); });
   root.querySelectorAll('[data-bdir]').forEach(b=>b.onclick = ()=>{ pref.dir = b.dataset.bdir; write(PK, pref); load(false); });
   root.querySelectorAll('[data-bday]').forEach(b=>b.onclick = ()=>{ pref.day = +b.dataset.bday; write(PK, pref); load(false); });
+  root.querySelectorAll('[data-bgr]').forEach(b=>b.onclick = ()=>{ pref.gr = b.dataset.bgr; write(PK, pref); render(); });
+  root.querySelector('[data-bwin]')?.addEventListener('click', ()=>{ pref.win = !pref.win; write(PK, pref); render(); });
+  $b('bs-gall')?.addEventListener('click', ()=>{ pref.gr = ''; write(PK, pref); render(); });
+  $b('bs-winload')?.addEventListener('click', ()=>loadWins(pref.to, pref.dir, date, list));
   root.querySelectorAll('[data-seat]').forEach(r=>{ const go = e=>{ if(e.target.closest('[data-bell]')) return; toggleSeat(pref.to, pref.dir, date, r.dataset.seat); };
     r.onclick = go; r.onkeydown = e=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(e); } }; });
   root.querySelectorAll('[data-bell]').forEach(b=>b.onclick = ()=>toggleWatch(pref.dir, date, b.dataset.bell, pref.to));
@@ -140,32 +157,53 @@ async function vote(id, to){
   catch(e){ say('반영하지 못했어요'); }
 }
 
-/* 좌석 배치도 — 앞이 위. 빈 좌석은 민트, 팔린 좌석은 회색. 통로는 빈칸 */
+/* 좌석 배치도 — 앞이 위. 빈 좌석은 민트, 팔린 좌석은 회색. 통로는 빈칸
+   통로 칸을 계산해 격자에 놓는다 — 시외 41인승은 통로 표시(gap)가 없어 네 자리가 붙어 보이고 맨 뒷줄 5석만 튀어나왔다.
+   줄마다 '통로 앞 자리 수 / 뒤 자리 수'를 세고, 통로 표시가 하나도 없으면 짝수 줄을 반으로 가른다. 맨 뒷줄(통로까지 다 찬 줄)은 그대로 채운다.
+   🪟 창가 = 줄의 맨 앞·맨 끝 자리(맨 뒷줄 5석은 양 끝). 프리미엄 21석(1+2)의 1인석은 창가이자 통로 쪽 — 창가로 센다. */
+const split = r=>{ const gi = r.findIndex(x=>x.gap); return gi > 0 ? [gi, r.length - gi] : null; };
+function lay(sm){
+  let rows = (sm.rows || []).map(r=>r.slice());
+  if(!rows.some(r=>r.some(x=>x.gap))) rows = rows.map(r=>r.length % 2 === 0 && r.length >= 2 ? r.map((x, i)=>i === r.length / 2 ? { ...x, gap:true } : x) : r);
+  return rows;
+}
+const isWin = (r, i) => i === 0 || i === r.length - 1;
+const winFree = sm => lay(sm).flatMap(r=>r.filter((x, i)=>isWin(r, i) && x.free)).map(x=>+x.n);
+const fresh = s => s && typeof s === 'object' && Date.now() - (s.at || 0) < 60e3;
 function seatHTML(sm, b){
   if(!sm || sm === 'loading') return '<div class="bs-seat"><div class="skel" aria-hidden="true"><i></i></div><small>좌석 배치를 불러오는 중…</small></div>';
   if(sm === 'err') return '<div class="bs-seat"><small>좌석 배치를 못 불러왔어요 — 예매 사이트에서 확인해 주세요</small></div>';
-  const free = sm.rows.flat().filter(x=>x.free).map(x=>x.n);
-  /* 통로 칸을 계산해 격자에 놓는다 — 시외 41인승은 통로 표시(gap)가 없어 네 자리가 붙어 보이고 맨 뒷줄 5석만 튀어나왔다.
-     줄마다 '통로 앞 자리 수 / 뒤 자리 수'를 세고, 통로 표시가 하나도 없으면 짝수 줄을 반으로 가른다. 맨 뒷줄(통로까지 다 찬 줄)은 그대로 채운다. */
-  let rows = sm.rows.map(r=>r.slice());
-  if(!rows.some(r=>r.some(x=>x.gap))) rows = rows.map(r=>r.length % 2 === 0 && r.length >= 2 ? r.map((x, i)=>i === r.length / 2 ? { ...x, gap:true } : x) : r);
-  const split = r=>{ const gi = r.findIndex(x=>x.gap); return gi > 0 ? [gi, r.length - gi] : null; };
+  const free = sm.rows.flat().filter(x=>x.free).map(x=>+x.n), rows = lay(sm), W = !!pref.win;
   const sp = rows.map(split).filter(Boolean), L = Math.max(1, ...sp.map(s=>s[0])), R = Math.max(1, ...sp.map(s=>s[1])), C = L + 1 + R;
-  const cell = (x, col)=>`<span class="bs-st ${x.free ? 'f' : 'x'}" style="grid-column:${col}" title="${+x.n}번 ${x.free ? '빈 좌석' : '예매됨'}">${+x.n}</span>`;
+  const cell = (x, col, w, one)=>`<span class="bs-st ${x.free ? 'f' : 'x'}${w ? ' w' : ''}" style="grid-column:${col}" title="${+x.n}번${one ? ' 1인석' : ''}${w ? ' 창가' : ''} ${x.free ? '빈 좌석' : '예매됨'}">${+x.n}</span>`;
   const grid = rows.map(r=>{ const s = split(r);
-    return s ? r.map((x, i)=>cell(x, i < s[0] ? i + 1 : C - (r.length - 1 - i))).join('') : r.map((x, i)=>cell(x, Math.min(C, i + 1))).join(''); }).join('');
-  return `<div class="bs-seat"><div class="bs-front" style="--c:${C}">🚌 앞 · 운전석</div><div class="bs-grid" style="grid-template-columns:repeat(${C}, 38px)">${grid}</div>
-    <small>빈 좌석 <b>${free.length}</b>석${free.length ? ` · ${free.slice(0, 14).join(', ')}${free.length > 14 ? ' …' : ''}번` : ''} · 1분 전후 기준</small></div>`;
+    return s ? r.map((x, i)=>cell(x, i < s[0] ? i + 1 : C - (r.length - 1 - i), isWin(r, i), (i < s[0] ? s[0] : s[1]) === 1)).join('')
+      : r.map((x, i)=>cell(x, Math.min(C, i + 1), isWin(r, i), false)).join(''); }).join('');
+  const list = (a)=>a.length ? ` · ${a.slice(0, 14).join(', ')}${a.length > 14 ? ' …' : ''}번` : '';
+  const wf = W ? winFree(sm) : [], pr = b && gcl(b) === 'pr';
+  return `<div class="bs-seat"><div class="bs-front" style="--c:${C}">🚌 앞 · 운전석</div><div class="bs-grid${W ? ' win' : ''}" style="grid-template-columns:repeat(${C}, 38px)">${grid}</div>
+    <small>${W ? `🪟 빈 창가 <b>${wf.length}</b>석${list(wf)} · 전체 빈 좌석 ${free.length}석${pr ? ' · 프리미엄 1인석 포함' : ''}` : `빈 좌석 <b>${free.length}</b>석${list(free)}`} · 1분 전후 기준</small></div>`;
+}
+async function fetchMap(to, dir, date, b){
+  const sk = `${to}|${dir}|${date}|${b.t}`;
+  if(typeof SEATS[sk] !== 'object') SEATS[sk] = 'loading';
+  try{ const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}&map=${encodeURIComponent(b.k)}`); if(!r.ok) throw 0;
+    const j = await r.json(); SEATS[sk] = { rows:Array.isArray(j.rows) ? j.rows : [], at:Date.now() }; }catch(e){ if(typeof SEATS[sk] !== 'object') SEATS[sk] = 'err'; }
+}
+/* 🪟 창가 자리 보기 — 보이는 차들의 배치도를 한 번에 최대 10편, 한 편씩 0.35초 쉬어 가며 받는다(예매 사이트에 예의). 1분 안에 받은 건 다시 안 받는다 */
+async function loadWins(to, dir, date, list){
+  if(winRun) return;
+  const todo = list.filter(b=>b.k && !fresh(SEATS[`${to}|${dir}|${date}|${b.t}`])).slice(0, 10);
+  if(!todo.length) return;
+  winRun = { n:todo.length, done:0 }; render();
+  try{ for(const b of todo){ await fetchMap(to, dir, date, b); winRun.done++; render(); await new Promise(r=>setTimeout(r, 350)); } }
+  finally{ winRun = null; render(); }
 }
 async function toggleSeat(to, dir, date, t){
   const sk = `${to}|${dir}|${date}|${t}`;
   if(seatOpen === sk){ seatOpen = ''; render(); return; }
   seatOpen = sk; const b = (cache[key(dir, date, to)]?.data?.buses || []).find(x=>x.t === t); if(!b?.k) return;
-  if(!SEATS[sk] || SEATS[sk] === 'err' || Date.now() - (SEATS[sk].at || 0) > 60e3){
-    SEATS[sk] = 'loading'; render();
-    try{ const r = await fetch(`/api/bus-seats?to=${to}&dir=${dir}&date=${date.replace(/-/g, '')}&map=${encodeURIComponent(b.k)}`); if(!r.ok) throw 0;
-      const j = await r.json(); SEATS[sk] = { rows:j.rows || [], at:Date.now() }; }catch(e){ SEATS[sk] = 'err'; }
-  }
+  if(!fresh(SEATS[sk])){ SEATS[sk] = 'loading'; render(); await fetchMap(to, dir, date, b); }
   render();
 }
 
@@ -217,6 +255,6 @@ window.busRender = ()=>{ if(view === 'bus') render(); };
 window.busOpen = ()=>{ if(typeof setTab === 'function') setTab('ride'); setView('bus'); };
 window.busEnter = ()=>{ setView(view); pullReq(); };
 window.carOpen = ()=>{ if(typeof setTab === 'function') setTab('ride'); setView('car'); };
-window._bus = { check, toggleWatch, watches, fetchDay, seatHTML, get cache(){ return cache; } };
+window._bus = { check, toggleWatch, watches, fetchDay, seatHTML, winFree, get cache(){ return cache; } };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 })();
