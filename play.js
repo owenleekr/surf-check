@@ -306,7 +306,12 @@ function playMerge(remote){
     if(Array.isArray(R.st)){ const a = Array.isArray(q.st) ? q.st : (q.st = []); for(let i = 0; i < 44; i++){ const v = _num(R.st[i], 3); if(v > _num(a[i], 3)){ while(a.length <= i) a.push(0); a[i] = v; ch = true; } } }
     [['hx', 1e6], ['hs', 5]].forEach(([f, mx])=>{ const r = R[f]; if(!r || typeof r !== 'object') return; const o = (q[f] && typeof q[f] === 'object') ? q[f] : (q[f] = {}); QHERO.forEach(k=>{ const v = _num(r[k], mx); if(v > _num(o[k], mx)){ o[k] = v; ch = true; } }); });
     if(Array.isArray(R.fm) && !Array.isArray(q.fm)){ q.fm = R.fm.slice(0, 4).map(k=>QHERO.includes(k) ? k : ''); ch = true; }
-    const ri = _num(R.it, 1e13); if(ri > _num(q.it, 1e13)){ q.it = ri; ch = true; } }
+    const ri = _num(R.it, 1e13); if(ri > _num(q.it, 1e13)){ q.it = ri; ch = true; }
+    /* 마을 탐험 — 장비(보드·슈트 0~10)는 큰 쪽, 진행 중 부탁(qp)은 더 뒤의 부탁이 이기고 같은 부탁이면 칸마다 큰 쪽 */
+    if(R.eq && typeof R.eq === 'object'){ const e = (q.eq && typeof q.eq === 'object') ? q.eq : (q.eq = {}); ['b', 'w'].forEach(k=>{ const v = _num(R.eq[k], 10); if(v > _num(e[k], 10)){ e[k] = v; ch = true; } }); }
+    if(R.qp && typeof R.qp === 'object'){ const r = { g:_num(R.qp.g, 44), a:_num(R.qp.a, 1), n:_num(R.qp.n, 3), w:_num(R.qp.w, 3) }, l = (q.qp && typeof q.qp === 'object') ? q.qp : null;
+      if(!l || r.g > _num(l.g, 44)){ q.qp = r; ch = true; }
+      else if(r.g === _num(l.g, 44)) ['a', 'n', 'w'].forEach(k=>{ if(r[k] > _num(l[k], 9)){ l[k] = r[k]; ch = true; } }); } }
   if(remote.df && typeof remote.df === 'object'){ const d = (p.df ||= { best:0, clears:0 }), rb = _num(remote.df.best, 15), rc = _num(remote.df.clears, 9999), rh = _num(remote.df.hd, 3); if(rb > _num(d.best, 15)){ d.best = rb; ch = true; } if(rc > _num(d.clears, 9999)){ d.clears = rc; ch = true; } if(rh > _num(d.hd, 3)){ d.hd = rh; ch = true; }
     for(const [k, mx] of [['st', 3], ['sb', 15]]) if(Array.isArray(remote.df[k])){ const a = Array.isArray(d[k]) ? d[k] : (d[k] = [0, 0, 0]); for(let i = 0; i < 3; i++){ const v = _num(remote.df[k][i], mx); if(v > _num(a[i], mx)){ a[i] = v; ch = true; } } } }   // 해변별 별·최고 라운드 — 칸마다 큰 값
   if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
@@ -611,8 +616,8 @@ function renderHub(enter){
     <div class="pt" style="margin-top:16px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
-      ${card(0,'🗺️','전설의 보드 원정', qSg(p.qb) ? `동료와 자동 전투 RPG · ${qSg(p.qb)}/44스테이지 · ⭐${qStars(p.qb)}` : '동료와 자동 전투 RPG · 11마을 44스테이지', qSg(p.qb) ? '' : 'NEW', 'quest')}
-      ${card(0,'🛡️','해변 수호', p.df ? `⭐ ${(Array.isArray(p.df.st) ? p.df.st : []).slice(0, 3).reduce((a, v) => a + _num(v, 3), 0)}/9 · 최고 ${_num(p.df.best, 15)}/15 라운드` : '해변 3곳 · 레벨 업 기술', p.df ? '' : 'NEW', 'defend')}
+      ${card(0,'🗺️','전설의 보드 원정', qSg(p.qb) ? `마을 주민 부탁 RPG · 마을 ${Math.min(11, Math.floor(qSg(p.qb) / 4) + 1)}/11 · ⭐${qStars(p.qb)}` : '마을을 걷고 주민 부탁을 들어주는 RPG', qSg(p.qb) ? '' : 'NEW', 'quest')}
+      ${card(0,'🛡️','해변 수호', p.df ? `⭐ ${(Array.isArray(p.df.st) ? p.df.st : []).slice(0, 3).reduce((a, v) => a + _num(v, 3), 0)}/9 · 웨이브 ${_num(p.df.best, 15)}/15` : '학교를 지켜라 · 액션', p.df ? '' : 'NEW', 'defend')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}
@@ -827,10 +832,10 @@ const UPG = [
   { k:'j_mag',    g:'jump',   ic:'🧲', n:'자석 시간+',    s:'자석',   d:'조개 자석이 2초씩 더 길게', max:4 },
   { k:'j_item',   g:'jump',   ic:'🎁', n:'아이템 등장↑',  s:'아이템', d:'쉬움에도 아이템이 나오고, 어려움은 더 자주', max:3 },
   { k:'j_val',    g:'jump',   ic:'🐚', n:'조개 가치↑',    s:'조개',   d:'조개 하나에 +2점씩 더', max:5 },
-  { k:'d_atk',    g:'defend', ic:'💥', n:'기본 공격력',   s:'공격',   d:'모든 기술 피해 +8%씩', max:3 },
+  { k:'d_atk',    g:'defend', ic:'💥', n:'기본 공격력',   s:'공격',   d:'모든 공격 피해 +8%씩', max:3 },
   { k:'d_sch',    g:'defend', ic:'🏫', n:'학교 체력',     s:'학교',   d:'학교 HP +10%씩', max:4 },
-  { k:'d_shell',  g:'defend', ic:'🐚', n:'시작 조개',     s:'조개',   d:'정비용 조개 +3개씩 들고 시작', max:4 },
-  { k:'d_free',   g:'defend', ic:'🎟️', n:'첫 카드 무료',  s:'무료',   d:'정비 보급 단계만큼 공짜', max:3 },
+  { k:'d_shell',  g:'defend', ic:'🐚', n:'보너스 조개',   s:'조개',   d:'판이 끝나면 조개 +3개씩 더', max:4 },
+  { k:'d_free',   g:'defend', ic:'🎟️', n:'시작 강화',     s:'시작',   d:'강화 카드를 단계만큼 골라서 시작', max:3 },
   { k:'q_hp',     g:'quest',  ic:'❤️', n:'원정대 체력',   s:'체력',   d:'동료 전원 체력 +6%씩', max:5 },
   { k:'q_atk',    g:'quest',  ic:'⚔️', n:'원정대 공격',   s:'공격',   d:'동료 전원 공격 +5%씩', max:5 },
   { k:'r_mul',    g:'surf',   ic:'🌊', n:'라인업 점수 배율', s:'점수', d:'세션 점수 +3%씩', max:5 },
@@ -881,7 +886,7 @@ function missions(p){
   const day = today(), m = dmOf(p), h = _fh('mis|' + day), v = p.vis?.[day] || {};
   const G = [
     { id:'mj', ic:'🏄', t:'파도 점프 1000점', done:m.j >= 1000, hint:`오늘 최고 ${_num(m.j, 1e6)}/1000점`, go:()=>gameOpen() },
-    { id:'md', ic:'🛡️', t:'해변 수호 5라운드 버티기', done:m.df >= 5, hint:`오늘 최고 ${_num(m.df, 15)}/5 라운드`, go:()=>window.defendOpen?.() },
+    { id:'md', ic:'🛡️', t:'해변 수호 웨이브 5 깨기', done:m.df >= 5, hint:`오늘 최고 ${_num(m.df, 15)}/5 웨이브`, go:()=>window.defendOpen?.() },
     { id:'mr', ic:'🌊', t:'라인업 서핑 400점', done:m.r >= 400, hint:`오늘 최고 ${_num(m.r, 1e6)}/400점`, go:()=>surfOpen() },
     { id:'mq', ic:'🗺️', t:'원정 스테이지 하나 깨기', done:m.q >= 1, hint:'아무 스테이지나 한 판', go:()=>questOpen() },
     { id:'ms', ic:'🛹', t:'서프스케이트 드릴 2번', done:m.sk >= 2, hint:`오늘 ${_num(m.sk, 999)}/2번`, go:()=>skateOpen() },
