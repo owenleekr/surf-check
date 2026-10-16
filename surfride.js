@@ -357,8 +357,17 @@ function hud(){
   if(S.fl > 0 && !RM){ ctx.globalAlpha = Math.min(.5, S.fl * 1.4); Rr('#FFFFFF', 0, 0, W, H); ctx.globalAlpha = 1; }
   const v = S.total + (S.phase === 'ride' ? Math.floor(R.pts) : 0); if(v !== scLast){ scLast = v; const sc = $s('s-score'); if(sc) sc.textContent = v; }
 }
+/* 떠오르는 글씨가 한꺼번에 여러 개 나오면(트릭 연타·콤보 안내·완벽 테이크오프) 서로 겹쳐 못 읽었다 —
+   위에서부터 차례로 쌓아서 한 줄(16px)씩 아래로 민다. 화면 아래(라인업·보드 자리)까지 밀리는 건 그리지 않고 곧 사라진다 */
+const POP_H = 16;
+function popLay(list){
+  let lo = -1e9;
+  for(const p of list.slice().sort((a, b) => a.y - b.y)){ p.dy = Math.max(Math.round(p.y), lo); lo = p.dy + POP_H; p.off = p.dy > H - 34; }
+  return list;
+}
 function pops(){
-  for(const p of S.pops){ ctx.globalAlpha = Math.max(0, Math.min(1, 1 - p.t / (p.life || 0.9) + 0.25)); lab(p.v, p.x, Math.round(p.y), '#FFE27A'); } ctx.globalAlpha = 1; }
+  popLay(S.pops);
+  for(const p of S.pops){ if(p.off) continue; ctx.globalAlpha = Math.max(0, Math.min(1, 1 - p.t / (p.life || 0.9) + 0.25)); lab(p.v, p.x, p.dy, '#FFE27A'); } ctx.globalAlpha = 1; }
 
 function loop(ts){
   raf = requestAnimationFrame(loop);
@@ -420,5 +429,5 @@ function wire(){
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 
 window.surfOpen = surfOpen; window.surfClose = surfClose;
-window._surf = { get hard(){ return hardS; }, set hard(v){ hardS = !!v; }, get S(){ return S; }, get R(){ return R; }, step, press, lift, pull, nextWave, newSession, FIX, set held(v){ held = v; }, trick:(b, n)=>trick(R, b, n || "테스트", 30), cmbM, SET_M };
+window._surf = { get hard(){ return hardS; }, set hard(v){ hardS = !!v; }, get S(){ return S; }, get R(){ return R; }, step, press, lift, pull, nextWave, newSession, FIX, set held(v){ held = v; }, trick:(b, n)=>trick(R, b, n || "테스트", 30), cmbM, SET_M, popLay };
 })();

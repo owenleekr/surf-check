@@ -328,7 +328,8 @@ function playMerge(remote){
       if(!l || R.fd.d > (l.d || '')){ q.fd = { d:R.fd.d, c:_num(R.fd.c, 1), g:{} }; ch = true; }
       if(q.fd.d === R.fd.d){ if(_num(R.fd.c, 1) > _num(q.fd.c, 1)){ q.fd.c = 1; ch = true; } Object.keys((R.fd.g && typeof R.fd.g === 'object') ? R.fd.g : {}).forEach(k=>{ if(/^(10|[0-9])[cd]$/.test(k) && !(q.fd.g ||= {})[k]){ q.fd.g[k] = 1; ch = true; } }); } } }
   if(remote.df && typeof remote.df === 'object'){ const d = (p.df ||= { best:0, clears:0 }), rb = _num(remote.df.best, 15), rc = _num(remote.df.clears, 9999), rh = _num(remote.df.hd, 3); if(rb > _num(d.best, 15)){ d.best = rb; ch = true; } if(rc > _num(d.clears, 9999)){ d.clears = rc; ch = true; } if(rh > _num(d.hd, 3)){ d.hd = rh; ch = true; }
-    for(const [k, mx] of [['st', 3], ['sb', 15]]) if(Array.isArray(remote.df[k])){ const a = Array.isArray(d[k]) ? d[k] : (d[k] = [0, 0, 0]); for(let i = 0; i < 3; i++){ const v = _num(remote.df[k][i], mx); if(v > _num(a[i], mx)){ a[i] = v; ch = true; } } } }   // 해변별 별·최고 라운드 — 칸마다 큰 값
+    for(const [k, mx] of [['st', 3], ['sb', 15]]) if(Array.isArray(remote.df[k])){ const a = Array.isArray(d[k]) ? d[k] : (d[k] = [0, 0, 0]); for(let i = 0; i < 3; i++){ const v = _num(remote.df[k][i], mx); if(v > _num(a[i], mx)){ a[i] = v; ch = true; } } }
+    if(remote.df.inf && typeof remote.df.inf === 'object' && dfInfPut(d, remote.df.inf)) ch = true; }   // 해변별 별·최고 라운드 — 칸마다 큰 값 · 🌀 무한 파도 최고(inf) — 점수·웨이브 칸마다 큰 쪽(가둔 값만)
   if(remote.sk && typeof remote.sk === 'object'){ const sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.best ||= {}; sk.real ||= {};
     Object.keys(remote.sk.best || {}).forEach(k=>{ if((remote.sk.best[k] || 0) > (sk.best[k] || 0)){ sk.best[k] = remote.sk.best[k]; ch = true; } });
     Object.keys(remote.sk.real || {}).forEach(d=>{ if(!sk.real[d]){ sk.real[d] = 1; ch = true; } });
@@ -391,6 +392,7 @@ function playTick(){
   }
   p.lvSeen = Math.max(p.lvSeen||0, lv);
   if(ch) playPush();
+  playDefendInfMove();
   renderPlayBits(); popNext();
 }
 
@@ -497,9 +499,22 @@ function playQuestDone(stage, win, shells, cleared, ex){
   return { best:q.best, gain, shells:sh + bx, x2:bx };
 }
 
+/* 🌀 무한 파도 최고 기록(df.inf) — 점수 ≤9,999,999 · 웨이브 ≤999. 예전엔 이 기기(localStorage)에만 있어서 기기를 바꾸면 사라졌다.
+   dfInf 는 어디서 온 값이든(남의 기기·서버) 숫자로 가두고, dfInfPut 은 칸마다 큰 쪽만 받는다(바뀌었으면 true) */
+const DINF = 'lineup.share.dinf';
+const dfInf = o => ({ s:_num(o && o.s, 9999999), w:_num(o && o.w, 999) });
+function dfInfPut(d, o){ const a = dfInf(d.inf), b = dfInf(o); if(b.s <= a.s && b.w <= a.w) return false; d.inf = { s:Math.max(a.s, b.s), w:Math.max(a.w, b.w) }; return true; }
+/* 이 기기에만 있던 무한 파도 기록을 도감으로 한 번 옮긴다(세션마다 한 번 확인 — 이미 옮겼으면 바뀌는 게 없어 저장도 안 한다) */
+let _dinfMv = false;
+function playDefendInfMove(){
+  if(_dinfMv || !ME?.profile?.play) return; _dinfMv = true;
+  let o = null; try{ o = JSON.parse(localStorage.getItem(DINF) || 'null'); }catch(e){}
+  if(!o || typeof o !== 'object') return;
+  if(dfInfPut(ME.profile.play.df ||= { best:0, clears:0 }, o)){ playPush(); renderPlayBits(); }
+}
 /* 해변 수호가 끝났을 때 — 최고 라운드·성공 횟수·연 해변(hd)·해변별 별(st)·최고 라운드(sb)와 조개.
    해변을 처음 지키면 첫 클리어 보너스(🐚20·30·40, ×2 없음). XP 는 다른 게임과 같은 하루 상한(gxp) 안에서만 */
-function playDefendDone(wave, win, shells, stage, stars){
+function playDefendDone(wave, win, shells, stage, stars, inf){   // inf: 무한 파도 판이면 { s:점수, w:웨이브 }
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today(), d = (p.df ||= { best:0, clears:0 }), g = _num(stage, 2);
   const st = Array.isArray(d.st) ? d.st : (d.st = [0, 0, 0]), sb = Array.isArray(d.sb) ? d.sb : (d.sb = [0, 0, 0]);
@@ -508,6 +523,7 @@ function playDefendDone(wave, win, shells, stage, stars){
   if(win){ d.clears = _num(d.clears, 9999) + 1; if(g + 1 > _num(d.hd, 3)) d.hd = g + 1;
     if(!_num(st[g], 3)) first = [20, 30, 40][g]; const s = _num(stars, 3); if(s > _num(st[g], 3)) st[g] = s; }
   const sh = _num(shells, 60), bx = x2('defend', sh); p.shells = (p.shells || 0) + sh + bx + first;
+  if(inf && typeof inf === 'object') dfInfPut(d, inf);
   dmNote('df', w); wkNote('d', w);
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.ceil(w / 2) + (win ? 4 : 0), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
@@ -542,6 +558,7 @@ let _xpShown = null, _xpFx = 0, _xpSum = 0, _xpT = 0;
 function xpFloat(d){
   const el = $('xpfx'); if(!el || d <= 0) return;
   _xpSum = (Date.now() - _xpFx < 1400 ? _xpSum : 0) + d; _xpFx = Date.now();
+  if(typeof gameSpot === 'function') gameSpot(el, true);   // 게임 중이면 머리줄을 덮지 않는 자리로
   el.textContent = `+${_xpSum} XP`; el.hidden = false; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
   clearTimeout(_xpT); _xpT = setTimeout(()=>{ el.hidden = true; }, 1800);
 }
@@ -636,7 +653,7 @@ function renderHub(enter){
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 📅 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
       ${card(0,'🗺️','전설의 보드 원정', qSg(p.qb) ? `마을 주민 부탁 RPG · 마을 ${Math.min(11, Math.floor(qSg(p.qb) / 4) + 1)}/11 · ⭐${qStars(p.qb)}` : '마을을 걷고 주민 부탁을 들어주는 RPG', qSg(p.qb) ? '' : 'NEW', 'quest')}
-      ${card(0,'🛡️','해변 수호', p.df ? `⭐ ${(Array.isArray(p.df.st) ? p.df.st : []).slice(0, 3).reduce((a, v) => a + _num(v, 3), 0)}/9 · 웨이브 ${_num(p.df.best, 15)}/15` : '학교를 지켜라 · 액션', p.df ? '' : 'NEW', 'defend')}
+      ${card(0,'🛡️','해변 수호', p.df ? `⭐ ${(Array.isArray(p.df.st) ? p.df.st : []).slice(0, 3).reduce((a, v) => a + _num(v, 3), 0)}/9 · 웨이브 ${_num(p.df.best, 15)}/15${dfInf(p.df.inf).w ? `<br><span style="white-space:nowrap">🌀 무한 웨이브 ${dfInf(p.df.inf).w}</span>` : ''}` : '학교를 지켜라 · 액션', p.df ? '' : 'NEW', 'defend')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
       ${card(1,'🧠','코치 퀴즈', `누적 정답 ${p.qz || 0}개`, quizDone ? '' : '+XP', 'quiz')}
       ${card(2,'🔮','오늘의 운세', fortOpen ? '컨디션 ' + '★'.repeat(fortune().star) : '열면 +3 XP', fortOpen ? '' : 'NEW', 'fort')}

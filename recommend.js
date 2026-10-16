@@ -67,7 +67,11 @@ function init(){
   card();
 }
 window.recCard = card; window.markUsed = markUsed;
-window.recTop = () => { const L = list(); return L[0] ? { ic:'💡', who:'', text:`${L[0].t}`, go:'rec' } : null; };
-window.recGo = () => { const L = list(); L[0]?.go(); };
+/* 홈 위 소식줄에 끼우는 추천 한 칸 — 아래 추천 카드가 지금 보여 주는 것(L[idx])과 같은 걸 고르면 새로 온 사람에게
+   「오늘 바다 다녀왔어요?」가 두 번 보였다. 카드에 없는 다음 추천을 고르고, 추천이 하나뿐이면 소식줄엔 넣지 않는다 */
+const feedPick = () => { const L = list(); if(!L.length) return null; const cur = $r('home-rec') ? L[idx % L.length].id : null; return L.find(x=>x.id !== cur) || null; };
+let feedId = '';   // 소식줄에 마지막으로 보여 준 추천 — 누르면 그걸 연다(그 사이 카드를 넘겼어도)
+window.recTop = () => { const r = feedPick(); feedId = r ? r.id : ''; return r ? { ic:'💡', who:'', text:`${r.t}`, go:'rec' } : null; };
+window.recGo = () => { (list().find(x=>x.id === feedId) || feedPick())?.go(); };
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else setTimeout(init, 0);
 })();

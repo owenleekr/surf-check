@@ -18,6 +18,19 @@ await t.S(()=>document.getElementById('k-real').click()); await t.sleep(200);
 console.log('실제로 탔어요', await t.S(()=>({ 버튼:document.getElementById('k-real').textContent, 기록:ME.profile.play.sk })));
 // 실제 루프로 몇 초 — 렌더 오류 확인 + 캡처
 await t.S(()=>_skate.start('flow')); await t.sleep(1800); fs.writeFileSync('/tmp/sk-run.png', await t.p.screenshot());
+// 연속 글자(🔥 N연속)와 코스 위 턴 이름표가 겹치지 않는지 — 실제로 그려진 글자 위치를 모아 상자끼리 비교
+const ov = await t.S(async ()=>{ const g = _skate; g.start('flow'); const G = g.G, cx = document.querySelector('#skate canvas').getContext('2d');
+  const perfect = n => { for(let i = 0; i < n && !G.done; i++){ const seg = G.segs[G.i]; g.held = !!(seg && G.s >= seg.w0 && G.s <= seg.w1); g.step(g.FIX); } };
+  perfect(60 * 12); while(G.stk < 2 && !G.done) perfect(10); G.paused = true;
+  const f0 = cx.fillText, rec = []; cx.fillText = function(t, x, y){ rec.push({ t:String(t), x, y, w:this.measureText(t).width }); return f0.apply(this, arguments); };
+  const box = r => [r.x - 3, r.y - 2, r.x + r.w + 3, r.y + 13], hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+  const LABS = new Set(['꾹', '탑턴', '바텀턴', '컷백']); let frames = 0, both = 0, near = 0, hits = 0;
+  for(let k = 0; k < 120 && !G.done; k++){ perfect(3); rec.length = 0; await new Promise(r=>requestAnimationFrame(r)); await new Promise(r=>requestAnimationFrame(r));
+    const st = rec.filter(r=>/연속/.test(r.t)), lb = rec.filter(r=>LABS.has(r.t)); frames++;
+    if(st.length && lb.length){ both++; if(lb.some(l=>l.y < 60)) near++; if(lb.some(l=>st.some(s=>hit(box(s), box(l))))) hits++; } }
+  cx.fillText = f0; G.paused = false; return { frames, both, near, hits, stk:G.stk }; });
+console.log('연속 글자 vs 턴 이름표', JSON.stringify(ov));
+const bad = []; if(!(ov.both > 10 && ov.hits === 0)) bad.push('연속 글자와 이름표 겹침');
 await t.S(()=>skateClose()); await t.sleep(200);
-console.log('닫힘', await t.S(()=>document.getElementById('skate').hidden), '| errs', t.errs);
-await t.b.close(); process.exit(0);
+console.log('닫힘', await t.S(()=>document.getElementById('skate').hidden), '| errs', t.errs, '| bad', bad);
+await t.b.close(); process.exit(bad.length || t.errs.length ? 1 : 0);

@@ -143,6 +143,7 @@ const TRAILG = Array.from({ length:61 }, (_, i)=>`rgba(255,200,40,${(i / 70).toF
 /* 큰 판정 글자 — 톡 커졌다 제자리로, 어두운 테두리로 어디서든 읽히게 */
 function big(t, x, y, col, sz, sc){ ctx.save(); ctx.translate(Math.round(x), Math.round(y)); ctx.scale(sc, sc); ctx.font = `${sz}px Galmuri11, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(10,22,40,.85)'; ctx.strokeText(t, 0, 0); ctx.fillStyle = col; ctx.fillText(t, 0, 0); ctx.restore(); ctx.textAlign = 'left'; }
+const STK_Y = 29;                                                                   // 연속 글자 줄(위 막대 바로 아래)
 const sy = s => PY - (s - G.s) * 1.0;                                                // 앞(진행 방향)이 화면 위
 function draw(){
   // 바닷가 산책로 한 장(scenery.js) — 세로로 이어 붙여 달린 만큼 흘려 보낸다. 바다 물결·가운데 점선은 그 위에 그대로
@@ -159,7 +160,9 @@ function draw(){
     const win = s >= seg.w0 && s <= seg.w1;
     Rk(win ? (seg.q == null ? '#FFD84A' : seg.q > 0.5 ? '#4ADE80' : '#FF8A8A') : 'rgba(255,255,255,.55)', xAt(s) - (win ? 3 : 1), y, win ? 6 : 2, 2);
   }
-  for(const seg of G.segs){ const y = sy(seg.apex); if(y < 28 || y > PY - 24 || seg.q != null) continue; lab(seg.lab, xAt(seg.apex) + seg.side * 9, y - 6, '#FFE27A', seg.side < 0 ? 'r' : 'l'); }
+  /* 턴 이름표 — 연속 글자(왼쪽 위 27~42px 줄)가 떠 있는 동안은 그 줄 아래(52px~)에서만 그려 둘이 겹치지 않게 */
+  const labTop = G.stk >= 2 ? STK_Y + 25 : 28;
+  for(const seg of G.segs){ const y = sy(seg.apex); if(y < labTop || y > PY - 24 || seg.q != null) continue; lab(seg.lab, xAt(seg.apex) + seg.side * 9, y - 6, '#FFE27A', seg.side < 0 ? 'r' : 'l'); }
   // 바퀴 자국
   const TC = G.stk >= 5 ? TRAILG : TRAIL, tw = G.stk >= 5 ? 2 : 1;
   for(let i = 0; i < G.trail.length; i++){ const p = G.trail[i], y = sy(p.s), c = TC[i] || TC[59]; Rk(c, p.x - 3, y, tw, 2); Rk(c, p.x + 3, y, tw, 2); }
@@ -180,7 +183,7 @@ function draw(){
     const t = inW ? (held ? '좋아요, 꾹!' : '👇 지금 꾹 누르기!') : held ? '떼요!' : soon ? '노란 칸이 와요' : G.i === 0 ? '노란 칸에서만 꾹 누르기' : '';
     if(t) lab(t, x, PY + 18, inW ? '#FFE27A' : '#FFFFFF', 'c'); }
   for(const p of SPK){ if(!p.on) continue; ctx.globalAlpha = Math.max(0, 1 - p.t / .5); Rk(p.t < .25 ? '#FFFFFF' : '#FFE27A', p.x - 1, p.y - 1, 2, 2); } ctx.globalAlpha = 1;
-  if(G.stk >= 2) lab(G.stk >= 5 ? `🔥 플로우 ${G.stk}연속` : `🔥 ${G.stk}연속`, 4, 29, G.stk >= 5 ? '#FFD84A' : '#FFFFFF');
+  if(G.stk >= 2) lab(G.stk >= 5 ? `🔥 플로우 ${G.stk}연속` : `🔥 ${G.stk}연속`, 4, STK_Y, G.stk >= 5 ? '#FFD84A' : '#FFFFFF');
   if(G.gr.t < .7 && G.gr.k){ const [t, col] = GRADE[G.gr.k], e = G.gr.t < .1 ? .6 + G.gr.t / .1 * .6 : G.gr.t < .18 ? 1.2 - (G.gr.t - .1) / .08 * .2 : 1;
     ctx.globalAlpha = G.gr.t > .5 ? (.7 - G.gr.t) / .2 : 1; big(t, CX, 64, col, 20, e); if(G.gr.sub) big(G.gr.sub, CX, 84, '#FFFFFF', 11, 1); ctx.globalAlpha = 1; }
   if(G.fl > 0 && !RM){ ctx.globalAlpha = G.fl * 1.6; Rk('#FFFFFF', 0, 0, W, H); ctx.globalAlpha = 1; }

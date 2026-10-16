@@ -46,6 +46,16 @@ await t.S(()=>{ document.getElementById('s-again').click(); }); await t.sleep(30
 await t.S(()=>{ const g=_surf; g.R.meter=1; for(let i=0;i<60*3;i++) g.step(g.FIX); }); await t.sleep(1500);
 await t.S(()=>{ const g=_surf; g.S.phase='ride'; Object.assign(g.R,{ v:120, h:0.5, x:300, curl:260 }); }); await t.sleep(800); await shot('ride');
 await t.S(()=>{ const g=_surf; Object.assign(g.R,{ v:90, h:0.8, x:600, curl:610 }); g.held=true; }); await t.sleep(250); await shot('tube2');
+// 7) 떠오르는 글씨 여러 개 — 한꺼번에 나와도 서로 겹치지 않게 쌓인다(16px 줄)
+const bad = [];
+const lay = await t.S(()=>{ const L = [{ x:70, y:64, t:0, v:'a' }, { x:70, y:64, t:0, v:'b' }, { x:30, y:70, t:0, v:'c' }, { x:10, y:96, t:0, v:'d' }, { x:10, y:60.4, t:0, v:'e' }];
+  _surf.popLay(L); const ys = L.filter(p=>!p.off).map(p=>p.dy).sort((a, b)=>a - b); let gap = 99; for(let i = 1; i < ys.length; i++) gap = Math.min(gap, ys[i] - ys[i - 1]); return { ys, gap, 숨김:L.filter(p=>p.off).length }; });
+console.log('글씨 쌓기', JSON.stringify(lay)); if(!(lay.gap >= 16 && lay.ys.length === 5)) bad.push('popLay 겹침');
+const live = await t.S(async ()=>{ const g = _surf; g.S.phase = 'ride'; Object.assign(g.R, { v:120, h:0.5, x:300, curl:260 }); g.trick(10, '스냅'); g.trick(10, '카빙'); g.trick(10, '플로터'); g.trick(10, '에어');
+  const ys = []; for(let f = 0; f < 6; f++){ await new Promise(r=>requestAnimationFrame(r)); const v = g.S.pops.filter(p=>!p.off && p.dy != null).map(p=>p.dy).sort((a, b)=>a - b); for(let i = 1; i < v.length; i++) ys.push(v[i] - v[i - 1]); }
+  return { n:g.S.pops.length, gap:ys.length ? Math.min(...ys) : -1 }; });
+console.log('실제 화면 글씨', JSON.stringify(live)); if(!(live.n >= 4 && live.gap >= 16)) bad.push('실제 화면 글씨 겹침');
+await shot('pops');
 await t.S(()=>surfClose()); await t.sleep(200);
-console.log('닫힘', await t.S(()=>document.getElementById('surf').hidden), '| errs', t.errs);
-await t.b.close(); process.exit(0);
+console.log('닫힘', await t.S(()=>document.getElementById('surf').hidden), '| errs', t.errs, '| bad', bad);
+await t.b.close(); process.exit(bad.length || t.errs.length ? 1 : 0);

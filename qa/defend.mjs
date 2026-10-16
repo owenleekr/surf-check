@@ -257,11 +257,12 @@ await D(()=>{ window._dfreeze = 0; _defend.killAll(true); defendClose(); });
 const ie = await D(()=>{ let n = 0, args = null; const f0 = window.playDefendDone; window.playDefendDone = (...a) => { n++; args = a; return f0(...a); };
   const df0 = JSON.stringify({ st:ME.profile.play.df.st, best:ME.profile.play.df.best, sb:ME.profile.play.df.sb, clears:ME.profile.play.df.clears });
   defendOpen(); _defend.start(3, 21, {}); _defend.skip(7); _defend.S.score = 12345; _defend.lose(); for(let i = 0; i < 20; i++) _defend.step(_defend.FIX); _defend.lose();
-  const o = { n, args:args && args.join(), 결과:document.querySelector('#d-ov .go-t')?.textContent, 점수:document.querySelector('#d-ov .d-score')?.textContent, 통계:document.querySelector('#d-ov .go-st')?.textContent.replace(/\s+/g,' '), 기록:localStorage.getItem('lineup.share.dinf'),
+  const o = { n, args:args && args.slice(0, 5).join(), inf:args && JSON.stringify(args[5]), 도감:JSON.stringify(ME.profile.play.df.inf), 결과:document.querySelector('#d-ov .go-t')?.textContent, 점수:document.querySelector('#d-ov .d-score')?.textContent, 통계:document.querySelector('#d-ov .go-st')?.textContent.replace(/\s+/g,' '), 기록:localStorage.getItem('lineup.share.dinf'),
     df:JSON.stringify({ st:ME.profile.play.df.st, best:ME.profile.play.df.best, sb:ME.profile.play.df.sb, clears:ME.profile.play.df.clears }) === df0 };
   window.playDefendDone = f0; return o; });
 await fshot('infend');
 console.log('무한 끝', JSON.stringify(ie)); ok(ie.n === 1 && /^5,false,\d+,0,0$/.test(ie.args || '') && +ie.args.split(',')[2] <= 40 && /웨이브 7까지/.test(ie.결과 || '') && /12,345/.test(ie.점수 || '') && /왕관/.test(ie.통계 || '') && /"s":12345/.test(ie.기록 || '') && /"w":7/.test(ie.기록 || '') && ie.df, '무한 파도 결과·보상');
+ok(ie.inf === '{"s":12345,"w":7}' && ie.도감 === '{"s":12345,"w":7}', '무한 파도 최고 기록이 도감(df.inf)에 저장');
 const ie2 = await D(()=>{ document.getElementById('d-go').click(); const a = _defend.S.inf; _defend.S.score = 50; _defend.lose(); const r = { 다시:a, 기록:localStorage.getItem('lineup.share.dinf'), 최고:document.querySelector('#d-ov .d-score em')?.textContent }; document.getElementById('d-sel').click(); r.메뉴 = document.getElementById('d-inf')?.textContent.replace(/\s+/g,' '); defendClose(); return r; });
 console.log('무한 다시', JSON.stringify(ie2)); ok(ie2.다시 === 1 && /"s":12345/.test(ie2.기록) && /최고 12,345/.test(ie2.최고 || '') && /최고 웨이브 7/.test(ie2.메뉴 || ''), '무한 파도 기록 유지');
 // 봇 — 무한 파도는 언젠가 끝난다
@@ -270,6 +271,28 @@ console.log('봇(무한·가볍게)', JSON.stringify(ib)); ok(ib.res === 'lose' 
 // 이상한 기록값
 const wv2 = await D(()=>{ localStorage.setItem('lineup.share.dinf', '{"s":"<img>","w":1e99}'); defendOpen(); const r = { 글:document.getElementById('d-inf')?.textContent, 태그:!!document.querySelector('#d-ov img') }; defendClose(); localStorage.setItem('lineup.share.dinf', '{"s":12345,"w":7}'); return r; });
 console.log('이상한 기록', JSON.stringify(wv2)); ok(wv2.글 && !wv2.태그 && /최고 웨이브 999/.test(wv2.글), '이상한 기록값');
+// 무한 파도 기록 — 도감에 저장·합치기(칸마다 큰 쪽, 남의 값은 가둔다)·이 기기 기록 옮기기·놀이 카드 표시
+const inf = await D(async ()=>{ const d = ME.profile.play.df, r = {};
+  playMerge({ df:{ inf:{ s:'<img src=x onerror=alert(1)>', w:1e99 } } }); r.이상 = JSON.stringify(d.inf);
+  playMerge({ df:{ inf:{ s:5e7, w:-3 } } }); r.큰점수 = JSON.stringify(d.inf);
+  playMerge({ df:{ inf:[1, 2] } }); playMerge({ df:{ inf:'x' } }); r.배열 = JSON.stringify(d.inf);
+  d.inf = { s:100, w:3 }; playMerge({ df:{ inf:{ s:50, w:9 } } }); r.칸마다 = JSON.stringify(d.inf);
+  setTab('play'); renderHub && renderHub(); await new Promise(z=>setTimeout(z, 100));
+  const c = document.querySelector('[data-hub="defend"]'); r.카드 = c && c.textContent.replace(/\s+/g, ' '); r.태그 = !!(c && c.querySelector('img'));
+  delete d.inf; localStorage.setItem('lineup.share.dinf', '{"s":777,"w":12}'); _dinfMv = false; playTick(); r.옮김 = JSON.stringify(d.inf);
+  _dinfMv = false; const p0 = JSON.stringify(d); playTick(); r.두번째 = JSON.stringify(d) === p0;
+  defendOpen(); r.메뉴 = document.getElementById('d-inf')?.textContent.replace(/\s+/g, ' '); defendClose();
+  localStorage.removeItem('lineup.share.dinf'); r.기기없음 = JSON.stringify(_defend.infBest());
+  return r; });
+await t.sleep(1600);
+const infPost = t.posts.filter(([u, b])=>u.startsWith('surfers') && b && b.profile && b.profile.play && b.profile.play.df && b.profile.play.df.inf).pop();
+console.log('무한 기록 도감', JSON.stringify(inf), '| 올림', infPost && JSON.stringify(infPost[1].profile.play.df.inf));
+ok(inf.이상 === '{"s":12345,"w":999}' && inf.큰점수 === '{"s":9999999,"w":999}' && inf.배열 === inf.큰점수, '무한 기록 합치기 — 이상한 값 가두기');
+ok(inf.칸마다 === '{"s":100,"w":9}', '무한 기록 합치기 — 칸마다 큰 쪽');
+ok(/🌀 무한 웨이브 9/.test(inf.카드 || '') && !inf.태그, '놀이 카드에 무한 웨이브');
+ok(inf.옮김 === '{"s":777,"w":12}' && inf.두번째, '이 기기 기록을 도감으로 한 번 옮김');
+ok(/최고 웨이브 12/.test(inf.메뉴 || '') && inf.기기없음 === '{"s":777,"w":12}', '기기 기록이 없어도 도감 기록으로 메뉴 표시');
+ok(infPost && JSON.stringify(infPost[1].profile.play.df.inf) === '{"s":777,"w":12}', '옮긴 기록을 서버에 올림');
 // 폭마다 — 열린 무한 파도 줄이 있어도 해변 고르기·무한 결과가 스크롤 없이 보이고 버튼이 화면 안
 for(const [w, h] of [[390, 844], [375, 667], [360, 740], [320, 640]]){
   await t.p.setViewport({ width:w, height:h, deviceScaleFactor:2, isMobile:true, hasTouch:true }); await t.sleep(150);

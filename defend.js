@@ -450,10 +450,14 @@ function endInf(){
   const ib = infBest(); S.best = ib.s; S.bestW = ib.w; S.newBest = S.score > ib.s && S.score > 0; S.newW = S.w > ib.w && S.cw > 0;
   R = null;
   if(!noRw){ if(S.newBest || S.newW){ try{ localStorage.setItem(LI, JSON.stringify({ s:Math.max(ib.s, S.score), w:Math.max(ib.w, S.w) })); }catch(e){} }
-    try{ if(typeof playDefendDone === 'function') R = playDefendDone(Math.min(NW, S.cw), false, S.earned, 0, 0) || null; }catch(e){} }
+    try{ if(typeof playDefendDone === 'function') R = playDefendDone(Math.min(NW, S.cw), false, S.earned, 0, 0, S.score > 0 || S.cw > 0 ? { s:S.score, w:S.w } : null) || null; }catch(e){} }   // 무한 최고 기록은 도감(df.inf)에도 — 기기를 바꿔도 남는다
   sfx('lose'); barUI(); ctl(); if(!botOn) over();
 }
-function infBest(){ try{ const o = JSON.parse(localStorage.getItem(LI) || '{}') || {}, n = (v, m) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(m, x)) : 0; }; return { s:n(o.s, 9999999), w:n(o.w, 999) }; }catch(e){ return { s:0, w:0 }; } }
+/* 무한 파도 최고 — 이 기기(LI)와 도감(ME.profile.play.df.inf) 중 큰 쪽. 둘 다 숫자로 가둔다 */
+function infBest(){ const n = (v, m) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(m, x)) : 0; };
+  let o = {}; try{ o = JSON.parse(localStorage.getItem(LI) || '{}') || {}; }catch(e){}
+  let p = null; try{ p = ME.profile.play.df.inf; }catch(e){} if(!p || typeof p !== 'object') p = {};
+  return { s:Math.max(n(o.s, 9999999), n(p.s, 9999999)), w:Math.max(n(o.w, 999), n(p.w, 999)) }; }
 function bests(){ try{ const a = JSON.parse(localStorage.getItem(LB) || '[]'); return [0, 1, 2].map(i => { const v = Math.floor(+(Array.isArray(a) ? a[i] : 0)); return Number.isFinite(v) ? Math.max(0, Math.min(9999999, v)) : 0; }); }catch(e){ return [0, 0, 0]; } }
 
 /* 효과 — 파편·고리·숫자 */
