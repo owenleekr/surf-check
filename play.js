@@ -304,6 +304,8 @@ function playMerge(remote){
     if(p.log) p.log = p.log.filter(x=>x && !del[x.id]).slice(-120); }
   Object.keys(remote.logx||{}).forEach(k=>{ const o = (p.logx ||= {}); if(!o[k]){ o[k] = 1; } });
   Object.keys(remote.badges||{}).forEach(k=>{ if(!p.badges[k]){ p.badges[k] = remote.badges[k]; ch = true; } });
+  /* 파도 점프 업적(ach) — 받은 건 어느 기기든 받은 것(합집합) */
+  if(remote.ach && typeof remote.ach === 'object') Object.keys(remote.ach).forEach(k=>{ if(/^[a-z0-9]{2,8}$/.test(k) && remote.ach[k] && !(p.ach ||= {})[k]){ p.ach[k] = 1; ch = true; } });
   Object.keys(remote.qd||{}).forEach(d=>{ if(!p.qd[d]){ p.qd[d] = remote.qd[d]; ch = true; }
     else Object.keys(remote.qd[d]).forEach(q=>{ if(!p.qd[d][q]){ p.qd[d][q] = 1; ch = true; } }); });
   Object.keys(remote.gn||{}).forEach(d=>{ if((remote.gn[d]||0) > (p.gn[d]||0)){ p.gn[d] = remote.gn[d]; ch = true; } });
@@ -324,6 +326,10 @@ function playMerge(remote){
     /* 낚시 도감(fs)·바구니(fi)·주민 호감(hv)은 칸마다 큰 쪽, 도감 보상 단계(fk)도 큰 쪽, 오늘 상태(fd)는 더 늦은 날 + 같은 날이면 합집합 */
     [['fs', 9999, /^[a-z]{2,8}$/], ['fi', 99, /^[a-z]{2,8}$/], ['hv', 5, /^(10|[0-9])[cd]$/]].forEach(([f, mx, re])=>{ const r = R[f]; if(!r || typeof r !== 'object') return; const o = (q[f] && typeof q[f] === 'object') ? q[f] : (q[f] = {}); Object.keys(r).forEach(k=>{ if(!re.test(k)) return; const v = _num(r[k], mx); if(v > _num(o[k], mx)){ o[k] = v; ch = true; } }); });
     { const rk = _num(R.fk, 3); if(rk > _num(q.fk, 3)){ q.fk = rk; ch = true; } }
+    /* 해변 탐사 최고 층(tw)은 큰 쪽, 명소(lm) 비트는 합집합, 동료 인연(bd)은 칸마다 큰 쪽 */
+    { const rt = _num(R.tw, 999); if(rt > _num(q.tw, 999)){ q.tw = rt; ch = true; }
+      const ll = _num(q.lm, 2047), rl = _num(R.lm, 2047) | ll; if(rl !== ll){ q.lm = rl; ch = true; }
+      if(R.bd && typeof R.bd === 'object'){ const o = (q.bd && typeof q.bd === 'object') ? q.bd : (q.bd = {}); QHERO.forEach(k=>{ const v = _num(R.bd[k], 2); if(v > _num(o[k], 2)){ o[k] = v; ch = true; } }); } }
     if(R.fd && typeof R.fd === 'object' && typeof R.fd.d === 'string' && /^\d{4}-\d\d-\d\d$/.test(R.fd.d)){ const l = (q.fd && typeof q.fd === 'object') ? q.fd : null;
       if(!l || R.fd.d > (l.d || '')){ q.fd = { d:R.fd.d, c:_num(R.fd.c, 1), g:{} }; ch = true; }
       if(q.fd.d === R.fd.d){ if(_num(R.fd.c, 1) > _num(q.fd.c, 1)){ q.fd.c = 1; ch = true; } Object.keys((R.fd.g && typeof R.fd.g === 'object') ? R.fd.g : {}).forEach(k=>{ if(/^(10|[0-9])[cd]$/.test(k) && !(q.fd.g ||= {})[k]){ q.fd.g[k] = 1; ch = true; } }); } } }

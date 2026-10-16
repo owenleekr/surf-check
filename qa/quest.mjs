@@ -222,6 +222,42 @@ R.선물.단짝 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; q.skip
   return { 셋:h3, 다섯:h5, 하트:q.hvOf()['2c'], 보물:[...document.querySelectorAll('.qb-it b')].some(b=>/갯배 사공의 보물/.test(b.textContent)), 끝:!q.canGift('c') }; });
 R.놀이가두기 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.fs = { mack:'9e9', evil:3, gold:-1, __proto__x:1 }; P.hv = { '2c':'<b>', '99z':5, '3d':9 }; P.fd = { d:'2000-01-01', c:1, g:{ '2c':1 } };
   return { fs:JSON.stringify(q.fsOf()), hv:JSON.stringify(q.hvOf()), fd:q.fdOf().c + JSON.stringify(q.fdOf().g) }; });
+// 깊이 더하기 — 🔊 소리 단추 · 지도 「← 마을로」 · 🏛️ 명소(처음만 🐚3, 기록장) · 💞 인연 이야기(Lv5, 처음만 🐚5) · 🌊 해변 탐사(전설 뒤, 새 층만 조개) · 옛 저장/남의 값 가두기
+const SHOT = process.env.DSHOT || '';
+const dsnap = async n => { if(SHOT) fs.writeFileSync(`${SHOT}/deep-q-${n}.png`, await t.p.screenshot()); };
+await fresh(9);
+R.깊이 = await Q(()=>{ const q = _quest, b = document.getElementById('q-snd'), s0 = localStorage.getItem('lineup.share.snd'); b.click(); const s1 = localStorage.getItem('lineup.share.snd'), t1 = b.textContent; b.click();
+  return { 소리:s0 !== s1 && localStorage.getItem('lineup.share.snd') === (s0 === '1' ? '1' : '0') && /🔊|🔇/.test(t1), 하늘:typeof q.nowTint() === 'string' && !!document.querySelector('.qw-tint'), 탐사잠김:!q.twOn() }; });
+R.깊이.지도 = await Q(()=>{ const q = _quest; q.map(); const mx = document.getElementById('q-mx'), r = { 글:mx.textContent.trim(), 탐사없음:!document.getElementById('q-tw') }; mx.click(); r.마을 = document.getElementById('q-ov').hidden && !document.getElementById('quest').hidden && document.getElementById('quest').classList.contains('qw'); return r; });
+await dsnap('1-village');
+R.명소 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; delete P.lm; q.town(2); const e = q.WK.ents.find(x=>x.t === 'lm'), mk = e && e.mk.textContent, b0 = shellBal(); q.interact(e);
+  const r = { 있음:!!e, 표시:mk, 카드:document.querySelector('#q-ov .go-t')?.textContent, 조개:shellBal() - b0, 비트:q.lmOf() };
+  document.getElementById('q-lmok').click(); const b1 = shellBal(); q.interact(q.WK.ents.find(x=>x.t === 'lm')); r.두번 = shellBal() - b1; document.getElementById('q-lmok').click(); r.표시2 = q.WK.ents.find(x=>x.t === 'lm').mk.textContent;
+  q.codex(); r.기록 = [...document.querySelectorAll('.qx h4')].some(h=>/마을 명소 1\/11/.test(h.textContent)); return r; });
+await dsnap('2-codex');
+R.인연 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; delete P.bd; P.hx.gull = 0; q.town(2); const lo = q.bdNext('gull'); P.hx.gull = 16 * 30 + 1; const hi = q.bdNext('gull');
+  q.teamUp(); document.querySelector('.qtm-l [data-hero="gull"]').click(); const btn = document.getElementById('q-bond'), badge = !!document.querySelector('.qtm-l [data-hero="gull"] .qtm-bdg'), b0 = shellBal(); btn.click();
+  return { 잠김:lo.ok, 열림:hi.ok, 배지:badge, 대화:document.getElementById('q-ov').classList.contains('qv-talk'), 말한이:document.querySelector('.qt-n')?.textContent, 조개:shellBal() - b0, 장:P.bd.gull }; });
+await dsnap('3-bond');
+R.인연.뒤 = await Q(()=>{ const q = _quest; q.skip(); const r = { 편성:document.getElementById('q-ov').classList.contains('qv-team'), 다음:q.bdNext('gull').ok, 또:q.bondGo('gull') }; return r; });
+await fresh(44);
+await Q(()=>{ delete ME.profile.play.qb.tw; _quest.map(); }); await t.sleep(300); await dsnap('4-map');
+R.탐사 = await Q(()=>{ const q = _quest, tb = document.getElementById('q-tw'), r = { 열림:q.twOn(), 단추:tb && tb.textContent };
+  tb.click(); r.카드 = document.querySelector('#q-ov .go-t')?.textContent; r.효과 = /이 층의 바다/.test(document.querySelector('#q-ov .go-d')?.textContent || ''); return r; });
+await dsnap('5-tower-card');
+R.탐사.편성 = await Q(()=>{ document.getElementById('q-twgo').click(); const s = _quest.S; return { 종류:s.kind, 층:s.tw, 라벨:document.querySelector('.qtm-hd span')?.textContent, 단추:document.getElementById('q-fight')?.textContent, 웨이브:s.waves.length }; });
+R.탐사.전투 = await Q(()=>{ const q = _quest; document.getElementById('q-fight').click(); const s = q.S; for(let i = 0; i < 90; i++) q.step(q.FIX); return { 적:s.foes.length, 배너:JSON.stringify(s.banQ || '') }; });
+await dsnap('6-tower-battle');
+R.탐사.보상 = await Q(()=>{ const q = _quest, b0 = shellBal(), s = q.S; q.end(true); const n1 = shellBal() - b0; q.skip(); const r = { 층:q.twOf(), 조개:n1, 카드:document.querySelector('#q-ov .go-t')?.textContent };
+  q.twFight(1); q.begin(); const b1 = shellBal(); q.end(true); q.skip(); r.다시 = shellBal() - b1; r.다시층 = q.S.tw; r.그대로 = q.twOf();
+  q.twFight(5); r.건너뛰기 = q.S.tw; return r; });
+await dsnap('7-tower-result');
+R.탐사.보스 = await Q(()=>{ const q = _quest; return { 보스층:q.twWaves(5)[1][0], 보통층:q.twWaves(4)[1].includes('BOSS'), 마을:q.twWaves(12).length }; });
+R.탐사.뒤로 = await Q(()=>{ const q = _quest; q.twFight(2); q.begin(); for(let i = 0; i < 30; i++) q.step(q.FIX); const a = q.qBack(); const r = { 전투:a && !q.S && document.getElementById('quest').classList.contains('qw') }; q.twCard(); r.카드 = q.qBack() && document.getElementById('q-ov').hidden; return r; });
+// 봇 균형 끝의 팀(Lv20·★3·장비 5)으로 — 1층부터 10여 층은 넘고 15층 근처에서 벽
+R.탐사.봇 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.tw = 0; const out = []; q.place('crab', 0); q.place('me', 1); q.place('gull', 2); q.place('haenyeo', 3); P.eq = { b:5, w:5 }; ['me', 'crab', 'gull', 'haenyeo'].forEach(k=>{ P.hx[k] = 10830; P.hs[k] = 3; }); for(let f = 1; f <= 8; f++){ q.twFight(f); q.begin(); const s = q.S; s.tutT = 0; let n = 0; while(q.S === s && !s.res && n++ < 60 * 200) q.step(q.FIX); out.push(s.res === 'win' ? 1 : 0); q.skip(); if(s.res !== 'win') break; } return out.join(''); });
+R.가두기2 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.tw = '<img>'; P.bd = { gull:'<b>', evil:2, haenyeo:7 }; P.lm = -5; const a = { tw:q.twOf(), lm:q.lmOf(), bd:q.bdNext('haenyeo') };
+  P.tw = 1e9; P.lm = 1e9; return { ...a, tw2:q.twOf(), lm2:q.lmOf() }; });
 await Q(()=>{ document.getElementById('q-ov').hidden = true; questClose(); });
 for(const k in R) console.log(k, JSON.stringify(R[k]));
 const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 보낸 편지' && R.마을.걷기 && R.마을.마을 === 0 && R.마을.사람 === 'a,c,d,shop' && R.마을.보스잠김 && /해녀 할머니/.test(R.마을.알림판) && /①/.test(R.마을.길잡이) && R.마을.할머니표시 === '❗' && R.마을.메뉴 === 4 && !R.마을.넘침
@@ -255,6 +291,13 @@ const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 
   && R.도감.조개 === 22 && R.도감.다시 === 0 && R.도감.단계 === 1 && R.도감.바구니 === 2 && R.도감.종류 === 5
   && R.선물.수다 && /선물/.test(R.선물.고르기) && R.선물.화면 && R.선물.칸 === 2 && R.선물.좋아함 === 2 && R.선물.오늘또 === false && R.선물.두번
   && R.선물.단짝.셋 === 5 && R.선물.단짝.다섯 === 15 && R.선물.단짝.하트 === 5 && R.선물.단짝.보물 && R.선물.단짝.끝
-  && R.놀이가두기.fs === '{"mack":9999}' && R.놀이가두기.hv === '{"3d":5}' && R.놀이가두기.fd === '0{}';
+  && R.놀이가두기.fs === '{"mack":9999}' && R.놀이가두기.hv === '{"3d":5}' && R.놀이가두기.fd === '0{}'
+  && R.깊이.소리 && R.깊이.하늘 && R.깊이.탐사잠김 && R.깊이.지도.글 === '← 마을로' && R.깊이.지도.탐사없음 && R.깊이.지도.마을
+  && R.명소.있음 && R.명소.표시 === '✨' && R.명소.카드 === '속초 대관람차' && R.명소.조개 === 3 && R.명소.비트 === 4 && R.명소.두번 === 0 && R.명소.표시2 === '' && R.명소.기록
+  && R.인연.잠김 === false && R.인연.열림 && R.인연.배지 && R.인연.대화 && R.인연.말한이 === '끼룩' && R.인연.조개 === 5 && R.인연.장 === 1 && R.인연.뒤.편성 && R.인연.뒤.다음 === false && R.인연.뒤.또 === false
+  && R.탐사.열림 && /1층 도전/.test(R.탐사.단추) && R.탐사.카드 === '해변 탐사 1층' && R.탐사.효과 && R.탐사.편성.종류 === 'tower' && R.탐사.편성.층 === 1 && /탐사 1층/.test(R.탐사.편성.라벨) && /탐사 1층/.test(R.탐사.편성.단추)
+  && R.탐사.전투.적 >= 3 && R.탐사.보상.층 === 1 && R.탐사.보상.조개 >= 6 && R.탐사.보상.조개 <= 30 && /1층 돌파/.test(R.탐사.보상.카드) && R.탐사.보상.다시 === 0 && R.탐사.보상.다시층 === 1 && R.탐사.보상.그대로 === 1 && R.탐사.보상.건너뛰기 === 2
+  && R.탐사.보스.보스층 === 'BOSS' && !R.탐사.보스.보통층 && R.탐사.뒤로.전투 && R.탐사.뒤로.카드 && /^1/.test(R.탐사.봇)
+  && R.가두기2.tw === 0 && R.가두기2.lm === 0 && R.가두기2.bd === null && R.가두기2.tw2 === 999 && R.가두기2.lm2 === 2047;
 console.log('판정', ok ? 'OK' : 'FAIL');
 console.log('errs', t.errs); await t.b.close(); process.exit(ok && !t.errs.length ? 0 : 1);

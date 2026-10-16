@@ -44,11 +44,31 @@ const SIZES = [
   { n:'무릎 파도', c:62, L:1300, lip:68, close:.12, surf:.35, rock:.0 },
   { n:'허리 파도', c:76, L:1700, lip:52, close:.22, surf:.35, rock:.2 },
   { n:'머리 파도', c:92, L:2100, lip:36, close:.32, surf:.3,  rock:.25 } ];
+/* 📍 스팟 — 양양 낙산 → 죽도 → 인구. 최고 점수(쉬움·어려움 중 큰 쪽)로 열린다. 파도 모양이 다르고, 어려운 스팟은 점수 배율이 조금 붙는다.
+   고른 스팟은 이 기기에 기억(lineup.share.sspot). 기록 칸(sebest/sbest)은 그대로 — 새 저장 필드 없음 */
+const SPOTS = [
+  { k:'naksan', n:'낙산', ic:'🏖', need:0,    d:'길고 완만한 파도 — 처음 서기 좋은 곳', c:.9,  L:1.08, lip:6,   m:1,   pl:'낙산' },
+  { k:'jukdo',  n:'죽도', ic:'🌀', need:500,  d:'빨리 말리는 파도 — 튜브가 잘 생겨요',  c:1.08, L:.92, lip:-6, m:1.1, pl:'죽도', tube:1.3 },
+  { k:'ingu',   n:'인구', ic:'🚀', need:1200, d:'크고 힘 있는 파도 — 에어 각',          c:1.14, L:1.1, lip:-12, m:1.2, pl:'죽도', fast:1 } ];
+let spot = SPOTS[0]; try{ const k = localStorage.getItem('lineup.share.sspot'); spot = SPOTS.find(x=>x.k === k) || SPOTS[0]; }catch(e){}
+const myBest = () => { try{ const p = ME.profile.play || {}; return Math.max(+p.sebest || 0, +p.sbest || 0); }catch(e){ return 0; } };
+const spotOpen = sp => myBest() >= sp.need;
+/* 📖 기술 도감 — 처음 성공한 기술이 한 칸씩 채워진다(이 기기에 기억, 보상 없음 — 보는 재미) */
+const CODEX = [['bottom','바텀턴','맨 아래에서 위로 꺾기'], ['top','탑턴','속도 붙여 립 치기'], ['air','에어','빠르게 립을 넘어 공중으로'], ['grab','에어 + 그랩','공중에서 한 번 더 탭'],
+  ['tube','튜브 라이딩','컬 안에 높이 붙어 빠져나오기'], ['ltube','긴 튜브','튜브 안에서 1.5초 버티기'], ['pull','깔끔한 풀아웃','높은 곳에서 🛑 풀아웃'], ['shore','해변까지','파도 끝까지 타기'],
+  ['perf3','완벽 3연속','완벽한 테이크오프 세 번 연속'], ['c2','콤보 ×2','기술 5개 쉬지 않고'], ['c3','콤보 ×3','기술 8개 쉬지 않고'], ['set','세트 파도 완주','가장 큰 파도를 끝까지(풀아웃 포함)']];
+let CX0 = {}; try{ CX0 = JSON.parse(localStorage.getItem('lineup.share.scodex') || '{}') || {}; }catch(e){ CX0 = {}; }
+function codex(k){ if(CX0[k] || !S) return; const c = CODEX.find(x=>x[0] === k); if(!c) return; CX0[k] = 1; try{ localStorage.setItem('lineup.share.scodex', JSON.stringify(CX0)); }catch(e){}
+  (S.newCx ||= []).push(c[1]); S.pops.push({ x:RX - 50, y:110, t:0, life:1.8, v:`📖 도감 등록: ${c[1]}!` }); beep(1047, 1568, .15, 'triangle', .05); }
+/* 🎯 세션 목표 — 판마다 하나. 해내면 +150점(그 판 합계에). 처음 판은 가장 쉬운 것 */
+const GOALS = [['🏖 해변까지 끝까지 1번','shore',1], ['탑턴 3번','top',3], ['🌀 튜브 1번','tube',1], ['🔗 콤보 5','cmb',5], ['✨ 완벽 테이크오프 2번','perf',2], ['🚀 에어 1번','air',1], ['❤️ 목숨 안 잃고 끝내기','nolose',1]];
+const GOAL_PT = 150;
 const SKY = [ ['#FFE3C2','#FFD0A8','#C9E8FF'], ['#BFE9FF','#9BDBFF','#7ACCF5'], ['#A8E0FF','#86D3FF','#64C3F0'], ['#FFD6A0','#FFB27A','#F08C7E'], ['#7A6CC4','#B57AB8','#F0A07E'] ];
 
 function newSession(){
   if(typeof upFor === 'function') upFor('surf');               // 🔧 강화 적용 표시
-  S = { phase:'lineup', wave:0, lives:LIVES, total:0, bestRide:0, ridden:0, lost:0, tricks:{ top:0, tube:0, air:0, pull:0 }, t:0, pops:[],
+  const gi = (()=>{ try{ return (ME.profile.play && ME.profile.play.sn) ? 1 + Math.floor(Math.random() * (GOALS.length - 1)) : 0; }catch(e){ return 0; } })();
+  S = { goal:{ n:GOALS[gi][0], k:GOALS[gi][1], v:GOALS[gi][2], c:0, done:false }, spot, perfN:0, phase:'lineup', wave:0, lives:LIVES, total:0, bestRide:0, ridden:0, lost:0, tricks:{ top:0, tube:0, air:0, pull:0 }, t:0, pops:[],
         pstk:0, pmax:0, cmax:0, setW:2 + Math.floor(Math.random() * 3), sets:0, fl:0, cmbHint:false };   // setW: 이번 세션의 세트 파도(3~5번째 중 하나)
   newWave();
 }
@@ -56,7 +76,8 @@ function newWave(){
   const big = S.wave >= 3 ? 2 : S.wave >= 1 ? 1 : 0, set = S.wave === S.setW;
   /* 세트 파도 — 한 세션에 한 번, 가장 큰 파도가 온다. 이 파도 점수는 ×1.5. 쉬움은 그래도 쉬움 규칙(클로즈아웃·바위 없음) */
   const base = SIZES[set ? 2 : Math.min(2, Math.max(0, big - (Math.random() < 0.3 ? 1 : 0) + (Math.random() < 0.25 ? 1 : 0)))];
-  const sz = hardS ? base : { ...base, c:base.c * 0.85, close:0, rock:0, surf:0.2 };
+  const sp = S.spot || SPOTS[0], b2 = { ...base, c:base.c * sp.c, L:Math.round(base.L * sp.L), lip:Math.max(28, base.lip + sp.lip) };
+  const sz = hardS ? b2 : { ...b2, c:b2.c * 0.85, close:0, rock:0, surf:0.2 };
   R = { sz, t:0, meter:0, arrive:set ? 3.2 : 2.7, swell:0, needle:0, popT:0, x:0, curl:-30, v:0, h:0.35, vh:0, air:false, ah:0, avh:0, grab:false,
         tube:0, pts:0, obs:[], spray:[], lastUp:false, topLock:0, done:null, msg:'', trick:{ top:0, tube:0, air:0 }, set, cmb:0, cmbT:0, cmax:0 };
   for(let x = 420; x < sz.L - 120; x += 170 + Math.random() * 170){
@@ -100,7 +121,7 @@ function step(dt){
       const q = off < (hardS ? 0.1 : 0.15) ? 'perfect' : off < (hardS ? 0.24 : 0.34) ? 'good' : 'late';
       R.v = q === 'perfect' ? 118 : q === 'good' ? 100 : 82; R.vh = -0.9; R.h = 0.9; R.x = 0; R.curl = -26;
       /* 완벽한 테이크오프가 이어지면 보너스가 30 → 60 → 90 … 로 커진다. 한 번 놓치면 처음부터 */
-      if(q === 'perfect'){ S.pstk++; S.pmax = Math.max(S.pmax, S.pstk); const b = 30 * S.pstk; R.pts += b; S.fl = .3;
+      if(q === 'perfect'){ S.pstk++; S.pmax = Math.max(S.pmax, S.pstk); goalAdd('perf'); if(S.pstk >= 3) codex('perf3'); const b = 30 * S.pstk; R.pts += b; S.fl = .3;
         S.pops.push({ x:RX - 20, y:50, t:0, life:1.2, v:S.pstk > 1 ? `✨ 완벽 ${S.pstk}연속! +${b}` : `✨ 완벽한 테이크오프! +${b}` }); if(S.pstk > 1) beep(784, 1568, .2); }
       else { S.pstk = 0; S.pops.push({ x:RX - 20, y:50, t:0, life:1, v:q === 'good' ? '👍 테이크오프' : '😬 늦은 테이크오프' }); }
       S.phase = 'ride'; beep(523, 1046, 0.15); buzz(15);
@@ -128,7 +149,7 @@ function ride(dt, taps){
     if(taps && !r.grab){ r.grab = true; S.pops.push({ x:RX - 6, y:20, t:0, v:'그랩!' }); beep(990, 1320, 0.1); }
     if(r.ah <= 0){ r.air = false; r.ah = 0; r.h = 1; r.vh = -0.9;
       if(r.curl > r.x){ return wipe('착지했는데 화이트워터…'); }
-      const bonus = 120 + (r.grab ? 40 : 0); r.trick.air++; trick(r, bonus, `🚀 에어${r.grab ? '+그랩' : ''}`, 30, 1.1); S.fl = .35; spray(14); buzz([10, 20, 10]); }
+      const bonus = 120 + (r.grab ? 40 : 0); r.trick.air++; codex('air'); if(r.grab) codex('grab'); goalAdd('air'); trick(r, bonus, `🚀 에어${r.grab ? '+그랩' : ''}`, 30, 1.1); S.fl = .35; spray(14); buzz([10, 20, 10]); }
   }
   if(r.cmb && (r.cmbT -= dt) <= 0){ r.cmb = 0; }                                   // 2.5초 안에 다음 기술이 없으면 콤보가 끊긴다
   // 속도 — 포켓(컬 가까이)에서 힘을 받고, 숄더로 가면 빠진다. 올라가면 느려지고 내려가면 빨라진다.
@@ -140,10 +161,10 @@ function ride(dt, taps){
   // 컬 — 튜브 or 먹힘
   const d2 = r.x - r.curl;
   if(d2 < 0 && !r.air){
-    if(r.h >= 0.55 && d2 > -46){ r.tube += dt; r.pts += 45 * dt * (1 + r.tube); if(r.tube > 2.6) return wipe('튜브가 닫혔어요'); }
+    if(r.h >= 0.55 && d2 > -46){ r.tube += dt; r.pts += 45 * dt * (1 + r.tube) * (sz.tube || 1); if(r.tube >= 1.5) codex('ltube'); if(r.tube > 2.6) return wipe('튜브가 닫혔어요'); }
     else return wipe(r.h < 0.55 ? '화이트워터에 먹혔어요' : '너무 깊이 들어갔어요');
   } else if(d2 >= 0 && r.tube > 0){
-    if(r.tube > 0.25){ const b = Math.floor(80 * r.tube); r.trick.tube++; trick(r, b, '🌀 튜브 성공!', 34, 1.2); S.fl = .35; beep(523, 1568, 0.3); buzz([15, 30, 15]); }
+    if(r.tube > 0.25){ const b = Math.floor(80 * r.tube * (sz.tube || 1)); r.trick.tube++; codex('tube'); goalAdd('tube'); trick(r, b, '🌀 튜브 성공!', 34, 1.2); S.fl = .35; beep(523, 1568, 0.3); buzz([15, 30, 15]); }
     r.tube = 0;
   }
   // 장애물
@@ -168,8 +189,11 @@ function ride(dt, taps){
 /* 기술 콤보 — 기술을 2.5초 안에 이어 하면 배수가 붙는다(3번째부터 ×1.5, 5번째 ×2, 8번째 ×3). 와이프아웃하면 끝 */
 const SET_M = 1.5, CMB_T = 2.5;
 const cmbM = n => n >= 8 ? 3 : n >= 5 ? 2 : n >= 3 ? 1.5 : 1;
+function goalAdd(k, n){ const g = S && S.goal; if(!g || g.done || g.k !== k) return; g.c = n == null ? g.c + 1 : Math.max(g.c, n);
+  if(g.c >= g.v && k !== 'nolose'){ g.done = true; S.total += GOAL_PT; S.pops.push({ x:RX - 60, y:80, t:0, life:2, v:`🎯 세션 목표 달성! +${GOAL_PT}` }); S.fl = Math.max(S.fl, .3); [784, 1047, 1319].forEach((f, i)=>setTimeout(()=>beep(f, 0, .1, 'square', .035), i * 80)); buzz([10, 20, 10]); } }
 function trick(r, base, name, y, life){
-  r.cmb++; r.cmbT = CMB_T; r.cmax = Math.max(r.cmax, r.cmb); S.cmax = Math.max(S.cmax, r.cmb);
+  if(name === '바텀턴') codex('bottom'); else if(name === '탑턴'){ codex('top'); goalAdd('top'); }
+  r.cmb++; goalAdd('cmb', r.cmb); if(r.cmb >= 5) codex('c2'); if(r.cmb >= 8) codex('c3'); r.cmbT = CMB_T; r.cmax = Math.max(r.cmax, r.cmb); S.cmax = Math.max(S.cmax, r.cmb);
   const m = cmbM(r.cmb), v = Math.round(base * m); r.pts += v;
   const pv = { nm:name, x:RX - 16, y:Math.max(y, 64), t:0, life:life || .9, v:`${name} +${v}${m > 1 ? ' ×' + m : ''}` };   // 점수줄(위 두 줄) 아래에서 떠오른다
   { const i = S.pops.findIndex(p=>p.nm === name); if(i >= 0) S.pops[i] = pv; else S.pops.push(pv); }   // 같은 기술(바텀턴 연타)은 한 줄을 고쳐 쓴다 — 네 줄씩 쌓여 서퍼를 가리지 않게
@@ -180,14 +204,15 @@ function spray(n){ for(let i = 0; i < n; i++) R.spray.push({ x:(R.cam || RX) - 6
 
 function wipe(why){
   const r = R; S.lives--; S.lost++;
-  const kept = Math.floor(r.pts * (hardS ? 0.4 : 0.6) * (r.set ? SET_M : 1)); r.cmb = 0;
+  const kept = Math.floor(r.pts * (hardS ? 0.4 : 0.6) * (r.set ? SET_M : 1) * (S.spot ? S.spot.m : 1)); r.cmb = 0;
   r.done = { kind:'wipe', why, got:kept, raw:Math.floor(r.pts) };
   S.total += kept; S.bestRide = Math.max(S.bestRide, kept); S.ridden++;
   S.phase = 'result'; held = false; beep(220, 60, 0.4, 'sawtooth', 0.07); buzz([40, 30, 60]);
   showResult();
 }
 function endRide(kind, bonus){
-  const r = R; const got = Math.floor((r.pts + bonus) * (r.set ? SET_M : 1));
+  const r = R; const got = Math.floor((r.pts + bonus) * (r.set ? SET_M : 1) * (S.spot ? S.spot.m : 1));
+  if(kind === 'shore'){ codex('shore'); goalAdd('shore'); } else if(bonus) codex('pull'); if(r.set) codex('set');
   S.tricks.top += r.trick.top; S.tricks.tube += r.trick.tube; S.tricks.air += r.trick.air; if(r.set) S.sets++;
   r.done = { kind, why:kind === 'shore' ? '해변까지 끝까지 탔어요!' : bonus ? '깔끔한 풀아웃!' : '풀아웃', got, bonus };
   S.total += got; S.bestRide = Math.max(S.bestRide, got); S.ridden++;
@@ -201,6 +226,8 @@ function nextWave(){
 }
 function over(){
   S.phase = 'over'; window._gameRun = false;
+  if(S.goal && !S.goal.done && S.goal.k === 'nolose' && S.lost === 0){ S.goal.done = true; S.total += GOAL_PT; }
+  const open0 = SPOTS.filter(spotOpen).length;
   const U = typeof upFor === 'function' ? upFor('surf', true) : {}, raw = S.total; if(U.mul) S.total = Math.round(raw * (1 + .03 * U.mul));   // 🔧 점수 배율
   const r = typeof playSurfDone === 'function' ? playSurfDone(S.total, S.bestRide, hardS) : { gain:0, newBest:false, best:S.total };
   const p = ME.profile.play || {}, nb = r.newBest && S.total > 0, best = r.best || 0, gap = best - S.total;
@@ -211,6 +238,7 @@ function over(){
     <div class="go-s"><span id="s-cnt">${S.total}</span><small>점</small></div>
     ${goal ? `<div class="go-d" style="margin:-2px 0 8px;word-break:keep-all">${goal}</div>` : ''}
     <div class="go-st"><span>잃은 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>최고 파도<b>${S.bestRide}</b></span><span>${hardS ? '어려움' : '쉬움'} 최고<b>${(hardS ? p.sbest : p.sebest) || S.total}</b></span></div>
+    <div class="go-d" style="margin:0 0 6px">📍 ${S.spot.ic} ${S.spot.n}${S.spot.m > 1 ? ` (×${S.spot.m})` : ''} · 🎯 ${esc(S.goal.n)} ${S.goal.done ? `✅ +${GOAL_PT}` : '— 다음 판에'}${S.newCx ? `<br>📖 새 도감: ${S.newCx.map(esc).join(', ')}` : ''}${(()=>{ const n1 = SPOTS.filter(spotOpen).length, nx = SPOTS[n1 - 1]; return n1 > open0 && nx ? `<br>🔓 <b>${nx.ic} ${nx.n}</b> 스팟이 열렸어요!` : ''; })()}</div>
     <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${S.cmax >= 3 ? ` · 🔗 최대 콤보 ${S.cmax}` : ''}${S.pmax >= 2 ? ` · ✨ 완벽 ${S.pmax}연속` : ''}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}${r.shells ? ` · 🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''}${U.mul ? ` · 🔧 ×${(1 + .03 * U.mul).toFixed(2)}` : ''}</div>
     <div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">↻ 한 판 더</button>
       <button class="btn ghost" id="s-exit" type="button" style="min-height:52px">닫기</button></div>
@@ -257,11 +285,13 @@ function riderY(){ const ly = lipY(R.x - R.curl); return TR - R.h * (TR - ly) - 
 const FACE = ['#BFF0FF','#7FD6F5','#4FBDE8','#36A6DC','#2A90CB','#2079B6','#1A66A0'], LY = new Array(W + 2);
 const ACT = new Set(['lineup', 'missed', 'pop', 'ride']);
 const BGS = [['정동진','sunrise'], ['죽도','morning'], ['속초','day'], ['하조대','golden'], ['경포','dusk']];
+const TODS = ['sunrise', 'morning', 'day', 'golden', 'dusk'];                     // 스팟 한 곳에서 해돋이 → 저녁까지
+const bgAt = i => [(S && S.spot ? S.spot : spot).pl, TODS[i]];
 function draw(){
   const sky = SKY[Math.min(SKY.length - 1, S ? S.wave : 0)];
   // 뒷배경 — 파도마다 다른 강원 마을의 수평선(scenery.js). 기다리는 동안엔 바다까지 넓게 보이고, 파도를 타면 수평선만 남는다
   const wi = Math.min(BGS.length - 1, S ? S.wave : 0), lu = !S || !R || S.phase === 'lineup' || S.phase === 'missed' || S.phase === 'pop', bh = lu ? 144 : 66;
-  const bgOk = !!(window.scenery && scenery.draw(ctx, BGS[wi][0], BGS[wi][1], { w:W, h:bh, hz:62, s:1.12, pan:Math.sin((S ? S.t : 0) / 9) * .8, noFg:1, noVig:1, alt:1 }));
+  const bgOk = !!(window.scenery && scenery.draw(ctx, bgAt(wi)[0], bgAt(wi)[1], { w:W, h:bh, hz:62, s:1.12, pan:Math.sin((S ? S.t : 0) / 9) * .8, noFg:1, noVig:1, alt:1 }));
   if(bgOk) Rr('#2C7DB8', 0, bh, W, H - bh);
   else{ Rr(sky[0], 0, 0, W, 20); Rr(sky[1], 0, 20, W, 22); Rr(sky[2], 0, 42, W, 20); Rr('#3A8FC9', 0, 62, W, 4); Rr('#2C7DB8', 0, 66, W, H - 66); }
   if(!S || !R){ return; }
@@ -354,6 +384,7 @@ function hud(){
   if(S.phase === 'ride'){ lab(`이번 파도 ${Math.floor(R.pts)}${R.set ? ' · 세트 ×1.5' : ''}`, 4, 21, '#FFE27A'); lab(`속도 ${Math.round(R.v)}`, W - 4, 21, R.v >= 135 ? '#4ADE80' : '#FFFFFF', 'r');
     if(R.cmb >= 2){ const m = cmbM(R.cmb); lab(`🔗 콤보 ${R.cmb}${m > 1 ? ' ×' + m : ''}`, 4, H - 42, m >= 3 ? '#FF9BD2' : m >= 2 ? '#FFB86B' : m > 1 ? '#7BE0FF' : '#FFFFFF');   // 왼쪽 아래 — 위쪽 점수줄·기술 글자와 겹치지 않게
       Rr('rgba(0,0,0,.45)', 4, H - 26, 64, 4); Rr('#FFE27A', 4, H - 26, Math.round(64 * Math.max(0, R.cmbT) / CMB_T), 4); } }
+  if(S.goal && (S.phase === 'lineup' || S.phase === 'missed')) lab(`🎯 ${S.goal.n}${S.goal.done ? ' ✅' : S.goal.v > 1 ? ` ${Math.min(S.goal.c, S.goal.v)}/${S.goal.v}` : ''}`, 4, 21, S.goal.done ? '#4ADE80' : '#FFFFFF');
   if(R && R.set && (S.phase === 'lineup' || S.phase === 'pop') && Math.floor(S.t * 3) % 3 !== 0) lab('🌊 세트 파도 온다! 이 파도 점수 ×1.5', W / 2, 40, '#FFE27A', 'c');
   if(S.fl > 0 && !RM){ ctx.globalAlpha = Math.min(.5, S.fl * 1.4); Rr('#FFFFFF', 0, 0, W, H); ctx.globalAlpha = 1; }
   const v = S.total + (S.phase === 'ride' ? Math.floor(R.pts) : 0); if(v !== scLast){ scLast = v; const sc = $s('s-score'); if(sc) sc.textContent = v; }
@@ -380,19 +411,38 @@ function loop(ts){
 
 /* ── 화면 열기·닫기 ── */
 function startCard(){
-  const p = ME.profile.play || {};
+  const p = ME.profile.play || {}; if(!spotOpen(spot)) spot = SPOTS[0];
   $s('s-ov').hidden = false;
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">🌊 라인업 서핑</div>
     <div class="go-mode" role="group" aria-label="난이도"><button type="button" data-sm="easy" aria-pressed="${!hardS}">🙂 쉬움</button><button type="button" data-sm="hard" aria-pressed="${hardS}">🔥 어려움</button></div>
     <div class="go-d" style="text-align:left">① 파도가 오면 <b>연타로 패들</b> ② 초록 칸에서 <b>탭 = 팝업</b><br>③ <b>누르면 위로 · 떼면 아래로</b> — 내려가면 빨라져요<br>${hardS ? '⚠ 앞이 한꺼번에 무너지면 빨리 지나가거나 <b>🛑 풀아웃</b> · 바위·서퍼 피하기' : '컬 가까이 높이 붙으면 🌀 튜브 · 립을 치면 탑턴'}</div>
+    <div class="go-mode" role="group" aria-label="스팟">${SPOTS.map(x=>`<button type="button" data-sp="${x.k}" aria-pressed="${x === spot}" ${spotOpen(x) ? '' : 'disabled'}>${spotOpen(x) ? x.ic : '🔒'} ${x.n}</button>`).join('')}</div>
+    <div class="go-d" style="margin:-2px 0 6px;font-size:12.5px">${spot.ic} ${esc(spot.d)}${spot.m > 1 ? ` · 점수 ×${spot.m}` : ''}${(()=>{ const nx = SPOTS.find(x=>!spotOpen(x)); return nx ? `<br><small>🔒 ${nx.n}: 최고 ${nx.need}점이면 열려요</small>` : ''; })()}</div>
     <div class="go-b">파도 ${WAVES}개 · ❤️×${LIVES} · ${hardS ? '어려움' : '쉬움'} 최고 <b>${(hardS ? p.sbest : p.sebest) || 0}</b>점</div>
+    ${p.sn ? `<button class="btn ghost" id="s-cx" type="button" style="width:100%;min-height:40px;margin-bottom:8px">📖 기술 도감 ${CODEX.filter(c=>CX0[c[0]]).length}/${CODEX.length}</button>` : ''}
     <button class="btn blue" id="s-go" type="button" style="width:100%;min-height:52px;font-size:16px">▶ 패들 아웃!</button></div>`;
   $s('s-go').onclick = ()=>{ newSession(); $s('s-ov').hidden = true; window._gameRun = true; ui(); };
+  $s('s-ov').querySelectorAll('[data-sp]').forEach(b=>b.onclick = ()=>{ const x = SPOTS.find(q=>q.k === b.dataset.sp); if(!x || !spotOpen(x)) return; spot = x; try{ localStorage.setItem('lineup.share.sspot', x.k); }catch(e){} bakeSpot(); startCard(); });
+  if($s('s-cx')) $s('s-cx').onclick = codexCard;
   $s('s-ov').querySelectorAll('[data-sm]').forEach(b=>b.onclick = ()=>{ hardS = b.dataset.sm === 'hard'; try{ localStorage.setItem('lineup.share.smode', hardS ? 'hard' : 'easy'); }catch(e){} startCard(); });
+}
+function bakeSpot(){ if(window.scenery) TODS.forEach((t, i)=>{ const b = bgAt(i); scenery.bake(b[0], b[1], { noFg:1, noVig:1, alt:1 }); }); }   // 미리 구워 두면 첫 파도부터 풍경이 뜬다
+/* 🔇/🔊 — 파도 점프와 같은 설정(lineup.share.snd) */
+function sndMk(){ let b = $s('s-snd'); if(!b){ const x = $s('s-x'); if(!x) return; b = document.createElement('button'); b.id = 's-snd'; b.type = 'button'; b.className = 'btn sm ghost'; x.parentNode.insertBefore(b, x);
+    b.onclick = e=>{ e.stopPropagation(); try{ localStorage.setItem('lineup.share.snd', sndOn() ? '0' : '1'); }catch(e){} sndMk(); beep(660, 990, 0.1); }; }
+  const on = sndOn(); b.textContent = on ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기'); }
+function codexCard(){
+  const n = CODEX.filter(c=>CX0[c[0]]).length;
+  $s('s-ov').hidden = false;
+  $s('s-ov').innerHTML = `<div class="go-card" style="text-align:left"><div class="go-t" style="text-align:center">📖 기술 도감 ${n}/${CODEX.length}</div>
+    <div class="go-d" style="text-align:center">처음 성공한 기술이 여기에 채워져요</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 10px">${CODEX.map(c=>`<div style="padding:6px 8px;border-radius:10px;background:${CX0[c[0]] ? 'rgba(74,222,128,.16)' : 'rgba(127,127,127,.12)'};font-size:12.5px;line-height:1.3"><b>${CX0[c[0]] ? '✅' : '🔒'} ${esc(c[1])}</b><br><small style="opacity:.75">${esc(c[2])}</small></div>`).join('')}</div>
+    <button class="btn blue" id="s-cxb" type="button" style="width:100%;min-height:48px">돌아가기</button></div>`;
+  $s('s-cxb').onclick = startCard;
 }
 function surfOpen(){
   cv = $s('s-cv'); ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
-  if(window.scenery) BGS.forEach(b=>scenery.bake(b[0], b[1], { noFg:1, noVig:1, alt:1 }));   // 미리 구워 두면 첫 파도부터 풍경이 뜬다
+  bakeSpot(); sndMk();   // 미리 구워 두면 첫 파도부터 풍경이 뜬다
   $s('surf').hidden = false; document.body.classList.add('game-on');
   me = mkMe(); S = null; R = null; held = false; startCard(); ui();
   last = 0; acc = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
@@ -430,5 +480,5 @@ function wire(){
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 
 window.surfOpen = surfOpen; window.surfClose = surfClose;
-window._surf = { get hard(){ return hardS; }, set hard(v){ hardS = !!v; }, get S(){ return S; }, get R(){ return R; }, step, press, lift, pull, nextWave, newSession, FIX, set held(v){ held = v; }, trick:(b, n)=>trick(R, b, n || "테스트", 30), cmbM, SET_M, popLay };
+window._surf = { SPOTS, CODEX, GOALS, get spot(){ return spot; }, set spot(k){ spot = SPOTS.find(x=>x.k === k) || SPOTS[0]; }, get codex(){ return CX0; }, startCard, get hard(){ return hardS; }, set hard(v){ hardS = !!v; }, get S(){ return S; }, get R(){ return R; }, step, press, lift, pull, nextWave, newSession, FIX, set held(v){ held = v; }, trick:(b, n)=>trick(R, b, n || "테스트", 30), cmbM, SET_M, popLay };
 })();

@@ -27,6 +27,15 @@ const DRILLS = {
             tips:['바텀턴 → 탑턴 → 컷백을 한 리듬으로 — 바다에서 가장 어려운 게 이 연결', '반대 스탠스로도 한 번(백사이드·늦은 드롭에 도움)', '휴대폰으로 찍어서 보드가 어깨보다 먼저 기우는지 확인'] },
 };
 const ORDER = ['pump', 'bottom', 'cut', 'flow'];
+/* 🎵 프리라이드 — 드릴 뒤에 여는 끝없는 리듬. 턴이 이어질수록 구간이 짧아져(템포↑) 리듬이 빨라진다. 놓침 3번이면 끝.
+   기록은 '성공한 턴 수'(sk.best.free — 드릴과 같은 칸이라 기기끼리 그대로 합쳐진다. 100턴까지 기록) */
+const FREE = { n:'프리라이드', ic:'🎵', d:'끝없이 이어지는 턴 — 갈수록 템포가 빨라져요 · 놓침 3번이면 끝', v0:64, tips:['드릴에서 익힌 펌핑·바텀턴·컷백을 한 줄로 — 실제 서프스케이트에선 이게 「라인」', '빨라질수록 무릎을 더 깊게, 짧게 — 상체는 계속 조용히', '실제로는 5분 연속 → 1분 쉬기를 3번이 좋아요'] };
+const FREE_P = [{ L:70, A:20, w:0.2, lab:'꾹' }, { L:126, A:40, w:0.34, lab:'바텀턴' }, { L:62, A:16, w:0.16, lab:'탑턴' }, { L:156, A:54, w:0.36, lab:'컷백' }];
+const FREE_LIVES = 3;
+const tempoOf = i => Math.min(1.6, 1 + i * 0.012);                                   // 1 → 1.6배(50턴쯤)
+function freeSeg(i, b){ const P = FREE_P[i < 2 ? 0 : Math.floor(Math.random() * FREE_P.length)], k = 1 / tempoOf(i);
+  const g = { L:Math.round(P.L * k), A:Math.round(P.A * (0.55 + 0.45 * k)), w:P.w, lab:P.lab }; g.b = b; g.side = i % 2 ? -1 : 1; g.apex = b + g.L / 2; g.w0 = g.apex - g.L * g.w; g.w1 = g.apex + g.L * g.w; g.inT = 0; g.outT = 0; g.q = null; return g; }
+const freeOn = () => { try{ const b = ME.profile.play && ME.profile.play.sk && ME.profile.play.sk.best; return !!b && ORDER.some(k=>b[k] != null); }catch(e){ return false; } };
 
 let AC = null;
 const sndOn = () => { try{ return localStorage.getItem('lineup.share.snd') === '1'; }catch(e){ return false; } };
@@ -34,11 +43,16 @@ function beep(f0, f1, dur, vol){ if(!sndOn()) return;
   try{ AC ||= new (window.AudioContext || window.webkitAudioContext)(); const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
     o.type = 'triangle'; o.frequency.setValueAtTime(f0, t); if(f1) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
     g.gain.setValueAtTime(vol || 0.05, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .02); }catch(e){} }
+/* 🔇/🔊 — 파도 점프와 같은 설정(lineup.share.snd) 하나를 같이 쓴다 */
+function sndMk(){ let b = $k('k-snd'); if(!b){ const x = $k('k-x'); if(!x) return; b = document.createElement('button'); b.id = 'k-snd'; b.type = 'button'; b.className = 'btn sm ghost'; x.parentNode.insertBefore(b, x);
+    b.onclick = e=>{ e.stopPropagation(); try{ localStorage.setItem('lineup.share.snd', sndOn() ? '0' : '1'); }catch(e){} sndMk(); beep(660, 990, 0.1); }; }
+  const on = sndOn(); b.textContent = on ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기'); }
 const buzz = p => { try{ if(typeof vib === 'function') vib(p); else navigator.vibrate?.(p); }catch(e){} };
 function mkMe(){ const c = document.createElement('canvas'); try{ const q = withLook(ME.profile, ME.name); drawSpr(c, avatarRows(q, false), avatarTintOf(q, 0)); }catch(e){ c.width = 24; c.height = 24; } return c; }
 
 /* 코스 — 구간마다 좌우로 휘는 반쪽 사인. 꼭짓점 주변(w 비율)이 '누르는 칸' */
 function build(kind){
+  if(kind === 'free'){ const segs = []; let b = 14; for(let i = 0; i < 10; i++){ const g = freeSeg(i, b); segs.push(g); b += g.L; } return { segs, end:Infinity, free:true }; }
   const segs = DRILLS[kind].seq(); let b = 14;
   segs.forEach((g, i)=>{ g.b = b; g.side = i % 2 ? -1 : 1; g.apex = b + g.L / 2; g.w0 = g.apex - g.L * g.w; g.w1 = g.apex + g.L * g.w; g.inT = 0; g.outT = 0; g.q = null; b += g.L; });
   return { segs, end:b };
@@ -56,8 +70,8 @@ function slope(s){ return (xAt(s + 2) - xAt(s - 2)) / 4; }
 
 function start(kind){
   if(typeof upFor === 'function') upFor('skate');               // 🔧 강화 적용 표시
-  const tr = build(kind);
-  G = { kind, ...tr, s:0, v:DRILLS[kind].v0, t:0, maxV:DRILLS[kind].v0, done:false, i:0, pops:[], trail:[], comp:0, stalled:0,
+  const tr = build(kind); segHint = 0;
+  G = { kind, ...tr, lives:FREE_LIVES, land:0, s:0, v:(DRILLS[kind] || FREE).v0, t:0, maxV:(DRILLS[kind] || FREE).v0, done:false, i:0, pops:[], trail:[], comp:0, stalled:0,
         stk:0, smax:0, np:0, gr:{ k:'', t:9, sub:'' }, spin:0, fl:0 };            // stk: 연속(좋아요 이상) · gr: 큰 판정 글자 · spin: 360 돌기
   $k('k-ov').hidden = true; held = false; window._gameRun = true;
 }
@@ -82,13 +96,17 @@ function step(dt){
       g.pops.push({ t:0, v:msg, good:seg.q > 0.5 });
       /* 판정 — 완벽!/좋아!/놓침 이 크게 튀어나오고 소리가 다르다. 좋아요 이상이 이어지면 연속, 4연속마다 360 돌기 */
       const k = seg.q > 0.8 ? 'p' : seg.q > 0.5 ? 'g' : 'm'; g.gr.k = k; g.gr.t = 0; g.gr.sub = '';
-      if(k === 'm'){ if(g.stk >= 4) g.gr.sub = `${g.stk}연속 끊김`; g.stk = 0; beep(220, 140, 0.14); }
+      if(k === 'm'){ if(g.stk >= 4) g.gr.sub = `${g.stk}연속 끊김`; g.stk = 0; beep(220, 140, 0.14);
+        if(g.free && g.i >= WARM){ g.lives--; g.gr.sub = g.lives > 0 ? `❤️ ${g.lives}번 남음` : '끝!'; buzz([20, 30, 20]); } }
       else { g.stk++; g.smax = Math.max(g.smax, g.stk); if(k === 'p'){ g.np++; beep(880, 1320, 0.1); buzz(8); } else beep(660, 880, 0.08);
         if(g.stk % 4 === 0){ g.spin = SPIN; g.fl = .25; sparkle(xAt(g.s), PY - 10); g.gr.sub = `🌀 ${g.stk}연속 — 360!`; [784, 988, 1175, 1568].forEach((f, j)=>setTimeout(()=>beep(f, 0, .1, .04), j * 70)); buzz([8, 20, 8]); } }
+      if(g.free && k !== 'm') g.land++;
       g.i++;
+      if(g.free){ while(g.segs.length - g.i < 8){ const L = g.segs[g.segs.length - 1]; g.segs.push(freeSeg(g.segs.length, L.b + L.L)); }
+        if(g.lives <= 0) return finish(false); }
     }
   }
-  g.v = Math.max(0, Math.min(170, g.v - (g.i >= WARM ? 4 : 0) * dt)); g.maxV = Math.max(g.maxV, g.v);   // 몸풀기 두 턴 동안은 줄지 않는다(출발 여유)
+  g.v = Math.max(0, Math.min(170, g.v - (g.i >= WARM ? (g.free ? 4 + 6 * (tempoOf(g.i) - 1) : 4) : 0) * dt)); g.maxV = Math.max(g.maxV, g.v);   // 몸풀기 두 턴 동안은 줄지 않는다(출발 여유)
   if(g.v < 12){ g.stalled += dt; if(g.stalled > 1.2) return finish(true); } else g.stalled = 0;
   g.trail.push({ s:g.s, x:xAt(g.s) }); if(g.trail.length > 60) g.trail.shift();
   g.pops.forEach(p=>p.t += dt); g.pops = g.pops.filter(p=>p.t < 0.9);
@@ -105,6 +123,7 @@ const RM = (()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').mat
 const GRADE = { p:['완벽!', '#FFE27A'], g:['좋아!', '#4ADE80'], m:['놓침', '#FF8A8A'] };
 function finish(stalled){
   const g = G; g.done = true; window._gameRun = false;
+  if(g.free) return finishFree(stalled);
   const qs = g.segs.filter(s=>s.q != null).map(s=>s.q), accP = qs.length ? Math.round(qs.reduce((a,b)=>a + b, 0) / qs.length * 100) : 0;
   const sc = stalled ? Math.round(accP * qs.length / g.segs.length) : accP;      // 멈추면 탄 만큼만 — 화면에도 같은 숫자를 보여 준다
   let prev = null; try{ const b = ME.profile.play && ME.profile.play.sk && ME.profile.play.sk.best; if(b && b[g.kind] != null) prev = +b[g.kind] || 0; }catch(e){}
@@ -120,14 +139,31 @@ function finish(stalled){
     ${r.gain || r.shells ? `<div class="go-b" style="text-align:center">${[r.gain ? `+${r.gain} XP` : '', r.shells ? `🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''].filter(Boolean).join(' · ')}</div>` : ''}
     <button class="btn mint" id="k-real" type="button" style="width:100%;min-height:48px" ${r.real ? 'disabled' : ''}>${r.real ? '✅ 오늘 실제로 탔어요' : '🛹 오늘 실제로 10분 탔어요 (+5 XP)'}</button>
     <div style="display:flex;gap:8px;margin-top:8px"><button class="btn blue" id="k-again" type="button" style="flex:1;min-height:48px">↻ 한 판 더</button>
-      ${ni < ORDER.length ? `<button class="btn blue" id="k-next" type="button" style="flex:1.4;min-height:48px;font-size:13px;line-height:1.25;padding:4px 8px">다음 ▶<br>${esc(DRILLS[ORDER[ni]].n)}</button>` : ''}
+      ${ni < ORDER.length ? `<button class="btn blue" id="k-next" type="button" style="flex:1.4;min-height:48px;font-size:13px;line-height:1.25;padding:4px 8px">다음 ▶<br>${esc(DRILLS[ORDER[ni]].n)}</button>` : `<button class="btn blue" id="k-next" type="button" style="flex:1.4;min-height:48px;font-size:13px;line-height:1.25;padding:4px 8px">다음 ▶<br>🎵 프리라이드</button>`}
       <button class="btn ghost" id="k-menu" type="button" style="min-height:48px">목록</button></div></div>`;
   $k('k-again').onclick = ()=>start(g.kind);
-  if($k('k-next')) $k('k-next').onclick = ()=>start(ORDER[ni]);
+  if($k('k-next')) $k('k-next').onclick = ()=>start(ni < ORDER.length ? ORDER[ni] : 'free');
   $k('k-menu').onclick = menu;
   $k('k-real').onclick = ()=>{ const ok = typeof playSkateReal === 'function' && playSkateReal(); const b = $k('k-real'); b.disabled = true; b.textContent = '✅ 오늘 실제로 탔어요'; if(ok) toast('훈련 기록했어요 +5 XP 🛹'); };
   beep(523, 1046, 0.25);
   if(nb) [523, 659, 784, 1047].forEach((f, j)=>setTimeout(()=>beep(f, 0, .12, .04), 200 + j * 90));
+  countUp($k('k-cnt'), sc);
+}
+function finishFree(stalled){
+  const g = G, sc = g.land;
+  let prev = null; try{ const b = ME.profile.play && ME.profile.play.sk && ME.profile.play.sk.best; if(b && b.free != null) prev = +b.free || 0; }catch(e){}
+  const r = typeof playSkateDone === 'function' ? playSkateDone('free', Math.min(100, sc)) : { gain:0, best:sc, real:false };
+  const nb = sc > 0 && prev != null && sc > prev, best = Math.max(r.best || 0, Math.min(100, sc));
+  $k('k-ov').hidden = false;
+  $k('k-ov').innerHTML = `<div class="go-card" style="text-align:left"><div class="go-t" style="text-align:center">${nb ? '🎉 프리라이드 최고 기록!' : stalled ? '🛑 멈췄어요' : '🎵 라인 끝'}</div>
+    <div class="go-st"><span>성공한 턴<b><i id="k-cnt" style="font-style:normal">${sc}</i></b></span><span>최대 연속<b>${g.smax}</b></span><span>최고 템포<b>×${tempoOf(g.i).toFixed(1)}</b></span><span>내 최고<b>${best}턴</b></span></div>
+    ${!nb && best > sc ? `<div class="go-d" style="text-align:center;margin:0 0 8px">🎯 내 최고 ${best}턴까지 <b>${best - sc}</b>턴</div>` : ''}
+    <div class="sk-tip"><b>${FREE.ic} 실제로 해 보기 — 라인 타기</b><ul>${FREE.tips.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>
+    ${r.gain || r.shells ? `<div class="go-b" style="text-align:center">${[r.gain ? `+${r.gain} XP` : '', r.shells ? `🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''].filter(Boolean).join(' · ')}</div>` : ''}
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn blue" id="k-again" type="button" style="flex:1;min-height:48px">↻ 한 판 더</button>
+      <button class="btn ghost" id="k-menu" type="button" style="min-height:48px">목록</button></div></div>`;
+  $k('k-again').onclick = ()=>start('free'); $k('k-menu').onclick = menu;
+  beep(523, 1046, 0.25); if(nb) [523, 659, 784, 1047].forEach((f, j)=>setTimeout(()=>beep(f, 0, .12, .04), 200 + j * 90));
   countUp($k('k-cnt'), sc);
 }
 function countUp(el, to){ if(!el || RM || to <= 0) return; const t0 = performance.now(), D = 600; el.textContent = '0';
@@ -174,8 +210,9 @@ function draw(){
   ctx.restore();
   if(held){ ctx.globalAlpha = 0.5; Rk('#FFD84A', x - 10, PY + 10, 20, 2); ctx.globalAlpha = 1; }
   // 위 — 드릴·진행·속도
-  const D = DRILLS[G.kind];
-  Rk('rgba(20,30,50,.78)', 0, 0, W, 25); lab(`${D.ic} ${D.n}`, 4, 3, '#FFFFFF', 'l', 0); lab(`${Math.min(G.i + 1, G.segs.length)}/${G.segs.length}`, W - 4, 3, '#FFFFFF', 'r', 0);
+  const D = DRILLS[G.kind] || FREE;
+  Rk('rgba(20,30,50,.78)', 0, 0, W, 25); lab(G.free ? `${D.ic} ${G.land}턴 · 템포×${tempoOf(G.i).toFixed(1)}` : `${D.ic} ${D.n}`, 4, 3, '#FFFFFF', 'l', 0);
+  lab(G.free ? '❤️'.repeat(Math.max(0, G.lives)) + '🤍'.repeat(FREE_LIVES - Math.max(0, G.lives)) : `${Math.min(G.i + 1, G.segs.length)}/${G.segs.length}`, W - 4, 3, '#FFFFFF', 'r', 0);
   Rk('rgba(255,255,255,.25)', 4, 18, W - 8, 4); Rk(G.v > 90 ? '#4ADE80' : G.v > 40 ? '#FFD84A' : '#FF8A8A', 4, 18, (W - 8) * Math.min(1, G.v / 150), 4);
   /* 몸풀기 두 턴 — 지금 눌러야 하는지 떼야 하는지 스케이터 위에서 알려 준다 */
   const cs = G.segs[G.i];
@@ -204,13 +241,14 @@ function menu(){
   $k('k-ov').innerHTML = `<div class="go-card" style="text-align:left"><div class="go-t" style="text-align:center">🛹 서프스케이트 훈련</div>
     <div class="go-d">땅에서 서핑 동작을 반복하는 연습장. 바다에선 한 번에 10~20번인 턴을 여기선 수십 번.<br><b>노란 칸을 지나는 동안 꾹(웅크리기)</b>, 벗어나면 떼기(펴기) — 리듬이 맞으면 빨라져요.</div>
     ${ORDER.map((k, i)=>`<button type="button" class="sk-dr" data-dr="${k}"><i>${DRILLS[k].ic}</i><span><b>${i + 1}. ${esc(DRILLS[k].n)}</b><small>${esc(DRILLS[k].d)}</small></span><em>${best[k] != null ? best[k] + '%' : '—'}</em></button>`).join('')}
+    ${freeOn() ? `<button type="button" class="sk-dr" data-dr="free"><i>${FREE.ic}</i><span><b>${esc(FREE.n)} · 끝없이</b><small>${esc(FREE.d)}</small></span><em>${best.free != null ? best.free + '턴' : 'NEW'}</em></button>` : `<div class="go-d" style="font-size:12px;margin:4px 0 0">🔒 드릴 하나를 끝내면 <b>🎵 프리라이드</b>(끝없는 리듬)가 열려요</div>`}
     <div class="go-d" style="font-size:11.5px;margin-top:8px">참고: Rapture Camps 「Surfskate Drills for Surfers」 등 서프스케이트 훈련 자료. 실제 연습은 보호대·차 없는 곳에서.</div></div>`;
   $k('k-ov').querySelectorAll('[data-dr]').forEach(b=>b.onclick = ()=>start(b.dataset.dr));
 }
 function skateOpen(){
   cv = $k('k-cv'); ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false;
   $k('skate').hidden = false; document.body.classList.add('game-on');
-  me = mkMe(); menu(); last = 0; acc = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
+  sndMk(); me = mkMe(); menu(); last = 0; acc = 0; cancelAnimationFrame(raf); raf = requestAnimationFrame(loop);
 }
 function skateClose(){
   cancelAnimationFrame(raf); raf = 0; G = null; window._gameRun = false;
@@ -231,5 +269,5 @@ function wire(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 window.skateOpen = skateOpen; window.skateClose = skateClose;
-window._skate = { get G(){ return G; }, start, step, FIX, set held(v){ held = v; }, xAt, DRILLS, ORDER };
+window._skate = { get G(){ return G; }, start, step, FIX, set held(v){ held = v; }, xAt, DRILLS, ORDER, FREE, tempoOf, menu };
 })();

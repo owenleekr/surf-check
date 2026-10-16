@@ -635,10 +635,10 @@ function map(keep, from){
   const w = Math.max(280, ov.clientWidth || 320), h = Y0 * 2 + (N - 1) * RY + 10, nx = qNow();
   const team = HK.filter(unl).map(k=>HERO[k]), vst = i => [0, 1, 2, 3].reduce((a, s)=>a + starOf(i * 4 + s), 0);
   const stOf = i => i < got || qbOf().legend ? `✅ 부탁 3/3 · 보스 격파 · ⭐ ${vst(i)}/12` : `📜 부탁 ${Math.min(3, nx.s)}/3${nx.s === 3 ? ' · 👑 보스 차례!' : ''}`;
-  const todo = nx.all ? '🏄 봉인을 풀었어요! 마을을 돌며 순찰로 동료를 키워 보세요' : `📍 지금 — <b>${esc(short(nx.v))}</b> ${nx.s === 3 ? `👑 보스 ${esc(BOSS[nx.v].n)}` : `「${esc(VIL[nx.v].q[nx.s].t)}」`}`;
-  ov.innerHTML = `<div class="qm"><div class="qm-top"><div class="qm-hd"><b>🗺️ 강원 해안 지도</b><span class="qm-bt"><button class="btn sm ghost" id="q-op" type="button" aria-label="오프닝 다시 보기">🎬</button><button class="btn sm ghost" id="q-cdx" type="button">📖 기록</button><button class="btn sm ghost" id="q-mx" type="button" aria-label="지도 닫기">✕</button></span></div>
+  const todo = nx.all ? '🏄 봉인을 풀었어요! 🌊 해변 탐사로 끝없는 바다에 도전해 보세요' : `📍 지금 — <b>${esc(short(nx.v))}</b> ${nx.s === 3 ? `👑 보스 ${esc(BOSS[nx.v].n)}` : `「${esc(VIL[nx.v].q[nx.s].t)}」`}`;
+  ov.innerHTML = `<div class="qm"><div class="qm-top"><div class="qm-hd"><b>🗺️ 강원 해안 지도</b><span class="qm-bt"><button class="btn sm ghost" id="q-op" type="button" aria-label="오프닝 다시 보기">🎬</button><button class="btn sm ghost" id="q-cdx" type="button">📖 기록</button><button class="btn sm qm-back" id="q-mx" type="button" aria-label="지도 닫고 마을로 돌아가기">← 마을로</button></span></div>
     <div class="qm-bar" role="progressbar" aria-label="마친 부탁" aria-valuemin="0" aria-valuemax="${NS}" aria-valuenow="${sg}"><i style="width:${sg / NS * 100}%"></i></div>
-    <p class="qm-tip"><span style="flex:1;min-width:0">${todo} · 🌙 시간당 🐚${2 + Math.floor(sg / 4)}</span><span class="qm-team" aria-label="동료">${team.map(p=>`<i title="${esc(p.n)}">${esc(p.ic)}</i>`).join('')}</span></p></div>
+    <p class="qm-tip"><span style="flex:1;min-width:0">${todo} · 🌙 시간당 🐚${2 + Math.floor(sg / 4)}</span><span class="qm-team" aria-label="동료">${team.map(p=>`<i title="${esc(p.n)}">${esc(p.ic)}</i>`).join('')}</span></p>${twOn() ? `<button class="btn qm-tw" id="q-tw" type="button"><b>🌊 해변 탐사 — ${twOf() + 1}층 도전</b><small>끝없는 바다 · 최고 ${twOf()}층</small></button>` : ''}</div>
     <div class="qm-map" style="height:${h}px">${mapSvg(w, h, got, rt)}${CH.map((c, i)=>{ const st = i < got ? 'done' : i === got ? 'now' : i <= top ? 'open' : 'lock';
       return `<button type="button" class="qm-n ${st}${i === sel ? ' sel' : ''}" data-ch="${i}" style="top:${Y0 + i * RY}px;width:${Math.round(w * CX[i]) + 17 - 6}px"${st === 'lock' ? ' disabled' : ''} aria-pressed="${i === sel}">
         <span class="qm-t"><b>${esc(c.n)}${i === N - 1 ? ' ⚠️' : ''}</b><small>제${i + 1}장 · ${st === 'lock' ? '아직 잠겨 있어요' : `⭐ ${vst(i)}/12 · ${esc(c.s)}`}</small></span>
@@ -652,6 +652,7 @@ function map(keep, from){
   $q('q-op').onclick = e=>{ e.stopPropagation(); opening(); };
   $q('q-cdx').onclick = e=>{ e.stopPropagation(); codex(); };
   $q('q-mx').onclick = e=>{ e.stopPropagation(); town(TV); };
+  const tw = $q('q-tw'); if(tw) tw.onclick = e=>{ e.stopPropagation(); twCard(); };
   const b = ov.querySelector('.qm-n.sel');
   ov.scrollTop = keep ? y0 : (b ? b.offsetTop + b.offsetParent.offsetTop - ov.clientHeight / 2 + 20 : 0);
   setBg(sel, false);
@@ -668,6 +669,7 @@ function codex(){
     ${fun ? dexHtml() : ''}
     <h4>만난 이들</h4><div class="qx-g">${ppl.map(({ p, i, rk })=>it(i < got, p.ic, p.n, `제${i + 1}장 ${short(i)}${fun && rk && hv[rk] ? ` · ${hv[rk] >= 5 ? '💖 단짝' : '♥' + hv[rk]}` : ''}`)).join('')}</div>
     <h4>지나온 곳</h4><div class="qx-l">${CH.map((c, i)=>it(i <= top, c.lm, c.n, i < got ? `제${i + 1}장 · ${c.s} · ${TOD[c.tod].nm}` : i <= top ? `제${i + 1}장 · 지금 머무는 마을` : `제${i + 1}장 · 아직 못 가 봤어요`, i <= top ? `<button class="btn sm" type="button" data-rp="${i}" aria-label="${esc(ro(c.n))} 가기">🚶 가기</button>` : '')).join('')}</div>
+    ${fun ? lmHtml() : ''}${twOn() ? `<h4>🌊 해변 탐사</h4><p class="qx-sm" style="margin:0 0 6px">최고 기록 <b>${twOf()}층</b> — 지도의 🌊 탐사 버튼으로 도전</p>` : ''}
     ${got >= N ? '<button class="btn ghost" id="q-end" type="button" style="width:100%;margin-top:10px">🎬 엔딩 다시 보기</button>' : ''}</div>`;
   $q('q-cx').onclick = ()=>map();
   ov.querySelectorAll('[data-rp]').forEach(b=>b.onclick = ()=>town(+b.dataset.rp));
@@ -688,7 +690,7 @@ function wavesOf(g){                                                            
   return out;
 }
 function mkFoe(kind, i, g){
-  const v = Math.floor(g / 4), B = BOSS[v], boss = kind === 'BOSS', F = boss ? { ic:B.ic, n:B.n, hp:120 * B.hp, atk:20, spd:1.5, rg:0 } : FOES[kind];
+  const v = S && S.tw ? S.v : Math.floor(g / 4), B = BOSS[v], boss = kind === 'BOSS', F = boss ? { ic:B.ic, n:B.n, hp:120 * B.hp, atk:20, spd:1.5, rg:0 } : FOES[kind];
   const hp = Math.round(F.hp * (boss ? TUNE.bh : TUNE.h) * (1 + g * TUNE.eh)), p = boss ? [182, SEA - 6] : EPOS[i % 5];
   return { side:'e', k:kind, ic:F.ic, n:F.n, rg:F.rg, hp, max:hp, hpD:hp, dT:0, atk:F.atk * TUNE.a * (1 + g * TUNE.ea), spd:F.spd, cd:.8 + i * .25 + rnd() * .3, x:W + 24 + i * 16, y:p[1], hx:p[0],
     en:0, fl:0, kb:0, lg:0, lgD:.22, st:0, sh:0, boss, pat:boss ? B.pat : null, pi:0, pT:boss ? 5 : 0, tel:null, sz:boss ? 30 : 16, dead:0, dd:0 };
@@ -710,6 +712,7 @@ function session(g){
 function who(w){
   const v = S ? S.k : TV, c = CH[v], V = VIL[v] || {};
   if(w === 'm') return { img:meImg, ic:'🏄', n:ME.name || '나', me:1 };
+  if(typeof w === 'string' && w.startsWith('h:')){ const k = w.slice(2), H = HERO[k]; return H ? { ic:H.ic, n:H.n, img:LK[k] ? npcImg(k) : '' } : null; }   // 💞 인연 이야기 — 동료가 말한다
   if(w === 'L') return { img:legImg || meImg, ic:'🏄', n:ME.name || '나', me:1 };
   if(w === 'a' || w === 'b'){ const lk = V[w] && V[w].lk; return lk ? { ...c[w], img:npcImg(lk) } : c[w]; }
   if(w === 'c' || w === 'd'){ const o = V[w]; return o ? { ic:o.ic, n:o.n, img:npcImg(o.lk) } : null; }
@@ -761,21 +764,21 @@ function teamUp(){
     return `<button type="button" class="qtm-s${k ? ' on' : ''}${PK && PK !== k ? ' tg' : ''}" data-sl="${i}"${k ? ` data-hero="${k}"` : ''} aria-label="${i < 2 ? '앞줄' : '뒷줄'} ${i % 2 + 1}번 — ${k ? esc(H.n) : '비어 있음'}">${k ? `<i aria-hidden="true">${H.ic}</i><b>${esc(H.n)}</b>${role(k)}<em aria-hidden="true">${stars(k)}</em>` : '<i aria-hidden="true">＋</i><small>비어 있음</small>'}</button>`; };
   const card = k => { const H = HERO[k];
     if(!unl(k)) return `<div class="qtm-h lk" aria-label="잠긴 동료"><i aria-hidden="true">❔</i><small>제${H.j + 1}장 보스를 넘으면 합류</small></div>`;
-    return `<button type="button" class="qtm-h${PK === k ? ' pk' : ''}${fm.includes(k) ? ' in' : ''}" data-hero="${k}" aria-pressed="${PK === k}"><i aria-hidden="true">${H.ic}</i><b>${esc(H.n)}</b>${role(k)}<em aria-hidden="true">${stars(k)}</em>${NEWH.has(k) && !fm.includes(k) ? '<u class="qtm-new">NEW</u>' : ''}</button>`; };
+    return `<button type="button" class="qtm-h${PK === k ? ' pk' : ''}${fm.includes(k) ? ' in' : ''}" data-hero="${k}" aria-pressed="${PK === k}"><i aria-hidden="true">${H.ic}</i><b>${esc(H.n)}</b>${role(k)}<em aria-hidden="true">${stars(k)}</em>${NEWH.has(k) && !fm.includes(k) ? '<u class="qtm-new">NEW</u>' : (bdNext(k) || {}).ok ? '<span class="qtm-bdg" aria-label="인연 이야기">💞</span>' : ''}</button>`; };
   let det = '';
-  if(PK){ const H = HERO[PK], s = heroStat(PK, S && S.U), st = s.st, c = STC[st], x = heroXp(PK), a = xpAt(s.l), b = xpAt(s.l + 1);
+  if(PK){ const bn = bdNext(PK), H = HERO[PK], s = heroStat(PK, S && S.U), st = s.st, c = STC[st], x = heroXp(PK), a = xpAt(s.l), b = xpAt(s.l + 1);
     det = `<div class="qtm-d">${fm.includes(PK) ? '' : `<p class="qtm-dh">👆 위 칸을 누르면 ${esc(H.n)}${fin(H.n) ? '이' : '가'} 그 자리에 들어가요</p>`}<div><b>${H.ic} ${esc(H.n)}</b> · ${H.role} · ${H.rg ? '원거리' : '근접'} · Lv${s.l} · ${'★'.repeat(st)}${'☆'.repeat(5 - st)}</div>
       <span class="qtm-xp" role="progressbar" aria-label="경험치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((x - a) / Math.max(1, b - a) * 100)}"><i style="width:${Math.min(100, (x - a) / Math.max(1, b - a) * 100).toFixed(0)}%"></i></span>
       <p>❤️ 체력 ${s.hp} · ⚔️ 공격 ${s.atk} · 전투력 ${power(PK, S && S.U)}</p><p>✨ 필살기 <b>${esc(H.u)}</b> — ${esc(H.ud)}</p>
-      <div class="qtm-db"><button type="button" class="btn sm ${st < 5 && bal >= c ? 'blue' : 'ghost'}" id="q-star"${st >= 5 ? ' disabled' : ''}>${st >= 5 ? '★ 최고 성급' : `⭐ ${st + 1}성 강화 · 🐚${c}`}</button>${fm.includes(PK) ? '<button type="button" class="btn sm ghost" id="q-out">편성에서 빼기</button>' : ''}</div></div>`; }
-  const kl = S ? (S.kind === 'boss' ? `👑 ${esc(BOSS[S.v].n)}` : S.kind === 'patrol' ? '⚔️ 해변 순찰' : `📜 ${esc((VIL[S.v].q[S.s] || {}).t || '')}`) : '';
-  ov.innerHTML = `<div class="qtm"><div class="qtm-hd"><b>👥 팀 편성</b>${S ? `<span>${kl}</span>` : ''}<button class="btn sm ghost" id="q-tmx" type="button">${S ? '↩ 마을로' : TB.startsWith('rw') ? '완료 ▶' : '✕ 닫기'}</button></div>
+      <div class="qtm-db"><button type="button" class="btn sm ${st < 5 && bal >= c ? 'blue' : 'ghost'}" id="q-star"${st >= 5 ? ' disabled' : ''}>${st >= 5 ? '★ 최고 성급' : `⭐ ${st + 1}성 강화 · 🐚${c}`}</button>${fm.includes(PK) ? '<button type="button" class="btn sm ghost" id="q-out">편성에서 빼기</button>' : ''}${bn ? (bn.ok ? `<button type="button" class="btn sm blue" id="q-bond">💞 인연 이야기 ${bn.n + 1}</button>` : `<small class="qtm-bd">💞 Lv${bn.lv}에 인연 이야기</small>`) : ''}</div></div>`; }
+  const kl = S ? (S.kind === 'boss' ? `👑 ${esc(BOSS[S.v].n)}` : S.tw ? `🌊 탐사 ${S.tw}층 · ${S.twx.ic} ${S.twx.n}` : S.kind === 'patrol' ? '⚔️ 해변 순찰' : `📜 ${esc((VIL[S.v].q[S.s] || {}).t || '')}`) : '';
+  ov.innerHTML = `<div class="qtm"><div class="qtm-hd"><b>👥 팀 편성</b>${S ? `<span>${kl}</span>` : ''}<button class="btn sm ghost" id="q-tmx" type="button">${S ? (S.tw ? '← 탐사' : '↩ 마을로') : TB.startsWith('rw') ? '완료 ▶' : '✕ 닫기'}</button></div>
     <div class="qtm-pw"><span>전투력 <b>${pw}</b></span>${S ? `<span class="${pw >= rp ? 'ok' : 'lo'}">권장 ${rp}${pw >= rp ? ' ✓' : ' — ⭐ 강화나 레벨 업'}</span>` : ''}<span>🐚 ${bal}</span></div>
     <div class="qtm-f"><div class="qtm-c"><small>뒷줄 · 딜러·힐러</small>${slot(2)}${slot(3)}</div><div class="qtm-c"><small>앞줄 · 탱커 ⚔️→</small>${slot(0)}${slot(1)}</div></div>
     ${S ? '<p class="qtm-tip qtm-bt">⚔️ 전투는 자동이에요! 동료들이 알아서 싸우고, 기력이 차면 아래 초상을 눌러 필살기 ✨</p>' : ''}
     <p class="qtm-tip">카드를 칸으로 끌어 놓거나, 눌러 고른 뒤 칸을 누르세요 · 적은 앞줄부터 노려요</p>
     <div class="qtm-l">${HK.filter((k, i)=>unl(k) || HK.findIndex(j=>!unl(j)) === i).map(card).join('')}</div>
-    ${det || S ? `<div class="qtm-ft">${det}${S ? `<button class="btn blue" id="q-fight" type="button">⚔️ 출전 — ${S.kind === 'boss' ? '보스전' : S.kind === 'patrol' ? '순찰 전투' : '퀘스트 전투'}</button>` : ''}</div>` : ''}</div>`;   // 고른 동료 상세는 아래에 붙어 있어 작은 폰에서도 스크롤 없이 보인다
+    ${det || S ? `<div class="qtm-ft">${det}${S ? `<button class="btn blue" id="q-fight" type="button">⚔️ 출전 — ${S.kind === 'boss' ? '보스전' : S.tw ? `탐사 ${S.tw}층` : S.kind === 'patrol' ? '순찰 전투' : '퀘스트 전투'}</button>` : ''}</div>` : ''}</div>`;   // 고른 동료 상세는 아래에 붙어 있어 작은 폰에서도 스크롤 없이 보인다
   const box = ov.querySelector('.qtm');
   box.onpointerdown = e=>{ const h = e.target.closest('[data-hero]'); DR = h ? { k:h.dataset.hero, x:e.clientX, y:e.clientY, mv:0, sl:h.dataset.sl } : null; };
   box.onpointermove = e=>{ if(!DR) return;
@@ -789,9 +792,10 @@ function teamUp(){
     const sl = e.target.closest('[data-sl]'), h = e.target.closest('[data-hero]');
     if(sl && PK && sl.dataset.hero !== PK){ place(PK, +sl.dataset.sl); PK = ''; beep(660, 880, .08, .03); return teamUp(); }
     if(h){ PK = PK === h.dataset.hero ? '' : h.dataset.hero; return teamUp(); } };
-  $q('q-tmx').onclick = e=>{ e.stopPropagation(); PK = ''; NEWH.clear(); const b = TB; TB = ''; if(S) town(S.v); else if(b === 'bag') bag(); else if(b === 'map') map(true); else if(b.startsWith('rw')){ const v = +b.slice(2); sel = Math.min(N - 1, v + 1); map(false, v); } else wBack(); };
+  $q('q-tmx').onclick = e=>{ e.stopPropagation(); PK = ''; NEWH.clear(); const b = TB; TB = ''; if(S && S.tw) twCard(); else if(S) town(S.v); else if(b === 'bag') bag(); else if(b === 'map') map(true); else if(b.startsWith('rw')){ const v = +b.slice(2); sel = Math.min(N - 1, v + 1); map(false, v); } else wBack(); };
   const sb = $q('q-star'); if(sb) sb.onclick = e=>{ e.stopPropagation(); if(typeof playQuestStar === 'function' && playQuestStar(PK)){ beep(523, 1047, .3, .05); if(typeof toast === 'function') toast(`⭐ ${HERO[PK].n} ${heroSt(PK)}성! 체력·공격 +20%`); } teamUp(); };
   const ob = $q('q-out'); if(ob) ob.onclick = e=>{ e.stopPropagation(); unplace(PK); teamUp(); };
+  const bd = $q('q-bond'); if(bd) bd.onclick = e=>{ e.stopPropagation(); bondGo(PK); };
   const fb = $q('q-fight'); if(fb) fb.onclick = e=>{ e.stopPropagation(); begin(); };
   const l = $q('q-log'); if(l) l.innerHTML = '<div>👥 팀 편성 — 탱커는 앞줄, 힐러·딜러는 뒷줄이 안전해요</div><div style="opacity:.75">조개로 ⭐ 성급 강화 · 부탁·전투로 레벨 업 · 마을 보스를 넘으면 새 동료</div>';
 }
@@ -800,12 +804,14 @@ function begin(){
   S.heroes = fmGet().map((k, i)=>k ? mkHero(k, i) : null).filter(Boolean); if(!S.heroes.length) return;
   wMode(false); const hd = document.querySelector('#quest .game-hd > b'); if(hd) hd.textContent = `⚔️ ${short(S.v)}`;   // 전투는 정사각 화면 — 걷기 층은 숨긴다
   S.mode = 'go'; S.wv = 0; spawnWave(); render();
-  S.banQ = [S.kind === 'boss' ? `👑 보스 — ${BOSS[S.v].n}` : '⚔️ 전투 시작!', S.kind === 'boss' ? 'boss' : ''];
+  S.banQ = [S.kind === 'boss' ? `👑 보스 — ${BOSS[S.v].n}` : S.tw ? `🌊 탐사 ${S.tw}층 · ${S.twx.ic} ${S.twx.n}` : '⚔️ 전투 시작!', S.kind === 'boss' ? 'boss' : ''];
+  if(S.tw && S.twx === TWX[2]) S.heroes.forEach(u=>{ u.en = Math.min(100, u.en + 40); });
   log(`⚔️ ${CH[S.v].n} — WAVE ${S.waves.length}개 · 전투는 자동, 기력이 차면 초상을 눌러 필살기`);
   if(tutNeed()) S.tutT = 1.6;                                                       // 첫 판 — 1.6초 싸운 뒤 멈추고 필살기 쓰는 법을 짚는다
 }
 function spawnWave(){
   S.foes = S.waves[S.wv].map((k, i)=>mkFoe(k, i, S.g));
+  if(S.tw){ const x = S.twx; S.foes.forEach(u=>{ if(x === TWX[0]) u.atk *= 1.25; else if(x === TWX[1]){ u.max = u.hp = u.hpD = Math.round(u.max * 1.3); } }); }   // 🌊 탐사 층의 바다 효과
   if(S.wv) S.banQ = S.foes.some(f=>f.boss) ? [`👑 ${BOSS[S.v].n} 등장!`, 'boss'] : [`🌊 WAVE ${S.wv + 1}/${S.waves.length}`, ''];
   if(S.foes.some(f=>f.boss)){ log(`⚠️ ${BOSS[S.v].ic} ${BOSS[S.v].n} 등장! 빨간 바닥이 뜨면 큰 기술`); beep(110, 70, .6, .07); }
 }
@@ -941,6 +947,7 @@ function txt(u, v, c, big){ fxPush({ k:'txt', x:u.x + (rnd() - .5) * 10, y:u.y -
 /* 판 끝 — 별(쓰러진 동료 0명 ★3 · 1명 ★2 · 그 밖 ★1) · 조개 · 참가 영웅 경험치. 결과 띠를 1.5초 보여 준 뒤(pend) 다음 화면으로.
    kind — boss: 이기면 마을을 깬다(조각·합류·다음 마을) · hunt: 이긴 별을 부탁에 적어 두고, 부탁한 사람에게 보고해야 끝 · patrol: 경험치·조개만 */
 function end(win, tmo){
+  if(S && S.kind === 'tower') return twEnd(win, tmo);
   const s = S, g = s.g, v = s.v, kind = s.kind || (s.s === 3 ? 'boss' : 'hunt'), boss = kind === 'boss', last = g === NS - 1, first = win && s.first;
   s.res = win ? 'win' : 'lose'; s.mode = 'done'; window._gameRun = false; tutOff();
   const stars = win ? (s.deaths === 0 ? 3 : s.deaths === 1 ? 2 : 1) : 0, prev = starOf(g);
@@ -987,7 +994,7 @@ function vReward(){
 function legend(){
   const ov = ovEl(''); if(S) S.mode = 'card';
   ov.innerHTML = `<div class="go-card">${legImg ? `<img class="q-leg" src="${legImg}" alt="전설의 보드를 든 내 캐릭터">` : '<div class="qpc">🏄</div>'}
-    <div class="go-t">🏆 전설의 보드!</div><div class="go-d">열한 마을의 조각으로 봉인을 풀었어요.<br>캐릭터 꾸미기 → 보드 색에 <b>‘전설’</b>이 열렸어요.<br>마을을 돌며 순찰로 동료를 더 키워 보세요!</div>
+    <div class="go-t">🏆 전설의 보드!</div><div class="go-d">열한 마을의 조각으로 봉인을 풀었어요.<br>캐릭터 꾸미기 → 보드 색에 <b>‘전설’</b>이 열렸어요.<br>🌊 지도의 「해변 탐사」 — 끝없는 바다가 열렸어요!</div>
     ${S ? stats() : ''}<button class="btn blue" id="q-next" type="button" style="width:100%;min-height:52px;font-size:16px">🏘️ 마을로</button></div>`;
   $q('q-next').onclick = ()=>town(N - 1);
   if(typeof popNext === 'function') setTimeout(popNext, 1200);
@@ -1236,14 +1243,15 @@ function wEnts(){
   if(cleared || (I.here && I.s >= 1)) ['p1', 'p2'].forEach(id=>{ if(!(DEAD[v + id] > Date.now() - 4e4)) mob(id, MOB[id][0], MOB[id][1], v * 4 + 1, 0); });
   if(!cleared) L.push({ t:'boss', id:'boss', x:BX[0], d:BX[1], lock:!(I.here && I.s === 3), n:BOSS[v].n, ic:BOSS[v].ic });
   if(funOn()){ L.push({ t:'fish', id:'fish', x:v === 9 ? 760 : 505, d:.1, n:'낚시터', ic:'🎣', nw:!fSeen() });   // 첫 마을을 넘으면 — 물가 낚시터, 하루 한 번 보물
+    if(LMK[v]) L.push({ t:'lm', id:'lm', x:lmSpot(L), d:.3, n:LMK[v][1], ic:LMK[v][0], fresh:!lmSeen(v) });   // 🏛️ 마을 명소 — 첫 마을 길잡이가 끝난 뒤부터
     if(!fdOf().c){ const c = chestSpot(v, L); L.push({ t:'chest', id:'chest', x:c.x, d:c.d, n:'오늘의 보물', ic:'🎁' }); } }
   return L;
 }
 function eEl(e){
   const b = document.createElement('button'); b.type = 'button'; b.className = 'qe ' + e.t + (e.lock ? ' lk' : ''); b.dataset.i = e.id;
-  const lab = e.t === 'npc' ? e.n : e.t === 'mob' ? (e.quest ? '📜 ' : '⚔️ ') + e.n : e.t === 'boss' ? '👑 ' + e.n : e.t === 'fish' ? '🎣 낚시터' : e.t === 'chest' ? '✨ 오늘의 보물' : '';
+  const lab = e.t === 'npc' ? e.n : e.t === 'mob' ? (e.quest ? '📜 ' : '⚔️ ') + e.n : e.t === 'boss' ? '👑 ' + e.n : e.t === 'fish' ? '🎣 낚시터' : e.t === 'chest' ? '✨ 오늘의 보물' : e.t === 'lm' ? '🏛️ ' + e.n : '';
   if(e.nw) b.classList.add('nw');
-  b.setAttribute('aria-label', e.t === 'npc' ? `${e.n}에게 말 걸기` : e.t === 'item' ? `${e.n} 줍기` : e.t === 'boss' ? `보스 ${e.n}` : e.t === 'fish' ? '낚시하기' : e.t === 'chest' ? '오늘의 보물 열기' : `${e.n}와 싸우기`);
+  b.setAttribute('aria-label', e.t === 'npc' ? `${e.n}에게 말 걸기` : e.t === 'item' ? `${e.n} 줍기` : e.t === 'boss' ? `보스 ${e.n}` : e.t === 'fish' ? '낚시하기' : e.t === 'chest' ? '오늘의 보물 열기' : e.t === 'lm' ? `${e.n} 둘러보기` : `${e.n}와 싸우기`);
   b.innerHTML = `<i class="qe-sh" aria-hidden="true"></i><span class="qe-b" aria-hidden="true">${e.t !== 'item' ? '<i class="qe-m"></i>' : ''}${lab ? `<span class="qe-n${e.t === 'mob' || e.t === 'boss' ? ' bad' : ''}${e.quest ? ' q' : ''}">${esc(lab)}</span>` : ''}${e.img ? `<img src="${e.img}" alt="" draggable="false">` : `<span class="qe-e">${esc(e.ic)}</span>`}</span>`;
   e.el = b; e.mk = b.querySelector('.qe-m'); return b;
 }
@@ -1265,6 +1273,7 @@ function wMarks(){
     } else if(e.t === 'mob') m = e.quest ? '❗' : '';
     else if(e.t === 'boss'){ m = e.lock ? '🔒' : '❗'; hot = !e.lock; }
     else if(e.t === 'chest'){ m = '✨'; hot = true; }
+    else if(e.t === 'lm') m = lmSeen(TV) ? '' : '✨';
     e.mk.textContent = m; e.mk.className = 'qe-m' + (hot ? ' hot' : ''); e.el.classList.toggle('hot', hot); }
 }
 function wRefresh(){
@@ -1277,7 +1286,7 @@ function wRefresh(){
 /* 퀘스트 알림판(위) — 지금 할 일 한 줄 + 목적지 방향. 누르면 그곳으로 걸어간다 */
 function wGoal(){
   const I = vInfo(), q = I.q, E = id => WK.ents.find(e=>e.id === id);
-  if(I.s === 4) return { t:I.all ? '🏄 전설의 보드를 찾았어요!' : `✅ ${short(TV)}의 부탁을 모두 들어줬어요`, o:I.all ? '해변 순찰로 동료를 더 키워 보세요' : `🗺️ 지도에서 다음 마을로 · ⚔️ 순찰 몬스터로 레벨 업`, e:null };
+  if(I.s === 4) return { t:I.all ? '🏄 전설의 보드를 찾았어요!' : `✅ ${short(TV)}의 부탁을 모두 들어줬어요`, o:I.all ? (twOn() ? `🗺️ 지도의 🌊 해변 탐사 — 최고 ${twOf()}층` : '해변 순찰로 동료를 더 키워 보세요') : `🗺️ 지도에서 다음 마을로 · ⚔️ 순찰 몬스터로 레벨 업`, e:null };
   if(I.s === 3) return { t:`👑 보스 — ${BOSS[TV].n}`, o:'해변 끝의 보스를 물리치면 봉인 조각!', e:E('boss') };
   const gv = whoN(q.by);
   if(!I.p.a) return { t:`❗ ${jo(gv, '과', '와')} 이야기하기`, o:'머리 위에 ❗가 뜬 사람을 눌러 보세요', e:E(q.by) };
@@ -1322,7 +1331,7 @@ function wBuild(){
   const G = { w:wv.clientWidth || 360, h:wv.clientHeight || 600 }; G.gh = Math.round(Math.max(200, Math.min(350, G.h * .48))); G.gt = G.h - G.gh; WK.G = G; WK.k = Math.max(.9, Math.min(1.25, G.gh / 280));
   const v = TV, alt = gotN() > v && CH[v].alt, P = TOD[alt || CH[v].tod], dk = !alt && DARK[CH[v].tod];
   wv.innerHTML = `<div class="qw-wd${dk ? ' dk' : ''}" id="q-wd" style="width:${WW}px;height:${G.h}px">${ground(v, P, G, dk)}${propsOf(v).map(([t, x, d, o], i)=>prop(t, x, d, G, P, i, o, dk)).join('')}<i class="qw-tap" id="q-tap" aria-hidden="true"></i><i class="qw-ring" id="q-ring" aria-hidden="true" hidden></i>${'<i class="qw-ds" aria-hidden="true"></i>'.repeat(5)}</div>
-    <button type="button" class="qw-trk" id="q-trk"></button><button type="button" class="btn blue qw-act" id="q-act" hidden></button>`;
+    <i class="qw-tint ${nowTint()}" aria-hidden="true"></i><button type="button" class="qw-trk" id="q-trk"></button><button type="button" class="btn blue qw-act" id="q-act" hidden></button>`;
   WK.wd = $q('q-wd'); WK.ring = $q('q-ring'); WK.ds = [...WK.wd.querySelectorAll('.qw-ds')];
   const me = document.createElement('div'); me.className = 'qe me'; me.setAttribute('aria-hidden', 'true');
   me.innerHTML = `<i class="qe-sh"></i><span class="qe-b">${walkImg ? `<img src="${walkImg}" alt="" draggable="false">` : '<span class="qe-e">🏄</span>'}</span>`;
@@ -1348,6 +1357,7 @@ function interact(e){
   if(e.t === 'boss') return bossTalk();
   if(e.t === 'fish') return fishOpen();
   if(e.t === 'chest') return chestOpen(e);
+  if(e.t === 'lm') return lmOpen();
 }
 /* 한 프레임 — 이동(키보드·눌러 이동), 동료 따라오기, 물건 줍기, 카메라·배경 시차, 가까운 대상 버튼 */
 function wTick(dt){
@@ -1493,9 +1503,9 @@ function bag(){
   ov.innerHTML = `<div class="qb"><div class="qb-hd"><b>🎒 내 정보</b><span>🐚 ${bal}</span><button class="btn sm ghost" id="q-bx" type="button">✕ 닫기</button></div>
     <div class="qb-me">${walkImg ? `<img src="${walkImg}" alt="내 캐릭터">` : '<i aria-hidden="true">🏄</i>'}<div><b>${esc(ME.name || '나')}</b><small>Lv${s.l} · ${'★'.repeat(s.st)}${'☆'.repeat(5 - s.st)} · 딜러</small>
       <span class="qtm-xp" role="progressbar" aria-label="경험치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct.toFixed(0)}%"></i></span><small>${s.l >= 30 ? '최고 레벨' : `다음 레벨까지 ${b - x} XP`}</small></div></div>
-    <div class="qb-st"><span>❤️ 체력<b>${s.hp}</b></span><span>⚔️ 공격<b>${s.atk}</b></span><span>💪 팀 전투력<b>${pw}</b></span><span>🧩 봉인 조각<b>${got}/${N}</b></span>${fun ? `<span>🐟 물고기 도감<b>${Object.keys(fsOf()).length}/${FISH.length}</b></span><span>💖 단짝<b>${Object.values(hv).filter(h=>h >= 5).length}명</b></span>` : ''}</div>
+    <div class="qb-st"><span>❤️ 체력<b>${s.hp}</b></span><span>⚔️ 공격<b>${s.atk}</b></span><span>💪 팀 전투력<b>${pw}</b></span><span>🧩 봉인 조각<b>${got}/${N}</b></span>${twOn() ? `<span>🌊 탐사 최고<b>${twOf()}층</b></span>` : ''}${fun ? `<span>🐟 물고기 도감<b>${Object.keys(fsOf()).length}/${FISH.length}</b></span><span>💖 단짝<b>${Object.values(hv).filter(h=>h >= 5).length}명</b></span>` : ''}</div>
     <h4>🛠️ 장비 — 동료 모두에게 적용</h4>${eqRow('b')}${eqRow('w')}
-    <h4>👥 동료 ${HK.filter(unl).length}/${HK.length}</h4><div class="qb-tm">${HK.filter(unl).map(k=>`<span class="${fm.includes(k) ? 'in' : ''}"><i aria-hidden="true">${HERO[k].ic}</i><b>${esc(HERO[k].n)}</b><small>Lv${heroLv(k)} ${'★'.repeat(heroSt(k))}${fm.includes(k) ? ' · 출전' : ''}</small></span>`).join('')}</div>
+    <h4>👥 동료 ${HK.filter(unl).length}/${HK.length}</h4><div class="qb-tm">${HK.filter(unl).map(k=>`<span class="${fm.includes(k) ? 'in' : ''}"><i aria-hidden="true">${HERO[k].ic}</i><b>${esc(HERO[k].n)}</b><small>Lv${heroLv(k)} ${'★'.repeat(heroSt(k))}${fm.includes(k) ? ' · 출전' : ''}${(bdNext(k) || {}).ok ? ' · 💞' : ''}</small></span>`).join('')}</div>
     <button class="btn" id="q-btm" type="button" style="width:100%;min-height:46px">👥 편성 · ⭐ 성급 강화</button>
     ${fun ? `<h4>🧺 물고기 바구니</h4>${Object.keys(fi).length ? `<div class="qb-it">${FISH.filter(f=>fi[f.k]).map(f=>`<span style="border-color:${RAR[f.r].c}"><i aria-hidden="true" style="${f.fl ? `filter:${f.fl}` : ''}">${f.ic}</i><b>${esc(f.n)}</b><small>×${fi[f.k]} · ${RAR[f.r].n}</small></span>`).join('')}</div><p class="qb-tip" style="margin-top:0">💬 주민에게 말을 걸면 하루 한 번 선물할 수 있어요</p>` : '<p class="qb-tip" style="margin-top:0">비어 있어요 — 마을 물가의 🎣 낚시터에서 낚아 보세요</p>'}` : ''}
     <h4>🎁 가방</h4>${items.length ? `<div class="qb-it">${items.map(([ic, n, d])=>`<span><i aria-hidden="true">${esc(ic)}</i><b>${esc(n)}</b><small>${esc(d)}</small></span>`).join('')}</div>` : '<p class="qb-tip">아직 비어 있어요 — 마을 보스를 넘으면 선물을 받아요</p>'}
@@ -1696,6 +1706,134 @@ function dexHtml(){
 /* 💪 전투력 오름 — 결과 카드에 「1,240 → 1,380」 */
 const pwOf = (team, U) => team.filter(Boolean).reduce((t, k)=>t + power(k, U), 0);
 const pwHtml = (a, b) => b > a ? `<div class="q-pw">💪 팀 전투력 ${a.toLocaleString('ko-KR')} → <b>${b.toLocaleString('ko-KR')}</b> <i>▲${(b - a).toLocaleString('ko-KR')}</i></div>` : '';
+/* ══ 깊이 더하기 — 🌊 해변 탐사(이야기를 다 깬 뒤 끝없는 층) · 💞 동료 인연 이야기 · 🏛️ 마을 명소 · 🕐 실제 시각 하늘빛 · 🔊 소리 ══
+   저장은 모두 qb 안 숫자 — tw 탐사 최고 층(0~999) · bd{영웅: 본 인연 장 0~2} · lm 명소를 둘러본 마을 비트(0~2047).
+   조개는 「처음」에만 — 새 층을 처음 넘을 때(먼저 층을 적고 나서 준다), 인연 장을 처음 볼 때 🐚5, 명소를 처음 볼 때 🐚3 */
+const TWX = [{ ic:'🌊', n:'거센 물살', d:'적 공격 +25%' }, { ic:'🌫️', n:'짙은 해무', d:'적 체력 +30% · 조개 +2' }, { ic:'🍃', n:'순풍', d:'동료 기력 +40으로 시작' }];
+const twOn = () => !!qbOf().legend || sgN() >= NS;
+const twOf = () => nm(qbOf().tw, 999);
+const twG = f => NS - 4 + f * 1.25;                                                      // 적 세기 — 마지막 마을 언저리에서 시작해 층마다 조금씩
+const twV = f => (f - 1) % N;                                                            // 층마다 마을 바다를 차례로 — 1층 아야진 … 11층 장호항 → 12층 다시 아야진
+const twX = f => TWX[f % 3];
+const twBoss = f => f % 5 === 0;
+const twSh = f => Math.min(20, 4 + Math.floor(f / 3)) + (twBoss(f) ? 8 : 0) + (f % 3 === 1 ? 2 : 0);
+function twWaves(f){
+  const fo = CH[twV(f)].fo, n = Math.min(4, 3 + Math.floor(f / 15)), out = [];
+  for(let w = 0; w < 2; w++){ const L = []; for(let i = 0; i < n; i++) L.push(fo[Math.floor(hs(f * 17 + i, w + 5) * fo.length)]); out.push(L); }
+  if(twBoss(f)) out[1] = ['BOSS', ...out[1].slice(0, 2)];
+  return out;
+}
+function twCard(){
+  clearT(); tutOff(); S = null; window._gameRun = false; wMode(true);
+  const f = twOf() + 1, v = twV(f), x = twX(f), ov = ovEl('qv-tw'), pw = pwOf(fmGet(), typeof upFor === 'function' ? upFor('quest', true) : {}), rp = recPow(twG(f));
+  setBg(v, false);
+  ov.innerHTML = `<div class="go-card"><div class="qpc" aria-hidden="true">🌊</div><div class="go-t">해변 탐사 ${f}층</div>
+    <div class="go-d">${esc(CH[v].lm)} ${esc(CH[v].n)} 앞바다${twBoss(f) ? ` · 👑 <b>${esc(BOSS[v].n)}</b>` : ''}<br>이 층의 바다 <b>${x.ic} ${x.n}</b> — ${x.d}</div>
+    <div class="go-st"><span>최고 기록<b>${twOf()}층</b></span><span>첫 돌파<b>🐚${twSh(f)}</b></span><span>권장 전투력<b style="color:${pw >= rp ? '#2FA55A' : '#E25A4A'}">${rp.toLocaleString('ko-KR')}</b></span></div>
+    <div class="go-b">끝없이 이어지는 바다 — 층마다 적이 조금씩 세지고, 5층마다 보스가 나와요</div>
+    <div class="q-ctl" style="margin-top:0"><button class="btn blue" id="q-twgo" type="button">⚔️ ${f}층 도전</button><button class="btn ghost" id="q-twx" type="button">← 지도</button></div></div>`;
+  $q('q-twgo').onclick = ()=>twFight(f);
+  $q('q-twx').onclick = ()=>map();
+}
+function twFight(f){
+  if(!twOn()) return;
+  f = Math.max(1, Math.min(twOf() + 1, nm(f, 999))); session(NS - 1);
+  const v = twV(f); Object.assign(S, { tw:f, g:twG(f), v, k:v, s:0, kind:'tower', first:false, waves:twWaves(f), left:100, twx:twX(f) });
+  setBg(v, false);
+  if(S.U.tag && typeof toast === 'function') toast('🔧 강화 적용: ' + S.U.tag);
+  teamUp();
+}
+function twEnd(win, tmo){
+  const s = S, f = s.tw; s.res = win ? 'win' : 'lose'; s.mode = 'done'; window._gameRun = false; tutOff();
+  const nw = win && f === twOf() + 1; if(nw) qbPut({ tw:f });                          // 층을 먼저 적고 나서 조개 — 같은 층을 두 번 받지 않게
+  const stars = win ? (s.deaths === 0 ? 3 : s.deaths === 1 ? 2 : 1) : 0, sh = nw ? twSh(f) + Math.min(5, s.bonus) : 0;
+  const xp = win ? 20 + Math.round(s.g) * 3 : 6 + Math.min(40, f), team = s.heroes.map(h=>h.k), before = team.map(heroLv), pw0 = pwOf(fmGet(), s.U);
+  let r = { gain:0, shells:sh };
+  try{ if(typeof playQuestDone === 'function') r = playQuestDone(s.v, false, sh, false, { g:NS - 1, won:false, stars:0, xp, team }) || r; }catch(e){}
+  s.r = r; s.stars = stars; s.lv = team.map((k, i)=>[k, before[i], heroLv(k)]); s.pw = [pw0, pwOf(fmGet(), s.U)];
+  log(win ? `✅ 탐사 ${f}층 돌파 ${'★'.repeat(stars)}` : `💤 ${tmo ? '시간 초과' : '전멸'}`);
+  s.banQ = win ? [`🌊 ${f}층 돌파!`, 'win'] : [tmo ? '⏱ 시간 초과…' : '💤 전멸…', 'bad'];
+  s.pend = ()=>twResult(win, tmo);
+  if(win) beep(523, 1047, .3); else beep(330, 165, .4);
+  tmr = setTimeout(()=>{ if(S === s && s.pend){ const g = s.pend; s.pend = null; g(); } }, RM ? 600 : 1500);
+}
+function twResult(win, tmo){
+  const s = S, f = s.tw, ov = ovEl(''); s.mode = 'card';
+  ov.innerHTML = `<div class="go-card"><div class="go-t">${win ? `🌊 ${f}층 돌파!` : `💤 ${tmo ? '시간 초과' : '전멸'}…`}</div>${win ? starsHtml(s.stars) : ''}
+    <div class="go-d">${win ? (twBoss(f) ? `👑 ${esc(BOSS[s.v].n)}${fin(BOSS[s.v].n) ? '을' : '를'} 넘었어요! 더 깊은 바다로` : '한 층 더 깊은 바다가 기다려요') : `${f}층 바다는 아직 거세요`}</div>
+    ${win ? '' : '<div class="go-b">💡 ⚔️ 순찰로 레벨 업 · 🎒 장비·⭐ 성급 강화 · 바다 효과에 맞춰 편성을 바꿔 보세요</div>'}${lvRow()}${stats()}
+    <div class="q-ctl" style="margin-top:0"><button class="btn blue" id="q-twn" type="button">${win ? `⬆ ${f + 1}층으로` : '🔁 다시'}</button><button class="btn ghost" id="q-twm" type="button">← 지도</button></div></div>`;
+  $q('q-twn').onclick = ()=>win ? twCard() : twFight(f);
+  $q('q-twm').onclick = ()=>map();
+  if(typeof popNext === 'function') setTimeout(popNext, 1200);
+}
+
+/* 💞 인연 이야기 — 동료 레벨 5·12에 한 장씩, 세 줄 대화. 'h' 는 그 동료, 'm' 은 나 */
+const BOND = {
+  gull:[[['h', '끼룩! 사실 처음엔 네 주먹밥 노리고 따라온 거였어.'], ['m', '…지금도 그런 거 아니지?'], ['h', '반은 맞아. 나머지 반은, 네 옆이 제일 바람이 좋아서야.']],
+        [['h', '하늘에서 보면 길 잃은 서퍼가 보여. 예전엔 그냥 지나쳤지.'], ['m', '지금은?'], ['h', '지금은 너한테 알려 주러 내려와. 우린 한 팀이니까. 끼룩!']]],
+  haenyeo:[[['h', '물질 오십 년에 숨 참는 법 하나는 확실히 배웠지.'], ['m', '어떻게 하면 오래 참아요?'], ['h', '욕심을 버리는 거여. 딱 숨만큼만 따고 올라오는 거. 파도도 마찬가지란다.']],
+           [['h', '우리 영감도 바다를 참 좋아했어. 너처럼 웃으면서.'], ['m', '할머니…'], ['h', '그래서 네 상처는 내가 다 돌봐 줄 거여. 이번엔 놓치지 않으려고.']]],
+  crab:[[['h', '집게를 들고 있으니 다들 무서워하지. 사실 난 겁이 많다.'], ['m', '그런데 늘 맨 앞에 서잖아.'], ['h', '겁나니까 앞에 서는 거다. 뒤에 있는 녀석들이 덜 무섭게.']],
+        [['h', '천진 바위 밑에 내 동생들이 산다. 요즘 물이 맑아져서 잘 지낸다더군.'], ['m', '다행이다!'], ['h', '다 네 덕이다. 이 집게, 이제 너를 위해서도 든다.']]],
+  coach:[[['h', '처음 보드에 일어서던 날 기억나? 일곱 번 넘어졌지.'], ['m', '여덟 번이었어요…'], ['h', '하하! 그래도 아홉 번째에 섰잖아. 그게 서퍼야.']],
+         [['h', '나도 큰 대회에서 크게 넘어진 뒤로 한동안 바다를 피했어.'], ['m', '그런데 어떻게 돌아왔어요?'], ['h', '너 같은 학생들이 매일 바다로 오는 걸 보고. 가르치면서 다시 배웠지.']]],
+  seal:[[['h', '몽… 몽돌 해변에서 데굴데굴 구르다 이름이 몽돌이 됐어.'], ['m', '귀여운 이름이야.'], ['h', '헤헤. 네가 불러 주면 더 좋아. 몽!']],
+        [['h', '서퍼들이 파도를 기다릴 때, 난 서퍼들을 기다려.'], ['m', '왜?'], ['h', '다들 무사히 돌아오는지 보려고. 이제 너도 내가 기다리는 사람이야.']]],
+  turtle:[[['h', '이 등껍질엔 백 년 바다가 새겨져 있단다.'], ['m', '백 년이요?'], ['h', '그래. 서두르지 않아도 바다는 기다려 준다는 걸 배우는 데 꼬박 걸렸지.']],
+          [['h', '하조대 소나무가 어린 묘목일 때부터 봐 왔지.'], ['m', '그때도 바다가 이렇게 예뻤어요?'], ['h', '그럼. 다만 지켜 주는 이가 있어야 계속 예쁘단다. 이제 그게 너구나.']]],
+  dol:[[['h', '나랑 경주할래? 저 부표까지!'], ['m', '돌고래를 어떻게 이겨…'], ['h', '이기려는 게 아니야. 같이 달리면 재밌잖아!']],
+       [['h', '밤바다에서 길을 잃은 적이 있어. 그때 누가 불을 비춰 줬지.'], ['m', '누가?'], ['h', '정동진의 기차 불빛. 이번엔 내가 너한테 그런 불빛이 될게.']]],
+  whale:[[['h', '내 노래는 바다 저편까지 닿는단다. 아주 느리게.'], ['m', '무슨 노래예요?'], ['h', '잘 돌아오라는 노래. 바다에 나간 모든 아이에게 부르는 거란다.']],
+         [['h', '봉인이 풀린 날, 바다가 오랜만에 따라 불렀지.'], ['m', '저도 들었어요!'], ['h', '그건 네가 만든 노래란다. 고맙다, 작은 서퍼야.']]],
+};
+const BDL = [5, 12];
+const bdObj = () => objOf(qbOf().bd, 2, k=>!!BOND[k]);
+const bdNext = k => { const n = bdObj()[k] || 0; return BOND[k] && unl(k) && n < 2 ? { n, lv:BDL[n], ok:heroLv(k) >= BDL[n] } : null; };
+function bondGo(k){
+  const b = bdNext(k); if(!b || !b.ok) return false;
+  const o = bdObj(); o[k] = b.n + 1; if(!qbPut({ bd:o })) return false; shellAdd(5);      // 먼저 적고 나서 조개 — 같은 장을 두 번 받지 않게
+  beep(660, 990, .2, .04);
+  talk(BOND[k][b.n].map(([w, t])=>[w === 'h' ? 'h:' + k : w, t]), ()=>{ if(typeof toast === 'function') toast(`💞 ${jo(HERO[k].n, '과', '와')} 더 가까워졌어요 · 🐚5`); teamUp(); });
+  return true;
+}
+
+/* 🏛️ 마을 명소 — 마을마다 하나. 눌러 보면 한 줄 이야기, 처음이면 🐚3 · 기록장에 남는다 */
+const LMK = [
+  ['⚓', '아야진항 빨간 등대', '작은 항구 끝의 빨간 등대. 고깃배들은 이 불빛을 보고 집으로 돌아와요.'],
+  ['🪨', '천진 바위섬', '해변 앞 바위섬. 물이 맑아서 바위 사이를 오가는 물고기가 다 보여요.'],
+  ['🎡', '속초 대관람차', '바닷가의 큰 관람차. 꼭대기에 오르면 설악산과 바다가 한눈에 들어와요.'],
+  ['🛕', '낙산사 의상대', '바다 위 절벽의 작은 정자. 해돋이를 보러 새벽부터 사람들이 모여요.'],
+  ['🏝️', '죽도', '해변 앞 작은 섬. 섬 앞에서 부서지는 파도는 서퍼들의 놀이터예요.'],
+  ['🌲', '하조대 정자', '바위 절벽 위 소나무와 정자. 바람이 불면 솔잎 소리가 파도 소리와 섞여요.'],
+  ['🦑', '주문진 수산시장', '오징어·대게가 가득한 시장. 갓 잡은 바다 냄새가 골목마다 퍼져요.'],
+  ['🏞️', '경포호', '바다 옆 잔잔한 호수. 밤이면 하늘·바다·호수에 달이 함께 떠요.'],
+  ['🚉', '정동진역', '바다 바로 앞 기차역. 새벽 기차를 타고 해돋이를 보러 오는 사람이 많아요.'],
+  ['🏕️', '망상 솔숲 캠핑장', '바닷가 솔숲의 캠핑장. 모닥불 앞에서 파도 소리를 들으며 잠들어요.'],
+  ['⛵', '장호항 물빛', '물이 맑아 배 밑 바위까지 비치는 항구. 카누를 타면 하늘에 떠 있는 것 같아요.'],
+];
+const lmOf = () => nm(qbOf().lm, 2047);
+const lmSeen = v => !!(lmOf() & (1 << v));
+function lmSpot(L){ for(const x of [800, 430, 975, 250, 640]) if(!L.some(e=>Math.abs(e.x - x) < 70 && Math.abs(e.d - .3) < .3)) return x; return 800; }   // 소품(간판·가게·파라솔) 사이 빈 곳
+function lmOpen(){
+  const v = TV, M = LMK[v], nw = !lmSeen(v); if(!M) return wBack();
+  if(nw && qbPut({ lm:lmOf() | (1 << v) })) shellAdd(3);                               // 먼저 적고 나서 조개
+  beep(784, 1175, .2, .04);
+  const ov = ovEl('');
+  ov.innerHTML = `<div class="go-card"><div class="qpc" aria-hidden="true">${esc(M[0])}</div><div class="go-t">${esc(M[1])}</div>
+    <div class="go-d">${esc(M[2])}</div>
+    <div class="go-b">${nw ? '📖 기록장 「마을 명소」에 적었어요 · 🐚 3개' : `📖 마을 명소 ${LMK.filter((_, i)=>lmSeen(i)).length}/${N}`}</div>
+    <button class="btn blue" id="q-lmok" type="button" style="width:100%;min-height:50px">좋아요!</button></div>`;
+  $q('q-lmok').onclick = wBack;
+}
+const lmHtml = () => `<h4>🏛️ 마을 명소 ${LMK.filter((_, i)=>lmSeen(i)).length}/${N}</h4><div class="qx-l">${LMK.map((M, i)=>`<div class="qx-it${lmSeen(i) ? '' : ' lk'}"><i aria-hidden="true">${lmSeen(i) ? esc(M[0]) : '❔'}</i><span><b>${lmSeen(i) ? esc(M[1]) : '???'}</b><small>${lmSeen(i) ? esc(M[2]) : `${esc(short(i))} 어딘가 — 마을에서 찾아 눌러 보세요`}</small></span></div>`).join('')}</div>`;
+
+/* 🕐 실제 시각 하늘빛 — 저녁엔 노을, 밤엔 푸른 어둠을 살짝(걷기 화면 위 한 겹, 누름은 통과) */
+const nowTint = () => { const h = new Date().getHours(); return h >= 20 || h < 5 ? 'nt' : h >= 17 ? 'ev' : h < 7 ? 'mo' : ''; };
+/* 🔊 소리 — 놀이 메뉴 설정과 같은 값(lineup.share.snd) */
+function sndBtn(){ const b = $q('q-snd'); if(!b) return; const on = sndOn(); b.textContent = on ? '🔊' : '🔇'; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? '소리 끄기' : '소리 켜기'); }
+function sndToggle(){ const on = !sndOn(); try{ localStorage.setItem('lineup.share.snd', on ? '1' : '0'); }catch(e){} sndBtn(); if(on) beep(660, 990, .1, .05); }
+
 /* 뒤로가기(안드로이드) — 대화·지도·가방 같은 덮개부터 닫고, 전투 중이면 마을로. 걷기 화면이면 false(원정을 닫는다) */
 function qBack(){
   if(CN){ const d = CN.done; cineStop(); if(d) d(); return true; }
@@ -1716,6 +1854,16 @@ function wCss(){
   if($q('q-css')) return; const st = document.createElement('style'); st.id = 'q-css';
   st.textContent = `
 #quest.qw .game-box{ width:100%; max-width:480px; justify-content:flex-start }
+.qw-tint{ position:absolute; inset:0; z-index:2; pointer-events:none; display:none }
+.qw-tint.ev{ display:block; background:linear-gradient(180deg,rgba(255,120,60,.16),rgba(255,160,90,.06)) }
+.qw-tint.nt{ display:block; background:linear-gradient(180deg,rgba(8,16,60,.34),rgba(8,20,70,.18)) }
+.qw-tint.mo{ display:block; background:linear-gradient(180deg,rgba(255,200,170,.14),rgba(255,230,200,0)) }
+.qm-back{ background:#1F2A44 !important; color:#fff !important; font-weight:800 }
+.qm-tw{ display:flex; flex-direction:column; align-items:flex-start; width:100%; margin-top:6px; min-height:48px; padding:6px 12px; text-align:left; color:#fff; background:linear-gradient(90deg,#1F6FB8,#2FA5C8); border:2px solid #1F2A44; border-radius:12px; box-shadow:0 3px 0 #1F2A44 }
+.qm-tw b{ font-size:14px } .qm-tw small{ font-size:11.5px; opacity:.9 }
+.qtm-bd{ align-self:center; color:#FFB8D8; font-weight:800; font-size:12px }
+.qtm-h > .qtm-bdg{ position:absolute; left:-6px; top:-9px; grid-row:auto; width:auto; height:auto; font-size:13px; line-height:1; text-decoration:none; filter:drop-shadow(0 1px 0 #fff) }
+.qe.lm .qe-e{ font-size:34px; filter:drop-shadow(0 2px 0 rgba(0,0,0,.18)) }
 #quest.qw .game-stage{ flex:1 1 0; min-height:0; overflow:hidden }
 #quest.qw #q-cv,#quest.qw .q-sks,#quest.qw .q-log{ display:none }
 #quest:not(.qw) #q-bar{ display:none }
@@ -1941,7 +2089,7 @@ function questOpen(){
   $q('quest').hidden = false; document.body.classList.add('game-on');
   me = mkMe(); meW = whiteOf(me); const lk = look(); meImg = svgUrl(lk, 'qme'); legImg = svgUrl({ ...lk, boardc:'legend' }, 'qlg');
   try{ walkImg = typeof mochiSVG === 'function' ? 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(mochiSVG(lk, { charm:2, uid:'q' })) : ''; }catch(e){ walkImg = ''; }
-  migrate();
+  migrate(); sndBtn();
   S = null; UI.bt = null; PK = ''; WK = null; ctl();
   const top = Math.floor(openTo() / 4); let tv = top; try{ const x = localStorage.getItem(TVK); if(x != null && x !== '') tv = nm(x, top); }catch(e){}
   TV = sel = qNow().all ? tv : top;                                                  // 진행 중이면 그 마을, 다 깼으면 마지막에 있던 마을
@@ -1975,6 +2123,7 @@ function wire(){
     WK.go = null; WK.tx = x; WK.td = d;
     const tp = $q('q-tap'); if(tp){ tp.style.setProperty('--p', `translate(${f1(x)}px,${f1(fy(G, d))}px)`); tp.style.transform = `translate(${f1(x)}px,${f1(fy(G, d))}px)`; tp.classList.remove('on'); void tp.offsetWidth; tp.classList.add('on'); }
   };
+  const hx = $q('q-x'); if(hx && !$q('q-snd')){ const sb = document.createElement('button'); sb.className = 'btn sm ghost'; sb.id = 'q-snd'; sb.type = 'button'; hx.parentNode.insertBefore(sb, hx); sb.onclick = e=>{ e.stopPropagation(); sndToggle(); }; }
   $q('q-x').onclick = e=>{ if(e && e.isTrusted === false && qBack()) return; questClose(); };   // 휴대폰 뒤로가기(backnav 가 대신 누름)는 덮개부터 닫는다
   $q('q-speed').onclick = ()=>{ speed = speed === 1 ? 2 : 1; try{ localStorage.setItem('lineup.share.qspd', String(speed)); }catch(e){} ctl(); };
   $q('q-auto').onclick = ()=>{ auto = !auto; try{ localStorage.setItem('lineup.share.qauto', auto ? '1' : '0'); }catch(e){} ctl(); if(S && S.tut === 1 && !auto) tutGo(2); };
@@ -1987,7 +2136,7 @@ function wire(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 window.questOpen = questOpen; window.questClose = questClose;
-window._quest = { TUNE, get S(){ return S; }, get FS(){ return FS; }, FISH, RAR, fishOpen, fishTap, fRoll, fGet, fOfDay, giftPick, giftGive, chestOpen, favOf, canGift, fsOf, fiOf, hvOf, fdOf, funOn, get CN(){ return CN; }, get auto(){ return auto; }, set auto(v){ auto = v; ctl(); }, get WK(){ return WK; }, qXp, get TV(){ return TV; }, get T(){ return T; }, step, session, town, bag, fight, vInfo, qpOf, eqOf, eqBuy, goTo, interact, npcTalk, qBack, wTick, VIL, EQC, begin, teamUp, ult, end, map, codex, opening, place, fmGet, migrate, wavesOf, power, recPow, heroStat, heroLv, heroSt, starOf, sgN, CH, HERO, BOSS, N, NS, FIX, scene,
+window._quest = { twCard, twFight, twOf, twOn, twWaves, twG, bondGo, bdNext, lmOpen, lmOf, nowTint, sndToggle, LMK, BOND, TWX, TUNE, get S(){ return S; }, get FS(){ return FS; }, FISH, RAR, fishOpen, fishTap, fRoll, fGet, fOfDay, giftPick, giftGive, chestOpen, favOf, canGift, fsOf, fiOf, hvOf, fdOf, funOn, get CN(){ return CN; }, get auto(){ return auto; }, set auto(v){ auto = v; ctl(); }, get WK(){ return WK; }, qXp, get TV(){ return TV; }, get T(){ return T; }, step, session, town, bag, fight, vInfo, qpOf, eqOf, eqBuy, goTo, interact, npcTalk, qBack, wTick, VIL, EQC, begin, teamUp, ult, end, map, codex, opening, place, fmGet, migrate, wavesOf, power, recPow, heroStat, heroLv, heroSt, starOf, sgN, CH, HERO, BOSS, N, NS, FIX, scene,
   sim(g, cap, kind){ session(g); if(kind === 'patrol'){ S.kind = kind; S.waves = S.waves.map(w=>w.filter(k=>k !== 'BOSS')); } begin(); const s = S; s.tutT = 0; let n = 0; while(S === s && !s.res && n++ < (cap || 60 * 200)) step(FIX); clearTimeout(tmr); return { res:s.res, stars:s.stars, t:Math.round(s.t), deaths:s.deaths, ults:s.ults || 0 }; },
   force(g, win){ session(g); S.heroes = fmGet().map((k, i)=>k ? mkHero(k, i) : null).filter(Boolean); S.mode = 'go'; end(win); },
   skip(){ for(let n = 0; n < 6; n++){                                              // 결과 띠 → 뒷이야기 → (엔딩) 순서로 끝까지 넘긴다

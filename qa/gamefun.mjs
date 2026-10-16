@@ -83,7 +83,7 @@ await t.S(()=>{ const s = _game.st; s.fx.star = 0; s.fx.fev = 0; s.combo = 4; s.
 await t.S(()=>{ const s = _game.st; s.y = 30; s.vy = 0; s.air = true; s.obs.push({ k:'rock', w:12, h:10, y:0, x:30 }); s.obs.push({ k:'fin', w:14, h:17, y:0, x:60 }); s.pick.push({ x:110, y:18, got:false, gold:1 }); }); await t.sleep(220);
 await shot('combo');
 // 결과 — 조개(+미션 보상)는 한 번만 지갑에, 다음 목표 줄, 이름 주입 없음
-const before = await t.S(()=>ME.profile.play.shells || 0);
+const before = await t.S(()=>{ localStorage.setItem('lineup.share.jach', JSON.stringify(Object.fromEntries((_game.ACH || []).map(a=>[a[0], 1])))); return ME.profile.play.shells || 0; });   // 업적 보상(한 번만 받는 조개)은 deep.mjs 에서 따로 — 여기선 이미 받은 것으로
 const res = await t.S(()=>{ const s = _game.st; s.md = 2; s.msh = 4; s.fevN = 1; s.cnt.nm = 3; s.gold = 1; s.pts = 262; s.shells = 9; s.lives = 1; s.shield = 0; s.invuln = 0; s.fx.star = 0; s.fx.fev = 0; s.y = 0; s.air = false; s.vy = 0; s.obs = [{ k:'rock', w:12, h:10, y:0, x:44 }]; _game.step(_game.FIX); return s.dead; });
 await t.sleep(1700);
 const over = await t.S(()=>({ 재미줄:document.querySelector('#g-ov .jp-fun')?.textContent, 목표:document.querySelector('#g-ov .jp-goal')?.textContent, 점수:document.querySelector('#g-cnt')?.textContent, 조개:ME.profile.play.shells, 주입:window.__x || 0 }));

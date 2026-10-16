@@ -409,6 +409,12 @@ body.game-on{ overflow:hidden }
 .d-card.syn{ background:linear-gradient(180deg,#F6EEFF,#E4CCFF); border-color:#7C3AED; box-shadow:0 0 0 2px #C4B5FD } .d-card.syn em{ color:#6D28D9 }
 .d-stg.d-inf{ margin:-4px 0 10px; width:100%; background:linear-gradient(90deg,#E3F4FF,#EFE4FF); border-color:#3B5BDB } .d-stg.d-inf em{ color:#3B5BDB; letter-spacing:0; font-size:12px }
 .d-inf0{ margin:-4px 0 10px; font-size:11.5px; font-weight:800; color:#8A93A6; text-align:center }
+.d-stys{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:-4px 0 4px } .d-sty{ display:flex; align-items:center; justify-content:center; gap:4px; min-height:40px; padding:4px 2px; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); cursor:pointer }
+.d-sty i{ font-style:normal; font-size:18px; font-family:sans-serif } .d-sty b{ font-size:13px } .d-sty small{ font-size:11px; font-weight:800; color:#8A93A6 } .d-sty[aria-pressed="true"]{ background:#FFF3C4; box-shadow:inset 0 0 0 2px #FFB020 } .d-sty:disabled{ opacity:.55; cursor:default; background:#EEF1F5 }
+.d-styd{ font-size:11.5px; font-weight:800; color:#5B6275; text-align:center; margin:0 0 10px; word-break:keep-all }
+.d-card.lg{ background:linear-gradient(180deg,#FFF6D6,#FFD86B); border-color:#B45309; box-shadow:0 0 0 2px #FFC94D } .d-card.lg em{ color:#B45309 } .d-card.shop em{ color:#B45309; font-size:12px }
+.d-shgo{ width:100%; margin-top:8px; min-height:44px }
+@media (max-height:700px){ #defend .go-card:has(.d-stys) .d-keys{ display:none } #defend .d-stys{ margin-top:-6px } #defend .d-sty{ min-height:36px } #defend .d-styd{ margin-bottom:6px } }
 .d-stars{ font-size:34px; line-height:1.1; letter-spacing:4px; color:#FFB020; margin:2px 0 4px; font-family:sans-serif } .d-stars s{ text-decoration:none; color:#D5DCE6 }
 .d-stars span{ display:inline-block; animation:dStar .5s cubic-bezier(.2,1.5,.4,1) both } .d-stars span:nth-child(2){ animation-delay:.18s } .d-stars span:nth-child(3){ animation-delay:.36s }
 @keyframes dStar{ from{ transform:scale(0) rotate(-40deg); opacity:0 } }
@@ -1669,7 +1675,7 @@ body{ word-break:keep-all; overflow-wrap:break-word }
 <!-- 해변 수호 (defend.js) -->
 <div class="game" id="defend" hidden role="dialog" aria-modal="true" aria-label="해변 수호">
   <div class="game-box">
-    <div class="game-hd"><b>🛡️ 해변 수호</b><span class="game-sc" id="d-hud" style="font-size:14px"></span><button class="btn sm ghost" id="d-x" type="button" aria-label="해변 수호 닫기">✕</button></div>
+    <div class="game-hd"><b>🛡️ 해변 수호</b><span class="game-sc" id="d-hud" style="font-size:14px"></span><button class="btn sm ghost" id="d-snd" type="button" aria-pressed="false" aria-label="소리 켜기">🔇</button><button class="btn sm ghost" id="d-x" type="button" aria-label="해변 수호 닫기">✕</button></div>
     <div class="game-stage">
       <canvas id="d-cv" width="480" height="720" aria-label="해변 수호 화면 — 서핑 학교를 지켜요. 아래 왼쪽 스틱으로 움직이고, 오른쪽 버튼으로 공격·대시·필살기"></canvas>
       <div class="d-top"><button class="btn sm" id="d-help" type="button" aria-label="조작법 보기">?</button><button class="btn sm" id="d-pause" type="button" aria-label="멈추기">⏸</button></div>

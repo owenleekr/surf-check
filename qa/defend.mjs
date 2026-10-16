@@ -220,8 +220,8 @@ const i1 = await D(()=>({ inf:_defend.S.inf, w:_defend.S.w, ban:_defend.S.ban &&
 console.log('무한 시작', JSON.stringify(i1)); ok(i1.inf === 1 && i1.w === 1 && /🌀 WAVE 1/.test(i1.ban || '') && /오늘의 바다/.test(i1.sub || '') && i1.run && i1.덮개, '무한 파도 시작');
 // 웨이브 5·10은 보스, 6은 보스 아님 · 웨이브가 갈수록 단단해진다 · 카드를 다 모아도 멈추지 않는다
 const iw = await D(()=>{ const S = _defend.S, o = {}; _defend.skip(5); _defend.fast(2.6); o.b5 = S.boss && S.boss.k; _defend.skip(6); o.b6 = !!S.boss; const h6 = _defend.spawn('crab', 100, 200).max; _defend.skip(12); const h12 = _defend.spawn('crab', 100, 200).max; o.세짐 = h12 > h6 * 2; _defend.skip(10); _defend.fast(2.6); o.b10 = S.boss && S.boss.k; o.해변그림 = S.stg;
-  for(const u of _defend.UPS) if(u.k !== 'heal') S.up[u.k] = u.max; S.hp = S.max; S.qi = S.q.length; _defend.killAll(true); for(let i = 0; i < 300 && !S.pick; i++) _defend.step(_defend.FIX); o.다모음 = S.pick && S.pick.join(); _defend.pick(0); o.다음 = S.w; return o; });
-console.log('무한 웨이브', JSON.stringify(iw)); ok(iw.b5 === 'king' && !iw.b6 && iw.b10 === 'jaws' && iw.세짐 && iw.해변그림 === 1 && iw.다모음 === 'heal' && iw.다음 === 11, '무한 웨이브 진행');
+  for(const u of _defend.UPS) if(u.k !== 'heal') S.up[u.k] = u.max; S.hp = S.max; S.qi = S.q.length; _defend.killAll(true); for(let i = 0; i < 300 && !S.pick; i++) _defend.step(_defend.FIX); o.다모음 = S.pick && S.pick.join(); _defend.pick(0); o.매점 = S.pickT === 'shop' && S.pick && S.pick.join(); _defend.shopGo(); o.다음 = S.w; return o; });
+console.log('무한 웨이브', JSON.stringify(iw)); ok(iw.b5 === 'king' && !iw.b6 && iw.b10 === 'jaws' && iw.세짐 && iw.해변그림 === 1 && iw.다모음 === 'heal' && iw.매점 === 's_heal,s_sp,s_card' && iw.다음 === 11, '무한 웨이브 진행');
 // 👑 왕관 적 — 체력 3배, 처음엔 한 줄 안내, 잡으면 아이템·조개 3개
 const cr = await D(()=>{ _defend.start(0, 11, {}); const S = _defend.S; _defend.skip(2); S.qi = S.q.length; _defend.killAll(); window._dfreeze = 1; S.ban = null; const P = _defend.P; P.x = 120; P.y = 230;
   const f = _defend.spawn('crab', 120, 205); const h0 = f.max; _defend.crownIt(f); const o = { 배:Math.round(f.max / h0), 표시:f.cr }; S.cb = 0; S.ks = 0;
@@ -302,5 +302,75 @@ for(const [w, h] of [[390, 844], [375, 667], [360, 740], [320, 640]]){
   if(w === 360){ await D(()=>defendOpen()); await t.sleep(150); await fshot('menu360'); await D(()=>defendClose()); }
 }
 await t.p.setViewport({ width:390, height:844, deviceScaleFactor:2, isMobile:true, hasTouch:true });
+// ── 깊이 더하기: 🎨 스타일(보드·패들·슬램) · 새 적(분열 해파리·방패 꽃게·급강하 갈매기·⚡💚 강한 적) · 보스 3단계 · 🌟 전설 카드 · ✨ 시너지 5종 · 🛒 매점 · 🏅 첫 돌파 · 🔊 소리 ──
+const DOUT = process.env.DEEP || OUT;
+const dshot = async n => { await t.S(()=>{ const o = document.getElementById('offbar'); if(o) o.hidden = true; }); await t.p.screenshot({ path:`${DOUT}/deep-d-${n}.png` }); };
+await t.p.setViewport({ width:390, height:844, deviceScaleFactor:2, isMobile:true, hasTouch:true }); await t.sleep(150);
+// 스타일 줄 — 별 3개면 패들 열림·슬램 잠김, 고르면 기억
+const sy0 = await D(()=>{ const d = ME.profile.play.df; d.st = [3, 0, 0]; d.hd = 1; localStorage.removeItem('lineup.share.dsty'); defendOpen(); const b = [...document.querySelectorAll('#d-ov [data-sty]')];
+  const r = { n:b.length, 잠김:b.map(x=>x.disabled).join(), 글:document.querySelector('#d-ov .d-styd')?.textContent }; b[1].click(); r.고름 = localStorage.getItem('lineup.share.dsty'); r.눌림 = document.querySelector('#d-ov [data-sty="1"]')?.getAttribute('aria-pressed'); return r; });
+await t.sleep(150); await dshot('menu');
+console.log('스타일 줄', JSON.stringify(sy0)); ok(sy0.n === 3 && sy0.잠김 === 'false,false,true' && /보드/.test(sy0.글 || '') && sy0.고름 === '1' && sy0.눌림 === 'true', '스타일 줄');
+const sy1 = await D(()=>{ const d = ME.profile.play.df; d.st = [0, 0, 0]; defendOpen(); const r = !document.querySelector('#d-ov .d-stys'); d.st = [3, 0, 0]; return r; });
+ok(sy1, '첫 판엔 스타일 줄 없음');
+// 🏹 패들 — 뛰어들지 않고 멀리서 맞힌다, 필살기는 패들 소나기
+const pd = await D(()=>{ defendOpen(); _defend.start(0, 3); window._dfreeze = 1; const S = _defend.S, P = _defend.P; _defend.killAll(); S.qi = S.q.length; S.ban = null; P.x = 120; P.y = 260;
+  const f = _defend.spawn('crab', 120, 190); f.hp = f.max = 999; const r = { sty:S.sty, 아이콘:document.querySelector('#d-sp b')?.textContent, h0:S.hits };
+  _defend.press('atk', 1); for(let i = 0; i < 40; i++) _defend.step(_defend.FIX); _defend.press('atk', 0); r.맞음 = S.hits - r.h0; r.제자리 = Math.abs(P.y - 260) < 4;
+  for(let i = 0; i < 3; i++){ const g = _defend.spawn('jelly', 40 + i * 70, 150); g.hp = g.max = 999; } S.sp = 100; const h1 = S.hits; _defend.special(); for(let i = 0; i < 40; i++) _defend.step(_defend.FIX); r.소나기 = S.rain.t > 0; r.소나기맞음 = S.hits - h1; return r; });
+await t.sleep(100); await dshot('paddle');
+await D(()=>{ for(let i = 0; i < 80; i++) _defend.step(_defend.FIX); });
+console.log('패들', JSON.stringify(pd)); ok(pd.sty === 1 && pd.아이콘 === '🏹' && pd.맞음 >= 1 && pd.제자리 && pd.소나기 && pd.소나기맞음 >= 8, '패들 스타일');
+// 💥 슬램 — 잠겨 있으면 못 쓴다, 열리면 둘레 전체를 치고 필살기 소용돌이는 끌어당긴다
+const sl = await D(()=>{ const d = ME.profile.play.df; _defend.start(0, 3, { style:'slam' }); const r = { 잠김:_defend.S.sty }; d.st = [3, 3, 0];
+  _defend.start(0, 3, { style:'slam' }); window._dfreeze = 1; const S = _defend.S, P = _defend.P; _defend.killAll(); S.qi = S.q.length; S.ban = null; P.x = 120; P.y = 230; r.sty = S.sty;
+  const a = _defend.spawn('crab', 98, 224), b = _defend.spawn('crab', 142, 224); a.hp = a.max = b.hp = b.max = 999; _defend.press('atk', 1); for(let i = 0; i < 10; i++) _defend.step(_defend.FIX); _defend.press('atk', 0);
+  r.양쪽 = a.hp < 999 && b.hp < 999; for(let i = 0; i < 40; i++) _defend.step(_defend.FIX);
+  const g = _defend.spawn('jelly', 120, 150); g.hp = g.max = 999; const d0 = Math.hypot(g.x - P.x, g.y - P.y); S.sp = 100; _defend.special(); for(let i = 0; i < 50; i++) _defend.step(_defend.FIX);
+  r.소용돌이 = S.wh.t > 0; r.끌림 = Math.round(d0 - Math.hypot(g.x - S.wh.x, g.y - S.wh.y)); return r; });
+await t.sleep(100); await dshot('slam');
+console.log('슬램', JSON.stringify(sl)); ok(sl.잠김 === 0 && sl.sty === 2 && sl.양쪽 && sl.소용돌이 && sl.끌림 > 10, '슬램 스타일');
+// 새 적 — 🛡️ 방패 꽃게(한 대에 한 칸·대시는 한 번에), 분열 해파리(아기 둘), 급강하 갈매기(동그라미 안이면 막음, 밖이면 학교)
+const ne = await D(()=>{ localStorage.setItem('lineup.share.dsty', '0'); _defend.start(1, 5); window._dfreeze = 1; const S = _defend.S, P = _defend.P; _defend.killAll(); S.qi = S.q.length; S.ban = null; P.x = 120; P.y = 240; const r = {};
+  const c = _defend.spawn('scrab', 120, 215); c.hp = c.max = 500; _defend.press('atk', 1); for(let i = 0; i < 8; i++) _defend.step(_defend.FIX); _defend.press('atk', 0); r.방패 = c.shd; r.몸 = c.hp;
+  for(let i = 0; i < 40; i++) _defend.step(_defend.FIX); P.x = 120; P.y = 240; c.x = 120; c.y = 225; c.kx = c.ky = 0; P.dcd = 0; _defend.press('dash', 1); for(let i = 0; i < 12; i++) _defend.step(_defend.FIX); r.대시후 = c.shd;
+  return r; });
+const mj = await D(()=>{ const S = _defend.S; _defend.killAll(); const m = _defend.spawn('mjel', 60, 160); const before = S.kills; _defend.killAll(); return { 잡음:S.kills - before }; });
+console.log('방패·분열', JSON.stringify({ ne, mj })); ok(ne.방패 === 2 && ne.몸 === 500 && ne.대시후 === 0 && mj.잡음 === 3, '방패 꽃게·분열 해파리');
+const dv = await D(()=>{ const S = _defend.S, P = _defend.P; _defend.killAll(); S.pick = null; S.ph = 'fight'; S.q.length = 0; S.q.push({ t:1e9, k:'jelly' }); S.qi = 0; S.ban = null; S.tipQ = null; const g = _defend.spawn('dive', 120, 60); g.tx = 120; let i = 0; for(; i < 400 && g.dv < 1; i++) _defend.step(_defend.FIX);
+  P.x = g.wx; P.y = g.wy + 4; P.stun = 0; const r = { 예고:g.dv === 1 }; return r; });
+await t.sleep(100); await dshot('dive');
+const dv2 = await D(()=>{ const S = _defend.S, P = _defend.P; for(let i = 0; i < 200; i++){ _defend.step(_defend.FIX); P.stun = 0; }
+  const r = {}; r.hp0 = S.hp; _defend.killAll(); const h = _defend.spawn('dive', 120, 60); h.tx = 120; P.x = 20; P.y = 160; for(let i = 0; i < 400 && h.on; i++) _defend.step(_defend.FIX); r.학교깎임 = r.hp0 - S.hp; return r; });
+console.log('급강하', JSON.stringify({ dv, dv2 })); ok(dv.예고 && dv2.학교깎임 > 0, '급강하 갈매기');
+const dv3 = await D(()=>{ const S = _defend.S, P = _defend.P; _defend.killAll(); S.pick = null; S.ph = 'fight'; S.q.length = 0; S.q.push({ t:1e9, k:'jelly' }); S.qi = 0; const g = _defend.spawn('dive', 120, 60); g.tx = 120; g.hp = g.max = 999; for(let i = 0; i < 400 && g.dv < 1; i++) _defend.step(_defend.FIX);
+  const h0 = S.hp; for(let i = 0; i < 200 && g.dv !== 0; i++){ P.x = g.wx; P.y = g.wy + 4; P.stun = 0; _defend.step(_defend.FIX); } return { 막음:g.on && g.stn > 0, 학교:S.hp === h0 }; });
+console.log('급강하 막기', JSON.stringify(dv3)); ok(dv3.막음 && dv3.학교, '급강하 막기');
+// 🌟 전설 카드 · ⚡ 번개 대시 시너지
+const lg = await D(()=>{ const S = _defend.S; _defend.killAll(); S.qi = S.q.length; for(let i = 0; i < 300 && !S.pick; i++) _defend.step(_defend.FIX); S.pick = ['ltri', 'boot', 'atk']; S.pickT = 'wave'; S.up.dash = 1; return 1; });
+await t.sleep(500); await dshot('legend');
+const lg2 = await D(()=>{ const c = document.querySelector('#d-bar [data-pick="0"]'); const r = { 전설:c.classList.contains('lg'), 글:c.textContent.replace(/\s+/g, ' '), 시너지표시:document.querySelector('#d-bar [data-pick="1"]').classList.contains('syn') };
+  _defend.pick(1); const S = _defend.S, P = _defend.P; r.zap = S.syn.zap; window._dfreeze = 1; _defend.killAll(); S.qi = S.q.length; P.x = 120; P.y = 240; P.dcd = 0; const f = _defend.spawn('jelly', 160, 236); f.hp = f.max = 999;
+  _defend.press('dash', 1); for(let i = 0; i < 20; i++) _defend.step(_defend.FIX); r.번개 = f.hp < 999; r.syn5 = _defend.SYN.length; return r; }).catch(e => ({ err:String(e) }));
+console.log('전설·시너지', JSON.stringify(lg2)); ok(lg2.전설 && /전설/.test(lg2.글 || '') && /삼지창/.test(lg2.글 || '') && lg2.시너지표시 && lg2.zap === 1 && lg2.번개 && lg2.syn5 === 5, '전설 카드·번개 대시');
+// 🛒 매점 — 판에서 주운 조개로 사고, 쓴 만큼 보상에서 빠진다 · 🏅 웨이브 10 첫 돌파는 한 번만
+const sp = await D(()=>{ window._dfreeze = 0; const d = ME.profile.play.df; delete d.inf; localStorage.removeItem('lineup.share.dinf'); _defend.start(3, 8); const S = _defend.S; S.shells = 20; _defend.openShop(); return { 고름:S.pick.join() }; });
+await t.sleep(500); await dshot('shop');
+const sp2 = await D(()=>{ const S = _defend.S; const r = { 제목:document.querySelector('#d-bar .d-sh')?.textContent, 버튼:!!document.getElementById('d-shgo') }; S.hp = S.max * .3; document.querySelector('#d-bar [data-pick="0"]').click(); r.쓴 = S.spent; r.수리 = S.hp > S.max * .7;
+  r.남은 = [...document.querySelectorAll('#d-bar [data-pick]')].length; document.getElementById('d-shgo').click(); r.다음 = S.ph; return r; });
+console.log('매점', JSON.stringify({ sp, sp2 })); ok(sp.고름 === 's_heal,s_sp,s_card' && /매점/.test(sp2.제목 || '') && /🐚20/.test(sp2.제목 || '') && sp2.버튼 && sp2.쓴 === 8 && sp2.수리 && sp2.남은 === 2 && sp2.다음 === 'fight', '매점');
+const ms = await D(()=>{ let args = null; const f0 = window.playDefendDone; window.playDefendDone = (...a) => { args = a; return f0(...a); };
+  const run = () => { const S = _defend.S; _defend.skip(10); S.qi = S.q.length; _defend.killAll(true); for(let i = 0; i < 300 && S.ph !== 'pick'; i++) _defend.step(_defend.FIX); const o = { ms:S.ms, 외침:S.call && S.call.s }; S.shells = 0; S.spent = 0; if(S.pick && !_defend.pick(0)) _defend.shopGo(); if(S.pickT === 'shop') _defend.shopGo(); _defend.lose(); o.보상 = args && args[2]; o.결과 = document.querySelector('#d-ov .d-new')?.textContent; return o; };
+  _defend.start(3, 9); const a = run(); const w1 = JSON.stringify(ME.profile.play.df.inf); _defend.start(3, 9); const b = run(); window.playDefendDone = f0; return { a, b, w1 }; });
+console.log('첫 돌파', JSON.stringify(ms)); ok(ms.a.ms === 10 && /웨이브 10 돌파/.test(ms.a.외침 || '') && ms.a.보상 >= 20 && ms.a.보상 <= 60 && /첫 돌파/.test(ms.a.결과 || '') && /"w":11/.test(ms.w1) && ms.b.ms === 0 && ms.b.보상 < ms.a.보상, '첫 돌파 보상 한 번');
+// ⚡💚 강한 적 · 보스 3단계(폭풍 너울 세 줄)
+const af = await D(()=>{ _defend.start(3, 12); _defend.skip(12); const S = _defend.S; return { 강한:S.q.filter(o => o.af).length, 왕관겹침:S.q.some(o => o.af && o.cr) }; });
+const st3 = await D(()=>{ _defend.start(2, 4); const S = _defend.S; _defend.skip(5); _defend.fast(4); const b = S.boss; if(!b) return { boss:null }; b.hp = b.max * .3; S.sw = null; S.swc = 0; for(let i = 0; i < 30 && !S.sw; i++) _defend.step(_defend.FIX); return { boss:b.k, 단계:b.bp, 줄:S.sw && S.sw.ys.length }; });
+await t.sleep(100); await dshot('storm3');
+console.log('강한 적·보스 3단계', JSON.stringify({ af, st3 })); ok(af.강한 >= 1 && !af.왕관겹침 && st3.boss === 'storm' && st3.단계 === 3 && st3.줄 === 3, '강한 적·보스 3단계');
+// 🔊 소리 — 놀이 탭 설정과 같은 값
+const sd = await D(()=>{ localStorage.setItem('lineup.share.snd', '0'); defendClose(); defendOpen(); const b = document.getElementById('d-snd'); const r = { 처음:b.textContent }; b.click(); r.켬 = [b.textContent, localStorage.getItem('lineup.share.snd'), b.getAttribute('aria-pressed')].join(); b.click(); r.끔 = [b.textContent, localStorage.getItem('lineup.share.snd')].join(); defendClose(); return r; });
+console.log('소리', JSON.stringify(sd)); ok(sd.처음 === '🔇' && sd.켬 === '🔊,1,true' && sd.끔 === '🔇,0', '소리 버튼');
+await D(()=>{ window._dfreeze = 0; localStorage.removeItem('lineup.share.dsty'); });
 console.log('bad', bad); console.log('errs', t.errs);
 await t.b.close(); process.exit(bad.length || t.errs.length ? 1 : 0);
