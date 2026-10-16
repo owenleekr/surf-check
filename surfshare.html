@@ -78,6 +78,7 @@ window.__bootFail = (files) => {
 <script src="foodtalk.js" defer></script>
 <script src="food.js" defer></script>
 <script src="feed.js" defer></script>
+<script src="bday.js" defer></script>
 <script src="install.js" defer></script>
 <script src="updates.js" defer></script>
 <script src="icons.js" defer></script>
@@ -1222,6 +1223,37 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .bs-winbar{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:8px; font-size:13px; font-weight:800 } .bs-winbar small{ font-size:12px; color:#5B6275; font-weight:700 }
 .bs-wn{ display:inline-block; margin-left:6px; padding:0 5px; font-style:normal; font-size:12px; font-weight:800; color:var(--ink); background:var(--sun); border:2px solid var(--ink); border-radius:6px } .bs-wn.none{ background:#E3E6EE; color:#5B6275 }
 .bs-grid.win .bs-st:not(.w){ opacity:.4 } .bs-grid.win .bs-st.w.f{ box-shadow:0 0 0 3px var(--sun) }
+/* 🎂 오늘의 생일 — 홈 맨 위 띠 + 축하 창 (bday.js) */
+.bday-bar{ display:flex; align-items:center; gap:10px; width:100%; margin:0 0 12px; padding:10px 14px; border:2px solid var(--ink); border-radius:14px;
+  background:linear-gradient(100deg,#FFE3EC 0%,#FFF3C4 55%,#DDF3FF 100%); color:var(--ink); text-align:left; font:inherit; cursor:pointer; position:relative; overflow:hidden; box-shadow:0 3px 0 var(--ink) }
+.bday-bar:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--ink) }
+.bday-bar > i{ font-style:normal; font-size:26px; animation:bdBob 1.6s ease-in-out infinite } .bday-bar span{ flex:1; min-width:0; display:flex; flex-direction:column; gap:1px }
+.bday-bar b{ font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .bday-bar small{ font-size:12px; color:var(--ink2) }
+.bday-bar em{ font-style:normal; font-weight:800; font-size:12px; background:var(--coral); color:#fff; border-radius:999px; padding:5px 10px; white-space:nowrap }
+.bday-bar::after{ content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 12% 20%,#FF6B6B 2px,transparent 3px),radial-gradient(circle at 38% 80%,#5AB4EF 2px,transparent 3px),radial-gradient(circle at 63% 15%,#6BD6A0 2px,transparent 3px),radial-gradient(circle at 88% 75%,#B48CFF 2px,transparent 3px); opacity:.7 }
+@keyframes bdBob{ 0%,100%{ transform:rotate(-8deg) } 50%{ transform:rotate(8deg) translateY(-2px) } }
+.bday-in{ padding-bottom:calc(14px + env(safe-area-inset-bottom)) }
+.bd-tabs{ display:flex; gap:6px; overflow-x:auto; margin-bottom:8px } .bd-tabs button{ flex:none; border:2px solid var(--ink); border-radius:999px; background:#fff; padding:5px 12px; font:inherit; font-weight:700 }
+.bd-tabs button small{ margin-left:5px; color:var(--ink2) } .bd-tabs button[aria-selected=true]{ background:var(--sun) }
+.bd-hero{ position:relative; text-align:center; padding:12px 8px 10px; border-radius:16px; background:linear-gradient(180deg,#FFE9F0,#FFF8E1); overflow:hidden }
+.bd-hero h3{ margin:4px 0 2px; font-size:19px } .bd-hero p{ margin:0; font-size:13px; color:var(--ink2) }
+.bd-stage{ position:relative; width:150px; height:150px; margin:0 auto } .bd-av{ width:100%; height:100%; object-fit:contain; animation:bdBob 2.4s ease-in-out infinite }
+.bd-cake2{ position:absolute; right:-6px; bottom:4px; font-size:38px } .bd-cake{ font-size:80px; line-height:150px }
+.bd-conf i{ position:absolute; top:-10px; width:7px; height:11px; border-radius:2px; animation:bdFall 3.2s linear infinite }
+.bd-conf i:nth-child(5n+1){ background:#FF6B6B } .bd-conf i:nth-child(5n+2){ background:#FFD23F } .bd-conf i:nth-child(5n+3){ background:#5AB4EF } .bd-conf i:nth-child(5n+4){ background:#6BD6A0 } .bd-conf i:nth-child(5n){ background:#B48CFF }
+.bd-conf i:nth-child(1){ left:5%; animation-delay:0.00s } .bd-conf i:nth-child(2){ left:34%; animation-delay:0.23s } .bd-conf i:nth-child(3){ left:63%; animation-delay:0.46s } .bd-conf i:nth-child(4){ left:92%; animation-delay:0.69s } .bd-conf i:nth-child(5){ left:25%; animation-delay:0.92s } .bd-conf i:nth-child(6){ left:54%; animation-delay:1.15s } .bd-conf i:nth-child(7){ left:83%; animation-delay:1.38s } .bd-conf i:nth-child(8){ left:16%; animation-delay:1.61s } .bd-conf i:nth-child(9){ left:45%; animation-delay:1.84s } .bd-conf i:nth-child(10){ left:74%; animation-delay:2.07s } .bd-conf i:nth-child(11){ left:7%; animation-delay:2.30s } .bd-conf i:nth-child(12){ left:36%; animation-delay:2.53s } .bd-conf i:nth-child(13){ left:65%; animation-delay:2.76s } .bd-conf i:nth-child(14){ left:94%; animation-delay:2.99s } 
+@keyframes bdFall{ 0%{ transform:translateY(0) rotate(0) } 100%{ transform:translateY(270px) rotate(540deg) } }
+.bd-list{ max-height:38vh; overflow:auto; margin:10px 0 8px; display:flex; flex-direction:column; gap:7px }
+.bd-msg{ border:2px solid var(--ink); border-radius:12px; padding:7px 10px; background:#fff } .bd-msg.me{ background:#FFF6D6 }
+.bd-msg b{ font-size:13px } .bd-msg b small{ margin-left:5px; font-weight:600; color:var(--ink2) } .bd-msg p{ margin:2px 0; font-size:14px; word-break:break-word; white-space:pre-wrap }
+.bd-msg span{ font-size:11px; color:var(--ink2) } .bd-msg span button{ border:0; background:none; color:var(--coral); font:inherit; font-weight:700; padding:0 }
+.bd-empty{ text-align:center; color:var(--ink2); font-size:13px; margin:12px 0 }
+.bd-chips{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px } .bd-chips button{ flex:none; border:1.5px solid var(--ink); border-radius:999px; background:#fff; padding:5px 10px; font:inherit; font-size:12.5px }
+.bd-form{ display:flex; gap:8px; align-items:stretch } .bd-form textarea{ flex:1; min-width:0; border:2px solid var(--ink); border-radius:12px; padding:8px 10px; font:inherit; font-size:15px; resize:none }
+.bd-cnt{ display:block; text-align:right; font-size:11px; color:var(--ink2); margin-top:3px }
+.bd-burst{ position:fixed; inset:0; pointer-events:none; z-index:200; overflow:hidden } .bd-burst i{ position:absolute; top:-12px; width:8px; height:13px; border-radius:2px; animation:bdFall2 2.4s ease-in forwards }
+@keyframes bdFall2{ 0%{ transform:translateY(0) rotate(0) } 100%{ transform:translateY(105vh) rotate(720deg) } }
+@media (prefers-reduced-motion: reduce){ .bday-bar > i, .bd-av, .bd-conf i{ animation:none } .bd-conf{ display:none } }
 </style>
 </head>
 <body>

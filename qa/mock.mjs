@@ -19,6 +19,7 @@ export async function open(data, me, opts={}){
     if(u.includes('/api/naver-list?resolve=')) return J(200, data.__resolve || { pid:null });
     if(u.includes('/api/naver-list')) return data.__naver ? J(200,data.__naver) : J(502,{error:'naver'});
     if(m==='OPTIONS' && u.includes('supabase')) return r.respond({status:204,headers:CORS,body:''});
+    if(m==='POST' && data.__rpc && u.includes('rpc/')){ const k=u.split('rpc/')[1].split('?')[0]; if(k in data.__rpc) return J(200,data.__rpc[k]); }
     if(m==='POST' && u.includes('rest/v1/')){ try{ posts.push([u.split('rest/v1/')[1], JSON.parse(r.postData())]); }catch(e){} return J(201,[]); }
     if(m==='DELETE' && u.includes('rest/v1/')) return r.respond({status:204,headers:CORS,body:''});
     for(const t of Object.keys(data).sort((a,b)=>b.length-a.length)) if(u.includes('rest/v1/'+t)) return J(200,data[t]||[]);

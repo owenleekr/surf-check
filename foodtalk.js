@@ -23,7 +23,7 @@ async function pull(force){
   if(pulling) return pulling;
   if(!force && talk && Date.now() - pulledAt < FRESH) return;
   pulling = (async ()=>{
-    try{ const rows = await api('place_talk?select=*&order=created_at.asc&limit=600'); talk = Array.isArray(rows) ? rows : []; talkOk = true; }
+    try{ const rows = await api('place_talk?select=*&target=not.like.bd:*&order=created_at.asc&limit=600'); talk = Array.isArray(rows) ? rows : []; talkOk = true; }
     catch(e){ if(e.code === 'notable') talkOk = false; }
     try{ const rows = await api('reacts?select=id,user_id,name,target,emo&target=like.ft:*&limit=1000'); rx = Array.isArray(rows) ? rows : []; rxOk = true; }
     catch(e){ if(e.code === 'notable') rxOk = false; }

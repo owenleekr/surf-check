@@ -633,6 +633,7 @@ function renderHub(enter){
       <button type="button" data-set="haptic" aria-pressed="${hapticOn()}"><span>📳 진동</span><b>${hapticOn() ? '켜짐' : '꺼짐'}</b></button>
       <button type="button" data-set="sound" aria-pressed="${soundOn()}"><span>🔊 게임 소리</span><b>${soundOn() ? '켜짐' : '꺼짐'}</b></button>
       <button type="button" data-set="big" aria-pressed="${bigOn()}"><span>🔠 글씨 크게</span><b>${bigOn() ? '켜짐' : '꺼짐'}</b></button>
+      <button type="button" data-set="bday" aria-pressed="${ME.profile?.bdoff !== 1}"><span>🎂 내 생일 알리기</span><b>${ME.profile?.bdoff === 1 ? '꺼짐' : '켜짐'}</b></button>
       <button type="button" data-set="a2hs"><span>📲 홈 화면에 추가</span><b>방법</b></button>
       <button type="button" data-set="guide"><span>📖 사용 가이드</span><b>열기</b></button>
       <button type="button" data-set="share"><span>🔗 친구에게 앱 알리기</span><b>공유</b></button>
@@ -650,6 +651,7 @@ function renderHub(enter){
     if(k === 'haptic'){ const on = !hapticOn(); try{ localStorage.setItem('lineup.share.haptic', on ? '1' : '0'); }catch(e){} if(on) navigator.vibrate?.(15); renderHub(); toast(on ? '진동을 켰어요' : '진동을 껐어요'); }
     else if(k === 'big'){ const on = !bigOn(); try{ localStorage.setItem('lineup.share.big', on ? '1' : '0'); }catch(e){} applyBig(); renderHub(); toast(on ? '글씨를 크게 했어요' : '글씨를 원래대로 했어요'); }
     else if(k === 'sound'){ const on = !soundOn(); try{ localStorage.setItem('lineup.share.snd', on ? '1' : '0'); }catch(e){} renderHub(); toast(on ? '게임 소리를 켰어요' : '게임 소리를 껐어요'); }
+    else if(k === 'bday'){ const off = ME.profile?.bdoff !== 1; (ME.profile ||= {}).bdoff = off ? 1 : 0; if(typeof saveProfile === 'function') saveProfile(); renderHub(); toast(off ? '생일 띠에 내 생일을 안 띄워요' : '생일날 친구들 홈에 축하 띠가 떠요'); }
     else if(k === 'guide'){ open('/guide', '_blank', 'noopener'); }
     else if(k === 'a2hs'){ if(typeof a2hsOpen === 'function') a2hsOpen(); }
     else if(k === 'share'){ const data = { title:'SurfShare', text:'양양 낙산 서핑 — 차 같이 타고, 숙소 같이 쓰고. 비밀번호는 단톡방에서 받아요.', url:'https://surf.owenai.xyz/' };
