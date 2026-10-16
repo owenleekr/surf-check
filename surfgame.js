@@ -475,7 +475,7 @@ function mileH(s, m){
   m.heal = heal;
   s.bgP = s.zone; s.zone = 1 + s.miles % ZONES.length; s.bgF = 1;
   ev('mile', m); vib([10, 20, 10]);
-  const zk = zkey(s); if(zk === 'storm' || zk === 'aurora') s.pops.push({ x:18, y:GY - 112, t:0, life:2.2, v:zk === 'storm' ? '💨 폭풍: 맞바람 · 🛢 드럼통' : '🌙 밤바다: 🦑 오징어는 밟아요', big:1 }); beep(784, 1568, .25, 'triangle', .06);
+  const zk = zkey(s); if(zk === 'storm' || zk === 'aurora') s.pops.push({ x:18, y:GY - 112 - 44, t:-1.7, life:2.2, v:zk === 'storm' ? '💨 폭풍: 맞바람 · 🛢 드럼통' : '🌙 밤바다: 🦑 오징어는 밟아요', big:1 }); beep(784, 1568, .25, 'triangle', .06);
 }
 /* 거대 문어 — 다가와 먹물을 쏘고, 수면으로 돌진한다. 머리를 밟아 체력을 다 깎으면 끝. 맞을 때마다, 다시 올 때마다 빨라진다 */
 function bossH(s, dt){
@@ -658,6 +658,7 @@ function draw(dt){
     if(p.gold){ const pu = 1.25 + Math.sin(s.t * 8 + p.x) * .08; c.globalAlpha = .35 + Math.sin(s.t * 6) * .15; blob(c, cx, cy, 7, 7, '#FFE27A'); c.globalAlpha = 1; c.drawImage(S.c, cx - 5.5 * pu, cy - 5 * pu, S.w * pu, S.h * pu); star4(cx + 4.5, cy - 4.5, 1.6 + Math.abs(Math.sin(s.t * 7)) * 1.6, '#FFFFFF'); return; }
     c.drawImage(S.c, cx - 5.5, cy - 5, S.w, S.h); const tw = Math.sin(s.t * 5 + p.x * .7); if(tw > .4) star4(cx + 3.6, cy - 3.6, (tw - .4) * 3.2, '#FFFFFF'); });
   // 장애물
+  const glo = hard && zkey(s) === 'aurora'; if(glo){ c.save(); c.shadowColor = 'rgba(255,236,190,.95)'; c.shadowBlur = 5 * K; }   // 밤바다 — 장애물 둘레에 옅은 빛(어두운 물에서도 보이게)
   s.obs.forEach(o=>{ const by = GY - o.y - o.h;
     if(hard && enemyH(o, by, s)) return;
     if(o.k === 'bird'){ const S = spr(((s.t * 9) | 0) % 2 ? 'bird1' : 'bird0'); c.drawImage(S.c, o.x - 3, by - 5 + Math.sin(s.t * 6 + o.x / 9), S.w, S.h); return; }
@@ -667,6 +668,7 @@ function draw(dt){
     // 물에 닿는 자리 — 하얀 거품 고리가 흔들린다
     const cx = o.x + o.w / 2, ph = s.t * 6 + o.x * .1; blob(c, cx, GY + .4, o.w / 2 + 2.5 + Math.sin(ph) * .6, 1.5, 'rgba(255,255,255,.9)');
     blob(c, o.x - 1.5, GY - 1.2 - Math.abs(Math.sin(ph)) * 1.5, .7, .7, 'rgba(255,255,255,.85)'); });
+  if(glo) c.restore();
   if(hard) bossD(s);
   drawMe(s, dt);
   foam(s);
@@ -680,7 +682,7 @@ function draw(dt){
   if(s.zone === 4 && !s.dead){ c.fillStyle = 'rgba(11,30,63,.16)'; c.fillRect(-6, -6, W + 12, H + 12); c.strokeStyle = 'rgba(207,230,255,.45)'; c.lineWidth = .6; c.beginPath();
     for(let i = 0; i < 26; i++){ const rx = (i * 37 + s.t * 120) % (W + 20) - 10, ry = (i * 53 + s.t * 380) % H; c.moveTo(W - rx, ry); c.lineTo(W - rx - 1.6, ry + 6); } c.stroke(); }
   // 점수 팝 — 톡 튀어나와 떠오른다
-  s.pops.forEach(p=>{ const life = p.life || .7, a = Math.min(1, (1 - p.t / life) * 2.2), sc = p.t < .12 ? .6 + p.t / .12 * .5 : p.t < .2 ? 1.1 - (p.t - .12) / .08 * .1 : 1;
+  s.pops.forEach(p=>{ if(p.t < 0) return; const life = p.life || .7, a = Math.min(1, (1 - p.t / life) * 2.2), sc = p.t < .12 ? .6 + p.t / .12 * .5 : p.t < .2 ? 1.1 - (p.t - .12) / .08 * .1 : 1;
     c.save(); c.globalAlpha = Math.max(0, a); c.translate(p.x + 2, p.y - p.t * 20); c.scale(sc, sc); txt(p.v, 0, 0, p.big ? 10 : 8, p.v[0] === '+' ? '#FFE27A' : '#FFFFFF', 'left', 900, 2.6); c.restore(); });
   if(mode === 'run' && !s.dead && vis.hint < 2 && !s.pops.length && (vis.hint ? s.air && !s.dj : s.t > .5)) tip(vis.hint ? '👆 공중에서 한 번 더 탭!' : '👆 탭 = 점프 · 꾹 누르면 더 높이', vis.hint ? 70 : GY - 56, s.t);
   banner(dt);
@@ -697,17 +699,18 @@ function nightD(s){ const c = ctx, py = GY - s.y - 12, fl = .92 + Math.sin(s.t *
   c.save(); c.globalCompositeOperation = 'lighter'; c.translate(PX + 10, py); c.scale(1.5 * fl, fl); c.fillStyle = NG.g; c.fillRect(-62, -62, 124, 124); c.restore(); }
 /* 💨 맞바람 — 예고는 화살표가 깜빡, 바람이 불면 앞에서 흰 줄이 몰아친다(그림만 — 바람 자체는 st.gust) */
 function gustD(s){ const c = ctx;
-  if(s.gw > 0 && ((s.t * 6) | 0) % 2){ txt('💨 맞바람 온다', W - 8, 58, 8, '#FFFFFF', 'right', 900, 2.4); }
+  if(s.gw > 0){ const pu = RM ? 1 : .8 + .2 * Math.sin(s.t * 14); c.globalAlpha = pu; rr(W - 68, 38, 62, 16, 7); c.fillStyle = 'rgba(5,12,24,.72)'; c.fill();
+    txt('💨 맞바람 온다!', W - 37, 45, 7, '#FFFFFF', 'center', 900, 2); c.globalAlpha = 1; bar(W - 63, 50.5, 52, 1.6, s.gw / GUST_W, '#7FE3FF'); return; }
   if(s.gust <= 0) return; const k = Math.min(1, s.gust / .4, (GUST_T - s.gust) / .3 + .2);
-  c.save(); c.globalAlpha = .55 * k * (RM ? .5 : 1); c.strokeStyle = '#FFFFFF'; c.lineWidth = .8; c.beginPath();
-  for(let i = 0; i < 16; i++){ const y = 24 + (i * 41) % 150, x = W - ((s.t * (300 + (i % 3) * 90) + i * 67) % (W + 50)), l = 10 + (i % 4) * 6; c.moveTo(x, y); c.lineTo(x + l, y - 1); } c.stroke(); c.restore();
-  txt('💨', W - 14, 60, 9, '#FFFFFF', 'center', 900); }
+  c.globalAlpha = k; rr(W - 60, 38, 54, 13, 6); c.fillStyle = 'rgba(5,12,24,.6)'; c.fill(); txt('💨 맞바람', W - 33, 44.5, 7, '#BFEFFF', 'center', 900, 2); c.globalAlpha = 1;
+  c.save(); c.globalAlpha = .75 * k * (RM ? .5 : 1); c.strokeStyle = '#FFFFFF'; c.lineWidth = 1.2; c.beginPath();
+  for(let i = 0; i < 16; i++){ const y = 24 + (i * 41) % 150, x = W - ((s.t * (300 + (i % 3) * 90) + i * 67) % (W + 50)), l = 10 + (i % 4) * 6; c.moveTo(x, y); c.lineTo(x + l, y - 1); } c.stroke(); c.restore(); }
 /* 피버 — 화면 가장자리가 금빛으로 달아오르고 속도선이 흐른다(선은 고정 개수, 새 객체 없음) */
 function feverD(s){ const c = ctx, k = Math.min(1, s.fx.fev / .5), a = RM ? .25 : .5;
   c.save(); c.globalAlpha = .16 * k; c.fillStyle = '#FFB020'; c.fillRect(-6, -6, W + 12, H + 12); c.globalAlpha = a * k; c.strokeStyle = '#FFFFFF'; c.lineWidth = .8; c.beginPath();
   for(let i = 0; i < 14; i++){ const y = 30 + (i * 37) % 130, x = W - ((s.t * (260 + (i % 4) * 60) + i * 53) % (W + 60)), l = 14 + (i % 3) * 8; c.moveTo(x, y); c.lineTo(x + l, y); } c.stroke(); c.restore();
-  const bl = .9 + Math.sin(s.t * 14) * .1; c.save(); c.translate(W / 2, 32); c.scale(bl, bl); txt('🔥 피버 ×2', 0, 0, 9, '#FFE27A', 'center', 900, 2.6); c.restore();
-  bar(W / 2 - 24, 39, 48, 2.4, s.fx.fev / FEVT, '#FFD36B'); }
+  const bl = .9 + Math.sin(s.t * 14) * .1; c.save(); c.translate(W / 2, 47); c.scale(bl, bl); txt('🔥 피버 ×2', 0, 0, 9, '#FFE27A', 'center', 900, 2.6); c.restore();
+  bar(W / 2 - 24, 53, 48, 2.4, s.fx.fev / FEVT, '#FFD36B'); }
 /* 미션 — 화면 아래 가운데 작은 띠. 하나 끝나면 초록으로 번쩍하고 다음 미션으로 */
 function misD(s, dt){ if(!s.mn || s.dead) return; const c = ctx, v = Math.min(s.mv, Math.max(0, misVal(s, s.mk)));
   if(vis.misK !== s.mi){ vis.misK = s.mi; vis.misT = s.mi ? .6 : 0; }
@@ -1035,10 +1038,10 @@ function achCard(){
   $g('g-ov').innerHTML = `<div class="go-card" style="text-align:left;max-height:86%;overflow:auto">
       <div class="go-t" style="text-align:center">🏄 내 보드</div>
       <div class="go-d" style="text-align:center;font-size:12px;margin-bottom:6px">보드마다 작은 특기 — 오늘의 챌린지에선 모두 기본 보드 규칙</div>
-      ${BOARDS.map(b=>{ const on = boardOpen(b); return `<button type="button" class="sk-dr" data-bd="${b.k}" ${on ? '' : 'disabled'} aria-pressed="${b === cur}" style="${b === cur ? 'outline:2px solid #3FA9F5;' : ''}${on ? '' : 'opacity:.55'}"><i style="background:linear-gradient(90deg,${b.c[0]},${b.c[1]});border-radius:8px;width:30px;height:12px;display:inline-block"></i><span><b>${esc(b.n)}${b === cur ? ' ✓' : ''}</b><small>${on ? esc(b.perk) : '🔒 ' + esc(b.lock[2]) + '이면 열려요'}</small></span></button>`; }).join('')}
+      ${BOARDS.map(b=>{ const on = boardOpen(b); return `<button type="button" class="sk-dr" data-bd="${b.k}" ${on ? '' : 'disabled'} aria-pressed="${b === cur}" style="padding:7px 10px;min-height:0;margin-bottom:5px;${b === cur ? 'outline:2px solid #3FA9F5;' : ''}${on ? '' : 'opacity:.55'}"><i style="background:linear-gradient(90deg,${b.c[0]},${b.c[1]});border-radius:8px;width:30px;height:12px;display:inline-block"></i><span><b>${esc(b.n)}${b === cur ? ' ✓' : ''}</b><small>${on ? esc(b.perk) : '🔒 ' + esc(b.lock[2]) + '이면 열려요'}</small></span></button>`; }).join('')}
       <div class="go-t" style="text-align:center;margin-top:10px">🏅 업적 ${achN()}/${ACH.length}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0 10px">${ACH.map(a=>`<div style="padding:6px 8px;border-radius:10px;background:${g[a[0]] ? 'rgba(255,211,107,.2)' : 'rgba(127,127,127,.12)'};font-size:12px;line-height:1.3"><b>${g[a[0]] ? a[1] : '🔒'} ${esc(a[2])}</b><br><small style="opacity:.8">${esc(a[3])} · 🐚${a[4]}</small></div>`).join('')}</div>
-      <button class="btn blue jp-wide" id="g-achb" type="button">돌아가기</button></div>`;
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:6px 0 8px">${ACH.map(a=>`<div style="padding:5px 7px;border-radius:10px;background:${g[a[0]] ? 'rgba(255,211,107,.2)' : 'rgba(127,127,127,.12)'};font-size:12px;line-height:1.25;word-break:keep-all"><b>${g[a[0]] ? a[1] : '🔒'} ${esc(a[2])}</b><br><small style="opacity:.8">${esc(a[3])} · 🐚${a[4]}</small></div>`).join('')}</div>
+      <div style="position:sticky;bottom:-1px;padding:6px 0 0;background:inherit"><button class="btn blue jp-wide" id="g-achb" type="button" style="margin:0">돌아가기</button></div></div>`;
   $g('g-ov').querySelectorAll('[data-bd]').forEach(b=>b.onclick = ()=>{ const x = BOARDS.find(q=>q.k === b.dataset.bd); if(!x || !boardOpen(x)) return; boardK = x.k; try{ localStorage.setItem('lineup.share.jboard', x.k); }catch(e){} achCard(); });
   $g('g-achb').onclick = showStart;
 }
@@ -1089,11 +1092,11 @@ function showOver(sc, r){
       ${fun.length ? `<div class="go-d jp-fun" style="margin:-2px 0 6px;word-break:keep-all">${fun.join(' · ')}</div>` : ''}
       <div class="go-st">${cells.map(([k, n])=>`<span>${k}<b>${n}</b></span>`).join('')}</div>
       ${goal ? `<div class="go-d jp-goal" style="margin:0 0 8px;word-break:keep-all">${goal}</div>` : ''}
-      ${r.ach && r.ach.length ? `<div class="go-d" style="margin:0 0 8px;word-break:keep-all;background:rgba(255,211,107,.16);border-radius:10px;padding:6px 8px">🏅 업적 달성! ${r.ach.map(a=>`${a[1]} <b>${esc(a[2])}</b> 🐚+${a[4]}`).join(' · ')}</div>` : ''}
-      ${r.nbd ? `<div class="go-d" style="margin:0 0 8px">🔓 새 보드 <b>${esc(r.nbd.n)}</b>가 열렸어요 — 시작 화면 🏄에서 골라요</div>` : ''}
       ${window.JUMP_STANDALONE ? `<div class="go-b">🐚 조개 ${st.shells}개${r.rank ? ` · 🏆 ${r.rank}` : ''}</div>` : `<div class="go-b">${hard ? `❤️ 잃은 목숨 <b>${st.lost}</b> · ` : ''}🐚 +${r.shells ?? st.shells}${r.x2 ? ' <b>×2</b>' : ''} (보유 ${r.bal ?? '–'})${r.gain ? ` · <b>+${r.gain} XP</b>` : xpFull ? ' · 오늘 XP는 다 채웠어요' : ''}</div>`}
       <div class="jp-row"><button class="btn blue" id="g-again" type="button" style="flex:1">↻ 한 판 더</button>
         <button class="btn ghost" id="g-exit" type="button">닫기</button></div>
+      ${r.ach && r.ach.length ? `<div class="go-d jp-ach" style="margin:8px 0 0;word-break:keep-all;background:rgba(255,211,107,.16);border-radius:10px;padding:6px 8px">🏅 업적 ${r.ach.length > 2 ? `<b>${r.ach.length}개</b> 달성! ${r.ach.map(a=>a[1]).join('')} 🐚+${r.ach.reduce((q, a)=>q + a[4], 0)}` : `달성! ${r.ach.map(a=>`${a[1]} <b>${esc(a[2])}</b> 🐚+${a[4]}`).join(' · ')}`}</div>` : ''}
+      ${r.nbd ? `<div class="go-d" style="margin:6px 0 0">🔓 새 보드 <b>${esc(r.nbd.n)}</b>가 열렸어요 — 시작 화면 🏄에서 골라요</div>` : ''}
       ${daily ? (()=>{ const rk = dailyRows(); return rk.length ? `<div class="go-r" style="margin-top:10px"><span class="jp-rh">오늘의 챌린지 순위</span>${rk.map((q,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(q.name)} ${q.best}</span>`).join('')}</div>` : ''; })() : ''}
       ${typeof upNudge === 'function' && !window.JUMP_STANDALONE ? upNudge('jump', { sc, best:nb || close ? 0 : best, x2:r.x2, daily, k:'j_val', plus:st.shells * 2 }) : ''}
       ${v && !hard ? `<div class="go-v" style="margin-top:10px">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}

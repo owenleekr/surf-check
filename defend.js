@@ -317,25 +317,25 @@ function pshot(x, y, a, v, life, dm, kd, pr, big){ const s = take(SHOTS); if(!s)
    🏹 패들: 뛰어들지 않고 멀리서 쏜다(3타째는 세 갈래) · 💥 슬램: 늘 내 둘레 전체, 느리지만 세고 3타째는 기절 */
 function swingStart(){
   if(S.sty === 1) return paddle();
-  P.cmb = P.cwin > 0 ? (P.cmb + 1) % 3 : 0; const sl = S.sty === 2, fin = P.cmb === 2, r = sl ? reach() * (fin ? 1.5 : 1.12) * (fin && S.up.fin ? 1.3 : 1) : reach() * (fin ? 1.3 : 1) * (fin && S.up.fin ? 1.2 : 1), t = aimT(); let a;
+  P.cmb = P.cwin > 0 ? (P.cmb + 1) % 3 : 0; const sl = S.sty === 2, fin = P.cmb === 2, r = sl ? reach() * (fin ? 1.5 : 1.3) * (fin && S.up.fin ? 1.3 : 1) : reach() * (fin ? 1.3 : 1) * (fin && S.up.fin ? 1.2 : 1), t = aimT(); let a;
   if(t){ const dx = t.x - P.x, dy = t.y - (P.y - 4), d = Math.hypot(dx, dy) || 1; a = Math.atan2(dy, dx); if(Math.abs(dx) > 3) P.face = dx > 0 ? 1 : -1;
     const want = d - FO[t.k].r - r * .55; if(want > 0){ const v = Math.min(300, want / .09); P.lt = .09; P.lvx = dx / d * v; P.lvy = dy / d * v; } }
   else a = P.mv ? Math.atan2(P.ay, P.ax) : -Math.PI / 2 + P.face * .5;   // 적이 없으면 보는 쪽으로 헛스윙
   P.sw = { t:0, a, r, arc:fin ? 3.4 : 2.3, fin, done:0, tg:t ? t.id : 0, s:P.cmb === 1 ? -1 : 1, sl };
-  const sm = 1 + .2 * (S.up.spd || 0); P.acd = (fin ? .4 : .24) * (sl ? 1.25 : 1) / sm; P.cwin = P.acd + .5;
+  const sm = 1 + .2 * (S.up.spd || 0); P.acd = (fin ? .4 : .24) * (sl ? 1.1 : 1) / sm; P.cwin = P.acd + .5;
   S.atks++; sfx(fin ? 'fin' : 'swing');
 }
 function paddle(){
   P.cmb = P.cwin > 0 ? (P.cmb + 1) % 3 : 0; const fin = P.cmb === 2, rg = reach() / 25, t = near(P.x, P.y - 4, AIM * 1.35 * rg, 1)[0];
   let a; if(t){ const dx = t.x - P.x, dy = t.y - (P.y - 4); a = Math.atan2(dy, dx); if(Math.abs(dx) > 3) P.face = dx > 0 ? 1 : -1; } else a = P.mv ? Math.atan2(P.ay, P.ax) : -Math.PI / 2;
-  const life = .4 * rg, dm = B() * (fin ? 1.15 : .78), pr = fin && S.up.fin ? 9 : 0;
-  if(fin){ for(const o of [-.22, 0, .22]) pshot(P.x, P.y - 6, a + o, 250, life, dm, 2, pr); } else pshot(P.x, P.y - 6, a, 250, life, dm, 1, 0);
+  const life = .4 * rg, dm = B() * (fin ? 1.15 : .8), pr = fin && S.up.fin ? 9 : 0;
+  if(fin){ for(const o of [-.22, 0, .22]) pshot(P.x, P.y - 6, a + o, 250, life, o ? dm * .8 : dm, o ? 1 : 2, pr); } else pshot(P.x, P.y - 6, a, 250, life, dm, 1, 0);
   P.sw = { t:0, a, r:12, arc:1, fin, done:1, tg:0, s:1, pd:1 }; if(fin) finX(P.x, P.y - 4, a);
   const sm = 1 + .2 * (S.up.spd || 0); P.acd = (fin ? .42 : .26) / sm; P.cwin = P.acd + .5;
   S.atks++; sfx(fin ? 'fin' : 'swing');
 }
 /* 3타째 덤 — 🌊 파도 주먹(시너지) · 🔱 삼지창(전설). 스타일과 상관없이 */
-function finX(x, y, a){ if(S.sty === 1 && S.syn.tor){ const T = S.tor; T.t = 1.3; T.c = .2; T.x = x + Math.cos(a) * 40; T.y = y + Math.sin(a) * 40; }
+function finX(x, y, a){ if(S.sty === 1 && S.syn.tor){ const T = S.tor; T.t = 1; T.c = .2; T.x = x + Math.cos(a) * 40; T.y = y + Math.sin(a) * 40; }
   if(S.syn.pun) pshot(x, y, a, 170, .7, B() * 1.1, 2, 99, 1); if(S.up.ltri) trident(x, y); }
 function resolve(){
   const w = P.sw; w.done = 1; let tf = null; if(w.tg) for(const f of FOES) if(f.on && f.id === w.tg){ tf = f; break; }
@@ -344,7 +344,7 @@ function resolve(){
   let n = 0;
   for(const f of FOES){ if(!f.on) continue; const R0 = FO[f.k].r, dx = f.x - P.x, dy = f.y - (P.y - 4), d = Math.hypot(dx, dy) || 1;
     if(d > w.r + R0) continue; if(!full && d > R0 + 5 && (dx * ax + dy * ay) / d < ca) continue;
-    hurt(f, dm, rnd() < crit(), dx, dy, w.fin ? 2 : 1); if(w.sl && w.fin && f.on && !FO[f.k].boss) f.stn = Math.max(f.stn, .6); n++; }
+    hurt(f, w.sl && FO[f.k].boss ? dm * .8 : dm, rnd() < crit(), dx, dy, w.fin ? 2 : 1); if(w.sl && w.fin && f.on && !FO[f.k].boss) f.stn = Math.max(f.stn, .6); n++; }
   if(full) ring(P.x, P.y - 4, w.r, '#FFE27A'); if(w.sl){ ring(P.x, P.y - 2, w.r * .7, '#FFFFFF'); if(!RM) S.shake = Math.max(S.shake, w.fin ? .2 : .08); }
   if(w.fin) finX(P.x, P.y - 4, w.a);
   if(w.fin && S.up.fin && S.syn.tor){ const T = S.tor; T.t = 1.3; T.c = .2; T.x = P.x + ax * 12; T.y = P.y - 4 + ay * 12; }   // 🌪️ 시너지 — 회오리 자리에 토네이도
@@ -375,11 +375,11 @@ function spTick(dt){
   const hm = S.big2 ? .5 : 1, rn = S.rain, wh = S.wh;
   if(rn.t > 0){ rn.t -= dt; rn.c -= dt;
     if(rn.c <= 0){ rn.c = .14; for(const f of FOES){ if(!f.on || f.y < -4 || f.x < -4 || f.x > W + 4 || f.ri > 0) continue; const F = FO[f.k];
-        hurt(f, (B() * .6 + (F.boss ? f.max * .007 : 0)) * hm, false, 0, -1, 4); if(!RM && rnd() < .5) part(f.x + (rnd() - .5) * 8, f.y - 30, '#FF8A3D', 0, 160, .18, 2.2); } }
+        hurt(f, (B() * .6 + (F.boss ? f.max * .005 : 0)) * hm, false, 0, -1, 4); if(!RM && rnd() < .5) part(f.x + (rnd() - .5) * 8, f.y - 30, '#FF8A3D', 0, 160, .18, 2.2); } }
     if(rn.t <= 0) spAgain(); }
   if(wh.t > 0){ wh.t -= dt; wh.c -= dt;
     for(const f of FOES){ if(!f.on || FO[f.k].boss) continue; const dx = wh.x - f.x, dy = wh.y - f.y, q = dx * dx + dy * dy; if(q < 8100 && q > 9){ const m = Math.sqrt(q); f.x += dx / m * 70 * dt; f.y += dy / m * 70 * dt; } }
-    if(wh.c <= 0){ wh.c = .2; for(const f of FOES){ if(!f.on) continue; const F = FO[f.k], r = F.r + (F.boss ? 40 : 26); if((f.x - wh.x) ** 2 + (f.y - wh.y) ** 2 < r * r) hurt(f, (B() * 1.2 + (F.boss ? f.max * .007 : 0)) * hm, false, f.x - wh.x, f.y - wh.y, 4); } }
+    if(wh.c <= 0){ wh.c = .2; for(const f of FOES){ if(!f.on) continue; const F = FO[f.k], r = F.r + (F.boss ? 40 : 26); if((f.x - wh.x) ** 2 + (f.y - wh.y) ** 2 < r * r) hurt(f, (B() * 1.5 + (F.boss ? f.max * .004 : 0)) * hm, false, f.x - wh.x, f.y - wh.y, 4); } }
     if(wh.t <= 0) spAgain(); }
 }
 function spAgain(){ if(S.syn.tsu && !S.big2){ S.big2 = 1; P.inv = Math.max(P.inv, 1.2); txt(SX, 170, '🐬 한 번 더!', 9); sfx('sp');
@@ -408,7 +408,7 @@ function hurt(f, dmg, cr, dx, dy, kd){
   if(F.boss || F.elite){ if(f.lagT <= 0 && f.lag - f.hp < 1) f.lagT = .45; }
   if(dmg >= 1) txt(f.x + (rnd() - .5) * 6, f.y - F.r - 4, Math.round(dmg), cr || kd === 2 || kd === 4 ? 2 : kd === 5 ? 6 : 1);
   if(!RM && kd !== 5){ const m = Math.hypot(dx, dy) || 1; spark(f.x - dx / m * F.r * .6, f.y - dy / m * F.r * .6, kd === 2 || kd === 4 ? 9 : 6); for(let i = 0; i < (kd === 2 ? 6 : 3); i++) part(f.x, f.y, i % 2 ? '#FFFFFF' : '#FFE27A', dx / m * 70 + (rnd() - .5) * 60, dy / m * 70 + (rnd() - .5) * 60, .22, 1.6); }
-  if(kd <= 4){ S.cb++; S.cbt = 2.2; if(S.cb > S.cbm) S.cbm = S.cb; S.hits++; if(kd !== 4) S.sp = Math.min(100, S.sp + 2.6 * spMul()); }
+  if(kd <= 4){ S.cb++; S.cbt = 2.2; if(S.cb > S.cbm) S.cbm = S.cb; S.hits++; if(kd !== 4) S.sp = Math.min(100, S.sp + (S.sty === 1 ? 2.45 : 2.6) * spMul()); }
   if(f.hp <= 0) kill(f);
 }
 function kill(f){

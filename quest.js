@@ -165,7 +165,7 @@ const BOSS = [
   { ic:'🦈', n:'상어 떼 우두머리', hp:5.6, pat:['back','front'] },
   { ic:'🌊', n:'성난 너울', hp:6, pat:['all','back','front'] },
   { ic:'🐡', n:'대왕 복어', hp:6, pat:['front','all','call'] },
-  { ic:'🦈', n:'백상아리', hp:5.2, pat:['front','back','all'] },
+  { ic:'🦈', n:'백상아리', hp:4.9, pat:['front','back','all'] },
   { ic:'🦑', n:'대왕 오징어', hp:6.4, pat:['all','call','back'] },
   { ic:'🌑', n:'달 삼킨 너울', hp:6.8, pat:['back','all','front'] },
   { ic:'🐙', n:'대왕문어', hp:7.2, pat:['all','front','call','back'] },
@@ -173,6 +173,28 @@ const BOSS = [
   { ic:'🐉', n:'검은 너울에 휘감긴 수호자', hp:8.5, pat:['front','all','back','call','all'] },
 ];
 const PAT = { front:'앞줄 내려찍기', back:'뒷줄 덮치기', all:'해일', call:'부하 부르기' };
+/* 상성 — 🌊물결 › 🔥불꽃 › 🍃바람 › 🌊물결. 동료가 이기는 쪽이면 피해 ×1.25(「효과 좋음!」), 지는 쪽이면 ×0.85 · 졸개 적이 때릴 땐 ×1.1/×0.9(보스 공격은 상성 없음). 보스 큰 기술(예고)은 상성과 무관.
+   a 가 t 를 이긴다 ⇔ (a + 1) % 3 === t. 동료 셋·셋·셋, 적은 해파리 🍃 · 꽃게 🔥 · 상어·파도 🌊 */
+const EL = [{ ic:'🌊', n:'물결' }, { ic:'🔥', n:'불꽃' }, { ic:'🍃', n:'바람' }];
+const HEL = { me:0, gull:2, haenyeo:0, crab:1, coach:1, seal:1, turtle:2, dol:2, whale:0 }, FEL = { jelly:2, crab:1, shark:0, wave:0 }, BEL = [2, 1, 0, 0, 1, 0, 2, 0, 1, 2, 1];
+const elWin = (a, t) => a != null && t != null && (a + 1) % 3 === t;
+const elM = (a, t) => a.side === 'h' ? (elWin(a.el, t.el) ? 1.25 : elWin(t.el, a.el) ? .85 : 1) : a.boss ? 1 : (elWin(a.el, t.el) ? 1.1 : elWin(t.el, a.el) ? .9 : 1);   // 적이 때릴 땐 더 약하게(±10%) — 균형을 크게 흔들지 않게
+const elOf = k => k === 'BOSS' ? (S ? BEL[S.v] : 0) : FEL[k];
+/* 보스마다 고유 기술 하나 — 체력 75%·40%에서 한 번씩(예고 뒤). 무늬는 일곱 가지를 나눠 쓴다:
+   heal 졸개(살아 있는 동안 보스 회복) · guard 졸개(살아 있는 동안 보스 피해 -50%) · shell 보호막 · dash 한 줄 돌진(빨간 선) · pool 소용돌이(때린 만큼 회복) · thorn 가시(근접 반사) · ink 먹물(기력 빼앗기) */
+const BM = [
+  { k:'heal', ic:'🪼', n:'새끼 해파리', tic:'🪼', tn:'새끼 해파리', c:2, say:'새끼가 살아 있으면 보스가 회복 — 새끼부터!' },
+  { k:'shell', ic:'🛡️', n:'단단한 껍질', say:'체력이 줄면 껍질 보호막 — 몰아쳐 깨세요!' },
+  { k:'dash', ic:'💨', n:'돌진', t:1.5, say:'빨간 줄이 뜨면 그 줄로 돌진해요!' },
+  { k:'pool', ic:'🌀', n:'소용돌이', say:'소용돌이 동안 때린 만큼 회복 — 보호막!' },
+  { k:'thorn', ic:'📌', n:'가시 부풀리기', say:'부풀면 근접 공격에 가시가 튀어요!' },
+  { k:'dash', ic:'⚡', n:'번개 돌진', t:1.1, say:'눈 깜짝할 새 한 줄을 꿰뚫어요 — 빨간 줄!' },
+  { k:'ink', ic:'🖤', n:'먹물', say:'먹물이 기력을 빼앗아요 — 필살기 먼저!' },
+  { k:'guard', ic:'🌙', n:'달 조각', tic:'🌙', tn:'달 조각', c:2, say:'달 조각이 있으면 보스 피해 -50%!' },
+  { k:'heal', ic:'🐙', n:'문어 다리', tic:'🦑', tn:'문어 다리', c:2, say:'다리가 살아 있으면 보스가 회복 — 다리부터!' },
+  { k:'shell', ic:'👁️', n:'폭풍의 눈', sh:.15, say:'폭풍의 눈 보호막 — 필살기로 깨세요!' },
+  { k:'guard', ic:'⚫', n:'검은 매듭', tic:'⚫', tn:'검은 매듭', c:3, say:'검은 매듭 셋 — 남아 있으면 피해 -50%!' },
+];
 /* 스테이지 사이 짧은 이야기 — [2스테이지 전, 3스테이지 전, 보스 전]. 1스테이지 전은 pre, 보스 뒤는 post */
 const BEATS = [
   [[['gull','끼룩! 방파제 쪽에 해파리가 또 몰려와!'],['a','물질하던 자리가 다 막혔구먼. 내 망사리 좀 지켜 주렴.'],['m','끼룩은 뒤에서 쪼아 줘. 내가 앞에서 막을게!']],
@@ -693,12 +715,16 @@ function mkFoe(kind, i, g){
   const v = S && S.tw ? S.v : Math.floor(g / 4), B = BOSS[v], boss = kind === 'BOSS', F = boss ? { ic:B.ic, n:B.n, hp:120 * B.hp, atk:20, spd:1.5, rg:0 } : FOES[kind];
   const hp = Math.round(F.hp * (boss ? TUNE.bh : TUNE.h) * (1 + g * TUNE.eh)), p = boss ? [182, SEA - 6] : EPOS[i % 5];
   return { side:'e', k:kind, ic:F.ic, n:F.n, rg:F.rg, hp, max:hp, hpD:hp, dT:0, atk:F.atk * TUNE.a * (1 + g * TUNE.ea), spd:F.spd, cd:.8 + i * .25 + rnd() * .3, x:W + 24 + i * 16, y:p[1], hx:p[0],
-    en:0, fl:0, kb:0, lg:0, lgD:.22, st:0, sh:0, boss, pat:boss ? B.pat : null, pi:0, pT:boss ? 5 : 0, tel:null, sz:boss ? 30 : 16, dead:0, dd:0 };
+    en:0, fl:0, kb:0, lg:0, lgD:.22, st:0, sh:0, boss, pat:boss ? B.pat : null, pi:0, pT:boss ? 5 : 0, tel:null, sz:boss ? 30 : 16, dead:0, dd:0, el:boss ? BEL[v] : FEL[kind], bi:v, mi:0, pool:0, thorn:0 };
 }
+/* 보스 졸개 — 걸어 들어와 앞에 선다(근접 동료가 먼저 노린다). 공격은 안 하고, heal 은 1초마다 보스 체력 2% 회복, guard 는 보스가 받는 피해 -50% */
+const TOTP = [[140, SEA - 13], [146, SEA + 9], [132, SEA - 1]];
+function mkTot(b, i, M){ const hp = Math.round(Math.max(30, b.max * .07)), p = TOTP[i % 3];
+  return { side:'e', k:'tot', tot:M.k, bo:b, ic:M.tic, n:M.tn, rg:0, hp, max:hp, hpD:hp, dT:0, atk:0, spd:1, cd:1, x:W + 20 + i * 12, y:p[1], hx:p[0], en:0, fl:0, kb:0, lg:0, lgD:.22, st:0, sh:0, boss:false, sz:13, dead:0, dd:0, el:b.el }; }
 function mkHero(k, i){
   const H = HERO[k], s = heroStat(k, S.U), p = HPOS[i];
   return { side:'h', k, ic:H.ic, n:H.n, role:H.role, rg:H.rg, hp:s.hp, max:s.hp, hpD:s.hp, dT:0, atk:s.atk, spd:H.spd, cd:.3 + i * .2, x:p[0] - 50, y:p[1], hx:p[0],
-    en:k === 'me' ? 40 : 20, fl:0, kb:0, lg:0, lgD:.22, st:0, sh:0, slot:i, sz:16, dead:0, dd:0, l:s.l };
+    en:k === 'me' ? 40 : 20, fl:0, kb:0, lg:0, lgD:.22, st:0, sh:0, slot:i, sz:16, dead:0, dd:0, l:s.l, el:HEL[k] };
 }
 function session(g){
   clearT(); tutOff(); const v = Math.floor(g / 4);
@@ -759,7 +785,7 @@ function teamUp(){
   if(S){ clearT(); S.mode = 'team'; }
   const ov = ovEl('qv-team'), fm = fmGet(), pw = fm.reduce((a, k)=>a + (k ? power(k, S && S.U) : 0), 0), rp = S ? recPow(S.g) : 0, bal = typeof shellBal === 'function' ? shellBal() : 0;
   if(PK && !unl(PK)) PK = '';
-  const stars = k => '★'.repeat(heroSt(k)), role = k => `<small style="color:${ROLE[HERO[k].role]}">${HERO[k].role} · Lv${heroLv(k)}</small>`;
+  const stars = k => '★'.repeat(heroSt(k)), role = k => `<small style="color:${ROLE[HERO[k].role]}">${EL[HEL[k]].ic}${HERO[k].role} · Lv${heroLv(k)}</small>`;
   const slot = i => { const k = fm[i], H = k && HERO[k];                         // 잠긴 동료는 다음에 합류할 한 명만 보여 목록이 물음표로 덮이지 않게
     return `<button type="button" class="qtm-s${k ? ' on' : ''}${PK && PK !== k ? ' tg' : ''}" data-sl="${i}"${k ? ` data-hero="${k}"` : ''} aria-label="${i < 2 ? '앞줄' : '뒷줄'} ${i % 2 + 1}번 — ${k ? esc(H.n) : '비어 있음'}">${k ? `<i aria-hidden="true">${H.ic}</i><b>${esc(H.n)}</b>${role(k)}<em aria-hidden="true">${stars(k)}</em>` : '<i aria-hidden="true">＋</i><small>비어 있음</small>'}</button>`; };
   const card = k => { const H = HERO[k];
@@ -767,7 +793,7 @@ function teamUp(){
     return `<button type="button" class="qtm-h${PK === k ? ' pk' : ''}${fm.includes(k) ? ' in' : ''}" data-hero="${k}" aria-pressed="${PK === k}"><i aria-hidden="true">${H.ic}</i><b>${esc(H.n)}</b>${role(k)}<em aria-hidden="true">${stars(k)}</em>${NEWH.has(k) && !fm.includes(k) ? '<u class="qtm-new">NEW</u>' : (bdNext(k) || {}).ok ? '<span class="qtm-bdg" aria-label="인연 이야기">💞</span>' : ''}</button>`; };
   let det = '';
   if(PK){ const bn = bdNext(PK), H = HERO[PK], s = heroStat(PK, S && S.U), st = s.st, c = STC[st], x = heroXp(PK), a = xpAt(s.l), b = xpAt(s.l + 1);
-    det = `<div class="qtm-d">${fm.includes(PK) ? '' : `<p class="qtm-dh">👆 위 칸을 누르면 ${esc(H.n)}${fin(H.n) ? '이' : '가'} 그 자리에 들어가요</p>`}<div><b>${H.ic} ${esc(H.n)}</b> · ${H.role} · ${H.rg ? '원거리' : '근접'} · Lv${s.l} · ${'★'.repeat(st)}${'☆'.repeat(5 - st)}</div>
+    det = `<div class="qtm-d">${fm.includes(PK) ? '' : `<p class="qtm-dh">👆 위 칸을 누르면 ${esc(H.n)}${fin(H.n) ? '이' : '가'} 그 자리에 들어가요</p>`}<div><b>${H.ic} ${esc(H.n)}</b> · ${H.role} · ${H.rg ? '원거리' : '근접'} · ${EL[HEL[PK]].ic}${EL[HEL[PK]].n}(${EL[(HEL[PK] + 1) % 3].ic}에 강함) · Lv${s.l} · ${'★'.repeat(st)}${'☆'.repeat(5 - st)}</div>
       <span class="qtm-xp" role="progressbar" aria-label="경험치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round((x - a) / Math.max(1, b - a) * 100)}"><i style="width:${Math.min(100, (x - a) / Math.max(1, b - a) * 100).toFixed(0)}%"></i></span>
       <p>❤️ 체력 ${s.hp} · ⚔️ 공격 ${s.atk} · 전투력 ${power(PK, S && S.U)}</p><p>✨ 필살기 <b>${esc(H.u)}</b> — ${esc(H.ud)}</p>
       <div class="qtm-db"><button type="button" class="btn sm ${st < 5 && bal >= c ? 'blue' : 'ghost'}" id="q-star"${st >= 5 ? ' disabled' : ''}>${st >= 5 ? '★ 최고 성급' : `⭐ ${st + 1}성 강화 · 🐚${c}`}</button>${fm.includes(PK) ? '<button type="button" class="btn sm ghost" id="q-out">편성에서 빼기</button>' : ''}${bn ? (bn.ok ? `<button type="button" class="btn sm blue" id="q-bond">💞 인연 이야기 ${bn.n + 1}</button>` : `<small class="qtm-bd">💞 Lv${bn.lv}에 인연 이야기</small>`) : ''}</div></div>`; }
@@ -775,6 +801,7 @@ function teamUp(){
   ov.innerHTML = `<div class="qtm"><div class="qtm-hd"><b>👥 팀 편성</b>${S ? `<span>${kl}</span>` : ''}<button class="btn sm ghost" id="q-tmx" type="button">${S ? (S.tw ? '← 탐사' : '↩ 마을로') : TB.startsWith('rw') ? '완료 ▶' : '✕ 닫기'}</button></div>
     <div class="qtm-pw"><span>전투력 <b>${pw}</b></span>${S ? `<span class="${pw >= rp ? 'ok' : 'lo'}">권장 ${rp}${pw >= rp ? ' ✓' : ' — ⭐ 강화나 레벨 업'}</span>` : ''}<span>🐚 ${bal}</span></div>
     <div class="qtm-f"><div class="qtm-c"><small>뒷줄 · 딜러·힐러</small>${slot(2)}${slot(3)}</div><div class="qtm-c"><small>앞줄 · 탱커 ⚔️→</small>${slot(0)}${slot(1)}</div></div>
+    ${S ? elHint() : ''}
     ${S ? '<p class="qtm-tip qtm-bt">⚔️ 전투는 자동이에요! 동료들이 알아서 싸우고, 기력이 차면 아래 초상을 눌러 필살기 ✨</p>' : ''}
     <p class="qtm-tip">카드를 칸으로 끌어 놓거나, 눌러 고른 뒤 칸을 누르세요 · 적은 앞줄부터 노려요</p>
     <div class="qtm-l">${HK.filter((k, i)=>unl(k) || HK.findIndex(j=>!unl(j)) === i).map(card).join('')}</div>
@@ -799,9 +826,18 @@ function teamUp(){
   const fb = $q('q-fight'); if(fb) fb.onclick = e=>{ e.stopPropagation(); begin(); };
   const l = $q('q-log'); if(l) l.innerHTML = '<div>👥 팀 편성 — 탱커는 앞줄, 힐러·딜러는 뒷줄이 안전해요</div><div style="opacity:.75">조개로 ⭐ 성급 강화 · 부탁·전투로 레벨 업 · 마을 보스를 넘으면 새 동료</div>';
 }
+/* 편성 화면 상성 한 줄 — 이 판에 나오는 적마다 무엇에 약한지 + 보스면 고유 기술 */
+function elHint(){
+  const ks = [...new Set(S.waves.flat())].filter(k=>k === 'BOSS' || FOES[k]);
+  const G = [[], [], []]; ks.forEach(k=>{ const f = k === 'BOSS' ? BOSS[S.v] : FOES[k]; G[(elOf(k) + 2) % 3].push(f); });   // 약점이 같은 적끼리 묶는다
+  const L = G.map((a, w)=>a.length ? `${a.map(f=>`${f.ic}${esc(f.n)}`).join('·')}${fin(a[a.length - 1].n) ? '은' : '는'} ${EL[w].ic}` : '').filter(Boolean);
+  const M = ks.includes('BOSS') ? BM[S.v] : null;
+  return `<p class="qtm-el">🎯 상대 ${L.join(' · ')}에 약해요${M ? `<small>👑 보스 기술 ${M.ic} ${esc(M.n)} — ${esc(M.say)}</small>` : ''}<small>🌊물결 › 🔥불꽃 › 🍃바람 › 🌊 — 상성이 좋으면 피해 +25%</small></p>`;
+}
 function begin(){
   if(!S) return; PK = '';
   S.heroes = fmGet().map((k, i)=>k ? mkHero(k, i) : null).filter(Boolean); if(!S.heroes.length) return;
+  S.eb = eqSet() ? 1.1 : 1;                                                          // 세트: 파도 타는 자 — 기력 +10%
   wMode(false); const hd = document.querySelector('#quest .game-hd > b'); if(hd) hd.textContent = `⚔️ ${short(S.v)}`;   // 전투는 정사각 화면 — 걷기 층은 숨긴다
   S.mode = 'go'; S.wv = 0; spawnWave(); render();
   S.banQ = [S.kind === 'boss' ? `👑 보스 — ${BOSS[S.v].n}` : S.tw ? `🌊 탐사 ${S.tw}층 · ${S.twx.ic} ${S.twx.n}` : '⚔️ 전투 시작!', S.kind === 'boss' ? 'boss' : ''];
@@ -813,7 +849,7 @@ function spawnWave(){
   S.foes = S.waves[S.wv].map((k, i)=>mkFoe(k, i, S.g));
   if(S.tw){ const x = S.twx; S.foes.forEach(u=>{ if(x === TWX[0]) u.atk *= 1.25; else if(x === TWX[1]){ u.max = u.hp = u.hpD = Math.round(u.max * 1.3); } }); }   // 🌊 탐사 층의 바다 효과
   if(S.wv) S.banQ = S.foes.some(f=>f.boss) ? [`👑 ${BOSS[S.v].n} 등장!`, 'boss'] : [`🌊 WAVE ${S.wv + 1}/${S.waves.length}`, ''];
-  if(S.foes.some(f=>f.boss)){ log(`⚠️ ${BOSS[S.v].ic} ${BOSS[S.v].n} 등장! 빨간 바닥이 뜨면 큰 기술`); beep(110, 70, .6, .07); }
+  if(S.foes.some(f=>f.boss)){ log(`⚠️ ${BOSS[S.v].ic} ${BOSS[S.v].n} 등장! 빨간 바닥이 뜨면 큰 기술`); log(`💡 ${BM[S.v].ic} ${BM[S.v].n} — ${BM[S.v].say}`); S.foes.forEach(f=>{ if(f.boss) f.t0 = S.t; }); beep(110, 70, .6, .07); }
 }
 function log(t){ if(!S) return; S.log.unshift({ t, at:S.t }); S.log = S.log.slice(0, 40); paintLog(); }
 
@@ -831,34 +867,41 @@ function target(u, O){
 function unitTick(u, dt, O){
   if(u.dead){ u.dd += dt; return; }
   u.fl = Math.max(0, u.fl - dt); u.kb = Math.max(0, u.kb - dt * 60); trail(u, Math.max(0, u.hp), u.max, dt);
-  if(u.side === 'h') u.en = Math.min(100, u.en + 5 * dt);
+  if(u.side === 'h') u.en = Math.min(100, u.en + 5 * dt * (S.eb || 1));
   if(u.x !== u.hx){ const d = u.hx - u.x, m = 120 * dt; u.x = Math.abs(d) <= m ? u.hx : u.x + Math.sign(d) * m; return; }   // 입장 — 자리까지 걸어 들어온다
   if(u.lg > 0){ const was = u.lg; u.lg -= dt; if(was > u.lgD / 2 && u.lg <= u.lgD / 2 && u.pd){ const p = u.pd; u.pd = null; if(!p.t.dead) strike(u, p.t, p.m); } }
+  if(u.tot){ if(u.tot === 'heal' && (u.cd -= dt) <= 0){ u.cd = 1; const b = u.bo; if(b && !b.dead && b.hp < b.max){ heal(b, b.max * .02); } } return; }   // 졸개는 서서 버틴다
   if(u.st > 0){ u.st -= dt; return; }
   if((u.cd -= dt * (u.side === 'h' && S.buff > 0 ? 1.25 : 1)) > 0) return;
   if(u.k === 'haenyeo'){ const lo = alive(S.heroes).filter(h=>h.hp < h.max * .8).sort((p, q)=>p.hp / p.max - q.hp / q.max)[0];   // 힐러 — 다친 동료가 있으면 치료 물방울
     if(lo){ u.cd = u.spd; u.en = Math.min(100, u.en + 12); S.proj.push({ x:u.x + 6, y:u.y - 8, t:lo, a:u, heal:u.atk * 1.8, c:'#7BF0B0' }); return; } }
   const t = target(u, O); if(!t) return;
   u.cd = u.spd * (.92 + rnd() * .16);
-  if(u.side === 'h') u.en = Math.min(100, u.en + 12);
+  if(u.side === 'h') u.en = Math.min(100, u.en + 12 * (S.eb || 1));
   if(u.rg) S.proj.push({ x:u.x + (u.side === 'h' ? 6 : -6), y:u.y - 8, t, a:u, m:1, c:u.side === 'h' ? HERO[u.k].col : '#C86BFF' });
   else { u.lg = u.lgD = .22; u.lt = t; u.pd = { t, m:1 }; }
 }
 function strike(a, t, m){
-  let d = a.atk * m * (.9 + rnd() * .2); const cr = rnd() < (a.side === 'h' ? .18 : .07);
+  let d = a.atk * m * (.9 + rnd() * .2); const cr = rnd() < (a.side === 'h' ? .18 : .07), em = elM(a, t);
   if(cr) d *= 1.8; if(a.side === 'h' && S.buff > 0) d *= 1.4;
-  hit(t, d, cr);
+  const n = hit(t, d * em, cr);
+  if(em > 1 && a.side === 'h' && n && S.t - (t.eP || -9) > 1.2){ t.eP = S.t; fxPush({ k:'txt', x:t.x, y:t.y - t.sz - 14, v:`${EL[a.el].ic}효과 좋음!`, c:'#8FF0FF', big:1 }); }   // 같은 적에겐 1.2초에 한 번만 띄워 화면이 시끄럽지 않게
+  if(n && a.pool > 0) heal(a, n);                                                // 🌀 소용돌이 — 때린 만큼 회복
+  if(n && t.thorn > 0 && a.side === 'h' && !a.rg && !a.dead) hit(a, n * .25, 0);       // 📌 가시 — 근접만 되돌려 받는다
 }
+const guardOn = () => S.foes.some(f=>f.tot === 'guard' && !f.dead);
 function hit(t, d, cr){
-  if(t.dead) return;
+  if(t.dead) return 0;
   if(t.side === 'h' && S.red > 0) d *= .4;
+  if(t.boss && guardOn()) d *= .5;
   d = Math.max(1, Math.round(d));
-  if(t.sh > 0){ const a = Math.min(t.sh, d); t.sh -= a; d -= a; if(!d){ txt(t, '막음', '#7BE0FF', 0); return; } }
-  t.hp -= d; t.fl = .14; t.dT = .45; t.kb = Math.max(t.kb, cr ? 10 : 4); if(t.side === 'h') t.en = Math.min(100, t.en + 6);
+  if(t.sh > 0){ const a = Math.min(t.sh, d); t.sh -= a; d -= a; if(!d){ txt(t, '막음', '#7BE0FF', 0); return 0; } }
+  t.hp -= d; t.fl = .14; t.dT = .45; t.kb = Math.max(t.kb, cr ? 10 : 4); if(t.side === 'h') t.en = Math.min(100, t.en + 6 * (S.eb || 1));
   txt(t, (cr ? '치명! ' : '') + d, cr ? '#FFE27A' : t.side === 'h' ? '#FF7A7A' : '#FFFFFF', cr ? 2 : 1);
   spark(t.x, t.y - t.sz / 2, cr ? 8 : 3, cr ? '#FFE27A' : '#FFFFFF');
   if(cr){ S.hs = Math.max(S.hs, .06); S.shk = Math.max(S.shk, .12); beep(1200, 600, .07, .03); } else beep(t.side === 'h' ? 220 : 700, 0, .04, .015);
   if(t.side === 'h' && d >= t.max * .2) try{ if(typeof vib === 'function') vib(10); }catch(e){}
+  return d;
 }
 function heal(t, n){ if(t.dead) return; n = Math.round(n); t.hp = Math.min(t.max, t.hp + n); txt(t, '+' + n, '#7BF0B0', 1); }
 function projTick(dt){
@@ -869,7 +912,7 @@ function projTick(dt){
 }
 function die(u){
   pop(u.x, u.y - u.sz / 2, u.boss ? 20 : 10, u.side === 'e' ? '#FFE27A' : '#FF8A8A');
-  if(u.side === 'e'){ S.killed++; if(u.boss || rnd() < .35){ S.bonus++; txt(u, '+🐚', '#FFF3C4', 1); } S.shk = Math.max(S.shk, u.boss ? .4 : .08); beep(900, 1400, .08, .03);
+  if(u.side === 'e'){ S.killed++; if(u.boss || (!u.tot && rnd() < .35)){ S.bonus++; txt(u, '+🐚', '#FFF3C4', 1); } S.shk = Math.max(S.shk, u.boss ? .4 : .08); beep(900, 1400, .08, .03);
     if(u.boss){ S.hs = .35; fxPush({ k:'flash', x:0, y:0, c:'#FFFFFF' }); log(`🏆 ${u.ic} ${u.n}를 쓰러뜨렸어요!`); } }
   else { S.deaths++; log(`💫 ${u.ic} ${u.n} 쓰러졌어요`); }
 }
@@ -895,7 +938,7 @@ function ult(i){
   UI.p[i] = -1; return true;
 }
 function autoUlt(){                                                                 // AUTO — 공격기는 바로, 회복·방어기는 예고가 떴거나 다쳤을 때 아껴 쓴다
-  const tel = S.foes.some(f=>f.tel && !f.dead), low = S.heroes.some(h=>!h.dead && h.hp < h.max * .55);
+  const tel = S.foes.some(f=>f.tel && !f.dead && (f.tel.k !== 'm' || BM[f.bi].k === 'dash')), low = S.heroes.some(h=>!h.dead && h.hp < h.max * .55);
   S.heroes.forEach((u, i)=>{ if(u.dead || u.en < 100) return;
     if(u.k === 'haenyeo' && !low) return; if((u.k === 'seal' || u.k === 'turtle') && !tel && !low) return;
     ult(i); });
@@ -904,13 +947,30 @@ const telTargets = k => { const a = S.heroes.filter(h=>!h.dead), fr = a.filter(h
   return k === 'all' ? a : k === 'front' ? (fr.length ? fr : bk) : (bk.length ? bk : fr); };
 function bossTick(b, dt){
   if(b.x !== b.hx) return;
+  if(b.pool > 0) b.pool -= dt; if(b.thorn > 0) b.thorn -= dt;
   if(!b.rage && b.hp < b.max * .5){ b.rage = 1; b.spd *= .75; S.banQ = [`🔥 ${b.n} 분노!`, 'boss']; S.shk = .3; log(`🔥 ${b.n}가 성났어요 — 기술이 더 자주 와요`); }
-  if(b.tel){ if((b.tel.t -= dt) <= 0){ const k = b.tel.k; b.tel = null; bossHit(b, k); } return; }
-  if(b.st > 0 || (b.pT -= dt) > 0) return;
+  if(b.tel){ if((b.tel.t -= dt) <= 0){ const T = b.tel; b.tel = null; bossHit(b, T.k, T); } return; }
+  if(b.st > 0) return;
+  const M = BM[b.bi];
+  if(M && b.mi < 2 && b.hp < b.max * (b.mi ? .4 : .75) && S.t - (b.mL ?? -99) > 8){ b.mi++; b.mL = S.t; const d = M.t || 1.3; b.tel = { k:'m', t:d, d, ln:M.k === 'dash' ? laneOf() : -1 }; b.pT = b.rage ? 5.5 : 7.5;   // 고유 기술이 큰 기술 한 차례를 대신한다(기술 수가 늘지 않게)   // 고유 기술 — 75%·40%에서 한 번씩(사이 8초는 띄운다)
+    S.banQ = [`⚠️ ${M.ic} ${M.n}!`, 'boss']; log(`⚠️ ${b.ic} ${M.ic} ${M.n} 준비!${M.k === 'dash' ? ' 빨간 줄을 보세요' : ''}`); beep(240, 160, .3, .05); return; }
+  if((b.pT -= dt) > 0) return;
   const k = b.pat[b.pi++ % b.pat.length]; b.tel = { k, t:1.7, d:1.7 }; b.pT = b.rage ? 5.5 : 7.5;
   S.banQ = [`⚠️ ${PAT[k]}!`, 'boss']; log(`⚠️ ${b.ic} ${PAT[k]} 준비 — 빨간 바닥을 보세요`); beep(180, 120, .3, .05);
 }
-function bossHit(b, k){
+const laneOf = () => { const a = S.heroes.filter(h=>!h.dead), n0 = a.filter(h=>h.slot % 2 === 0).length; return n0 >= a.length - n0 ? 0 : 1; };   // 동료가 더 많은 줄(위 0 · 아래 1)
+const telN = b => b.tel.k === 'm' ? BM[b.bi].n : PAT[b.tel.k];
+function mech(b, T){
+  const M = BM[b.bi];
+  if(M.k === 'heal' || M.k === 'guard'){ for(let i = 0; i < (M.c || 2); i++) S.foes.push(mkTot(b, i, M)); S.banQ = [`${M.tic} ${M.tn}${M.k === 'heal' ? ' — 보스가 회복해요' : ' — 보스가 단단해져요'}!`, 'boss']; }
+  else if(M.k === 'shell'){ b.sh += b.max * (M.sh || .12); fxPush({ k:'ring', x:b.x, y:b.y - 14, c:'#7BE0FF' }); }
+  else if(M.k === 'dash'){ S.heroes.filter(h=>!h.dead && h.slot % 2 === T.ln).forEach(h=>hit(h, b.atk * 1.3, 0)); S.shk = .4; fxPush({ k:'boom' }); beep(90, 50, .4, .07); }
+  else if(M.k === 'pool'){ b.pool = 6; fxPush({ k:'ring', x:b.x, y:b.y - 6, c:'#5AC8FF' }); }
+  else if(M.k === 'thorn'){ b.thorn = 5; fxPush({ k:'ring', x:b.x, y:b.y - 14, c:'#FFB45A' }); }
+  else if(M.k === 'ink'){ S.heroes.forEach(h=>{ if(!h.dead) h.en = Math.max(0, h.en - 35); }); fxPush({ k:'flash', x:0, y:0, c:'#1A1030' }); UI.p = []; }
+}
+function bossHit(b, k, T){
+  if(k === 'm') return mech(b, T || {});
   if(k === 'call'){ for(let i = 0; i < 2; i++) S.foes.push(mkFoe(CH[S.v].fo[i % CH[S.v].fo.length], i + 1, S.g)); S.banQ = ['🌊 부하가 몰려와요!', 'boss']; return; }
   telTargets(k).forEach(h=>hit(h, b.atk * (k === 'all' ? 1.3 : k === 'back' ? 1.7 : 2.3), 0));   // 뒷줄은 약한 동료라 덜 아프게 — 대신 예고를 못 읽으면 힐러가 먼저 눕는다
   S.shk = .4; S.hs = Math.max(S.hs, .1); fxPush({ k:'boom' }); beep(90, 50, .4, .07);
@@ -1172,15 +1232,27 @@ function qpSet(o){ const p = ME && ME.profile && ME.profile.play; if(!p) return;
 function vInfo(){ const n = qNow(), here = !n.all && n.v === TV, s = here ? n.s : 4; return { ...n, here, s, q:here && s < 3 ? VIL[TV].q[s] : null, p:qpOf() }; }
 const ready = I => !!(I.q && I.p.a && (I.q.k === 'hunt' ? I.p.w > 0 : I.q.k === 'get' ? I.p.n >= 3 : false));
 const EQ = { b:{ ic:'🏄', n:'서핑보드', d:'동료 전원 공격', per:4 }, w:{ ic:'🩱', n:'웻슈트', d:'동료 전원 체력', per:5 } };
-const EQC = [20, 35, 55, 80, 110, 150, 200, 260, 330, 400];
+/* 장비 — Lv5까지는 조개만, Lv6~10은 조개 + 🧺 바구니의 귀한 물고기(EQF[단계-5] = [최소 희귀도, 마리]). 물고기가 들어가는 만큼 윗단계 조개 값은 낮췄다(🔧 강화소 30~480 보다 가볍게).
+   보드·슈트 둘 다 Lv5 이상이면 세트 「파도 타는 자」 — 전투 중 동료 기력 +10% */
+const EQC = [20, 35, 55, 80, 110, 130, 160, 190, 220, 260];
+const EQF = [[2, 1], [2, 2], [3, 1], [3, 2], [3, 3]];
 const eqOf = k => nm((qbOf().eq || {})[k], 10);
+const eqSet = () => eqOf('b') >= 5 && eqOf('w') >= 5;
+const eqNeed = lv => lv >= 5 && lv < 10 ? EQF[lv - 5] : null;
+const eqFish = r => { const fi = fiOf(); return FISH.filter(f=>f.r >= r && fi[f.k]).reduce((t, f)=>t + fi[f.k], 0); };   // 그 희귀도 이상 물고기 수
 function eqBuy(k){
   const p = ME && ME.profile && ME.profile.play; if(!p || !EQ[k]) return false;
   const lv = eqOf(k), say = t => { if(typeof toast === 'function') toast(t); };
   if(lv >= 10){ say('이미 최고 단계예요'); return false; }
-  const c = EQC[lv], bal = typeof shellBal === 'function' ? shellBal() : 0;
+  const c = EQC[lv], bal = typeof shellBal === 'function' ? shellBal() : 0, nd = eqNeed(lv);
   if(bal < c){ say(`🐚 조개가 모자라요 — ${c}개 필요 (보유 ${bal})`); return false; }
+  if(nd && eqFish(nd[0]) < nd[1]){ say(`${RAR[nd[0]].o} ${RAR[nd[0]].n} 이상 물고기가 ${nd[1]}마리 필요해요 — 🎣 낚시터에서 낚아요`); return false; }
+  if(nd){ const fi = fiOf(); let n = nd[1];                                        // 덜 귀한 것부터 쓴다(전설 윤슬어는 마지막)
+    for(const f of FISH.filter(f=>f.r >= nd[0]).sort((a, b)=>a.r - b.r)){ while(n > 0 && fi[f.k] > 0){ fi[f.k]--; n--; } if(!fi[f.k]) delete fi[f.k]; }
+    p.qb.fi = fi; }
+  const was = eqSet();
   (p.qb ||= {}).eq = { b:eqOf('b'), w:eqOf('w'), [k]:lv + 1 }; p.spent = (p.spent || 0) + c;
+  if(!was && eqSet()) setTimeout(()=>{ if(typeof toast === 'function') toast('✨ 세트 완성: 파도 타는 자 — 전투 기력 +10%'); }, 1200);
   if(typeof playPush === 'function') playPush(); try{ vib([20, 40, 20]); }catch(e){} return true;
 }
 const whoN = id => { const w = who(id); return w ? w.n : ''; };
@@ -1494,8 +1566,9 @@ function bag(){
   clearT(); tutOff(); S = null; window._gameRun = false; wMode(true);
   const ov = ovEl('qv-bag'), U = typeof upFor === 'function' ? upFor('quest', true) : {}, s = heroStat('me', U), x = heroXp('me'), a = xpAt(s.l), b = xpAt(s.l + 1);
   const pct = s.l >= 30 ? 100 : Math.min(100, (x - a) / Math.max(1, b - a) * 100), fm = fmGet().filter(Boolean), pw = fm.reduce((t, k)=>t + power(k, U), 0), bal = typeof shellBal === 'function' ? shellBal() : 0, got = qbOf().legend ? N : gotN(), I = vInfo();
-  const eqRow = k => { const E = EQ[k], l = eqOf(k), c = EQC[l];
-    return `<div class="qb-eq"><i aria-hidden="true">${E.ic}</i><span><b>${E.n} Lv${l}/10</b><small>${E.d} +${l * E.per}%${l < 10 ? ` → +${(l + 1) * E.per}%` : ''}</small></span><button type="button" class="btn sm ${l < 10 && bal >= c ? 'blue' : 'ghost'}" data-eq="${k}"${l >= 10 ? ' disabled' : ''}>${l >= 10 ? '최고' : `강화 🐚${c}`}</button></div>`; };
+  const eqRow = k => { const E = EQ[k], l = eqOf(k), c = EQC[l], nd = eqNeed(l), fok = !nd || eqFish(nd[0]) >= nd[1];
+    return `<div class="qb-eq"><i aria-hidden="true">${E.ic}</i><span><b>${E.n} Lv${l}/10</b><small>${E.d} +${l * E.per}%${l < 10 ? ` → +${(l + 1) * E.per}%` : ''}${nd ? ` · ${RAR[nd[0]].o}${RAR[nd[0]].n} 이상 물고기 ${nd[1]}마리 (가진 ${eqFish(nd[0])})` : ''}</small></span><button type="button" class="btn sm ${l < 10 && bal >= c && fok ? 'blue' : 'ghost'}" data-eq="${k}"${l >= 10 ? ' disabled' : ''}>${l >= 10 ? '최고' : `강화 🐚${c}${nd ? ` +${RAR[nd[0]].o}${nd[1]}` : ''}`}</button></div>`; };
+  const setRow = `<p class="qb-set${eqSet() ? ' on' : ''}">${eqSet() ? '✨' : '🔒'} 세트 <b>파도 타는 자</b> — 보드·슈트 둘 다 Lv5면 전투 기력 +10%${eqSet() ? ' · 적용 중' : ''}</p><p class="qb-tip" style="margin-top:2px">Lv6부터는 🧺 바구니의 귀한 물고기(🔵·🟣)도 함께 써요</p>`;
   const items = CH.slice(0, got).filter(c=>c.gift).map(c=>[c.gift.ic, c.gift.n, short(CH.indexOf(c)) + '에서 받은 선물']);
   if(qbOf().legend) items.unshift(['🏄', '전설의 보드', '봉인을 풀고 얻은 보드']);
   const hv = hvOf(), fun = funOn(), fi = fiOf(); Object.keys(hv).filter(k=>hv[k] >= 5).forEach(k=>{ const o = VIL[+k.slice(0, -1)][k.slice(-1)]; if(o) items.push([o.ic, `${o.n}의 보물`, '💖 단짝의 선물']); });
@@ -1504,7 +1577,7 @@ function bag(){
     <div class="qb-me">${walkImg ? `<img src="${walkImg}" alt="내 캐릭터">` : '<i aria-hidden="true">🏄</i>'}<div><b>${esc(ME.name || '나')}</b><small>Lv${s.l} · ${'★'.repeat(s.st)}${'☆'.repeat(5 - s.st)} · 딜러</small>
       <span class="qtm-xp" role="progressbar" aria-label="경험치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}"><i style="width:${pct.toFixed(0)}%"></i></span><small>${s.l >= 30 ? '최고 레벨' : `다음 레벨까지 ${b - x} XP`}</small></div></div>
     <div class="qb-st"><span>❤️ 체력<b>${s.hp}</b></span><span>⚔️ 공격<b>${s.atk}</b></span><span>💪 팀 전투력<b>${pw}</b></span><span>🧩 봉인 조각<b>${got}/${N}</b></span>${twOn() ? `<span>🌊 탐사 최고<b>${twOf()}층</b></span>` : ''}${fun ? `<span>🐟 물고기 도감<b>${Object.keys(fsOf()).length}/${FISH.length}</b></span><span>💖 단짝<b>${Object.values(hv).filter(h=>h >= 5).length}명</b></span>` : ''}</div>
-    <h4>🛠️ 장비 — 동료 모두에게 적용</h4>${eqRow('b')}${eqRow('w')}
+    <h4>🛠️ 장비 — 동료 모두에게 적용</h4>${eqRow('b')}${eqRow('w')}${setRow}
     <h4>👥 동료 ${HK.filter(unl).length}/${HK.length}</h4><div class="qb-tm">${HK.filter(unl).map(k=>`<span class="${fm.includes(k) ? 'in' : ''}"><i aria-hidden="true">${HERO[k].ic}</i><b>${esc(HERO[k].n)}</b><small>Lv${heroLv(k)} ${'★'.repeat(heroSt(k))}${fm.includes(k) ? ' · 출전' : ''}${(bdNext(k) || {}).ok ? ' · 💞' : ''}</small></span>`).join('')}</div>
     <button class="btn" id="q-btm" type="button" style="width:100%;min-height:46px">👥 편성 · ⭐ 성급 강화</button>
     ${fun ? `<h4>🧺 물고기 바구니</h4>${Object.keys(fi).length ? `<div class="qb-it">${FISH.filter(f=>fi[f.k]).map(f=>`<span style="border-color:${RAR[f.r].c}"><i aria-hidden="true" style="${f.fl ? `filter:${f.fl}` : ''}">${f.ic}</i><b>${esc(f.n)}</b><small>×${fi[f.k]} · ${RAR[f.r].n}</small></span>`).join('')}</div><p class="qb-tip" style="margin-top:0">💬 주민에게 말을 걸면 하루 한 번 선물할 수 있어요</p>` : '<p class="qb-tip" style="margin-top:0">비어 있어요 — 마을 물가의 🎣 낚시터에서 낚아 보세요</p>'}` : ''}
@@ -1915,6 +1988,8 @@ function wCss(){
 .qb-eq{ display:flex; align-items:center; gap:10px; margin-bottom:6px; padding:8px 10px; background:#fff; border:2px solid var(--ink); border-radius:10px } .qb-eq > i{ font-size:26px; font-style:normal } .qb-eq span{ flex:1; min-width:0 } .qb-eq b{ display:block; font-size:14px } .qb-eq small{ display:block; font-size:12px; font-weight:700; color:#5B6275 } .qb-eq .btn{ min-height:42px; white-space:nowrap }
 .qb-tm,.qb-it{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:8px } .qb-tm span,.qb-it span{ display:flex; flex-direction:column; align-items:center; padding:6px 4px; text-align:center; background:#fff; border:2px solid var(--ink); border-radius:10px } .qb-tm span.in{ background:#E6FBEF }
 .qb-tm i,.qb-it i{ font-size:24px; font-style:normal } .qb-tm b,.qb-it b{ font-size:12px; line-height:1.3; word-break:keep-all } .qb-tm small,.qb-it small{ font-size:11px; font-weight:700; color:#5B6275; word-break:keep-all }
+.qb-set{ margin:2px 0 0; padding:7px 10px; font-size:12.5px; font-weight:700; color:#5B6275; background:#F4F5F8; border:2px dashed #C9CED8; border-radius:10px; word-break:keep-all } .qb-set.on{ color:#1F2A44; background:#FFF6D6; border:2px solid #E8A317 }
+.qtm-el{ margin:4px 0 0 !important; padding:6px 9px; font-size:12.5px; font-weight:800; line-height:1.5; color:#1F2A44 !important; background:#E8F7FF; border:2px solid #1F2A44; border-radius:10px; word-break:keep-all } .qtm-el small{ display:block; font-size:11.5px; font-weight:700; color:#5B6275 }
 .qb-tip{ margin:10px 0 0; font-size:12.5px; font-weight:700; line-height:1.55; color:#5B6275; word-break:keep-all }
 .qm-inf{ margin:0 0 8px; padding:8px 10px; font-size:13px; font-weight:700; line-height:1.5; color:var(--ink); background:rgba(255,250,236,.95); border:2px solid var(--ink); border-radius:10px; word-break:keep-all } .qm-inf b{ font-size:14.5px }
 #quest .game-box{ justify-content:flex-start }
@@ -2003,8 +2078,11 @@ function unit(u){
   if(u.sh > 0){ ctx.strokeStyle = 'rgba(123,224,255,.85)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, top + h / 2, h * .62, 0, 6.3); ctx.stroke(); }
   if(u.side === 'h' && S.red > 0){ ctx.strokeStyle = 'rgba(156,224,122,.85)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, top + h / 2 + 2, h * .7, Math.PI, 0); ctx.stroke(); }
   if(u.st > 0) for(let i = 0; i < 3; i++){ const r = t * 6 + i * 2.1; Rq('#FFE27A', x + Math.cos(r) * 7 - 1, top - 4 + Math.sin(r) * 2, 2, 2); }
+  if(u.pool > 0){ ctx.strokeStyle = 'rgba(90,200,255,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.ellipse(x, u.y + 2, 22 + Math.sin(t * 8) * 3, 5, 0, 0, 6.3); ctx.stroke(); }
+  if(u.thorn > 0) for(let i = 0; i < 6; i++){ const r = t * 2 + i * 1.05; Rq('#FFB45A', x + Math.cos(r) * h * .55 - 1, top + h / 2 + Math.sin(r) * h * .5 - 1, 2, 2); }
   if(u.boss) return;
   hb(x - 10, top - 6, 20, 3, u.hp, u.hpD, u.max, u.side === 'h' ? '#4ADE80' : '#FF6B6B');
+  if(u.el != null) ctx.drawImage(bake(EL[u.el].ic, 7), Math.round(x - 20), Math.round(top - 10));   // 상성 표시 — 체력 막대 왼쪽 작은 아이콘
   if(u.side === 'h'){ Rq('rgba(0,0,0,.5)', x - 10, top - 2, 20, 1); Rq(u.en >= 100 ? (Math.sin(t * 12) > 0 ? '#FFFFFF' : '#FFE27A') : '#F4C430', x - 10, top - 2, 20 * u.en / 100, 1); }
 }
 function fxDraw(){
@@ -2027,7 +2105,8 @@ function draw(){
   ctx.save(); if(sh) ctx.translate(Math.round((rnd() - .5) * sh), Math.round((rnd() - .5) * sh));
   for(const b of s.foes){ if(!b.tel || b.dead) continue;                           // 보스 예고 — 맞을 자리 바닥이 빨갛게 숨 쉬고, 보스 위 막대가 찬다
     ctx.globalAlpha = .3 + .2 * Math.sin(s.t * 18); ctx.fillStyle = '#FF2A2A';
-    telTargets(b.tel.k).forEach(h=>{ ctx.beginPath(); ctx.ellipse(h.hx, h.y + 2, 16, 5, 0, 0, 6.3); ctx.fill(); });
+    if(b.tel.k === 'm'){ if(b.tel.ln >= 0){ const y = HPOS[b.tel.ln][1]; Rq('#FF2A2A', 20, y - 4, b.x - 20, 9); } }   // 돌진 — 그 줄 전체에 빨간 선
+    else telTargets(b.tel.k).forEach(h=>{ ctx.beginPath(); ctx.ellipse(h.hx, h.y + 2, 16, 5, 0, 0, 6.3); ctx.fill(); });
     ctx.globalAlpha = 1; Rq('rgba(0,0,0,.5)', b.x - 16, b.y - b.sz - 10, 32, 3); Rq('#FF4A4A', b.x - 16, b.y - b.sz - 10, 32 * (1 - b.tel.t / b.tel.d), 3); }
   const all = [...s.heroes, ...s.foes].sort((p, q)=>p.y - q.y);
   for(const u of all) unit(u);
@@ -2042,7 +2121,9 @@ function draw(){
   const bf = [s.buff > 0 ? '⚔️+40%' : '', s.red > 0 ? '🛡️-60%' : '', s.taunt ? '🦀도발' : ''].filter(Boolean).join(' ');
   if(bf){ ctx.fillStyle = '#FFF3C4'; ctx.fillText(bf, 4, 17); }
   const boss = s.foes.find(f=>f.boss && !f.dead);
-  if(boss){ Rq('rgba(24,6,34,.82)', 0, H - 19, W, 19); ctx.fillStyle = boss.tel ? '#FF8A8A' : '#FFD6F0'; ctx.fillText(boss.tel ? `⚠️ ${PAT[boss.tel.k]}!` : `${boss.rage ? '🔥 ' : ''}${boss.n}  ${Math.max(0, Math.ceil(boss.hp))}/${boss.max}`, 4, H - 17); hb(4, H - 7, W - 8, 4, boss.hp, boss.hpD, boss.max, '#E0457A'); }
+  if(boss){ Rq('rgba(24,6,34,.82)', 0, H - 19, W, 19); const intro = s.t - (boss.t0 ?? -9) < 4, M = BM[boss.bi];
+    ctx.fillStyle = boss.tel ? '#FF8A8A' : intro ? '#FFF3C4' : '#FFD6F0';
+    ctx.fillText(boss.tel ? `⚠️ ${telN(boss)}!` : intro ? `💡 ${M.say}` : `${EL[boss.el].ic}${boss.rage ? '🔥' : ''} ${boss.n} ${Math.max(0, Math.ceil(boss.hp))}/${boss.max}${guardOn() ? ' 🛡️-50%' : boss.pool > 0 ? ' 🌀회복' : boss.thorn > 0 ? ' 📌가시' : ''}`, 4, H - 17); hb(4, H - 7, W - 8, 4, boss.hp, boss.hpD, boss.max, '#E0457A'); }
 }
 function paintLog(){ const el = $q('q-log'); if(!el || !S) return; el.innerHTML = S.log.slice(0, 6).map((l, i)=>`<div style="opacity:${1 - i * 0.13}">${esc(l.t)}</div>`).join(''); }
 
@@ -2136,7 +2217,7 @@ function wire(){
 }
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 window.questOpen = questOpen; window.questClose = questClose;
-window._quest = { twCard, twFight, twOf, twOn, twWaves, twG, bondGo, bdNext, lmOpen, lmOf, nowTint, sndToggle, LMK, BOND, TWX, TUNE, get S(){ return S; }, get FS(){ return FS; }, FISH, RAR, fishOpen, fishTap, fRoll, fGet, fOfDay, giftPick, giftGive, chestOpen, favOf, canGift, fsOf, fiOf, hvOf, fdOf, funOn, get CN(){ return CN; }, get auto(){ return auto; }, set auto(v){ auto = v; ctl(); }, get WK(){ return WK; }, qXp, get TV(){ return TV; }, get T(){ return T; }, step, session, town, bag, fight, vInfo, qpOf, eqOf, eqBuy, goTo, interact, npcTalk, qBack, wTick, VIL, EQC, begin, teamUp, ult, end, map, codex, opening, place, fmGet, migrate, wavesOf, power, recPow, heroStat, heroLv, heroSt, starOf, sgN, CH, HERO, BOSS, N, NS, FIX, scene,
+window._quest = { twCard, twFight, twOf, twOn, twWaves, twG, bondGo, bdNext, lmOpen, lmOf, nowTint, sndToggle, LMK, BOND, TWX, TUNE, get S(){ return S; }, get FS(){ return FS; }, FISH, RAR, fishOpen, fishTap, fRoll, fGet, fOfDay, giftPick, giftGive, chestOpen, favOf, canGift, fsOf, fiOf, hvOf, fdOf, funOn, get CN(){ return CN; }, get auto(){ return auto; }, set auto(v){ auto = v; ctl(); }, get WK(){ return WK; }, qXp, get TV(){ return TV; }, get T(){ return T; }, step, session, town, bag, fight, vInfo, qpOf, eqOf, eqBuy, goTo, interact, npcTalk, qBack, wTick, VIL, EQC, EQF, EL, HEL, FEL, BEL, BM, elM, eqSet, eqNeed, eqFish, begin, teamUp, ult, end, map, codex, opening, place, fmGet, migrate, wavesOf, power, recPow, heroStat, heroLv, heroSt, starOf, sgN, CH, HERO, BOSS, N, NS, FIX, scene,
   sim(g, cap, kind){ session(g); if(kind === 'patrol'){ S.kind = kind; S.waves = S.waves.map(w=>w.filter(k=>k !== 'BOSS')); } begin(); const s = S; s.tutT = 0; let n = 0; while(S === s && !s.res && n++ < (cap || 60 * 200)) step(FIX); clearTimeout(tmr); return { res:s.res, stars:s.stars, t:Math.round(s.t), deaths:s.deaths, ults:s.ults || 0 }; },
   force(g, win){ session(g); S.heroes = fmGet().map((k, i)=>k ? mkHero(k, i) : null).filter(Boolean); S.mode = 'go'; end(win); },
   skip(){ for(let n = 0; n < 6; n++){                                              // 결과 띠 → 뒷이야기 → (엔딩) 순서로 끝까지 넘긴다

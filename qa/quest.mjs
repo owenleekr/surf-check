@@ -2,7 +2,8 @@
    알림판 눌러 해변의 무리로 → 편성(전투는 자동 안내) → 전투 튜토리얼(AUTO 끄기 → 초상 눌러 필살기) → 승리 → 보고 → 부탁 완료(sg·별·조개) →
    모으기(물건 셋 줍기) → 전하기(다른 주민) → 보스 → 조각·합류 → 지도(다음 마을로) → 다음 마을.
    순찰 전투(진행 그대로·경험치), 패배 카드, 편성(눌러 옮기기·끌어 놓기)·⭐ 성급 강화, 내 정보(장비 강화 🐚), 방치 보상 8시간 상한,
-   뒤로가기(덮개부터), 옛 저장 옮기기(ch·sg), 합치기(qp·eq 가두기), 11마을 봇 진행(균형), 마지막 보스 → 전설 */
+   뒤로가기(덮개부터), 옛 저장 옮기기(ch·sg), 합치기(qp·eq 가두기), 11마을 봇 진행(균형), 마지막 보스 → 전설,
+   상성(🌊›🔥›🍃·효과 좋음·편성 힌트), 보스 11마리 고유 기술(예고·졸개·보호막·돌진·소용돌이·가시·먹물), 장비 Lv6+ 물고기·세트 */
 import { open } from './mock.mjs';
 import fs from 'fs';
 const OUT = process.env.QSHOT || '/tmp';
@@ -258,6 +259,46 @@ R.탐사.뒤로 = await Q(()=>{ const q = _quest; q.twFight(2); q.begin(); for(l
 R.탐사.봇 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.tw = 0; const out = []; q.place('crab', 0); q.place('me', 1); q.place('gull', 2); q.place('haenyeo', 3); P.eq = { b:5, w:5 }; ['me', 'crab', 'gull', 'haenyeo'].forEach(k=>{ P.hx[k] = 10830; P.hs[k] = 3; }); for(let f = 1; f <= 8; f++){ q.twFight(f); q.begin(); const s = q.S; s.tutT = 0; let n = 0; while(q.S === s && !s.res && n++ < 60 * 200) q.step(q.FIX); out.push(s.res === 'win' ? 1 : 0); q.skip(); if(s.res !== 'win') break; } return out.join(''); });
 R.가두기2 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.tw = '<img>'; P.bd = { gull:'<b>', evil:2, haenyeo:7 }; P.lm = -5; const a = { tw:q.twOf(), lm:q.lmOf(), bd:q.bdNext('haenyeo') };
   P.tw = 1e9; P.lm = 1e9; return { ...a, tw2:q.twOf(), lm2:q.lmOf() }; });
+// 상성 — 🌊 › 🔥 › 🍃 › 🌊. 동료 ×1.25/×0.85 · 졸개 적 ×1.1/×0.9 · 보스는 상성 없이 때린다. 편성 화면에 「상대 ○○는 🔥에 약해요」, 싸우면 「효과 좋음!」
+R.상성 = await Q(()=>{ const q = _quest, P = ME.profile.play.qb; P.sg = 4; P.fm = ['crab', 'me', 'gull', 'haenyeo'];
+  const me = { side:'h', el:q.HEL.me }, gull = { side:'h', el:q.HEL.gull }, crabF = { side:'e', el:q.FEL.crab }, jelly = { side:'e', el:q.FEL.jelly }, boss = { side:'e', boss:true, el:q.BEL[0] };
+  const r = { 좋음:q.elM(me, crabF), 나쁨:q.elM(gull, crabF), 적:q.elM(jelly, me), 보스:q.elM(boss, me), 셋:[0, 1, 2].map(e=>Object.values(q.HEL).filter(x=>x === e).length).join('') };
+  q.session(1); q.teamUp(); r.힌트 = document.querySelector('.qtm-el')?.textContent || ''; r.카드 = document.querySelector('.qtm-s[data-hero="me"] small')?.textContent || '';
+  q.begin(); const s = q.S; s.tutT = 0; r.속성 = s.heroes.every(h=>h.el != null) && s.foes.every(f=>f.el != null); let pop = 0;
+  for(let n = 0; n < 60 * 40 && q.S === s && !s.res && !pop; n++){ q.step(q.FIX); pop = s.fx.some(f=>f.k === 'txt' && /효과 좋음/.test(f.v)); }
+  r.효과 = pop; q.bag(); return r; });
+// 보스 고유 기술 — 11마리 모두, 체력 75% 아래로 떨어지면 예고(한 줄) 뒤 발동. 들어올 때 💡 한 줄 안내
+R.보스기술 = await Q(()=>{ const q = _quest, out = []; q.auto = false;
+  for(let v = 0; v < q.N; v++){ q.session(v * 4 + 3); q.begin(); const s = q.S; s.tutT = 0; s.left = 999; s.heroes.forEach(h=>{ h.max = h.hp = 1e7; });
+    s.wv = s.waves.length - 2; s.foes.forEach(f=>{ f.hp = 0; }); let b = null, n = 0;
+    while(n++ < 120 && !s.foes.some(f=>f.boss)) q.step(q.FIX); s.heroes.forEach(h=>{ h.atk = 0; }); n = 0;
+    while(n++ < 600 && !(b && b.x === b.hx)){ q.step(q.FIX); b = s.foes.find(f=>f.boss); }
+    if(!b){ out.push(v + ':보스없음'); q.skip(); continue; }
+    const M = q.BM[v], intro = s.log.some(l=>/^💡/.test(l.t)); b.hp = b.max * .7; b.tel = null; b.pT = 99; let tel = null; n = 0;
+    while(n++ < 400){ if(b.tel && b.tel.k === 'm'){ tel = { ...b.tel }; s.heroes.forEach(h=>{ h.en = 80; }); } q.step(q.FIX); if(tel && !b.tel) break; }
+    const tots = s.foes.filter(f=>f.tot), en = Math.max(...s.heroes.map(h=>h.en));
+    const ok = !!tel && intro && M.say.length <= 27 && (M.k === 'heal' || M.k === 'guard' ? tots.length === M.c && tots.every(f=>f.tot === M.k) : M.k === 'shell' ? b.sh > 0 : M.k === 'dash' ? tel.ln >= 0 : M.k === 'pool' ? b.pool > 0 : M.k === 'thorn' ? b.thorn > 0 : M.k === 'ink' ? en < 60 : false);
+    out.push(ok ? 1 : v + ':' + M.k); q.skip(); }
+  q.auto = true; q.bag(); return { 결과:out.join(''), 무늬:new Set(q.BM.map(m=>m.k)).size }; });
+// 졸개 — 달 조각(guard)이 있으면 보스 피해 절반 · 새끼 해파리(heal)는 보스를 회복
+R.졸개 = await Q(()=>{ const q = _quest, r = {}; q.auto = false;
+  for(const v of [7, 0]){ q.session(v * 4 + 3); q.begin(); const s = q.S; s.tutT = 0; s.left = 999; s.heroes.forEach(h=>{ h.max = h.hp = 1e7; h.atk = 0; h.cd = 99; });
+    s.wv = s.waves.length - 2; s.foes.forEach(f=>{ f.hp = 0; }); let b = null, n = 0; while(n++ < 600 && !(b && b.x === b.hx)){ q.step(q.FIX); b = s.foes.find(f=>f.boss); }
+    b.hp = b.max * .7; b.pT = 99; n = 0; while(n++ < 400 && !s.foes.some(f=>f.tot && f.x === f.hx)) q.step(q.FIX);
+    if(v === 7) r.가드 = s.foes.filter(f=>f.tot === 'guard').length;
+    else { const h0 = b.hp; for(let i = 0; i < 130; i++) q.step(q.FIX); r.회복 = b.hp > h0; }
+    q.skip(); }
+  q.auto = true; q.bag(); return r; });
+// 장비 — Lv5까지 조개만, Lv6부터 귀한 물고기도 · 둘 다 Lv5면 세트(기력 +10%) · 물고기는 덜 귀한 것부터 한 번만 쓴다
+R.장비2 = await Q(()=>{ const q = _quest, p = ME.profile.play, P = p.qb; P.eq = { b:5, w:4 }; P.fi = { mack:3 }; p.shells = (p.shells || 0) + 2000; const b0 = shellBal(), r = {};
+  r.물고기없음 = q.eqBuy('b') === false && q.eqOf('b') === 5 && shellBal() === b0;
+  P.fi = { mack:3, yell:1, lim:1 }; r.샀다 = q.eqBuy('b'); r.보드 = q.eqOf('b'); r.조개 = b0 - shellBal(); r.바구니 = JSON.stringify(P.fi);
+  r.두번 = q.eqBuy('b'); r.보드2 = q.eqOf('b'); r.바구니2 = JSON.stringify(P.fi);
+  r.세트전 = q.eqSet(); q.eqBuy('w'); r.세트 = q.eqSet();
+  q.session(1); q.begin(); r.기력 = q.S.eb;
+  q.bag(); r.가방 = { 세트:!!document.querySelector('.qb-set.on'), 표시:document.querySelector('[data-eq="b"]')?.textContent || '' };
+  P.fi = { yell:'<b>', gold:1e9, evil:5 }; r.가두기 = q.eqFish(2);
+  P.fi = {}; P.eq = { b:3, w:2 }; return r; });
 await Q(()=>{ document.getElementById('q-ov').hidden = true; questClose(); });
 for(const k in R) console.log(k, JSON.stringify(R[k]));
 const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 보낸 편지' && R.마을.걷기 && R.마을.마을 === 0 && R.마을.사람 === 'a,c,d,shop' && R.마을.보스잠김 && /해녀 할머니/.test(R.마을.알림판) && /①/.test(R.마을.길잡이) && R.마을.할머니표시 === '❗' && R.마을.메뉴 === 4 && !R.마을.넘침
@@ -298,6 +339,10 @@ const ok = /원정/.test(R.카드) && R.오프닝 && R.장제목 === '바다가 
   && R.탐사.열림 && /1층 도전/.test(R.탐사.단추) && R.탐사.카드 === '해변 탐사 1층' && R.탐사.효과 && R.탐사.편성.종류 === 'tower' && R.탐사.편성.층 === 1 && /탐사 1층/.test(R.탐사.편성.라벨) && /탐사 1층/.test(R.탐사.편성.단추)
   && R.탐사.전투.적 >= 3 && R.탐사.보상.층 === 1 && R.탐사.보상.조개 >= 6 && R.탐사.보상.조개 <= 30 && /1층 돌파/.test(R.탐사.보상.카드) && R.탐사.보상.다시 === 0 && R.탐사.보상.다시층 === 1 && R.탐사.보상.그대로 === 1 && R.탐사.보상.건너뛰기 === 2
   && R.탐사.보스.보스층 === 'BOSS' && !R.탐사.보스.보통층 && R.탐사.뒤로.전투 && R.탐사.뒤로.카드 && /^1/.test(R.탐사.봇)
-  && R.가두기2.tw === 0 && R.가두기2.lm === 0 && R.가두기2.bd === null && R.가두기2.tw2 === 999 && R.가두기2.lm2 === 2047;
+  && R.가두기2.tw === 0 && R.가두기2.lm === 0 && R.가두기2.bd === null && R.가두기2.tw2 === 999 && R.가두기2.lm2 === 2047
+  && R.상성.좋음 === 1.25 && R.상성.나쁨 === .85 && R.상성.적 === 1.1 && R.상성.보스 === 1 && R.상성.셋 === '333' && /해파리는 🔥/.test(R.상성.힌트) && /꽃게 떼는 🌊/.test(R.상성.힌트) && /🌊/.test(R.상성.카드) && R.상성.속성 && R.상성.효과
+  && R.보스기술.결과 === '11111111111' && R.보스기술.무늬 === 7 && R.졸개.가드 === 2 && R.졸개.회복
+  && R.장비2.물고기없음 && R.장비2.샀다 && R.장비2.보드 === 6 && R.장비2.조개 === 130 && R.장비2.바구니 === '{"mack":3,"lim":1}' && R.장비2.두번 === false && R.장비2.보드2 === 6 && R.장비2.바구니2 === '{"mack":3,"lim":1}'
+  && R.장비2.세트전 === false && R.장비2.세트 && R.장비2.기력 === 1.1 && R.장비2.가방.세트 && /🔵/.test(R.장비2.가방.표시) && R.장비2.가두기 === 99;
 console.log('판정', ok ? 'OK' : 'FAIL');
 console.log('errs', t.errs); await t.b.close(); process.exit(ok && !t.errs.length ? 0 : 1);
