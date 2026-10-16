@@ -33,6 +33,8 @@ const MODS = [
 let mod = MODS[0];
 /* 쉬움 = 처음 버전(목숨 1·아이템·스테이지 없음·느린 속도), 어려움 = 지금 버전. 점수는 따로 쌓는다(best / hbest).
    오늘의 챌린지는 모두가 하도록 쉬움으로 고정. 고른 모드는 이 기기에 기억한다. */
+let UP = {};                     // 🔧 강화(play.js upFor) — 챌린지·시뮬에선 비운다(공정)
+const SV = () => 10 + 2 * (UP.val || 0);   // 조개 하나 점수
 let hard = false; try{ hard = localStorage.getItem('lineup.share.jmode') === 'hard'; }catch(e){}
 const hashStr = s => { let h = 2166136261; for(const c of s){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
 const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
@@ -150,7 +152,7 @@ function spawnObs(){
 /* 아이템 하나 — 장애물과 겹치지 않는 높이·자리에. 하트는 목숨이 줄었을 때만 나온다 */
 function spawnItem(){
   const w = { tube:.16, star:.12, magnet:.18, slow:.14, gem:.14, x2:.16 };
-  if(st.lives < LIVES) w.heart = .14;
+  if(hard && st.lives < LIVES) w.heart = .14;          // 쉬움은 목숨 하나 규칙 — 강화로 아이템이 나와도 하트는 없다
   let tot = 0; for(const k in w) tot += w[k];
   let r = rnd() * tot, k = 'gem'; for(const q in w){ r -= w[q]; if(r <= 0){ k = q; break; } }
   const y = [6, 24, 40][Math.floor(rnd() * 3)];
@@ -177,7 +179,7 @@ function step(dt){
   /* 어려움은 스테이지마다 속도가 정해져 있다(시간이 아니라 코스로 어려워진다). 쉬움은 처음 그대로 */
   s.speed = hard ? (s.boss ? 40 : SPD[s.zone - 1]) * (s.fx.slow > 0 ? 0.62 : 1) : Math.min(210, 92 + s.t * 3.4);
   s.dist += s.speed * dt; s.pts += s.speed * dt / 14 * mult();
-  s.nextItem -= s.speed * dt; if(s.nextItem <= 0){ spawnItem(); s.nextItem = hard ? 900 + rnd() * 600 : 520 + rnd() * 420; }
+  s.nextItem -= s.speed * dt; if(s.nextItem <= 0){ spawnItem(); s.nextItem = (hard ? 900 + rnd() * 600 : 520 + rnd() * 420) * (1 - .12 * (UP.item || 0)); }
   // 점프 물리
   if(hard){ physH(s, dt); if(s.dead || s.resp > 0) return; }
   else if(s.air){ s.vy -= G * dt; s.y += s.vy * dt;
@@ -214,8 +216,8 @@ function step(dt){
   if(s.fx.magnet > 0) s.pick.forEach(p=>{ if(!p.it && p.x < 120 && p.x > 20){ p.x += (44 - p.x) * Math.min(1, dt * 5); p.y += (10 + s.y - p.y) * Math.min(1, dt * 5); } });
   for(const p of s.pick){
     if(!p.got && p.it && sx + sw + 4 > p.x && sx - 4 < p.x + 9 && sb < p.y + 9 && st_ > p.y){ p.got = true; s.items++; got(p.it); continue; }
-    if(!p.it && !p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pts += 10 * mult(); s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+' + 10 * mult() }); vib(6); beep(880, 1320, 0.09, 'triangle', 0.06); ev('shell', p);
-      if(hard) oneUpH(s); if(s.shells % (hard ? 25 : 5) === 0 && !s.shield){ s.shield = 1; s.pops.push({ x:30, y:GY - 56, t:0, v:'🛟 구명튜브!' }); beep(660, 1320, 0.2, 'triangle', 0.07); } }
+    if(!p.it && !p.got && sx + sw + 3 > p.x && sx - 3 < p.x + 7 && sb < p.y + 7 && st_ > p.y){ p.got = true; s.shells++; s.pts += SV() * mult(); s.pops.push({ x:p.x, y:GY - p.y - 10, t:0, v:'+' + SV() * mult() }); vib(6); beep(880, 1320, 0.09, 'triangle', 0.06); ev('shell', p);
+      if(hard) oneUpH(s); if(s.shells % ((hard ? 25 : 5) - Math.max(0, (UP.shield || 0) - 1) * (hard ? 2 : 1)) === 0 && !s.shield){ s.shield = 1; s.pops.push({ x:30, y:GY - 56, t:0, v:'🛟 구명튜브!' }); beep(660, 1320, 0.2, 'triangle', 0.07); } }
   }
 }
 
@@ -224,7 +226,7 @@ function got(k){
   if(k === 'heart') s.lives = Math.min(hard ? MAXL : LIVES, s.lives + 1);
   else if(k === 'tube') s.shield = 1;
   else if(k === 'star') s.fx.star = 5;
-  else if(k === 'magnet') s.fx.magnet = 8;
+  else if(k === 'magnet') s.fx.magnet = 8 + 2 * (UP.mag || 0);
   else if(k === 'slow') s.fx.slow = 5;
   else if(k === 'x2') s.fx.x2 = 8;
   else if(k === 'gem') s.pts += 50 * mult();
@@ -329,13 +331,13 @@ function bumpH(s, b){
   b.used = true;
   const k = b.c === 'board' && s.big ? 'coin' : b.c;
   if(k === 'coin'){   // 조개 연속 — 하나는 바로, 여섯 개가 앞에 줄지어 다가온다
-    s.shells++; s.pts += 10 * mult(); oneUpH(s); s.pops.push({ x:b.x, y:GY - b.y - 22, t:0, v:'+' + 10 * mult() }); ev('pop', { b, ic:'🐚' }); beep(988, 1976, .12, 'triangle', .06);
+    s.shells++; s.pts += SV() * mult(); oneUpH(s); s.pops.push({ x:b.x, y:GY - b.y - 22, t:0, v:'+' + SV() * mult() }); ev('pop', { b, ic:'🐚' }); beep(988, 1976, .12, 'triangle', .06);
     for(let i = 0; i < 6; i++) s.pick.push({ x:b.x + 18 + i * 9, y:6 + Math.sin(i / 5 * Math.PI) * 14, got:false });
     return; }
   s.items++;
   if(k === 'board'){ s.big = 1; s.pops.push({ x:16, y:GY - 62, t:0, life:1.2, v:'🏄 큰 파도 보드! 한 번 버텨요' }); }
   else if(k === 'star'){ s.fx.star = 6; s.pops.push({ x:24, y:GY - 62, t:0, life:1.2, v:'⭐ 무적 6초!' }); }
-  else { s.fx.magnet = 8; s.pops.push({ x:24, y:GY - 62, t:0, life:1.2, v:'🧲 조개 자석' }); }
+  else { s.fx.magnet = 8 + 2 * (UP.mag || 0); s.pops.push({ x:24, y:GY - 62, t:0, life:1.2, v:'🧲 조개 자석' }); }
   ev('pop', { b, k, ic:k === 'board' ? '🏄' : k === 'star' ? '⭐' : '🧲' }); vib([8, 20, 8]); beep(523, 1568, .3, 'triangle', .07);
 }
 function oneUpH(s){ while(s.shells >= s.oneUp){ s.oneUp += 100; s.lives = Math.min(MAXL, s.lives + 1); s.pops.push({ x:20, y:GY - 70, t:0, life:1.3, v:'🍄 1-UP! 조개 100개', big:1 }); ev('1up'); } }
@@ -765,7 +767,7 @@ function hud(s){
   let x = 10.5;
   const ring = (ic, v)=>{ blob(c, x, y + 6.5, 6.3, 6.3, 'rgba(8,24,46,.5)'); if(v < 1){ c.strokeStyle = '#FFD36B'; c.lineWidth = 1.5; c.beginPath(); c.arc(x, y + 6.5, 5.6, -Math.PI / 2, -Math.PI / 2 + v * Math.PI * 2); c.stroke(); }
     c.font = `6.4px ${EMO}`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(ic, x, y + 6.9); x += 15; };
-  [['star','⭐',hard ? 6 : 5],['magnet','🧲',8],['slow','🐢',5]].forEach(([k, ic, mx])=>{ if(s.fx[k] > 0) ring(ic, s.fx[k] / mx); });
+  [['star','⭐',hard ? 6 : 5],['magnet','🧲',8 + 2 * (UP.mag || 0)],['slow','🐢',5]].forEach(([k, ic, mx])=>{ if(s.fx[k] > 0) ring(ic, s.fx[k] / mx); });
   if(s.shield) ring('🛟', 1);
   if(hard && s.big) ring('🏄', 1);
   if(hard && s.boss) bossBar(s);
@@ -854,7 +856,9 @@ let hardPref = null;
 function begin(isDaily){
   daily = isDaily === true;
   if(daily){ hardPref = hard; hard = false; } else if(hardPref != null){ hard = hardPref; hardPref = null; }   // 챌린지는 쉬움으로, 끝나면 고른 모드로
-  loadMe(); reset(); TH = hard ? THEMES[ZONES[0][2]] : themeNow(); mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false; acc = 0;
+  loadMe(); reset(); UP = (!daily && !window._gameSim && typeof upFor === 'function') ? upFor('jump') : {};
+  if(UP.shield) st.shield = 1; if(UP.item) st.nextItem = hard ? 300 : 600;      // 쉬움은 원래 아이템이 없다 — 강화하면 나온다
+  TH = hard ? THEMES[ZONES[0][2]] : themeNow(); mode = 'run'; window._gameRun = true; $g('g-ov').hidden = true; last = 0; held = false; acc = 0;
   const p = (typeof ME !== 'undefined' && ME && ME.profile && ME.profile.play) || {};
   vis.best = (daily ? (p.dbest && p.dbest.day === today() ? p.dbest.score : 0) : hard ? p.hbest : p.best) || 0;
   vis.ban = { t:0, top:hard ? 'STAGE 1' : daily ? '📅 오늘의 챌린지' : '오늘의 바다', name:hard ? ZONES[0][1] : bgOf(st)[0] + ' 해변' };
@@ -871,10 +875,11 @@ function showOver(sc, r){
       <div class="go-s">${sc}<small>점</small></div>
       <div class="go-st">${cells.map(([k, n])=>`<span>${k}<b>${n}</b></span>`).join('')}</div>
       ${hard ? `<div class="go-b">잃은 목숨 <b>${st.lost}</b> · 아이템 <b>${st.items}</b>개</div>` : ''}
-      ${window.JUMP_STANDALONE ? `<div class="go-b">🐚 조개 ${st.shells}개${r.rank ? ` · 🏆 ${r.rank}` : ''}</div>` : `<div class="go-b">🐚 +${st.shells} (보유 ${r.bal ?? '–'})${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>`}
+      ${window.JUMP_STANDALONE ? `<div class="go-b">🐚 조개 ${st.shells}개${r.rank ? ` · 🏆 ${r.rank}` : ''}</div>` : `<div class="go-b">🐚 +${r.shells ?? st.shells}${r.x2 ? ' <b>×2</b>' : ''} (보유 ${r.bal ?? '–'})${r.gain ? ` · <b>+${r.gain} XP</b>` : ' · 오늘 XP는 다 채웠어요'}</div>`}
+      ${typeof upNudge === 'function' && !window.JUMP_STANDALONE ? upNudge('jump', { sc, best:nb ? 0 : best, x2:r.x2, daily, k:'j_val', plus:st.shells * 2 }) : ''}
       ${daily ? (()=>{ const rk = dailyRows(); return rk.length ? `<div class="go-r"><span class="jp-rh">오늘의 챌린지 순위</span>${rk.map((q,i)=>`<span>${['🥇','🥈','🥉'][i]} ${esc(q.name)} ${q.best}</span>`).join('')}</div>` : ''; })() : ''}
       ${v && !hard ? `<div class="go-v">“${esc(v[0])}”<small>— ${esc(v[1])}</small></div>` : ''}
-      <div class="jp-row"><button class="btn blue" id="g-again" type="button" style="flex:1">↻ 다시 하기</button>
+      <div class="jp-row"><button class="btn blue" id="g-again" type="button" style="flex:1">↻ 한 판 더</button>
         <button class="btn ghost" id="g-exit" type="button">닫기</button></div>
       ${sc >= 100 && typeof sendChat === 'function' ? `<button class="btn ghost jp-wide" id="g-brag" type="button">📣 마을에 자랑하기</button>` : ''}
       ${window.JUMP_STANDALONE ? `<button class="btn ghost jp-wide" id="g-share" type="button">📤 친구에게 공유</button>` : ''}</div>`;

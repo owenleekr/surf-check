@@ -2276,6 +2276,7 @@ $('now-btn').onclick = async ()=>{
     nowRows = (nowRows||[]).filter(c=>c.user_id!==ME.id).concat(row.active ? [row] : []);
     renderNow(); toast(row.active ? `${beach} 체크인!` : '나왔어요');
     if(row.active && typeof playStamp === 'function') playStamp(beach);
+    if(row.active && typeof playVisit === 'function') playVisit('chk');      // 오늘의 미션 「해변 체크인」
     /* 나왔으면 바로 서핑 일지 — 해변과 머문 시간을 채워서 연다 */
     if(!row.active && mine && typeof window.surfLogOpen === 'function'){ const mins = mine.at ? (Date.now() - new Date(mine.at)) / 6e4 : 60; setTimeout(()=>window.surfLogOpen({ s:beach, m:Math.max(20, Math.min(240, mins)) }), 450); }
   }catch(e){ $('now-btn').disabled = false;

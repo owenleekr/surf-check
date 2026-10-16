@@ -66,6 +66,8 @@ function start(df, sd){
   S = { df:diff, r:0, ph:'fight', t:0, rt:0, q:[], qi:0, hp:D.sch, max:D.sch, lag:D.sch, lagT:0, bacc:0, shells:0, got:0, kills:0, ult:1, big:-1, shake:0, paused:false, res:null, ban:null,
         st:0, offer:[], bought:[], rr:2, lv:{}, heal:0, guards:[], sw:null, swc:3, boss:null, hint:4, nid:1, dashT:0, dashId:0, earned:0, pw:null };
   P = { x:SX, y:H - 90, face:1, stun:0, cd:0, dash:0, dx:0, dy:0, kx:0, ky:0, mv:0, thr:0 };
+  { const U = (!botOn && typeof upFor === 'function') ? upFor('defend') : {};      // 🔧 강화 — 균형 시험(봇)에는 쓰지 않는다
+    if(U.atk) S.lv.atk = U.atk; if(U.sch) S.max = S.hp = S.lag = Math.round(D.sch * (1 + .1 * U.sch)); if(U.shell) S.shells += 3 * U.shell; S.free = U.free || 0; }
   power(); stick = null; window._gameRun = true;
   const ov = $d('d-ov'); if(ov){ ov.hidden = true; ov.innerHTML = ''; }
   startRound(); ctl();
@@ -227,10 +229,10 @@ function offer(){
   for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   S.offer = a.slice(0, 3).map(c => c.k); S.bought = [0, 0, 0];
 }
-const cost = k => k === 'heal' ? CK.heal.c + S.heal * 2 : CK[k].c + (S.lv[k] || 0) * 5;
+const cost = k => S && S.free > 0 ? 0 : k === 'heal' ? CK.heal.c + S.heal * 2 : CK[k].c + (S.lv[k] || 0) * 5;
 function buy(i){
   if(!S || S.ph !== 'shop' || S.bought[i]) return false; const k = S.offer[i]; if(!k) return false; const c = cost(k); if(S.shells < c) return false;
-  S.shells -= c; S.bought[i] = 1;
+  S.shells -= c; S.bought[i] = 1; if(S.free > 0) S.free--;
   if(k === 'heal'){ S.heal++; S.hp = Math.min(S.max, S.hp + S.max * .35); txt(SX, BY - 6, '+HP', 5); }
   else { S.lv[k] = (S.lv[k] || 0) + 1; if(k === 'guard') S.guards.push({ x:P.x, y:P.y, cd:0 }); power(); }
   burst(P.x, P.y, '#FFE27A', 10); shopUI(); return true;
@@ -475,9 +477,10 @@ function over(){
     const win = S.res === 'win', nm = typeof ME !== 'undefined' && ME && ME.name ? esc(ME.name) : '';
     ov.innerHTML = `<div class="go-card"><div class="go-t">${win ? '🏆 학교를 지켰어요!' : '🌊 학교가 잠겼어요'}</div>
       <div class="go-d">${win ? `${nm ? nm + ' 님이 ' : ''}폭풍 너울까지 막아냈어요 (${DIFF[S.df].n})` : `라운드 ${S.r}에서 밀렸어요. 공격력·공속 카드부터 사 봐요`}</div>
-      <div class="go-st"><span>도달 라운드<b>${S.r}/${NR}</b></span><span>처치<b>${S.kills}</b></span><span>받은 조개<b>${S.got}</b></span><span>보상<b>🐚${S.earned}</b></span></div>
+      <div class="go-st"><span>도달 라운드<b>${S.r}/${NR}</b></span><span>처치<b>${S.kills}</b></span><span>받은 조개<b>${S.got}</b></span><span>보상<b>🐚${R && R.shells || S.earned}${R && R.x2 ? ' ×2' : ''}</b></span></div>
       <div class="go-b">XP +${R && R.gain || 0}${R && R.best ? ` · 최고 ${Math.min(NR, R.best)}/${NR} 라운드` : ''}</div>
-      ${mode}<div class="d-row"><button class="btn" id="d-go" type="button">🔁 다시</button><button class="btn ghost" id="d-close" type="button">닫기</button></div></div>`;
+      ${typeof upNudge === 'function' ? upNudge('defend', { sc:win ? NR : S.r - 1, best:R && R.best || 0, u:'라운드', x2:R && R.x2 }) : ''}
+      ${mode}<div class="d-row"><button class="btn" id="d-go" type="button">🔁 한 판 더</button><button class="btn ghost" id="d-close" type="button">닫기</button></div></div>`;
     $d('d-close').onclick = defendClose;
   }
   ov.querySelectorAll('[data-df]').forEach(x => x.onclick = () => { diff = +x.dataset.df; try{ localStorage.setItem(LS, diff); }catch(e){} ov.querySelectorAll('[data-df]').forEach(y => y.setAttribute('aria-pressed', y === x)); });
@@ -493,7 +496,7 @@ function shopUI(){
   el.hidden = false;
   el.innerHTML = `<div class="d-sh"><b>🔧 정비 시간 <span id="d-st">${Math.ceil(S.st)}</span>초</b><b>🐚 <span id="d-shs">${S.shells}</span></b></div><div class="d-cards">${S.offer.map((k, i) => { const C = CK[k], lv = S.lv[k] || 0, c = cost(k);
       return S.bought[i] ? `<button type="button" class="d-card on" disabled><i>✅</i><b>${C.n}</b><small>샀어요</small></button>`
-        : `<button type="button" class="d-card" data-buy="${i}" ${S.shells < c ? 'disabled' : ''}><i>${C.ic}</i><b>${C.n}</b><small>${C.d}</small><em>${k === 'heal' ? '즉시' : `Lv${lv}→${lv + 1}`}</em><u>🐚${c}</u></button>`; }).join('')}</div>
+        : `<button type="button" class="d-card" data-buy="${i}" ${S.shells < c ? 'disabled' : ''}><i>${C.ic}</i><b>${C.n}</b><small>${C.d}</small><em>${k === 'heal' ? '즉시' : `Lv${lv}→${lv + 1}`}</em><u>${c ? '🐚' + c : '🎟️ 무료'}</u></button>`; }).join('')}</div>
     <div class="d-row"><button type="button" class="btn sm ghost" data-rr ${S.shells < S.rr ? 'disabled' : ''}>🔄 바꾸기 🐚${S.rr}</button><button type="button" class="btn sm" data-gonext>출발 ▶</button></div>`;
   el.querySelectorAll('[data-buy]').forEach(x => x.onclick = () => buy(+x.dataset.buy));
   el.querySelector('[data-rr]').onclick = reroll; el.querySelector('[data-gonext]').onclick = go;

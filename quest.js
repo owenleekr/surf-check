@@ -584,6 +584,7 @@ function session(k){
   clearT();
   S = { k, mode:'title', hp:100, maxHp:100, atk:11, cd:0.8, cdT:0, def:1, multi:1, shield:0, startShield:0, palRate:0.22, hs:0,
         foes:[], pals:[], fx:[], log:[], t:0, killed:0, need:CH[k].need, spawnT:1.2, shells:0, whale:false, boons:[], bossOut:false, res:null, gifts:[], alt:false, shk:0, pend:null };
+  { const U = typeof upFor === 'function' ? upFor('quest', true) : {}; if(U.hp) S.hp = S.maxHp = 100 + 8 * U.hp; if(U.atk) S.atk += U.atk; S.upTag = U.tag || ''; }   // 🔧 강화 — 마을 선물보다 먼저(선물이 그 위에 더한다)
   for(let j = 0; j < k; j++) if(CH[j].gift){ CH[j].gift.f(S); S.gifts.push(CH[j].gift.ic); }   // 앞 마을들의 선물 — 이야기로 강해진다
   S.sk = TEAM.filter(([, j])=>j === 0 || j < k).map(([c])=>({ c, ...SKL[c], t:SKL[c].cd * .4, act:0 }));
   S.shield = S.startShield; S.hpD = S.hp; window._gameRun = true;              // 원정 중엔 다른 알림 카드가 덮지 않게
@@ -591,6 +592,7 @@ function session(k){
 }
 function start(k){
   session(k); const c = CH[k], ov = ovEl('qv-title');
+  if(S.upTag && typeof toast === 'function') toast('🔧 강화 적용: ' + S.upTag);
   ov.innerHTML = `<div class="q-reg" aria-hidden="true">${esc(c.lm)} ${esc(c.n)}</div><div class="qtt" role="button" tabindex="0" aria-label="이야기 시작"><small>제 ${k + 1} 장 · ${esc(TOD[c.tod].nm)}</small><b>${esc(c.s)}</b><span>${esc(c.lm)} ${esc(c.n)}</span><p>${esc(c.d)}</p></div>`;
   log(`📍 ${c.n} — ${c.d}`); beep(392, 523, .4, .04);
   const go = ()=>{ if(S && S.mode === 'title'){ clearTimeout(tmr); talk(c.pre, pickPhase); } };
@@ -738,7 +740,7 @@ function end(win){
   if(win) beep(523, 1047, 0.3); else beep(330, 165, .4);
   tmr = setTimeout(()=>{ if(S === s0 && S.pend){ const f = S.pend; S.pend = null; f(); } }, RM ? 600 : 1500);
 }
-const stats = () => `<div class="go-st"><span>장<b>${S.k + 1}/${N}</b></span><span>쓰러뜨림<b>${S.killed}</b></span><span>조개<b>${S.shells}</b></span><span>XP<b>+${S.r && S.r.gain || 0}</b></span></div>`;
+const stats = () => `<div class="go-st"><span>장<b>${S.k + 1}/${N}</b></span><span>쓰러뜨림<b>${S.killed}</b></span><span>조개<b>${S.r && S.r.shells || S.shells}${S.r && S.r.x2 ? ' ×2' : ''}</b></span><span>XP<b>+${S.r && S.r.gain || 0}</b></span></div>`;
 function reward(){
   const c = CH[S.k], k = S.k, ov = ovEl(''), mo = MONO[k];
   S.mode = 'card';

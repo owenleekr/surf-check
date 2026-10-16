@@ -46,6 +46,7 @@ const SIZES = [
 const SKY = [ ['#FFE3C2','#FFD0A8','#C9E8FF'], ['#BFE9FF','#9BDBFF','#7ACCF5'], ['#A8E0FF','#86D3FF','#64C3F0'], ['#FFD6A0','#FFB27A','#F08C7E'], ['#7A6CC4','#B57AB8','#F0A07E'] ];
 
 function newSession(){
+  if(typeof upFor === 'function') upFor('surf');               // 🔧 강화 적용 표시
   S = { phase:'lineup', wave:0, lives:LIVES, total:0, bestRide:0, ridden:0, lost:0, tricks:{ top:0, tube:0, air:0, pull:0 }, t:0, pops:[] };
   newWave();
 }
@@ -183,14 +184,16 @@ function nextWave(){
 }
 function over(){
   S.phase = 'over'; window._gameRun = false;
+  const U = typeof upFor === 'function' ? upFor('surf', true) : {}, raw = S.total; if(U.mul) S.total = Math.round(raw * (1 + .03 * U.mul));   // 🔧 점수 배율
   const r = typeof playSurfDone === 'function' ? playSurfDone(S.total, S.bestRide, hardS) : { gain:0, newBest:false, best:S.total };
   const p = ME.profile.play || {};
   $s('s-ov').hidden = false;
   $s('s-ov').innerHTML = `<div class="go-card"><div class="go-t">${r.newBest && S.total > 0 ? '🎉 최고 기록!' : '🏁 세션 끝'}</div>
     <div class="go-s">${S.total}<small>점</small></div>
     <div class="go-st"><span>사용한 목숨<b>${S.lost}/${LIVES}</b></span><span>탄 파도<b>${S.ridden}/${WAVES}</b></span><span>베스트 라이드<b>${S.bestRide}</b></span><span>${hardS ? '어려움' : '쉬움'} 최고<b>${(hardS ? p.sbest : p.sebest) || S.total}</b></span></div>
-    <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}${r.shells ? ` · 🐚 +${r.shells}` : ''}</div>
-    <div style="display:flex;gap:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">새 세션</button>
+    <div class="go-b">🌀 튜브 ${S.tricks.tube} · 🚀 에어 ${S.tricks.air} · 탑턴 ${S.tricks.top} · 풀아웃 ${S.tricks.pull}${r.gain ? ` · <b>+${r.gain} XP</b>` : ''}${r.shells ? ` · 🐚 +${r.shells}${r.x2 ? ' ×2' : ''}` : ''}${U.mul ? ` · 🔧 ×${(1 + .03 * U.mul).toFixed(2)}` : ''}</div>
+    ${typeof upNudge === 'function' ? upNudge('surf', { sc:S.total, best:r.newBest ? 0 : r.best, x2:r.x2, k:'r_mul', plus:Math.round(raw * .03) }) : ''}
+    <div style="display:flex;gap:8px"><button class="btn blue" id="s-again" type="button" style="flex:1;min-height:52px;font-size:16px">🌊 한 판 더</button>
       <button class="btn ghost" id="s-exit" type="button" style="min-height:52px">닫기</button></div>
     ${S.total >= 300 && typeof sendChat === 'function' ? `<button class="btn ghost" id="s-brag" type="button" style="width:100%;min-height:48px;margin-top:8px">📣 마을에 자랑하기</button>` : ''}</div>`;
   $s('s-again').onclick = ()=>{ newSession(); $s('s-ov').hidden = true; window._gameRun = true; ui(); };

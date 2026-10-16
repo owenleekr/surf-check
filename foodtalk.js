@@ -158,7 +158,7 @@ async function send(T){
   const rt = replyTo[T];
   const row = { id:`${ME.id}|${Date.now()}`, target:T, parent:rt ? rt.top : null, user_id:ME.id, name:ME.name, cohort:ME.cohort || 'open', text, created_at:new Date().toISOString() };
   sentAt = Date.now();
-  try{ await api('place_talk', { method:'POST', body:JSON.stringify(row) }); (talk ||= []).push(row); draft[T] = ''; delete replyTo[T]; onChange(); navigator.vibrate?.(12); }
+  try{ await api('place_talk', { method:'POST', body:JSON.stringify(row) }); (talk ||= []).push(row); if(typeof playVisit === 'function') playVisit('food'); draft[T] = ''; delete replyTo[T]; onChange(); navigator.vibrate?.(12); }
   catch(e){ toast(e.code === 'notable' ? '댓글 표가 아직 없어요' : '남기지 못했어요 · 신호 확인'); }
 }
 async function sendAdd(kind, box){

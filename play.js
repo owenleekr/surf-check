@@ -16,7 +16,8 @@ const PLV = [[0,'모래알','🐚'],[50,'물장구','💦'],[150,'패들러','�
    레벨은 적힌 값을 믿지 않고 xp 로 다시 계산한다. */
 const _num = (v, max) => { const x = Math.floor(+v); return Number.isFinite(x) ? Math.max(0, Math.min(max, x)) : 0; };
 const peerPlay = pl => (pl && typeof pl === 'object') ? { xp:_num(pl.xp, 100000), best:_num(pl.best, 100000), bat:_num(pl.bat, 4e12), sebest:_num(pl.sebest, 1000000), hbest:_num(pl.hbest, 100000), hbat:_num(pl.hbat, 4e12), sbest:_num(pl.sbest, 1000000), sbat:_num(pl.sbat, 4e12),
-  dbest:(pl.dbest && typeof pl.dbest === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.dbest.day))) ? { day:String(pl.dbest.day), score:_num(pl.dbest.score, 100000) } : null } : null;
+  dbest:(pl.dbest && typeof pl.dbest === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.dbest.day))) ? { day:String(pl.dbest.day), score:_num(pl.dbest.score, 100000) } : null,
+  wk:(pl.wk && typeof pl.wk === 'object' && /^\d{4}-\d{2}-\d{2}$/.test(String(pl.wk.w))) ? { w:String(pl.wk.w), j:_num(pl.wk.j, 1000000), d:_num(pl.wk.d, 15), r:_num(pl.wk.r, 1000000), q:_num(pl.wk.q, 11) } : null } : null;   // 이번 주 기록(주간 순위)
 const lvOf = xp => { let i = 0; PLV.forEach((l,k)=>{ if(xp >= l[0]) i = k; }); return i; };
 
 /* ── 레벨 보상 ── 새 꾸미기 아이템은 여기서만 정의한다.
@@ -131,7 +132,8 @@ function playBuy(key, v){
 
 /* ── 조개 상점 화면 ── 내 캐릭터에 입혀 본 모습(미리보기)으로 고르고, 사면 바로 입는다 */
 let shopCat = '전체', shopTry = null;
-function shopOpen(){
+function shopOpen(cat){
+  if(typeof cat === 'string') shopCat = cat;                 // 허브 「강화소」는 강화 칸으로 바로 연다
   let sh = $('shop-sheet');
   if(!sh){ sh = document.createElement('div'); sh.className = 'sheet'; sh.id = 'shop-sheet';
     sh.innerHTML = '<div class="sheet-dim" data-shclose></div><div class="sheet-in"><div class="sheet-hd"><span class="t">🛍️ 소품샵</span><button class="btn sm ghost" data-shclose>닫기</button></div><div id="shop-body"></div></div>';
@@ -140,6 +142,11 @@ function shopOpen(){
       if(e.target.closest('[data-shclose]')){ sh.hidden = true; shopTry = null; return; }
       const c = e.target.closest('[data-cat]'); if(c){ shopCat = c.dataset.cat; renderShop(); return; }
       const t = e.target.closest('[data-try]'); if(t){ const it = SHOP[+t.dataset.try]; shopTry = shopTry === it ? null : it; renderShop(); return; }
+      const up = e.target.closest('[data-up]'); if(up){ const u = UPG.find(x=>x.k === up.dataset.up), c = u ? UPC[upLv(u.k)] : null; if(c == null) return;
+        if(shellBal() < c) return toast(`🐚 조개가 모자라요 — ${c}개 필요 (보유 ${shellBal()}). 미션·출석·게임으로 모아요!`);
+        const q = `🐚 ${c}개로 ${u.n} ${upLv(u.k) + 1}단계를 살까요?\n(보유 ${shellBal()}개)`;
+        if(!(window.ask ? await ask(q, { ok:'강화' }) : confirm(q))) return;
+        if(playUp(u.k)) renderShop(); return; }
       const b = e.target.closest('[data-buy]'); if(b){ const it = SHOP[+b.dataset.buy]; const own = ME.profile.play?.own?.[it.key + ':' + it.v];
         if(own){ ME.profile[it.key] = it.v; saveProfile?.(); toast(`${it.ic} ${it.n} 입었어요`); renderShop(); if(typeof renderBuilder === 'function') renderBuilder(); return; }
         const cost = priceOf(it);
@@ -152,7 +159,7 @@ function shopOpen(){
 function renderShop(){
   const body = $('shop-body'); if(!body) return;
   const own = ME.profile.play?.own || {}, deal = dealOf();
-  const cats = ['전체', '서핑 용품', '소품', '옷', '모자', '머리', '보드', '친구'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
+  const cats = ['전체', '🔧 강화', '서핑 용품', '소품', '옷', '모자', '머리', '보드', '친구'], list = SHOP.map((it, i)=>({ it, i })).filter(({ it })=>shopCat === '전체' || it.cat === shopCat);
   const base = withLook(ME.profile || {}, ME.name), wear = shopTry ? { ...base, [shopTry.key]:shopTry.v } : base;
   body.innerHTML = `<div class="shop-top"><canvas id="shop-me" data-anim></canvas><div><b>🐚 ${shellBal()}개</b><small>${shopTry ? `👀 <b>${esc(shopTry.ic)} ${esc(shopTry.n)}</b> 입어 보는 중 — 왼쪽이 입은 모습` : '물건 그림을 누르면 내 캐릭터에 입혀 봐요'}</small>
       <small>조개는 🌊 라인업 서핑 · 🏄 파도 점프 · 🛹 서프스케이트에서 모여요</small></div></div>
@@ -162,6 +169,7 @@ function renderShop(){
       return `<div class="shop-it${shopTry === it ? ' try' : ''}${got ? ' got' : ''}"><button type="button" class="shop-pv" data-try="${i}" aria-label="${esc(it.n)} 입어 보기">${typeof mochiItem === 'function' ? `<img class="shop-zoom" alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(mochiItem(base, it.key, it.v))}">` : `<canvas data-pv="${i}"></canvas>`}${sale ? '<em>할인</em>' : ''}</button>
         <b>${esc(it.ic)} ${esc(it.n)}</b>
         <button type="button" class="btn sm ${got ? (on ? 'ghost' : 'mint') : 'blue'}" data-buy="${i}" ${got && on ? 'disabled' : ''}>${got ? (on ? '입는 중' : '입기') : `🐚 ${priceOf(it)}${sale ? ` <s>${it.cost}</s>` : ''}`}</button></div>`; }).join('')}</div>`;
+  if(shopCat === '🔧 강화'){ const g = body.querySelector('.shop-grid'); if(g) g.outerHTML = upShopHtml(); }
   if(typeof drawSpr === 'function'){
     drawSpr($('shop-me'), avatarRows(wear, shopTry?.key === 'pet'), avatarTintOf(wear, 0));
     body.querySelectorAll('[data-pv]').forEach(c=>{ const it = SHOP[+c.dataset.pv], q = { ...base, [it.key]:it.v }; drawSpr(c, avatarRows(q, it.key === 'pet'), avatarTintOf(q, 0)); });
@@ -278,7 +286,8 @@ function playMerge(remote){
   if(!remote || !ME?.profile) return;
   const p = playP(); let ch = false;
   Object.keys(remote.stamps||{}).forEach(k=>{ const s = (p.stamps ||= {}); if(!s[k]){ s[k] = remote.stamps[k]; ch = true; } });
-  ['base','bonus','best','bat','hbest','hbat','sbest','sbat','sebest','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ if((remote[k]||0) > (p[k]||0)){ p[k] = remote[k]; ch = true; } });
+  ['base','bonus','best','bat','hbest','hbat','sbest','sbat','sebest','qall','qz','goalN','dN','shells','spent'].forEach(k=>{ const v = _num(remote[k], 1e9); if(v > (p[k]||0)){ p[k] = v; ch = true; } });      // 남의 기기 값도 숫자로 가둔다(글자·무한대 차단)
+  if(metaMerge(p, remote)) ch = true;
   Object.keys(remote.own||{}).forEach(k=>{ const o = (p.own ||= {}); if(!o[k]){ o[k] = 1; ch = true; } });
   /* 서핑 일지 — id 로 합치고, 어느 기기에서든 지운 건 지운 채로 */
   if(Array.isArray(remote.log) || remote.logdel){ const del = { ...(remote.logdel || {}), ...(p.logdel || {}) }; p.logdel = Object.fromEntries(Object.keys(del).slice(-200).map(k=>[k, 1]));
@@ -362,7 +371,8 @@ function playGameDone(score, isDaily, shells, hard){
   const p = playP(), day = today();
   p.gn[day] = (p.gn[day] || 0) + 1;
   const bk = hard ? 'hbest' : 'best', newBest = score > (p[bk] || 0); if(newBest){ p[bk] = score; p[hard ? 'hbat' : 'bat'] = Date.now(); }       // 쉬움·어려움 기록은 따로       // bat = 최고기록 시각 — 상단 소식줄이 '방금 돌파'를 보여준다
-  p.shells = (p.shells || 0) + _num(shells, 500);                       // 이번 판에 모은 조개는 지갑에 쌓인다
+  const sh = _num(shells, 500), bx = x2('jump', sh); p.shells = (p.shells || 0) + sh + bx;          // 이번 판에 모은 조개는 지갑에 — 오늘 첫 판은 ×2
+  dmNote('j', score); wkNote('j', score);
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(score / 30), 15 - p.gxp));
   p.gxp += gain; p.bonus += gain;
@@ -374,7 +384,7 @@ function playGameDone(score, isDaily, shells, hard){
     if(p.dcday !== day){ p.dcday = day; p.dN = (p.dN || 0) + 1; p.bonus += 5; dGain = 5; }
   }
   playTick(); playPush();
-  return { gain:gain + dGain, newBest, best:p[bk], daily:!!isDaily, shells:_num(shells, 500), bal:shellBal() };
+  return { gain:gain + dGain, newBest, best:p[bk], daily:!!isDaily, shells:sh + bx, x2:bx, bal:shellBal() };
 }
 
 /* 라인업 서핑이 끝났을 때 — 최고점(sbest)과 그 시각(sbat). XP 는 파도 점프와 같은 하루 상한(gxp)을 나눠 쓴다 */
@@ -384,12 +394,13 @@ function playSurfDone(score, bestRide, hard){
   const sc = _num(score, 1000000), bk = hard ? 'sbest' : 'sebest', newBest = sc > (p[bk] || 0);
   if(newBest){ p[bk] = sc; if(hard) p.sbat = Date.now(); }
   p.sn = (p.sn || 0) + 1;
-  const shells = Math.min(30, Math.floor(sc / 40)); p.shells = (p.shells || 0) + shells;           // 조개 — 상점에서 옷을 산다
+  const s0 = Math.min(30, Math.floor(sc / 40)), bx = x2('surf', s0), shells = s0 + bx; p.shells = (p.shells || 0) + shells;
+  dmNote('r', sc); wkNote('r', sc);           // 조개 — 상점에서 옷을 산다
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(sc / 60), 15 - p.gxp));
   p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
-  return { gain, newBest, best:p[bk], shells, bal:shellBal() };
+  return { gain, newBest, best:p[bk], shells, x2:bx, bal:shellBal() };
 }
 
 /* 서프스케이트 훈련 — 드릴별 최고 정확도(sk.best), XP 는 하루 상한(gxp) 공유. 실제로 탔다는 체크는 하루 1번 +5 */
@@ -397,11 +408,12 @@ function playSkateDone(kind, accP){
   if(!ME.profile.play){ playReady.force = true; playTick(); }
   const p = playP(), day = today(), sk = (p.sk ||= { best:{}, real:{}, n:0 });
   const a = _num(accP, 100); sk.best ||= {}; sk.best[kind] = Math.max(sk.best[kind] || 0, a); sk.n = (sk.n || 0) + 1;
-  const shells = a >= 80 ? 5 : a >= 60 ? 3 : 1; p.shells = (p.shells || 0) + shells;
+  const s0 = (a >= 80 ? 5 : a >= 60 ? 3 : 1) + upLv('s_mul'), bx = x2('skate', s0), shells = s0 + bx; p.shells = (p.shells || 0) + shells;
+  { const m = dmOf(p); m.sk = _num(m.sk, 999) + 1; }
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.floor(a / 25), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
-  return { gain, best:sk.best[kind], real:!!(sk.real || {})[day], shells };
+  return { gain, best:sk.best[kind], real:!!(sk.real || {})[day], shells, x2:bx };
 }
 function playSkateReal(){
   const p = playP(), day = today(), sk = (p.sk ||= { best:{}, real:{}, n:0 }); sk.real ||= {};
@@ -419,11 +431,12 @@ function playQuestDone(stage, win, shells, cleared){
   const st = _num(stage, 20); if(st > (q.best ?? -1)) q.best = st;
   if(cleared && st === _num(q.ch, 11)) q.ch = Math.min(11, st + 1);
   if(win){ q.clears = (q.clears || 0) + 1; if(!q.legend){ q.legend = 1; _popQ.push({ ic:'🏄', t:'전설의 보드를 찾았어요!', d:'캐릭터 꾸미기 → 보드 색 「전설」이 열렸어요', up:true }); } }
-  p.shells = (p.shells || 0) + _num(shells, 300);
+  const sh = _num(shells, 300), bx = x2('quest', sh); p.shells = (p.shells || 0) + sh + bx;
+  if(cleared){ dmNote('q', 1); wkNote('q', st + 1); }
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(st + (win ? 5 : 0), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
-  return { best:q.best, gain };
+  return { best:q.best, gain, shells:sh + bx, x2:bx };
 }
 
 /* 해변 수호가 끝났을 때 — 최고 파도·성공 횟수(df)와 조개. XP 는 다른 게임과 같은 하루 상한(gxp) 안에서만 */
@@ -432,11 +445,12 @@ function playDefendDone(wave, win, shells, diff){
   const p = playP(), day = today(), d = (p.df ||= { best:0, clears:0 });
   const w = _num(wave, 15); if(w > _num(d.best, 12)) d.best = w;
   if(win){ d.clears = _num(d.clears, 9999) + 1; const h = _num(diff, 2) + 1; if(h > _num(d.hd, 3)) d.hd = h; }
-  p.shells = (p.shells || 0) + _num(shells, 60);
+  const sh = _num(shells, 60), bx = x2('defend', sh); p.shells = (p.shells || 0) + sh + bx;
+  dmNote('df', w); wkNote('d', w);
   if(p.gday !== day){ p.gday = day; p.gxp = 0; }
   const gain = Math.max(0, Math.min(Math.ceil(w / 2) + (win ? 4 : 0), 15 - p.gxp)); p.gxp += gain; p.bonus += gain;
   playTick(); playPush();
-  return { best:d.best, gain };
+  return { best:d.best, gain, shells:sh + bx, x2:bx };
 }
 
 /* 6기 전체 주간 목표를 채웠을 때 — 보는 사람이 그 주에 한 번이라도 훈련했어야 받는다(구경만 하고 받아가지 않게).
@@ -567,10 +581,13 @@ function renderHub(enter){
       ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
       ${card(7,'🏘','마을 · 채팅', '캐릭터들이 모인 곳 · 한마디', '', 'town')}
       ${card(6,'🛍️','소품샵', `🐚 ${shellBal()} 보유`, '', 'shop')}
+      ${(()=>{ const n = UPG.reduce((a, u)=>a + upLv(u.k), 0), mx = UPG.reduce((a, u)=>a + u.max, 0), c = Math.min(...UPG.filter(u=>upLv(u.k) < u.max).map(u=>UPC[upLv(u.k)]));
+        return card(6,'🔧','강화소', `${n}/${mx}단계${Number.isFinite(c) ? ` · 다음 🐚${c}` : ' · 모두 완료'}`, Number.isFinite(c) && shellBal() >= c ? '강화 가능' : '', 'up'); })()}
       ${card(8,'🌊','라인업 서핑', `쉬움 ${p.sebest || 0} · 어려움 ${p.sbest || 0}`, '', 'surf')}
     </div>
     <div class="pt" style="margin-top:18px">오늘의 퀘스트 <small>${done}/${qs.length}${done === qs.length ? ' · 모두 완료 🎉' : ' · 모두 하면 +20 XP'}</small></div>
     ${qs.map((q,i)=>`<button type="button" class="pq${q.done?' done':''}" data-hq="${i}"><i>${q.done ? '✔' : q.ic}</i><span>${q.t}<small>${q.done ? '완료 · +5 XP' : q.hint}</small></span><b>${q.done ? '' : '›'}</b></button>`).join('')}
+    ${metaHub(p)}
     <div class="pt" style="margin-top:18px">설정 · 공유</div>
     <div class="hubset">
       <button type="button" data-set="haptic" aria-pressed="${hapticOn()}"><span>📳 진동</span><b>${hapticOn() ? '켜짐' : '꺼짐'}</b></button>
@@ -599,12 +616,14 @@ function renderHub(enter){
       try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });
   { const hc = root.querySelector('#hh-av'); if(hc && typeof drawSpr === 'function'){ const q = withLook(ME.profile || {}, ME.name); requestAnimationFrame(()=>drawSpr(hc, avatarRows(q, false), avatarTintOf(q, 0))); } }
   root.querySelectorAll('[data-hq]').forEach(b=>b.onclick = ()=>{ const q = qs[+b.dataset.hq]; if(!q.done) q.go(); });
+  metaWire(root);
   root.querySelectorAll('[data-hub]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.hub;
     if(k === 'game') gameOpen(); else if(k === 'surf') surfOpen(); else if(k === 'skate') skateOpen(); else if(k === 'quest') questOpen(); else if(k === 'defend') window.defendOpen?.(); else if(k === 'quiz') quizOpen();
     else if(k === 'fort'){ if(!fortOpen) playFortune(); _hubFort = !_hubFort || !fortOpen ? true : false; renderHub(); setTimeout(()=>root.querySelector('.fort')?.scrollIntoView({ block:'center', behavior:'smooth' }), 60); }
     else if(k === 'stamp' || k === 'badge') openPlay('collect');
     else if(k === 'rank') openPlay('rank');
     else if(k === 'shop') shopOpen();
+    else if(k === 'up') shopOpen('🔧 강화');
     else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
     else if(k === 'emote' || k === 'town'){ setTab('town'); } });
 }
@@ -754,4 +773,210 @@ function playWire(){
     else if(!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
   });
   if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arm); else arm();
+})();
+
+/* ── 🔧 강화소 · 오늘의 미션 · 출석 · 주간 순위 ─────────────────────────
+   돈은 받지 않는다. 조개(🐚)로 영구 강화를 사서 다음 판이 조금 나아진다 — 「한 판 더」와 「내일 또」의 이유.
+   공정: 오늘의 챌린지(모두 같은 코스)와 균형 시험(봇·시뮬)에는 강화를 쓰지 않는다.
+   저장값은 남의 기기·프로필에서 섞여 들어오므로 읽을 때마다 _num 으로 가둔다. */
+const UPC = [30, 60, 120, 240, 480];                 // 단계별 값 — 한 판 10~60개라 윗단계는 며칠 걸린다
+const UPG = [
+  { k:'j_shield', g:'jump',   ic:'🛟', n:'시작 방패',     s:'방패',   d:'구명튜브를 들고 출발 · 2단계부터 튜브가 더 자주', max:3 },
+  { k:'j_mag',    g:'jump',   ic:'🧲', n:'자석 시간+',    s:'자석',   d:'조개 자석이 2초씩 더 길게', max:4 },
+  { k:'j_item',   g:'jump',   ic:'🎁', n:'아이템 등장↑',  s:'아이템', d:'쉬움에도 아이템이 나오고, 어려움은 더 자주', max:3 },
+  { k:'j_val',    g:'jump',   ic:'🐚', n:'조개 가치↑',    s:'조개',   d:'조개 하나에 +2점씩 더', max:5 },
+  { k:'d_atk',    g:'defend', ic:'💥', n:'시작 공격력',   s:'공격',   d:'공격력 카드를 단계만큼 들고 시작', max:3 },
+  { k:'d_sch',    g:'defend', ic:'🏫', n:'학교 체력',     s:'학교',   d:'학교 HP +10%씩', max:4 },
+  { k:'d_shell',  g:'defend', ic:'🐚', n:'시작 조개',     s:'조개',   d:'정비용 조개 +3개씩 들고 시작', max:4 },
+  { k:'d_free',   g:'defend', ic:'🎟️', n:'첫 카드 무료',  s:'무료',   d:'정비 상점 카드 단계만큼 공짜', max:3 },
+  { k:'q_hp',     g:'quest',  ic:'❤️', n:'원정대 체력',   s:'체력',   d:'최대 체력 +8씩', max:5 },
+  { k:'q_atk',    g:'quest',  ic:'⚔️', n:'원정대 공격',   s:'공격',   d:'공격력 +1씩', max:5 },
+  { k:'r_mul',    g:'surf',   ic:'🌊', n:'라인업 점수 배율', s:'점수', d:'세션 점수 +3%씩', max:5 },
+  { k:'s_mul',    g:'skate',  ic:'🛹', n:'스케이트 보상', s:'조개',   d:'드릴 한 번에 조개 +1씩', max:3 },
+];
+const UPGK = { jump:'🏄 파도 점프', defend:'🛡️ 해변 수호', quest:'🗺️ 전설의 보드 원정', surf:'🌊 라인업 서핑', skate:'🛹 서프스케이트' };
+const upLv = k => { const u = UPG.find(x=>x.k === k); return u ? _num(ME?.profile?.play?.up?.[k], u.max) : 0; };
+function playUp(k){
+  const u = UPG.find(x=>x.k === k), p = ME?.profile?.play; if(!u || !p) return false;
+  const lv = upLv(k); if(lv >= u.max){ toast('이미 최고 단계예요'); return false; }
+  const c = UPC[lv]; if(shellBal() < c){ toast(`🐚 조개가 모자라요 — ${c}개 필요 (보유 ${shellBal()})`); return false; }
+  (p.up ||= {})[k] = lv + 1; p.spent = (p.spent || 0) + c;
+  playPush(); vib([20, 40, 20]); toast(`${u.ic} ${u.n} ${lv + 1}단계!`); return true;
+}
+/* 게임이 판을 시작할 때 — {shield:1, mag:2 …} 와 화면 태그. 강화가 있으면 토스트로 「무엇이 적용됐는지」 보인다 */
+function upFor(g, quiet){
+  const o = {}, on = [];
+  UPG.filter(u=>u.g === g).forEach(u=>{ const lv = upLv(u.k), id = u.k.split('_')[1]; o[id] = lv; if(lv) on.push(`${u.s} ${lv}`); });
+  o.tag = on.join(' · ');
+  if(o.tag && !quiet && typeof toast === 'function') toast('🔧 강화 적용: ' + o.tag);
+  return o;
+}
+window.upFor = upFor; window.playUp = playUp;
+function upShopHtml(){
+  return `<div class="note" style="margin-top:8px">🔧 한 번 사면 계속 — 다음 판부터 자동 적용. <b>📅 오늘의 챌린지</b>는 모두 같은 조건(강화 없음)이에요.</div>`
+    + Object.keys(UPGK).map(g=>`<div class="uph">${UPGK[g]}</div><div class="uplist">${UPG.filter(u=>u.g === g).map(u=>{ const lv = upLv(u.k), c = UPC[lv], mx = lv >= u.max;
+      return `<div class="upit"><i>${u.ic}</i><span><b>${u.n}</b> <em class="pips" aria-label="${lv}/${u.max}단계">${'●'.repeat(lv)}${'○'.repeat(u.max - lv)}</em><small>${u.d}</small></span>
+        <button type="button" class="btn sm ${mx ? 'ghost' : shellBal() >= c ? 'blue' : 'ghost'}" data-up="${u.k}" ${mx ? 'disabled' : ''}>${mx ? '최고' : `🐚 ${c}`}</button></div>`; }).join('')}</div>`).join('');
+}
+
+/* 하루 기록(dm) — 미션 진행·받은 보상·게임별 오늘 첫 판(f). 날짜가 바뀌면 새로 */
+const _isDay = d => /^\d{4}-\d{2}-\d{2}$/.test(String(d));
+const DMX = { j:1000000, df:15, r:1000000, q:11, sk:999, box:1 };
+function dmOf(p){ const day = today(); if(!p.dm || p.dm.d !== day) p.dm = { d:day, j:0, df:0, r:0, q:0, sk:0, c:{}, f:{}, box:0 }; p.dm.c ||= {}; p.dm.f ||= {}; return p.dm; }
+function dmNote(k, v){ const m = dmOf(playP()); m[k] = Math.max(_num(m[k], DMX[k]), _num(v, DMX[k])); }
+/* 오늘 첫 판 ×2 — 게임마다 하루 한 번. 조개 0개 판은 기회를 쓰지 않는다 */
+function x2(g, sh){ const m = dmOf(playP()); if(!(sh > 0) || m.f[g]) return 0; m.f[g] = 1; return sh; }
+/* 이번 주 최고(월요일 시작) — 다른 사람 화면의 주간 순위에 쓰인다 */
+function wkNote(k, v){
+  if(typeof weekKey !== 'function') return; const p = playP(), w = weekKey(today()), mx = { j:1000000, d:15, r:1000000, q:11 }[k];
+  if(!p.wk || p.wk.w !== w) p.wk = { w, j:0, d:0, r:0, q:0 };
+  p.wk[k] = Math.max(_num(p.wk[k], mx), _num(v, mx));
+}
+
+/* 오늘의 미션 — 게임 둘 + 바다·마을 활동 하나. 날짜로 고르니 모두 같은 미션(단톡방에서 이야기거리) */
+const MIS_RW = 15;
+function missions(p){
+  const day = today(), m = dmOf(p), h = _fh('mis|' + day), v = p.vis?.[day] || {};
+  const G = [
+    { id:'mj', ic:'🏄', t:'파도 점프 1000점', done:m.j >= 1000, hint:`오늘 최고 ${_num(m.j, 1e6)}/1000점`, go:()=>gameOpen() },
+    { id:'md', ic:'🛡️', t:'해변 수호 5라운드 버티기', done:m.df >= 5, hint:`오늘 최고 ${_num(m.df, 15)}/5 라운드`, go:()=>window.defendOpen?.() },
+    { id:'mr', ic:'🌊', t:'라인업 서핑 400점', done:m.r >= 400, hint:`오늘 최고 ${_num(m.r, 1e6)}/400점`, go:()=>surfOpen() },
+    { id:'mq', ic:'🗺️', t:'원정 한 장 깨기', done:m.q >= 1, hint:'아무 마을이나 한 장', go:()=>questOpen() },
+    { id:'ms', ic:'🛹', t:'서프스케이트 드릴 2번', done:m.sk >= 2, hint:`오늘 ${_num(m.sk, 999)}/2번`, go:()=>skateOpen() },
+  ], C = [
+    { id:'cl', ic:'📒', t:'서핑 일지 쓰기', done:(p.log || []).some(e=>e && e.d === day), hint:'바다 다녀온 기록 한 줄', go:()=>window.surfLogOpen?.() },
+    { id:'cf', ic:'🍜', t:'맛집에 한마디', done:!!v.food, hint:'가 본 곳 한 줄 후기', go:()=>setTab('food') },
+    { id:'cc', ic:'📍', t:'해변 체크인', done:!!v.chk, hint:'바다에 도착하면 홈에서 체크인', go:()=>setTab('home') },
+    { id:'cz', ic:'🧠', t:'코치 퀴즈 한 판', done:!!v.quiz, hint:'누가 한 말일까요?', go:()=>quizOpen() },
+  ];
+  const a = h % G.length, b = (a + 1 + (h >>> 4) % (G.length - 1)) % G.length;
+  return [G[a], G[b], C[(h >>> 9) % C.length]];
+}
+function misClaim(id){
+  const p = playP(), m = dmOf(p), q = missions(p).find(x=>x.id === id);
+  if(!q || !q.done || m.c[id]) return false;
+  m.c[id] = 1; p.shells = (p.shells || 0) + MIS_RW; playPush(); vib([20, 40, 20]); toast(`🎯 미션 완료 · 🐚 +${MIS_RW}`); return true;
+}
+function misBox(){
+  const p = playP(), m = dmOf(p);
+  if(m.box || !missions(p).every(q=>m.c[q.id])) return 0;
+  const n = 30 + (_fh('box|' + ME.id + '|' + today()) % 5) * 5;       // 30~50 — 열어 봐야 안다
+  m.box = 1; p.shells = (p.shells || 0) + n; playPush(); vib([30, 50, 30, 50, 60]); return n;
+}
+
+/* 7일 출석 — 하루라도 거르면 1일부터. 7일째는 큰 조개 + 안 가진 소품 하나 */
+const ATT_RW = [10, 15, 20, 25, 30, 40, 60];
+const prevDay = d => new Date(Date.parse(d + 'T00:00:00Z') - 864e5).toISOString().slice(0, 10);
+function attState(p){
+  const day = today(), a = p.att || {}, n0 = _num(a.n, 9999), claimed = a.d === day;
+  const n = claimed ? Math.max(1, n0) : a.d === prevDay(day) ? n0 + 1 : 1;
+  return { claimed, n, slot:(n - 1) % 7 + 1 };
+}
+function attClaim(){
+  const p = playP(), s = attState(p); if(s.claimed) return null;
+  p.att = { d:today(), n:s.n }; let n = ATT_RW[s.slot - 1], gift = null;
+  if(s.slot === 7){ const own = p.own || {}, c = SHOP.filter(it=>!own[it.key + ':' + it.v] && it.cost <= 50);
+    if(c.length){ gift = c[_fh(ME.id + '|' + today()) % c.length]; (p.own ||= {})[gift.key + ':' + gift.v] = 1; } else n += 40; }
+  p.shells = (p.shells || 0) + n; playPush(); vib([30, 50, 30]);
+  return { n, gift, slot:s.slot };
+}
+
+/* 다른 기기 값 합치기 — 강화는 단계별 큰 쪽, 하루·주 기록은 최신 날짜 우선·같은 날이면 큰 쪽. 모르는 키는 버린다 */
+function metaMerge(p, r){
+  let ch = false;
+  if(r.up && typeof r.up === 'object') UPG.forEach(u=>{ const v = _num(r.up[u.k], u.max); if(v > upLv(u.k)){ (p.up ||= {})[u.k] = v; ch = true; } });
+  if(p.up) Object.keys(p.up).forEach(k=>{ const u = UPG.find(x=>x.k === k); if(!u) delete p.up[k]; else p.up[k] = _num(p.up[k], u.max); });
+  if(r.dm && typeof r.dm === 'object' && _isDay(r.dm.d)){ const rd = String(r.dm.d);
+    if(!p.dm || rd > String(p.dm.d || '')){ p.dm = { d:rd, j:0, df:0, r:0, q:0, sk:0, c:{}, f:{}, box:0 }; ch = true; }
+    if(p.dm.d === rd){ const m = p.dm; m.c ||= {}; m.f ||= {};
+      Object.keys(DMX).forEach(k=>{ const v = _num(r.dm[k], DMX[k]); if(v > _num(m[k], DMX[k])){ m[k] = v; ch = true; } });
+      ['c', 'f'].forEach(k=>{ const o = r.dm[k]; if(o && typeof o === 'object') Object.keys(o).filter(x=>/^[a-z]{1,8}$/.test(x)).slice(0, 12).forEach(x=>{ if(!m[k][x]){ m[k][x] = 1; ch = true; } }); }); } }
+  if(r.att && typeof r.att === 'object' && _isDay(r.att.d)){ const rd = String(r.att.d), rn = _num(r.att.n, 9999), a = p.att || {};
+    if(rd > String(a.d || '') || (rd === a.d && rn > _num(a.n, 9999))){ p.att = { d:rd, n:rn }; ch = true; } }
+  if(r.wk){ const w = peerPlay({ wk:r.wk }).wk;
+    if(w && (!p.wk || w.w > String(p.wk.w || ''))){ p.wk = w; ch = true; }
+    else if(w && w.w === p.wk.w) ['j', 'd', 'r', 'q'].forEach(k=>{ if(w[k] > (p.wk[k] || 0)){ p.wk[k] = w[k]; ch = true; } }); }
+  return ch;
+}
+
+/* 결과 화면 한 줄 — 아깝게 놓친 기록(near-miss) · 강화 예고 · 오늘 첫 판 ×2. 문구는 전부 고정값(사람 이름 없음) */
+function upNudge(g, o){
+  o = o || {}; const L = [], sc = _num(o.sc, 1e7), best = _num(o.best, 1e7);
+  if(o.x2) L.push(`🌅 오늘 첫 판 보너스 · 조개 ×2 (+${_num(o.x2, 999)})`);
+  if(best > 0 && sc < best && sc >= best * .75) L.push(`🔥 아깝다! 최고 기록까지 ${best - sc}${o.u || '점'} — 한 판 더?`);
+  if(o.daily) L.push('📅 챌린지는 강화 없이 모두 같은 조건으로 겨뤄요');
+  else{
+    const u = (o.k && UPG.find(x=>x.k === o.k && upLv(x.k) < x.max)) || UPG.filter(x=>x.g === g && upLv(x.k) < x.max).sort((a, b)=>upLv(a.k) - upLv(b.k))[0];
+    if(u){ const c = UPC[upLv(u.k)], plus = u.k === o.k ? _num(o.plus, 1e6) : 0;
+      L.push(plus > 0 ? `🔧 「${u.n}」 강화했으면 <b>+${plus}점</b> 더 나왔을 거예요` : `🔧 다음 강화 「${u.ic} ${u.n}」 ${upLv(u.k) + 1}단계`);
+      L.push(shellBal() >= c ? `<button type="button" class="btn sm mint" data-upgo="${g}">🔧 강화소 가기 · 🐚${c} (보유 ${shellBal()})</button>` : `🐚${c} 필요 — ${c - shellBal()}개만 더 모으면 돼요`); }
+  }
+  return L.length ? `<div class="up-nudge">${L.map(x=>`<div>${x}</div>`).join('')}</div>` : '';
+}
+window.upNudge = upNudge;
+document.addEventListener('click', e=>{
+  const b = e.target.closest && e.target.closest('[data-upgo]'); if(!b) return;
+  const f = { jump:'gameClose', defend:'defendClose', surf:'surfClose', skate:'skateClose', quest:'questClose' }[b.dataset.upgo];
+  try{ if(f && typeof window[f] === 'function') window[f](); }catch(err){}
+  setTimeout(()=>shopOpen('🔧 강화'), 150);
+});
+
+/* 허브 — 출석 달력 · 미션 · 이번 주 동기 순위 */
+function weekHtml(){
+  if(typeof weekKey !== 'function') return '';
+  const wk = weekKey(today()), co = ME.cohort && ME.cohort !== 'open' ? ME.cohort : '';
+  const rows = (state.town || []).filter(x=>x.id !== ME.id && !isTestId(x.id) && (!co || x.cohort === co)).map(x=>({ id:x.id, name:String(x.name || ''), w:peerPlay(x.profile?.play)?.wk }))
+    .concat([{ id:ME.id, name:ME.name, w:peerPlay(ME.profile.play)?.wk }]).filter(r=>r.w && r.w.w === wk);
+  const G = [['j','🏄 파도 점프','점'], ['d','🛡️ 해변 수호','R'], ['r','🌊 라인업 서핑','점'], ['q','🗺️ 원정','장']];
+  const lines = G.map(([k, n, u])=>{ const t = rows.filter(r=>r.w[k] > 0).sort((a, b)=>b.w[k] - a.w[k]);
+    if(!t.length) return `<div><span>${n}<small>아직 아무도 — 1위 자리가 비었어요</small></span><b>—</b></div>`;
+    const i = t.findIndex(r=>r.id === ME.id), top = t[0];
+    const mine = i < 0 ? '나는 아직 기록 없음' : i === 0 ? '👑 내가 1위!' : `나 ${i + 1}위 · 1위까지 ${top.w[k] - t[i].w[k]}${u}`;
+    return `<div class="${i === 0 ? 'me' : ''}"><span>${n}<small>${mine}</small></span><b>🥇 ${esc(top.name)} ${top.w[k]}${u}</b></div>`; }).join('');
+  return `<div class="pt" style="margin-top:18px">🏆 이번 주 ${co ? esc(co) + ' ' : ''}랭킹 <small>월요일마다 새로 · 강화도 실력</small></div><div class="wkb">${lines}</div>`;
+}
+const isTestId = id => typeof isTest === 'function' ? isTest(id) : false;
+function metaHub(p){
+  const at = attState(p), ms = missions(p), m = dmOf(p), nC = ms.filter(q=>m.c[q.id]).length;
+  const cal = ATT_RW.map((r, i)=>{ const d = i + 1, got = at.claimed ? d <= at.slot : d < at.slot, now = !at.claimed && d === at.slot;
+    return `<span class="at-d${got ? ' on' : ''}${now ? ' now' : ''}"><small>${d}일</small><b>${got ? '✔' : d === 7 ? '🎁' : '🐚'}</b><i>${r}</i></span>`; }).join('');
+  return `<div class="pt" style="margin-top:18px">📅 7일 출석 <small>${at.claimed ? `${at.n}일 연속 · 오늘 받았어요` : at.n > 1 ? `${at.n - 1}일 연속 중 — 오늘 받으면 이어져요` : '하루라도 거르면 1일부터'}</small></div>
+    <div class="atcal">${cal}</div>
+    ${at.claimed ? '' : `<button type="button" class="btn blue" data-att style="width:100%;min-height:46px;margin-top:8px">🎁 ${at.slot}일째 출석 보상 받기 · 🐚 ${ATT_RW[at.slot - 1]}${at.slot === 7 ? ' + 소품 선물' : ''}</button>`}
+    <div class="pt" style="margin-top:18px">🎯 오늘의 미션 <small>${nC}/3 · 하나에 🐚${MIS_RW} · 모두 받으면 🎁 상자</small></div>
+    ${ms.map(q=>{ const c = m.c[q.id]; return `<button type="button" class="pq${c ? ' done' : ''}${q.done && !c ? ' ready' : ''}" data-mis="${q.id}"><i>${c ? '✔' : q.ic}</i><span>${q.t}<small>${c ? `받았어요 · 🐚 ${MIS_RW}` : q.done ? '완료! 눌러서 조개 받기' : q.hint}</small></span><b>${c ? '' : q.done ? `🐚${MIS_RW}` : '›'}</b></button>`; }).join('')}
+    ${nC === 3 ? (m.box ? `<div class="note" style="margin-top:6px">🎁 오늘 상자를 열었어요 — 내일 새 미션!</div>` : `<button type="button" class="btn mint" data-box style="width:100%;min-height:48px;margin-top:6px">🎁 미션 상자 열기</button>`) : ''}
+    ${weekHtml()}`;
+}
+function metaWire(root){
+  root.querySelectorAll('[data-mis]').forEach(b=>b.onclick = ()=>{ const p = ME.profile.play, q = missions(p).find(x=>x.id === b.dataset.mis); if(!q || dmOf(p).c[q.id]) return;
+    if(!q.done) return q.go();
+    if(misClaim(q.id)){ if(typeof burst === 'function') burst(b, 12); renderHub(); } });
+  const at = root.querySelector('[data-att]'); if(at) at.onclick = ()=>{ const r = attClaim(); if(!r) return; if(typeof burst === 'function') burst(at, 18);
+    _popQ.push({ ic:r.slot === 7 ? '🎁' : '📅', t:`${r.slot}일째 출석!`, d:`🐚 +${r.n}${r.gift ? `\n${r.gift.ic} ${r.gift.n}을(를) 선물로 받았어요 — 소품샵에서 입어 봐요` : ''}${r.slot < 7 ? `\n내일 오면 🐚 ${ATT_RW[r.slot]}` : '\n내일부터 새 7일이 시작돼요'}`, up:r.slot === 7 });
+    renderHub(); popNext(); };
+  const bx = root.querySelector('[data-box]'); if(bx) bx.onclick = ()=>{ const n = misBox(); if(!n) return;
+    _popQ.push({ ic:'🎁', t:'미션 상자를 열었어요!', d:`🐚 +${n}\n내일 새 미션 세 개가 기다려요`, up:true }); renderHub(); popNext(); };
+}
+/* 화면 조각 스타일 — 이 기능 것만 여기 둔다(본 CSS 를 건드리지 않게) */
+(function metaCss(){
+  if(document.getElementById('meta-css')) return; const s = document.createElement('style'); s.id = 'meta-css';
+  s.textContent = `.atcal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.at-d{display:flex;flex-direction:column;align-items:center;border:2px solid var(--ink);background:#fff;padding:4px 0;font-size:11px;line-height:1.3;color:var(--ink)}
+.at-d b{font-size:16px}.at-d i{font-style:normal;font-weight:800}
+.at-d.on{background:var(--sun)}.at-d.now{outline:3px solid var(--sea);outline-offset:-2px}
+@media (prefers-reduced-motion:no-preference){.at-d.now{animation:atp .9s ease-in-out infinite alternate}.pq.ready{animation:atp .9s ease-in-out infinite alternate}}
+@keyframes atp{to{transform:translateY(-2px)}}
+.pq.ready{border-color:var(--sea)}
+.wkb{border:2px solid var(--ink);background:#fff;padding:4px 10px;color:var(--ink)}
+.wkb>div{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-top:1px dashed rgba(27,27,47,.25);font-size:13.5px}
+.wkb>div:first-child{border-top:0}.wkb>div.me b{color:var(--sea)}
+.wkb small{display:block;color:var(--ink2);font-size:11.5px;font-weight:400}.wkb b{text-align:right;min-width:0;overflow-wrap:anywhere}
+.uph{font-weight:800;margin:14px 0 6px}.uplist{display:grid;gap:8px}
+.upit{display:flex;align-items:center;gap:10px;border:2px solid var(--ink);background:#fff;padding:8px 10px;color:var(--ink)}
+.upit>i{font-style:normal;font-size:24px}.upit>span{flex:1;min-width:0}.upit small{display:block;font-size:12px;color:var(--ink2)}
+.upit .pips{font-style:normal;letter-spacing:1px;font-size:11px;color:var(--sea)}.upit .btn{white-space:nowrap}
+.up-nudge{border:2px dashed currentColor;border-radius:10px;padding:6px 10px;margin:8px 0;font-size:13px;line-height:1.5;text-align:center}
+.up-nudge .btn{margin-top:4px}`;
+  (document.head || document.documentElement).appendChild(s);
 })();
