@@ -1174,6 +1174,41 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
 .qm-bt{ display:flex; gap:4px; margin-left:auto } .qm-bt .btn{ min-height:32px; padding:0 8px; font-size:12px }
 .qm-rt{ stroke-dasharray:1 1; stroke-dashoffset:1; animation:qmrt 1.4s .3s ease-in-out forwards } @keyframes qmrt{ to{ stroke-dashoffset:0 } }
 .qm-me.mv{ animation:qfade .5s 1.5s ease-out both, qbob 1.6s 2s ease-in-out infinite }
+/* 원정 RPG — 팀 편성·전투 초상·스테이지 고르기·별·첫 판 튜토리얼 (quest.js) */
+#q-ov.qv-team{ display:block; padding:0; overflow:auto; background:linear-gradient(#FFF7E3,#FCEFD0) }
+.qtm{ padding:0 8px 8px; font-size:12px }
+.qtm-hd{ position:sticky; top:0; z-index:2; display:flex; align-items:center; gap:6px; padding:8px 0 6px; background:#FFF7E3; font:800 14px "Galmuri11",sans-serif } .qtm-hd span{ font-size:11.5px; color:#5B6275; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .qtm-hd .btn{ margin-left:auto; flex:none; min-height:32px; padding:0 8px; font-size:12px }
+.qtm-pw{ display:flex; flex-wrap:wrap; gap:4px 8px; align-items:center; font-weight:800; color:#1F2A44 } .qtm-pw b{ font-size:15px } .qtm-pw .ok{ color:#1F8A4C } .qtm-pw .lo{ color:#C2303A } .qtm-pw span:last-child{ margin-left:auto }
+.qtm-f{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:6px 0 2px; padding:6px; background:linear-gradient(#9FD8F0,#5DB6DE); border:2px solid var(--ink); border-radius:10px }
+.qtm-c{ display:flex; flex-direction:column; gap:4px; min-width:0 } .qtm-c>small{ font-size:10.5px; font-weight:800; color:#0E2A4A; text-align:center }
+.qtm-s,.qtm-h{ position:relative; display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:5px; align-items:center; min-width:0; min-height:44px; padding:4px 6px; font-family:inherit; text-align:left; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:10px; touch-action:none; user-select:none; -webkit-user-select:none; cursor:grab }
+.qtm-s i,.qtm-h i{ grid-row:span 2; font-style:normal; font-size:22px; font-family:sans-serif } .qtm-s b,.qtm-h b{ font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis } .qtm-s small,.qtm-h small{ font-size:10px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.qtm-s em,.qtm-h em{ position:absolute; right:4px; top:1px; font-style:normal; font-size:9px; color:#E8A317; letter-spacing:-1px }
+.qtm-s:not(.on){ background:rgba(255,255,255,.55); border-style:dashed } .qtm-s:not(.on) small{ color:#5B6275 } .qtm-s.tg{ background:#FFF3C4; animation:qrdy 1s ease-in-out infinite }
+.qtm-tip{ margin:4px 0; font-size:11px; color:#5B6275; text-align:center; word-break:keep-all }
+.qtm-l{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px }
+.qtm-h.in{ background:#EAF6FF } .qtm-h.pk{ background:#FFF3C4; box-shadow:0 0 0 3px #F4C430 } .qtm-h.lk{ display:flex; flex-direction:column; justify-content:center; text-align:center; opacity:.6; background:#EEE; cursor:default } .qtm-h.lk small{ white-space:normal; color:#5B6275 }
+.qtm-d{ margin-top:6px; padding:8px; color:#FFF6DC; background:#1F2A44; border-radius:10px; line-height:1.5; word-break:keep-all } .qtm-d b{ color:#FFE27A } .qtm-d p{ margin:2px 0 }
+.qtm-xp{ display:block; height:4px; margin:3px 0; background:rgba(255,255,255,.2); border-radius:2px } .qtm-xp i{ display:block; height:100%; background:#7BE0FF; border-radius:2px }
+.qtm-db{ display:flex; gap:6px; margin-top:6px } .qtm-db .btn{ flex:1; min-height:40px }
+.qtm-ft{ position:sticky; bottom:0; padding-top:8px; background:linear-gradient(rgba(252,239,208,0),#FCEFD0 35%) } .qtm-ft .btn{ width:100%; min-height:50px; font-size:16px }
+.qtm-gh{ position:fixed; left:0; top:0; z-index:3000; width:40px; height:40px; display:grid; place-items:center; font-size:30px; font-family:sans-serif; pointer-events:none; filter:drop-shadow(0 3px 0 rgba(0,0,0,.3)) }
+.q-pt{ position:relative; flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; gap:1px; padding:3px 2px 13px; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:10px }
+.q-pt i{ font-style:normal; font-size:22px; font-family:sans-serif; line-height:1.1 } .q-pt b{ max-width:100%; font-size:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.q-pt-h,.q-pt-e{ position:absolute; left:5px; right:5px; height:4px; background:rgba(0,0,0,.15); border-radius:2px; overflow:hidden } .q-pt-h{ bottom:8px } .q-pt-e{ bottom:2px }
+.q-pt-h em,.q-pt-e em{ display:block; height:100%; width:calc(var(--h,1) * 100%); background:#2FB865 } .q-pt-e em{ width:calc(var(--e,0) * 100%); background:#E8A317 }
+.q-pt.rdy{ background:#FFF3C4; box-shadow:0 0 0 3px var(--c); animation:qrdy .8s ease-in-out infinite } .q-pt.dead{ opacity:.4; filter:grayscale(1) } .q-pt[aria-disabled="true"]{ cursor:default }
+.qm-sg{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; margin-bottom:6px }
+.qm-ft .qm-s{ width:auto; min-height:44px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2px; font-family:inherit; color:var(--ink); background:#fff; border:2px solid var(--ink); border-radius:10px } .qm-s b{ font-size:12px } .qm-s i{ font-style:normal; font-size:11px; color:#B87A00; letter-spacing:-1px }
+.qm-s.on{ background:#F4C430 } .qm-s.bs b{ color:#A4235A } .qm-s:disabled{ opacity:.5 }
+.qm-go{ display:flex; gap:6px } .qm-ft .qm-go .btn{ width:auto; flex:none; padding:0 10px } .qm-ft .qm-go .btn.blue{ flex:1; min-width:0 }
+.q-stars{ margin:2px 0 4px; font-size:32px; letter-spacing:4px; color:#F4C430; text-shadow:0 2px 0 #8A5A00; text-align:center } .q-stars i{ display:inline-block; font-style:normal; animation:qstar .45s cubic-bezier(.2,1.6,.4,1) both } .q-stars i.off{ color:#C9CED8; text-shadow:none }
+@keyframes qstar{ from{ transform:scale(2.4) rotate(-30deg); opacity:0 } }
+.q-lv{ display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:4px 0 8px; font-size:12px; font-weight:800 } .q-lv b{ color:#1F8A4C }
+.q-tut{ position:fixed; z-index:2500; max-width:230px; padding:8px 12px; color:#1F2A44; background:#FFE27A; border:2px solid var(--ink); border-radius:12px; font:800 13px/1.4 "Galmuri11",sans-serif; word-break:keep-all; pointer-events:none; box-shadow:0 4px 0 rgba(0,0,0,.25); animation:qtut 1s ease-in-out infinite alternate } .q-tut[hidden]{ display:none }
+.q-tut::after{ content:''; position:absolute; left:50%; margin-left:-7px; border:7px solid transparent } .q-tut.up{ transform:translateX(-50%) } .q-tut.up::after{ bottom:100%; border-bottom-color:var(--ink) } .q-tut.dn{ transform:translate(-50%,-100%) } .q-tut.dn::after{ top:100%; border-top-color:var(--ink) }
+.q-hl{ position:relative; z-index:4; box-shadow:0 0 0 4px #FFE27A,0 0 0 7px #1F2A44 !important } @keyframes qtut{ to{ margin-top:-5px } }
+@media (prefers-reduced-motion:reduce){ .q-pt.rdy,.qtm-s.tg,.q-stars i,.q-tut{ animation:none !important } }
 #q-ov.qv-cdx{ display:block; padding:0; overflow:auto; background:#FFF7E3 }
 .qx{ padding:0 10px 14px } .qx-hd{ position:sticky; top:0; z-index:1; display:flex; align-items:center; gap:8px; padding:10px 0 8px; background:#FFF7E3; font-family:"Galmuri11",sans-serif; font-size:15px; font-weight:800 } .qx-hd span{ margin-left:auto; font-size:12px; color:#5B6275 }
 .qx h4{ margin:8px 0 6px; font-size:13px; color:#5B6275 }
@@ -1511,12 +1546,12 @@ button:focus-visible, a:focus-visible, [role="button"]:focus-visible, input:focu
     <div class="game-hd"><b>🗺️ 전설의 보드 원정</b><span class="game-sc" id="q-hp" style="font-size:14px"></span><button class="btn sm ghost" id="q-x" type="button" aria-label="원정 닫기">✕</button></div>
     <div class="game-stage">
       <div class="qs-bg" id="q-bg" aria-hidden="true"></div>
-      <canvas id="q-cv" width="240" height="240" aria-label="원정 화면 — 서퍼가 알아서 싸워요"></canvas>
+      <canvas id="q-cv" width="240" height="240" aria-label="원정 전투 화면 — 동료들이 자동으로 싸워요"></canvas>
       <div class="q-fx" id="q-fx" aria-hidden="true"></div>
       <div class="q-top" id="q-top" hidden><button class="btn sm" id="q-auto" type="button" aria-pressed="true">AUTO 켬</button><button class="btn sm" id="q-speed" type="button" aria-label="배속 1배">×1</button></div>
       <div class="game-ov" id="q-ov"></div>
     </div>
-    <div class="q-sks" id="q-sks" aria-label="길동무 기술"></div>
+    <div class="q-sks" id="q-sks" aria-label="동료 초상 — 눌러서 필살기"></div>
     <div class="q-log" id="q-log" aria-live="polite"></div>
   </div>
 </div>

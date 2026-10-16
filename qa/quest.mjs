@@ -1,60 +1,87 @@
-/* 전설의 보드 원정(이야기판) — 오프닝(첫 진입 자동·건너뛰기)·지도·장 제목·대화·준비물·전투, 장별 승률(난이도), 조각 진행 저장·전설 보드 잠금 해제, 지면 진행 그대로, 가로 넘침 */
+/* 전설의 보드 원정(자동 전투 RPG) — 놀이 카드 문구, 오프닝→지도(스테이지 4칸), 첫 판 튜토리얼(AUTO 끄기 → 초상 눌러 필살기),
+   편성(눌러 옮기기·끌어 놓기), 승리·패배·별, 성급 강화 구매, 방치 보상 8시간 상한, 옛 저장(ch) 옮기기, 44판 봇 진행(균형), 마지막 보스 → 전설 */
 import { open } from './mock.mjs';
 import fs from 'fs';
 const OUT = process.env.QSHOT || '/tmp';
 const t = await open({ surfers:[{ id:'u4', name:'이성현', cohort:'6기', profile:{} }] }, { id:'u4', name:'이성현', profile:{ gender:'f', birth:'1', dressed:1 } }, { wait:2500, width:375 });
+const R = {};
 await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); setTab('play'); }); await t.sleep(300);
-console.log('놀이 카드', await t.S(()=>document.querySelector('[data-hub="quest"]')?.textContent.replace(/\s+/g,' ').trim()));
-await t.S(()=>document.querySelector('[data-hub="quest"]').click()); await t.sleep(1700);
-const op = await t.S(()=>({ 오프닝:document.getElementById('q-ov').classList.contains('qv-cine'), 점:document.querySelectorAll('.qc-dots b').length, 자막:document.getElementById('qc-sub')?.textContent.length || 0, 건너뛰기:!!document.getElementById('qc-sk'), 넘침:document.documentElement.scrollWidth > innerWidth }));
-console.log('오프닝', JSON.stringify(op));
-fs.writeFileSync(OUT + '/q3-opening.png', await t.p.screenshot());
+R.카드 = await t.S(()=>document.querySelector('[data-hub="quest"]')?.textContent.replace(/\s+/g,' ').trim());
+await t.S(()=>document.querySelector('[data-hub="quest"]').click()); await t.sleep(1500);
+R.오프닝 = await t.S(()=>document.getElementById('q-ov').classList.contains('qv-cine'));
 await t.S(()=>document.getElementById('qc-sk').click()); await t.sleep(400);
-op.건너뛴뒤 = await t.S(()=>({ 지도:document.querySelectorAll('.qm-n').length, 기억:localStorage.getItem('lineup.share.qop'), 카메라:document.getElementById('q-bg').style.transform }));
-console.log('오프닝 건너뛰기', JSON.stringify(op.건너뛴뒤));
-console.log('지도', JSON.stringify(await t.S(()=>({ 마을:document.querySelectorAll('.qm-n').length, 잠김:document.querySelectorAll('.qm-n:disabled').length, 내캐릭터:!!document.querySelector('.qm-n.sel img.qm-me[src^="data:image/svg"]'), 버튼:document.getElementById('q-go').textContent, 넘침:document.documentElement.scrollWidth > innerWidth }))));
-fs.writeFileSync(OUT + '/quest-map.png', await t.p.screenshot());
+R.지도 = await t.S(()=>({ 마을:document.querySelectorAll('.qm-n').length, 스테이지:document.querySelectorAll('.qm-s').length, 잠김:document.querySelectorAll('.qm-s:disabled').length, 버튼:document.getElementById('q-go').textContent.trim(), 넘침:document.documentElement.scrollWidth > innerWidth }));
+// 1-1 — 제목 → 대화 건너뛰기 → 편성
 await t.S(()=>document.getElementById('q-go').click()); await t.sleep(300);
-console.log('장 제목', await t.S(()=>document.querySelector('.qtt')?.textContent.trim()));
+R.제목 = await t.S(()=>document.querySelector('.qtt b')?.textContent);
 await t.S(()=>document.getElementById('q-ov').click()); await t.sleep(200);
-await t.S(()=>{ for(let i=0;i<8;i++) document.getElementById('q-tb').click(); }); await t.sleep(1200);   // 해설 2줄·할머니 2줄 넘겨 '나' 대사(모찌 초상)
-console.log('대화', JSON.stringify(await t.S(()=>({ 이름:document.querySelector('.qt-n')?.textContent, 초상:!!document.querySelector('.qt-pt img[src^="data:image/svg"]'), 말:document.getElementById('q-tx').textContent, 단계:_quest.S.mode }))));
-fs.writeFileSync(OUT + '/quest-talk.png', await t.p.screenshot());
 await t.S(()=>document.getElementById('q-sk').click()); await t.sleep(200);
-console.log('준비물', await t.S(()=>({ 단계:_quest.S.mode, 카드:document.querySelectorAll('[data-qb]').length })));
-await t.S(()=>document.querySelector('[data-qb="0"]').click()); await t.sleep(2000);
-console.log('전투 중', await t.S(()=>({ 단계:_quest.S.mode, 체력:document.getElementById('q-hp').textContent, 로그:document.getElementById('q-log').textContent.slice(0, 60) })));
-// AUTO 끔 = 기술 카드를 눌러 쓴다, 배속 ×2
+R.편성 = await t.S(()=>({ 단계:_quest.S.mode, 칸:document.querySelectorAll('[data-sl]').length, 카드:document.querySelectorAll('.qtm-h').length, 잠김:document.querySelectorAll('.qtm-h.lk').length, 출전:!!document.getElementById('q-fight') }));
+// 눌러 옮기기 — 끼룩 카드 → 앞줄 2번 칸
+await t.S(()=>document.querySelector('.qtm-l [data-hero="gull"]').click()); await t.sleep(80);
+await t.S(()=>document.querySelector('[data-sl="1"]').click()); await t.sleep(80);
+R.탭이동 = await t.S(()=>_quest.fmGet().join(','));
+// 끌어 놓기 — 앞줄 2번(끼룩)을 뒷줄 2번 칸으로
+const rc = await t.S(()=>{ const a = document.querySelector('[data-sl="1"]').getBoundingClientRect(), b = document.querySelector('[data-sl="3"]').getBoundingClientRect(); return [a.x + a.width / 2, a.y + a.height / 2, b.x + b.width / 2, b.y + b.height / 2]; });
+await t.p.mouse.move(rc[0], rc[1]); await t.p.mouse.down(); await t.p.mouse.move(rc[0] + 20, rc[1] + 10, { steps:4 }); await t.p.mouse.move(rc[2], rc[3], { steps:6 }); await t.p.mouse.up(); await t.sleep(200);
+R.끌기 = await t.S(()=>_quest.fmGet().join(','));
+await t.sleep(300); await t.S(()=>document.querySelector('.qtm-l [data-hero="me"]').click()); await t.sleep(100);
+fs.writeFileSync(OUT + '/q4-team.png', await t.p.screenshot());
+R.상세 = await t.S(()=>document.querySelector('.qtm-d')?.textContent.replace(/\s+/g,' ').slice(0, 60));
+// 출전 → 튜토리얼
+await t.S(()=>{ localStorage.removeItem('lineup.share.qtut'); _quest.auto = true; document.getElementById('q-fight').click(); }); await t.sleep(2600);
+R.튜토1 = await t.S(()=>({ 단계:_quest.S.tut, 말:document.getElementById('q-tut')?.textContent, 보임:!document.getElementById('q-tut')?.hidden, 초상:document.querySelectorAll('.q-pt').length }));
+const tm = await t.S(()=>_quest.S.t); await t.sleep(400);
+R.튜토멈춤 = await t.S(t0=>_quest.S.t === t0, tm);
 await t.S(()=>document.getElementById('q-auto').click()); await t.sleep(150);
-const au = await t.S(()=>{ const q=_quest, k=q.S.sk[0]; k.t=k.cd; const r={ 버튼:document.getElementById('q-auto').textContent, 눌림:document.getElementById('q-auto').getAttribute('aria-pressed'), 카드:document.querySelectorAll('.q-skc').length, 위버튼:!document.getElementById('q-top').hidden };
-  document.querySelector('.q-skc').click(); r.썼다 = k.t === 0; return r; });
-await t.S(()=>document.getElementById('q-speed').click()); au.배속 = await t.S(()=>document.getElementById('q-speed').textContent);
-await t.sleep(120); au.컷인 = await t.S(()=>!!document.querySelector('.q-cut'));
-console.log('AUTO·기술', JSON.stringify(au));
-fs.writeFileSync(OUT + '/q3-battle.png', await t.p.screenshot());
-await t.S(()=>{ document.getElementById('q-auto').click(); document.getElementById('q-speed').click(); });
-// 장별 자동 40판 — 앞 마을 선물이 붙은 상태로 이길 수 있는지
-const sim = await t.S(()=>{ const q=_quest; q.auto=true; const save=JSON.stringify(ME.profile.play||{}); const out={}; const _pq=window.playQuestDone; window.playQuestDone=()=>({best:0,gain:0});
-  for(let k=0;k<q.N;k++){ let w=0, tm=0; for(let r=0;r<40;r++){ q.session(k); q.pickPhase(); let n=0; while(!q.S.res && n++<60*60*20){ if(q.S.mode==='pick') q.choose(Math.floor(Math.random()*3)); q.step(q.FIX); } if(q.S.res==='win') w++; tm+=q.S.t; q.skip&&q.skip(); }
-    out[k+1]=`${Math.round(w/40*100)}% ${Math.round(tm/40)}s`; }
-  window.playQuestDone=_pq; ME.profile.play=JSON.parse(save); q.map(); return out; });
-console.log('장별 승률', JSON.stringify(sim));
-// 지면 조각은 그대로, 이기면 순서대로 하나씩, 마지막 장에서 전설
-const prog = await t.S(()=>{ const q=_quest, qb=()=>ME.profile.play.qb, run=(k,win)=>{ q.session(k); q.pickPhase(); q.choose(0); if(win){ q.S.hp=q.S.maxHp=99999; } else { q.S.hp=0.01; q.S.def=1e6; q.S.atk=0; q.S.palRate=0; q.S.shield=0; } let n=0; while(!q.S.res && n++<60*60*40) q.step(q.FIX); const r=q.S.res; q.skip(); return r; };
-  const a = run(0,false), afterLose = qb().ch ?? 0, jump = run(3,true), afterJump = qb().ch ?? 0;
-  const seq=[]; for(let k=0;k<q.N;k++){ const r=run(k,true); seq.push(qb().ch); }
-  return { 짐:a, 진뒤조각:afterLose, 건너뛴승리:jump, 건너뛴뒤조각:afterJump, 순서:seq.join(','), 전설:qb().legend, 완주:qb().clears, 잠금:lockOf('boardc','legend'), 카드:document.querySelector('#q-ov .go-t')?.textContent }; });
-console.log('진행', JSON.stringify(prog));
-await t.S(()=>_quest.map()); await t.sleep(200);
-console.log('완주 뒤 지도', await t.S(()=>({ 잠김:document.querySelectorAll('.qm-n:disabled').length, 조각:document.querySelectorAll('.qm-n.done').length, 넘침:document.documentElement.scrollWidth > innerWidth })));
-await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); }); await t.sleep(200);
-await t.S(()=>document.getElementById('q-cdx').click()); await t.sleep(300);
-const cdx = await t.S(()=>({ 항목:document.querySelectorAll('.qx-it').length, 잠김:document.querySelectorAll('.qx-it.lk').length, 다시:document.querySelectorAll('[data-rp]').length, 엔딩:!!document.getElementById('q-end'), 넘침:document.documentElement.scrollWidth > innerWidth }));
-console.log('기록장', JSON.stringify(cdx));
-fs.writeFileSync(OUT + '/q3-codex.png', await t.p.screenshot());
-await t.S(()=>document.getElementById('q-cx').click()); await t.sleep(200);
+R.튜토2 = await t.S(()=>({ 단계:_quest.S.tut, 말:document.getElementById('q-tut')?.textContent, 준비:document.querySelectorAll('.q-pt.rdy').length }));
+await t.S(()=>document.querySelector('.q-pt.rdy').click()); await t.sleep(160);
+R.필살기 = await t.S(()=>({ 썼다:_quest.S.ults, 튜토:_quest.S.tut, 저장:localStorage.getItem('lineup.share.qtut'), 컷인:!!document.querySelector('.q-cut') }));
+fs.writeFileSync(OUT + '/q4-battle.png', await t.p.screenshot());
+await t.S(()=>{ document.getElementById('q-speed').click(); }); R.배속 = await t.S(()=>document.getElementById('q-speed').textContent);
+await t.S(()=>{ document.getElementById('q-speed').click(); document.getElementById('q-auto').click(); });
+// 이 판 끝까지(자동) → 승리·별·결과 카드
+const r1 = await t.S(()=>{ const q = _quest, s = q.S; let n = 0; while(!s.res && n++ < 60 * 200) q.step(q.FIX); return { res:s.res, stars:s.stars }; });
+await t.S(()=>_quest.skip()); await t.sleep(200);
+R.첫승 = { ...r1, 진행:await t.S(()=>ME.profile.play.qb.sg), 별:await t.S(()=>ME.profile.play.qb.st[0]), 카드:await t.S(()=>({ 별:document.querySelectorAll('.q-stars i').length, 다음:document.getElementById('q-nx')?.textContent, 레벨:document.querySelector('.q-lv')?.textContent })) };
+// 패배 — 진행 그대로, 패배 카드
+await t.S(()=>{ _quest.force(1, false); _quest.skip(); }); await t.sleep(100);
+R.패배 = await t.S(()=>({ 진행:ME.profile.play.qb.sg, 카드:document.querySelector('#q-ov .go-t')?.textContent, 편성버튼:!!document.getElementById('q-tm2') }));
+// 성급 강화 — 조개로 2성
+R.강화 = await t.S(()=>{ const p = ME.profile.play; p.shells = (p.shells || 0) + 200; const b0 = shellBal(); _quest.session(1); _quest.teamUp(); document.querySelector('.qtm-l [data-hero="me"]').click(); document.getElementById('q-star').click(); return { 전:b0, 후:shellBal(), 성급:_quest.heroSt('me'), 공격:_quest.heroStat('me').atk }; });
+// 방치 보상 — 20시간 떠나 있어도 8시간치
+R.방치 = await t.S(()=>{ const q = ME.profile.play.qb; q.it = Date.now() - 20 * 36e5; const b0 = shellBal(), r = playQuestIdle(), again = playQuestIdle(); return { ...r, 늘어남:shellBal() - b0, 다시:again.n, 상한:r.n === 8 * r.rate }; });
+// 옛 저장(ch=5) 옮기기
+R.옮기기 = await t.S(()=>{ const p = ME.profile.play; p.qb = { ch:5, best:4, clears:0 }; _quest.migrate(); const q = p.qb;
+  return { sg:q.sg, 별1:q.st.filter(v=>v === 1).length, 레벨:_quest.heroLv('me'), 편성:q.fm.filter(Boolean).length, 꽃게:_quest.fmGet().includes('crab') }; });
+await t.S(()=>{ _quest.map(); }); await t.sleep(200);
+await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); }); await t.sleep(100);
+R.옮긴지도 = await t.S(()=>({ 깬마을:document.querySelectorAll('.qm-n.done').length, 열린칸:document.querySelectorAll('.qm-s:not(:disabled)').length, 넘침:document.documentElement.scrollWidth > innerWidth }));
+fs.writeFileSync(OUT + '/q4-map.png', await t.p.screenshot());
+// 균형 — 새 프로필로 44판을 봇이 순서대로(지면 앞 판 한 번 돌고 조개 되는 대로 성급 강화). 판당 시도 수
+R.균형 = await t.S(()=>{ const q = _quest, p = ME.profile.play, _pop = window.popNext; window.popNext = ()=>{}; localStorage.setItem('lineup.share.qtut', '1'); q.auto = true;
+  p.qb = {}; p.shells = 0; p.spent = 0; q.migrate(); const tries = [], tt = []; let stuck = -1;
+  const buy = ()=>{ const fm = q.fmGet().filter(Boolean).sort((a, b)=>q.heroSt(a) - q.heroSt(b)); for(const k of fm) if(q.heroSt(k) < 5 && shellBal() >= [0, 40, 90, 180, 320][q.heroSt(k)]){ playQuestStar(k); break; } };
+  for(let g = 0; g < q.NS; g++){ let a = 0, r; do{ r = q.sim(g); a++; tt.push(r.t); if(r.res !== 'win' && g > 0){ q.sim(g - 1); q.sim(g - 1); } buy(); } while(r.res !== 'win' && a < 15); tries.push(a); if(r.res !== 'win'){ stuck = g; break; } }
+  window.popNext = _pop; const v = []; for(let i = 0; i < tries.length; i += 4) v.push(tries.slice(i, i + 4).join(''));
+  return { 마을별시도:v.join(' '), 막힘:stuck, 판평균초:Math.round(tt.reduce((a, b)=>a + b, 0) / tt.length), 동료:q.fmGet().filter(Boolean).map(k=>k + '★' + q.heroSt(k) + 'Lv' + q.heroLv(k)).join(' '), 별:p.qb.st.reduce((a, b)=>a + b, 0), 전설:p.qb.legend }; });
+// 마지막 보스 → 엔딩 → 전설 (테스트 훅)
+R.전설 = await t.S(()=>{ const q = _quest, p = ME.profile.play; p.qb = { sg:43, ch:10 }; q.migrate(); q.force(43, true); q.skip(); return { 전설:p.qb.legend, 잠금:lockOf('boardc', 'legend'), 진행:p.qb.sg, 조각:p.qb.ch, 카드:document.querySelector('#q-ov .go-t')?.textContent }; });
+// 합치기 — 남의 기기 값은 숫자로 가두고 모르는 영웅은 버린다
+R.합치기 = await t.S(()=>{ playMerge({ qb:{ sg:'99', st:[3, 'x', 9e9, 2], hx:{ me:5e9, evil:5 }, hs:{ gull:'<b>', crab:4 }, fm:['me', '<img>', 'crab'], it:'1e99' } }); const q = ME.profile.play.qb;
+  return { sg:q.sg, st:q.st.slice(0, 4).join(','), hx:q.hx.me, evil:'evil' in q.hx, hs:JSON.stringify(q.hs), it:q.it <= 1e13 }; });
+await t.S(()=>{ while(!document.getElementById('pop').hidden) popClose(); _quest.map(); }); await t.sleep(150);
+await t.S(()=>document.getElementById('q-cdx').click()); await t.sleep(200);
+R.기록장 = await t.S(()=>({ 다시:document.querySelectorAll('[data-rp]').length, 엔딩:!!document.getElementById('q-end') }));
 await t.S(()=>document.getElementById('q-x').click()); await t.sleep(200);
-console.log('닫기', await t.S(()=>({ 숨김:document.getElementById('quest').hidden, 카드:document.querySelector('[data-hub="quest"]')?.textContent.replace(/\s+/g,' ').trim() })));
-const ok = op.오프닝 && op.점 === 4 && op.자막 > 0 && op.건너뛴뒤.지도 === 11 && op.건너뛴뒤.기억 === '1' && au.눌림 === 'false' && au.카드 > 0 && au.썼다 && au.배속 === '×2' && cdx.다시 === 11 && cdx.잠김 === 0 && !cdx.넘침 && prog.진뒤조각 === 0 && prog.건너뛴뒤조각 === 0 && prog.순서 === '1,2,3,4,5,6,7,8,9,10,11' && prog.전설 === 1 && prog.잠금 === null;
+R.닫기 = await t.S(()=>({ 숨김:document.getElementById('quest').hidden, 카드:document.querySelector('[data-hub="quest"]')?.textContent.replace(/\s+/g,' ').trim() }));
+for(const k in R) console.log(k, JSON.stringify(R[k]));
+const ok = /RPG/.test(R.카드) && R.오프닝 && R.지도.마을 === 11 && R.지도.스테이지 === 4 && R.지도.잠김 === 3 && !R.지도.넘침 && R.편성.칸 === 4 && R.편성.출전
+  && R.탭이동 === 'me,gull,,' && R.끌기 === 'me,,,gull' && R.튜토1.단계 === 1 && R.튜토1.보임 && R.튜토멈춤 && R.튜토2.단계 === 2 && R.튜토2.준비 >= 1 && R.필살기.썼다 >= 1 && R.필살기.튜토 === 0 && R.필살기.저장 === '1' && R.필살기.컷인 && R.배속 === '×2'
+  && R.첫승.res === 'win' && R.첫승.진행 === 1 && R.첫승.별 >= 1 && R.첫승.카드.별 === 3 && R.패배.진행 === 1 && R.패배.편성버튼
+  && R.강화.성급 === 2 && R.강화.전 - R.강화.후 === 40 && R.방치.h === 8 && R.방치.상한 && R.방치.늘어남 === R.방치.n && R.방치.다시 === 0
+  && R.옮기기.sg === 20 && R.옮기기.별1 === 20 && R.옮기기.레벨 > 1 && R.옮기기.꽃게 && R.옮긴지도.깬마을 === 5 && !R.옮긴지도.넘침
+  && R.균형.막힘 === -1 && R.균형.전설 === 1 && R.전설.전설 === 1 && R.전설.잠금 === null && R.전설.진행 === 44 && R.전설.조각 === 11
+  && R.합치기.sg === 44 && R.합치기.st === '3,1,3,2' && R.합치기.hx === 1e6 && !R.합치기.evil && R.합치기.it && R.기록장.다시 === 11 && R.닫기.숨김;
 console.log('판정', ok ? 'OK' : 'FAIL');
 console.log('errs', t.errs); await t.b.close(); process.exit(ok && !t.errs.length ? 0 : 1);
