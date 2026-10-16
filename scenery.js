@@ -34,9 +34,19 @@ function range(x0, x1, base, amp, col, seed, jag){            // 산줄기 — �
   }
   return `<path d="${d}L${x1} ${base + 2}Z" fill="${col}"/>`;
 }
-const pine = (x, y, s, c) => `<g transform="translate(${x} ${y}) scale(${s})" fill="${c}"><path d="M-1 0Q-2 -8 1 -14Q3 -18 2 -22L3.2 -22Q4.5 -17 2.6 -13Q.6 -8 1.4 0Z"/><ellipse cx="2" cy="-22" rx="9" ry="2.6"/><ellipse cx="-3" cy="-17" rx="6" ry="2.2"/><ellipse cx="7" cy="-15.5" rx="5" ry="2"/><ellipse cx="3" cy="-26" rx="5" ry="2"/></g>`;
-const pav = (x, y, s, c, lit) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-9" y="-2" width="18" height="2" fill="${c}"/><rect x="-7.5" y="-10" width="1.4" height="8" fill="${c}"/><rect x="6.1" y="-10" width="1.4" height="8" fill="${c}"/><rect x="-2.6" y="-10" width="1.1" height="8" fill="${c}"/><rect x="1.5" y="-10" width="1.1" height="8" fill="${c}"/><path d="M-13.5 -9Q-10.5 -10 -9 -11.6L-4.6 -16.4H4.6L9 -11.6Q10.5 -10 13.5 -9Q12 -11.6 10.4 -12.2L5.2 -18H-5.2L-10.4 -12.2Q-12 -11.6 -13.5 -9Z" fill="${c}"/><path d="M-5.2 -18H5.2" stroke="${lit}" stroke-width=".8" opacity=".9"/></g>`;   // 정자 — 처마 끝이 살짝 들린 한옥 지붕
-const lighthouse = (x, y, s, body, band, P) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-3 0L-2 -16H2L3 0Z" fill="${body}"/><rect x="-2.6" y="-11" width="5.2" height="2" fill="${band}"/><rect x="-2.3" y="-6" width="4.6" height="2" fill="${band}"/><rect x="-2.6" y="-20" width="5.2" height="4" fill="${band}"/><path d="M-3 -20L0 -23L3 -20Z" fill="${band}"/><circle cy="-18" r="1.3" fill="${P.win}"/>${P.night ? `<path class="qbm" d="M0 -18L-46 -26V-10Z" fill="${P.win}" opacity=".2"/><circle cy="-18" r="5" fill="${P.win}" opacity=".3"/>` : ''}</g>`;
+const pine = (x, y, s, c) => `<g transform="translate(${x} ${y}) scale(${s})" fill="${c}"><path d="M-.8 0Q-2 -7 .6 -13Q2.6 -17.5 2 -22L3.4 -22Q4.4 -16.5 2.4 -12.6Q.8 -7 1.8 0Z"/><path d="M1.6 -10Q4.6 -12.4 7.4 -14.6M1.2 -13Q-1.4 -14.6 -3.6 -15.6" stroke="${c}" stroke-width="1" fill="none" stroke-linecap="round"/><ellipse cx="-4" cy="-16.4" rx="5.4" ry="3.2"/><ellipse cx="2" cy="-17.6" rx="5.2" ry="3.6"/><ellipse cx="7.6" cy="-15.8" rx="4.4" ry="3"/><ellipse cx="-.6" cy="-22.4" rx="4.6" ry="3.2"/><ellipse cx="4.6" cy="-23" rx="4.2" ry="3.4"/><ellipse cx="2.2" cy="-27" rx="3.4" ry="2.8"/><g fill="#FFFFFF" opacity=".16"><ellipse cx="-3.2" cy="-18" rx="3.4" ry="1.4"/><ellipse cx="2.8" cy="-19.6" rx="3.2" ry="1.5"/><ellipse cx="7.8" cy="-17.2" rx="2.6" ry="1.2"/><ellipse cx="1.6" cy="-24.6" rx="3.2" ry="1.4"/><ellipse cx="2.6" cy="-28.4" rx="2" ry="1"/></g></g>`;   // 소나무 — 납작한 막대 대신 둥근 잎 뭉치를 층층이, 윗면만 살짝 밝게(캐릭터의 셀 셰이딩과 맞춘다)
+const pav = (x, y, s, c, lit) => `<g transform="translate(${x} ${y}) scale(${s})" fill="${c}"><path d="M-10.4 0H10.4L9.2 -2.2H-9.2Z"/><rect x="-7.8" y="-9.6" width="1.7" height="7.6" rx=".6"/><rect x="6.1" y="-9.6" width="1.7" height="7.6" rx=".6"/><path d="M-6.2 -5.6H6.2" stroke="${c}" stroke-width=".9"/><path d="M-14 -11.2Q-10.6 -11 -8.6 -13L-5 -16.8Q0 -17.8 5 -16.8L8.6 -13Q10.6 -11 14 -11.2Q11.4 -9.2 9.4 -9.4H-9.4Q-11.4 -9.2 -14 -11.2Z"/><path d="M-5 -16.8Q0 -17.8 5 -16.8" stroke="${lit}" stroke-width=".9" fill="none" opacity=".85" stroke-linecap="round"/><path d="M-12 -10.6Q-10 -10.2 -8.4 -11.6M12 -10.6Q10 -10.2 8.4 -11.6" stroke="${lit}" stroke-width=".6" fill="none" opacity=".55"/></g>`;   // 정자 — 기둥 둘·난간·끝이 들린 처마(가는 막대 여럿은 멀리서 얼룩이 된다)
+const shade = (x, y, w) => `<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(w / 2)}" ry="${f1(Math.max(.6, w * .07))}" fill="#0A1626" opacity=".16"/>`;   // 바닥 그림자 — 건물이 떠 보이지 않게 땅에 붙인다
+const foam = (x0, x1, y, P, op) => `<path d="M${x0} ${f1(y)}Q${f1((x0 + x1) / 2)} ${f1(y - 1.4)} ${x1} ${f1(y)}" stroke="${P.crest}" stroke-width=".9" fill="none" opacity="${op || .6}" stroke-linecap="round"/>`;   // 물가 흰 거품 줄 — 땅과 바다의 경계를 또렷하게
+const spray = (x, y, w, dl, P) => `<path class="qsp"${dl ? ` style="animation-delay:${dl}s"` : ''} d="M${f1(x - w / 2)} ${f1(y)}q${f1(w / 4)} ${f1(-w * .45)} ${f1(w / 2)} 0q${f1(w / 4)} ${f1(-w * .45)} ${f1(w / 2)} 0" stroke="${P.crest}" stroke-width="1.1" fill="none" opacity=".85" stroke-linecap="round"/>`;   // 바위 물보라 — 흰 점은 얼룩으로 읽혀 작은 거품 곡선으로
+const buoy = (x, y, i) => `<g class="qbob" style="animation-delay:${-i * .8}s"><ellipse cx="${x}" cy="${y + 1.8}" rx="2.6" ry=".5" fill="#FF9A52" opacity=".35"/><circle cx="${x}" cy="${y}" r="1.6" fill="#FF8A3D"/><path d="M${x - 1.55} ${y - .2}H${x + 1.55}" stroke="#FFFFFF" stroke-width=".7"/><circle cx="${x - .5}" cy="${y - .7}" r=".45" fill="#FFFFFF" opacity=".8"/></g>`;   // 부표 — 밝은 주황·흰 띠·물그림자(어두운 점은 흙먼지로 읽힌다)
+function grove(x0, x1, base, amp, P, seed){                  // 숲 덮인 섬 — 둥근 잎 뭉치가 이어진 한 덩어리 윤곽(공을 여러 개 늘어놓으면 돌무더기로 읽힌다), 윗가장자리만 밝게
+  const n = Math.max(3, Math.round((x1 - x0) / 9)), pts = [];
+  for(let j = 0; j <= n; j++){ const u = j / n; pts.push([x0 + (x1 - x0) * u, base - amp * Math.pow(Math.sin(Math.PI * u), .8) * (j && j < n ? .9 + hs(j, seed) * .2 : 1)]); }
+  const d = dy => { let s = `M${x0} ${base + 2}L${x0} ${f1(base + dy)}`; for(let j = 1; j <= n; j++){ const w = pts[j][0] - pts[j - 1][0]; s += `A${f1(w * .55)} ${f1(w * .42)} 0 0 1 ${f1(pts[j][0])} ${f1(pts[j][1] + dy)}`; } return s + `L${x1} ${base + 2}Z`; };
+  return `<path d="${d(-1.3)}" fill="${P.lit}" opacity=".3"/><path d="${d(0)}" fill="${P.mid}"/>`;
+}
+const lighthouse = (x, y, s, body, band, P) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M-3 0L-2 -16H2L3 0Z" fill="${body}"/><rect x="-2.6" y="-11" width="5.2" height="2" fill="${band}"/><rect x="-2.3" y="-6" width="4.6" height="2" fill="${band}"/><rect x="-2.6" y="-20" width="5.2" height="4" fill="${band}"/><path d="M-3 -20L0 -23L3 -20Z" fill="${band}"/><circle cy="-18" r="1.3" fill="${P.win}"/>${P.night ? `<path class="qbm" d="M0 -18L-36 -23.5V-12.5Z" fill="${P.win}" opacity=".1"/><path class="qbm" d="M0 -18L-22 -20.6V-15.4Z" fill="${P.win}" opacity=".12"/><circle cy="-18" r="5" fill="${P.win}" opacity=".3"/>` : ''}</g>`;
 function houses(x0, y, n, P, seed){                          // 마을 지붕 — 밤이면 창에 불이 켜진다
   let s = '';
   for(let i = 0; i < n; i++){
@@ -71,8 +81,8 @@ function village(k, P, alt){
   switch(k){
     case 0:   // 아야진 — 작은 항구와 빨간 등대, 앞바다의 납작한 층층 바위
       L.far = range(-40, 120, HZ, 18, P.far, 1.3);
-      L.mid = `<path d="M-12 ${HZ - 8}Q30 ${HZ - 12} 70 ${HZ - 4}L96 ${HZ + 2}H-12Z" fill="${P.near}"/>${houses(-2, HZ - 5, 8, P, 3)}<rect x="66" y="${HZ + 1}" width="44" height="2.4" fill="${P.mid}"/>${lighthouse(108, HZ + 2, .8, '#E25A4A', '#F6F1E8', P)}`;
-      L.sea = rocks(176, 132, 34, 8, P, 1) + rocks(196, 136, 40, 10, P, 2) + `<circle class="qsp" cx="200" cy="128" r="2.5" fill="${P.crest}"/><circle class="qsp" style="animation-delay:-1.2s" cx="214" cy="131" r="2" fill="${P.crest}"/>`;
+      L.mid = `<path d="M-12 ${HZ - 8}Q30 ${HZ - 12} 70 ${HZ - 4}Q86 ${HZ} 96 ${HZ + 2}H-12Z" fill="${P.near}"/>${pine(78, HZ - 2, .4, P.mid)}${houses(-2, HZ - 5, 8, P, 3)}<path d="M64 ${HZ + 2.6}Q66 ${HZ + .6} 70 ${HZ + .6}H108Q110.5 ${HZ + .6} 110.5 ${HZ + 2.6}Z" fill="${P.mid}"/>${foam(-12, 112, HZ + 3, P, .5)}${lighthouse(108, HZ + 2, .8, '#E25A4A', '#F6F1E8', P)}`;
+      L.sea = rocks(176, 132, 34, 8, P, 1) + rocks(196, 136, 40, 10, P, 2) + spray(200, 128.5, 7, 0, P) + spray(215, 131.5, 6, -1.2, P) + foam(174, 238, 136.6, P, .55);
       L.fg = sandFg(P, 224) + rocks(-14, 244, 46, 22, { near:P.fg, lit:P.lit }, 4) + `<path d="M222 240q2 -14 6 -20M228 240q0 -12 -5 -18M234 240q1 -10 5 -15" stroke="${P.fg}" stroke-width="1.6" fill="none"/>`;
       break;
     case 1:   // 천진 — 언덕 위 청간정과 소나무, 바닥까지 비치는 맑은 물
@@ -82,22 +92,29 @@ function village(k, P, alt){
       L.fg = sandFg(P, 222) + [[30, 232], [90, 236], [180, 233]].map(([x, y])=>`<circle cx="${x}" cy="${y}" r="2.2" fill="#FFF4E6"/><path d="M${x - 1} ${y}a1 1 0 1 1 1 1" stroke="#D9A88A" stroke-width=".6" fill="none"/>`).join('');
       break;
     case 2:   // 속초 — 설악산(울산바위) 능선, 도시와 대관람차, 오른쪽 영금정
-      L.far = range(-30, 180, HZ, 52, P.far, .4, .9) + `<path d="M40 ${HZ - 34}q6 -12 16 -10q8 -6 14 2q6 0 6 8z" fill="${P.far}"/><path d="M42 ${HZ - 34}q6 -12 16 -10" stroke="#FFFFFF" stroke-width="1" fill="none" opacity=".5"/>` + range(-20, 150, HZ, 22, P.aut, 2.4) + `<rect x="-12" y="${HZ - 14}" width="170" height="16" fill="${P.far}" opacity=".35"/>`;
-      L.mid = Array.from({ length:9 }, (_, i)=>{ const h = 8 + hs(i, 7) * 14; return `<rect x="${-4 + i * 7.5}" y="${f1(HZ - h)}" width="6" height="${f1(h)}" fill="${P.mid}"/><rect x="${-2 + i * 7.5}" y="${f1(HZ - h + 3)}" width="2" height="1" fill="${P.lit}" opacity=".6"/>`; }).join('') + ferris(84, HZ - 16, 12, P) + rocks(178, HZ + 4, 60, 12, P, 8) + pav(206, HZ - 6, .85, P.mid, P.lit) + `<circle class="qsp" cx="186" cy="${HZ + 2}" r="3" fill="${P.crest}"/><circle class="qsp" style="animation-delay:-.8s" cx="230" cy="${HZ + 3}" r="2.5" fill="${P.crest}"/>`;
+      L.far = range(-30, 180, HZ, 52, P.far, .4, .9) + `<path d="M40 ${HZ - 34}q6 -12 16 -10q8 -6 14 2q6 0 6 8z" fill="${P.far}"/><path d="M42 ${HZ - 34}q6 -12 16 -10" stroke="#FFFFFF" stroke-width="1" fill="none" opacity=".5"/>` + range(-20, 150, HZ, 22, (P.aut || P.mid), 2.4) + ``;
+      L.mid = Array.from({ length:9 }, (_, i)=>{ const h = 8 + hs(i, 7) * 14, x = -4 + i * 7.5; return `<rect x="${x}" y="${f1(HZ - h)}" width="6.4" height="${f1(h + 1)}" rx=".8" fill="${P.mid}"/><rect x="${x}" y="${f1(HZ - h)}" width="2" height="${f1(h + 1)}" fill="#FFFFFF" opacity=".1"/><path d="M${x + 1.6} ${f1(HZ - h + 3)}h3M${x + 1.6} ${f1(HZ - h + 6)}h3" stroke="${P.lit}" stroke-width=".7" stroke-dasharray=".9 .9" opacity=".55"/>`; }).join('') + foam(-12, 76, HZ + 1.6, P, .45) + ferris(84, HZ - 16, 12, P) + rocks(178, HZ + 4, 60, 12, P, 8) + pav(206, HZ - 6, .85, P.mid, P.lit) + spray(186, HZ + 2, 7, 0, P) + spray(230, HZ + 3, 6, -.8, P);
       L.fg = sandFg(P, 224) + [20, 44, 68].map(x=>`<rect x="${x}" y="226" width="2" height="12" fill="${P.fg}"/>`).join('') + `<path d="M21 229Q33 233 45 229T69 229" stroke="${P.fg}" stroke-width=".8" fill="none"/>`;
       break;
     case 3:   // 낙산 — 언덕 위 해수관음상, 절벽 끝 의상대와 기운 소나무
-      L.far = range(-30, 130, HZ - 6, 34, P.far, 1.9, .6) + range(-20, 110, HZ - 8, 14, P.aut, .7);
-      L.mid = `<path d="M-12 ${HZ + 4}V${HZ - 22}Q20 ${HZ - 40} 50 ${HZ - 30}Q80 ${HZ - 22} 96 ${HZ - 8}L104 ${HZ + 4}Z" fill="${P.near}"/>` +
-        `<path d="M34 ${HZ - 36}q2 0 2 3q0 2 -1 3q4 1 4.5 6l2 18h-15l2 -18q.5 -5 4.5 -6q-1 -1 -1 -3q0 -3 2 -3z" transform="translate(0 -8)" fill="#EDE7DA"/><circle cx="34" cy="${HZ - 46}" r="5" fill="#FFFFFF" opacity=".25"/>` +
-        pine(12, HZ - 26, .8, P.mid) + pine(58, HZ - 26, .7, P.mid) + pav(86, HZ - 11, .8, P.mid, P.lit) + `<g transform="translate(97 ${HZ - 11}) rotate(28)">${pine(0, 0, .65, P.mid)}</g>`;
+      L.far = range(-30, 130, HZ - 6, 34, P.far, 1.9, .6) + range(-20, 110, HZ - 8, 14, (P.aut || P.mid), .7);
+      L.mid = `<path d="M-12 ${HZ + 4}V${HZ - 22}Q20 ${HZ - 40} 50 ${HZ - 30}Q80 ${HZ - 22} 96 ${HZ - 8}Q101 ${HZ - 2} 104 ${HZ + 4}Z" fill="${P.near}"/>` +
+        [[2, HZ - 26, 7, 4.6], [16, HZ - 31, 7.5, 5], [62, HZ - 27, 7, 4.6], [76, HZ - 20, 6.5, 4.2], [88, HZ - 12, 5.5, 3.6]].map(([x, y, rx, ry])=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${P.mid}"/><ellipse cx="${x - 1}" cy="${f1(y - ry * .45)}" rx="${f1(rx * .6)}" ry="${f1(ry * .35)}" fill="#FFFFFF" opacity=".14"/>`).join('') +
+        `<circle cx="34" cy="${HZ - 41}" r="6" fill="#FFFFFF" opacity=".22"/><g opacity=".9"><path d="M34 ${HZ - 45}q2 0 2 3q0 2 -1 3q4 1 4.5 6l2 18h-15l2 -18q.5 -5 4.5 -6q-1 -1 -1 -3q0 -3 2 -3z" fill="#EDE7DA"/><path d="M35 ${HZ - 39}q4 1 4.5 6l2 18h-4z" fill="#000000" opacity=".1"/></g>` +
+        pine(10, HZ - 28, .7, P.mid) + pine(58, HZ - 27, .62, P.mid) + pav(86, HZ - 12, .8, P.fg, P.lit) + `<g transform="translate(98 ${HZ - 7}) rotate(24)">${pine(0, 0, .55, P.mid)}</g>` + foam(80, 108, HZ + 3.4, P, .55);
       L.fg = sandFg(P, 220) + `<path d="M150 252q6 -18 18 -24M160 252q2 -14 -4 -22" stroke="${P.fg}" stroke-width="1.4" fill="none"/>`;
       break;
     case 4:   // 죽도 — 대숲 섬 위 죽도정, 오른쪽 해변의 서핑숍과 라인업의 서퍼들
       L.far = range(130, 290, HZ, 12, P.far, 3.3);
-      L.mid = `<path d="M18 ${HZ + 3}Q24 ${HZ - 20} 58 ${HZ - 22}Q92 ${HZ - 20} 100 ${HZ + 3}Z" fill="${P.near}"/>` + [26, 38, 50, 72, 84].map((x, i)=>pine(x, HZ - 12 - (i % 2) * 4, .55, P.mid)).join('') + pav(62, HZ - 21, .75, P.mid, P.lit) +
-        [['#2F8F8A', 150], ['#E8A43A', 166], ['#E86A5A', 182], ['#5BB5E0', 198], ['#F4C430', 214]].map(([c, x], i)=>`<rect x="${x}" y="${HZ - 9 - (i % 2) * 2}" width="14" height="${11 + (i % 2) * 2}" fill="${c}" opacity=".9"/><rect x="${x - 1}" y="${HZ - 11 - (i % 2) * 2}" width="16" height="2" fill="${P.mid}"/><rect x="${x + 3}" y="${HZ - 5}" width="3" height="3" fill="${P.lit}" opacity=".7"/><rect x="${x + 11}" y="${HZ - 14}" width="2.4" height="12" rx="1.2" fill="#FFFFFF" transform="rotate(8 ${x + 12} ${HZ})"/>`).join('');
-      L.sea = [116, 132, 148, 166].map((x, i)=>`<g class="qbob" style="animation-delay:${-i * .7}s"><rect x="${x}" y="${131 + (i % 2) * 3}" width="7" height="1.6" rx=".8" fill="#FFFFFF"/><circle cx="${x + 3.5}" cy="${129 + (i % 2) * 3}" r="1.6" fill="${P.fg}"/></g>`).join('');
+      L.mid = `<path d="M10 ${HZ + 3}Q16 ${HZ - 8} 34 ${HZ - 11}Q58 ${HZ - 15} 84 ${HZ - 11}Q100 ${HZ - 8} 108 ${HZ + 3}Z" fill="${P.near}"/>` + grove(18, 100, HZ + 1, 22, P, 3) +
+        pine(30, HZ - 14, .5, P.mid) + pine(48, HZ - 20, .58, P.mid) + pine(86, HZ - 13, .48, P.mid) + pav(65, HZ - 22, .7, P.fg, P.lit) + rocks(8, HZ + 3.5, 20, 5, P, 15) + rocks(96, HZ + 3.5, 16, 4, P, 16) + foam(6, 114, HZ + 3.6, P, .6) +
+        // 서핑숍 — 떠 있는 상자 대신: 뒤 솔숲 언덕 → 모래띠 → 지붕·차양·문 달린 작은 가게(바닥 그림자) → 기대 세운 짧은 보드
+        `<path d="M138 ${HZ + 1}Q156 ${HZ - 10} 184 ${HZ - 9}Q214 ${HZ - 13} 252 ${HZ - 8}V${HZ + 1}Z" fill="${P.near}"/>` + [146, 160, 172, 226, 238].map((x, i)=>pine(x, HZ - 4 - (i % 2) * 2, .38, P.mid)).join('') +
+        `<path d="M132 ${HZ + 3.6}Q146 ${HZ - 1.6} 168 ${HZ - 1.8}H252V${HZ + 3.6}Z" fill="${P.sand}"/>${foam(132, 252, HZ + 3.8, P, .6)}` +
+        [['#3E9C96', '#2C6E6A', 156, 8], ['#E9A94A', '#B9782A', 170, 9.5], ['#E2786A', '#A9524A', 184, 8], ['#6FB5D9', '#3F7FA6', 198, 9], ['#F0C94A', '#B8962A', 212, 8]].map(([c, r, x, h])=>{ const y = HZ + 1.2, w = 12;
+          return shade(x + w / 2, y + .4, w + 4) + `<rect x="${x}" y="${f1(y - h)}" width="${w}" height="${h}" rx=".8" fill="${c}"/><rect x="${x + w - 3}" y="${f1(y - h)}" width="3" height="${h}" fill="#000000" opacity=".1"/><path d="M${x - 1.4} ${f1(y - h + .4)}L${x + w / 2} ${f1(y - h - 4)}L${x + w + 1.4} ${f1(y - h + .4)}Z" fill="${r}" stroke="${r}" stroke-width=".8" stroke-linejoin="round"/><rect x="${x + 1.6}" y="${f1(y - h + 2.2)}" width="${w - 3.2}" height="1.6" rx=".8" fill="#FFF8EC" opacity=".9"/><rect x="${x + 4.6}" y="${f1(y - 3.6)}" width="2.8" height="3.6" rx=".6" fill="${r}"/>`; }).join('') +
+        [[167, '#FFFFFF', -10], [181.5, '#F4C430', 8], [209, '#FFFFFF', -8]].map(([x, c, a])=>`<rect x="${x}" y="${HZ - 5}" width="1.8" height="6.2" rx=".9" fill="${c}" transform="rotate(${a} ${x + .9} ${HZ + 1.2})"/>`).join('');
+      L.sea = buoy(118, 131, 0) + buoy(176, 134, 1);   // 라인업 서퍼 실루엣(어두운 점)은 빼고 부표 둘만
       L.fg = sandFg(P, 222) + [[196, '#F4C430', -8], [208, '#E86A5A', 4], [220, '#5BB5E0', -3]].map(([x, c, r])=>`<rect x="${x}" y="200" width="7" height="32" rx="3.5" fill="${c}" stroke="${P.fg}" stroke-width="1" transform="rotate(${r} ${x + 3} 232)"/>`).join('');
       break;
     case 5:   // 하조대 — 오른쪽 바위 절벽 위 정자, 바위 기둥 위 외톨이 소나무, 왼쪽 흰 등대
@@ -108,7 +125,7 @@ function village(k, P, alt){
       break;
     case 6:   // 주문진 — 어시장 천막과 등불, 빨강·하양 방파제 등대, 집어등 단 오징어배
       L.far = range(-40, 100, HZ, 14, P.far, 5.1);
-      L.mid = `<rect x="-12" y="${HZ - 2}" width="98" height="6" fill="${P.near}"/>` + Array.from({ length:7 }, (_, i)=>`<rect x="${-6 + i * 12}" y="${HZ - 9}" width="11" height="7" fill="${P.mid}"/><path d="M${-7 + i * 12} ${HZ - 9}h13l-2 -3h-9z" fill="${i % 2 ? '#E86A5A' : '#F4F1EA'}" opacity=".85"/><circle cx="${-1 + i * 12}" cy="${HZ - 6}" r="1.2" fill="${P.win}"/><circle cx="${-1 + i * 12}" cy="${HZ - 6}" r="3.5" fill="${P.win}" opacity=".2"/>`).join('') +
+      L.mid = `<rect x="-12" y="${HZ - 2}" width="98" height="6" fill="${P.near}"/>${foam(-12, 86, HZ + 4.2, P, .4)}` + Array.from({ length:7 }, (_, i)=>`<rect x="${-6 + i * 12}" y="${HZ - 9}" width="11" height="7" fill="${P.mid}"/><path d="M${-7 + i * 12} ${HZ - 9}h13l-2 -3h-9z" fill="${i % 2 ? '#E86A5A' : '#F4F1EA'}" opacity=".85"/><circle cx="${-1 + i * 12}" cy="${HZ - 6}" r="1.2" fill="${P.win}"/><circle cx="${-1 + i * 12}" cy="${HZ - 6}" r="3.5" fill="${P.win}" opacity=".2"/>`).join('') +
         `<rect x="86" y="${HZ + 1}" width="56" height="3" fill="${P.mid}"/>${lighthouse(140, HZ + 2, .8, '#E25A4A', '#F6F1E8', P)}<rect x="196" y="${HZ + 1}" width="56" height="3" fill="${P.mid}"/>${lighthouse(198, HZ + 2, .8, '#F4F1EA', '#9AA0A8', P)}` +
         [104, 160, 176].map((x, i)=>`<path d="M${x} ${HZ + 7}h16l-3 4h-10z" fill="${P.fg}"/><rect x="${x + 7}" y="${HZ - 6}" width="1" height="13" fill="${P.fg}"/><path d="M${x + 1} ${HZ - 2}H${x + 15}" stroke="${P.win}" stroke-width="1.2" stroke-dasharray="1.2 1.6"/>`).join('');
       L.fg = sandFg(P, 226) + [6, 22, 38].map((x, i)=>`<rect x="${x}" y="${206 + i * 4}" width="5" height="40" fill="${P.fg}"/>`).join('') + `<rect x="0" y="210" width="48" height="3" fill="${P.fg}"/><circle cx="214" cy="232" r="5" fill="#E86A5A" stroke="${P.fg}"/><circle cx="226" cy="234" r="4" fill="#F4C430" stroke="${P.fg}"/>`;
@@ -165,6 +182,7 @@ function svg(k, tod, o){
     <radialGradient id="qsV" cx=".5" cy=".46" r=".72"><stop offset=".6" stop-color="#05040F" stop-opacity="0"/><stop offset="1" stop-color="#05040F" stop-opacity="${P.vig}"/></radialGradient>
     <radialGradient id="qsB"><stop offset="0" stop-color="#FFE9A0" stop-opacity=".9"/><stop offset="1" stop-color="#F4C430" stop-opacity="0"/></radialGradient>
     <linearGradient id="qsR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity=".3"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
+    <linearGradient id="qsH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.sky[3]}" stop-opacity="0"/><stop offset=".86" stop-color="${P.sky[3]}" stop-opacity=".2"/><stop offset="1" stop-color="${P.sky[3]}" stop-opacity="0"/></linearGradient>
     ${P.rain ? '<pattern id="qsN" width="9" height="24" patternUnits="userSpaceOnUse"><path d="M7 0L4 11" stroke="#D8E4F4" stroke-width=".7" opacity=".5"/><path d="M3 13L1 20" stroke="#D8E4F4" stroke-width=".6" opacity=".35"/></pattern>' : ''}
   </defs><rect x="-12" y="-12" width="264" height="${HZ + 14}" fill="url(#qsS)"/>`;
   // ① 하늘 — 별·해/달·빛살·구름 (거의 안 움직이는 층)
@@ -183,7 +201,7 @@ function svg(k, tod, o){
   if(L && !(P.sun && P.sun.y > HZ)) for(let i = 0; i < 9; i++){ const w = 3 + i * 3.2; s += `<rect class="qgl" style="animation-delay:${f1(-i * .37)}s" x="${f1(L.x - w / 2 + Math.sin(i * 2.1) * 3)}" y="${f1(HZ + 2 + i * i * 1.25)}" width="${f1(w)}" height="1" fill="${P.sun ? P.sun.c : '#FFF4D6'}" opacity=".8"/>`; }
   if(P.sun && P.sun.y > HZ - P.sun.r) s += `<rect x="${P.sun.x - P.sun.r * 1.6}" y="${HZ + 1}" width="${P.sun.r * 3.2}" height="2" fill="${P.sun.c}" opacity=".6"/>`;
   s += wv(124, .6 * big, P.crest, .35, 9, .6, '7 9') + wv(133, 1 * big, P.crest, .4, 7, .8, '10 6', 1) + wv(147, 1.5 * big, P.crest, .45, 6, 1) + wv(166, 2.2 * big, P.crest, .5, 5, 1.2, '', 1) + wv(190, 3 * big, P.crest, .55, 4.4, 1.5) + wv(213, 3.4 * big, P.crest, .6, 3.8, 1.8, '', 1);
-  s += V.sea + `</g><g data-d=".85">${V.mid}</g>`;
+  s += V.sea + `</g><g data-d=".85">${V.mid}<rect x="-12" y="${HZ - 52}" width="264" height="58" fill="url(#qsH)"/></g>`;
   // ⑤ 앞 실루엣 — 가장 많이 움직이는 층(시차)
   if(!o.noFg) s += `<g data-d="1.8">${V.fg}</g>`;
   // ⑥ 입자 — 갈매기·반딧불·비·번개
@@ -200,7 +218,7 @@ function svg(k, tod, o){
 /* 굽기 — 장면·옵션마다 한 번만 SVG → 이미지 → 오프스크린 캔버스. 로딩 중엔 null(게임은 예전 하늘로 버틴다) */
 const CACHE = {};
 function bake(k, tod, o){
-  o = o || {}; const K = o.k || 1;
+  o = o || {}; const K = o.k || 3;   // 3배로 구워 둔다 — 1배를 폰 화면(3~4배)에 늘리면 소나무·정자가 계단처럼 깨진다
   const key = [k, typeof tod === 'string' ? tod : JSON.stringify(tod), o.alt ? 1 : 0, o.noFg ? 1 : 0, o.noVig ? 1 : 0, K].join('|');
   const e = CACHE[key]; if(e) return e.cv;
   const ent = CACHE[key] = { cv:null }, px = 240 * K, im = new Image();
