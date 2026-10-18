@@ -91,24 +91,33 @@ create table if not exists admin_keys (
 );
 alter table admin_keys enable row level security;   -- 정책 없음 = anon 직접 조회 불가
 
--- 평문으로 넣어도 저장 직전에 bcrypt 로 바꾼다. 16자 미만은 거절.
+-- 평문으로 넣어도 저장 직전에 bcrypt 로 바꾼다. 8자 미만은 거절.
 create or replace function admin_keys_hash() returns trigger
 language plpgsql set search_path = public, extensions as $$
 begin
   if new.k !~ '^\$2[abxy]\$\d\d\$' then
-    if char_length(new.k) < 16 then raise exception '열쇠는 16자 이상으로 만들어 주세요'; end if;
+    if char_length(new.k) < 8 then raise exception '열쇠는 8자 이상으로 만들어 주세요'; end if;
     new.k := crypt(new.k, gen_salt('bf', 10));
   end if;
   return new;
 end $$;
 create or replace trigger admin_keys_hash before insert or update on admin_keys for each row execute function admin_keys_hash();
 
+create table if not exists admin_tries (at timestamptz not null default now());   -- 틀린 열쇠 기록
+alter table admin_tries enable row level security;
+
+-- 1시간에 10번 틀리면 그 동안은 맞는 열쇠도 거절(마구 넣어 보기 차단). 실패 기록이 남아야 하므로
+-- admin_* 함수는 틀린 열쇠에 예외 대신 {"error":"noadmin"}(수정 함수는 false)를 돌려준다.
 create or replace function _is_admin(p_key text) returns boolean
 language plpgsql security definer set search_path = public, extensions as $$
 begin
-  if p_key is not null and char_length(p_key) >= 16
+  if (select count(*) from admin_tries where at > now() - interval '1 hour') >= 10 then
+    perform pg_sleep(0.6); return false; end if;
+  if p_key is not null and char_length(p_key) >= 8
      and exists (select 1 from admin_keys where k = crypt(p_key, k)) then return true; end if;
-  perform pg_sleep(0.6);                      -- 틀린 열쇠는 느리게 — 마구 넣어 보기 어렵게
+  insert into admin_tries default values;
+  delete from admin_tries where at < now() - interval '1 day';
+  perform pg_sleep(0.6);
   return false;
 end $$;
 
@@ -128,7 +137,7 @@ create or replace function admin_visits(p_key text, p_days int default 30) retur
 language plpgsql security definer set search_path = public as $$
 declare d int := greatest(1, least(coalesce(p_days, 30), 180));
 begin
-  if not _is_admin(p_key) then raise exception 'noadmin'; end if;
+  if not _is_admin(p_key) then return jsonb_build_object('error', 'noadmin'); end if;
   return coalesce((
     with u as (
       select user_id, max(created_at) as last_seen,
@@ -158,7 +167,7 @@ declare d int := greatest(1, least(coalesce(p_days, 14), 180));
         since timestamptz := now() - make_interval(days => d);
         today0 timestamptz := date_trunc('day', now() at time zone 'Asia/Seoul') at time zone 'Asia/Seoul';
 begin
-  if not _is_admin(p_key) then raise exception 'noadmin'; end if;
+  if not _is_admin(p_key) then return jsonb_build_object('error', 'noadmin'); end if;
   return jsonb_build_object(
     'days', p_days,
     'dau', (select count(distinct user_id) from events where created_at >= today0),
@@ -191,7 +200,7 @@ end $$;
 create or replace function admin_feedback(p_key text) returns jsonb
 language plpgsql security definer set search_path = public as $$
 begin
-  if not _is_admin(p_key) then raise exception 'noadmin'; end if;
+  if not _is_admin(p_key) then return jsonb_build_object('error', 'noadmin'); end if;
   return coalesce((select jsonb_agg(to_jsonb(f) order by f.created_at desc)
     from (select * from feedback order by created_at desc limit 500) f), '[]'::jsonb);
 end $$;
@@ -199,7 +208,7 @@ end $$;
 create or replace function admin_feedback_update(p_key text, p_id bigint, p_status text, p_reply text) returns boolean
 language plpgsql security definer set search_path = public as $$
 begin
-  if not _is_admin(p_key) then raise exception 'noadmin'; end if;
+  if not _is_admin(p_key) then return false; end if;
   if p_status not in ('접수','검토 중','반영됨','보류') then raise exception 'badstatus'; end if;
   update feedback set status = p_status, reply = nullif(left(btrim(coalesce(p_reply, '')), 500), ''), updated_at = now() where id = p_id;
   if not found then raise exception 'nofeedback'; end if;
@@ -218,7 +227,7 @@ end $$;
 
 -- ── 5. 권한 ─────────────────────────────────────────────────
 -- Supabase 는 새 표·함수를 anon 에게 기본으로 열어 준다. 여기서 필요한 것만 남긴다.
-revoke all on feedback, events, admin_keys from anon, authenticated;
+revoke all on feedback, events, admin_keys, admin_tries from anon, authenticated;
 grant insert on feedback, events to anon, authenticated;
 
 revoke all on function _is_admin(text) from public, anon, authenticated;
@@ -238,7 +247,7 @@ select (select count(*) from events) as events_rows,
 
 -- ─────────────────────────────────────────────────────────────
 -- 오웬이 할 일 — 운영자 열쇠 넣기 (한 번만)
---   1) 남이 짐작 못 할 긴 문장을 직접 하나 만드세요(16자 이상). 어디에도 붙여 넣지 말고 메모해 두세요.
+--   1) 남이 짐작 못 할 긴 문장을 직접 하나 만드세요(8자 이상). 어디에도 붙여 넣지 말고 메모해 두세요.
 --   2) 아래 줄의 주석(--)을 지우고, 따옴표 안을 그 문장으로 바꿔 이 줄만 실행하세요.
 --      저장될 때 bcrypt 로 바뀌어 원문은 DB 에 남지 않습니다.
 --   3) surf.owenai.xyz/stats 를 열고 같은 문장을 한 번 넣으면 그 기기에 기억됩니다.
