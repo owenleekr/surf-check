@@ -383,8 +383,8 @@ function playTick(){
   if(!newsSeen){ try{ localStorage.setItem('lineup.share.news', NEWS); }catch(e){}
     if(!fresh0){ const u = (window.UPDATES || [])[0];
       _popQ.push({ ic:'🆕', t:u ? `업데이트 · ${u.t}` : '새로 생겼어요', d:u ? u.items.map(x=>`${x[0]} ${x[1].split(' — ')[0]}`).join('\n') : '놀이 탭에 새 게임이 생겼어요',
-        go:()=>window.updOpen ? updOpen() : setTab('play'), btn:'자세히 보기', ok:'다시 보지 않기',
-        onOk:()=>{ try{ if(u){ localStorage.setItem('lineup.share.updhide', u.id); localStorage.setItem('lineup.share.upd', u.id); } }catch(e){} window.updCard?.(); } }); }
+        go:()=>window.updOpen ? updOpen() : setTab('play'), btn:'자세히 보기', ok:'일주일 닫기',
+        onOk:()=>{ if(window.updWeek) window.updWeek(); else window.updCard?.(); } }); }
   }
   /* 방금 가입한 사람은 배지가 없다 — 온보딩이 도감을 소개하니 빈 환영 카드는 생략한다. 기록이 있는 사람에게만 '지금까지'를 보여준다. */
   if(first){ p.lvSeen = lv; if(Object.keys(p.badges).length) _popQ.push({ ic:'📖', t:'서퍼 도감이 열렸어요', d:`지금까지 배지 ${Object.keys(p.badges).length}개 · Lv.${lv+1} ${PLV[lv][1]}`, welcome:true }); }
@@ -609,7 +609,7 @@ function popNext(){
   const c = _popQ.shift(); _popBusy = true;
   $('pop-ic').textContent = c.ic; $('pop-t').textContent = c.t; $('pop-d').textContent = c.d;
   const go = $('pop-go'); go.hidden = !c.go; _popGo = c.go || null; if(c.go) go.textContent = c.btn || '보러가기';
-  $('pop-ok').textContent = c.ok || '좋아요'; _popOk = c.onOk || null;                    // 업데이트 알림은 '다시 보지 않기'
+  $('pop-ok').textContent = c.ok || '좋아요'; _popOk = c.onOk || null;                    // 업데이트 알림은 '일주일 닫기'
   $('pop').hidden = false; $('pop-ok').focus({ preventScroll:true });
   vib(c.up ? [30,50,30,50,60] : [20,40,20]);
   if(typeof burst === 'function') burst($('pop-ic'), c.up ? 22 : 12);
@@ -666,7 +666,6 @@ function renderHub(enter){
       ${card(3,'📍','해변 스탬프', `${st}/${SEAS.length} 곳`, '', 'stamp')}
       ${card(4,'🎒','배지 도감', `${got}/${BADGES.length}개`, '', 'badge')}
       ${card(5,'🏆','동기 순위', myRank ? `레벨 ${myRank}위` : '순위 보기', '', 'rank')}
-      ${card(7,'🏘','마을 · 채팅', '캐릭터들이 모인 곳 · 한마디', '', 'town')}
       ${card(6,'🛍️','소품샵', `🐚 ${shellBal()} 보유`, '', 'shop')}
       ${(()=>{ const n = UPG.reduce((a, u)=>a + upLv(u.k), 0), mx = UPG.reduce((a, u)=>a + u.max, 0), c = Math.min(...UPG.filter(u=>upLv(u.k) < u.max).map(u=>UPC[upLv(u.k)]));
         return card(6,'🔧','강화소', `${n}/${mx}단계${Number.isFinite(c) ? ` · 다음 🐚${c}` : ' · 모두 완료'}`, Number.isFinite(c) && shellBal() >= c ? '강화 가능' : '', 'up'); })()}
@@ -684,7 +683,10 @@ function renderHub(enter){
       <button type="button" data-set="a2hs"><span>📲 홈 화면에 추가</span><b>방법</b></button>
       <button type="button" data-set="guide"><span>📖 사용 가이드</span><b>열기</b></button>
       <button type="button" data-set="share"><span>🔗 친구에게 앱 알리기</span><b>공유</b></button>
+      <button type="button" data-set="feedback"><span>💡 개선 요청</span><b>보내기</b></button>
+      <button type="button" data-set="track" aria-pressed="${trackOn()}"><span>📊 사용 기록 보내기</span><b>${trackOn() ? '켜짐' : '꺼짐'}</b></button>
     </div>
+    <p class="note" style="margin-top:6px">📊 어떤 메뉴·게임을 썼는지만 보내요(글 내용·위치는 안 보내요) — 앱을 고치는 데만 쓰고 180일 뒤 지워요. <a href="/privacy" target="_blank" rel="noopener">자세히</a></p>
     ${(()=>{ const top = dailyTop(); return top.length ? `<div class="dtop"><h4>🗓️ 오늘의 챌린지 TOP ${top.length}</h4>${top.map((r,i)=>`<div class="${r.id===ME.id?'me':''}"><span>${['🥇','🥈','🥉'][i]} ${esc(r.name)}</span><b>${r.s}점</b></div>`).join('')}</div>` : ''; })()}
     ${_hubFort && fortOpen ? (()=>{ const f = fortune(); return `<div class="fort" style="margin-top:12px"><div class="fs">서핑 컨디션 <b>${'★'.repeat(f.star)}${'☆'.repeat(5 - f.star)}</b></div>
       <div>🌊 행운의 해변 <b>${esc(f.beach)}</b></div><div>⏰ 행운의 시간 <b>${f.time}</b></div><div>🎨 행운의 보드 색 <b>${esc(f.color)}</b></div><div>🐚 행운의 조개 <b>${f.n}개</b></div>
@@ -700,6 +702,8 @@ function renderHub(enter){
     else if(k === 'sound'){ const on = !soundOn(); try{ localStorage.setItem('lineup.share.snd', on ? '1' : '0'); }catch(e){} renderHub(); toast(on ? '게임 소리를 켰어요' : '게임 소리를 껐어요'); }
     else if(k === 'bday'){ const off = ME.profile?.bdoff !== 1; (ME.profile ||= {}).bdoff = off ? 1 : 0; if(typeof saveProfile === 'function') saveProfile(); renderHub(); toast(off ? '생일 띠에 내 생일을 안 띄워요' : '생일날 친구들 홈에 축하 띠가 떠요'); }
     else if(k === 'guide'){ open('/guide', '_blank', 'noopener'); }
+    else if(k === 'feedback'){ window.feedbackOpen?.('play'); }
+    else if(k === 'track'){ const on = !trackOn(); window.trackSet?.(on); renderHub(); toast(on ? '사용 기록을 다시 보내요 · 고마워요' : '사용 기록을 보내지 않아요'); }
     else if(k === 'a2hs'){ if(typeof a2hsOpen === 'function') a2hsOpen(); }
     else if(k === 'share'){ const data = { title:'SurfShare', text:'양양 낙산 서핑 — 차 같이 타고, 숙소 같이 쓰고. 비밀번호는 단톡방에서 받아요.', url:'https://surf.owenai.xyz/' };
       try{ if(navigator.share) await navigator.share(data); else{ await navigator.clipboard.writeText(data.url); toast('링크를 복사했어요'); } }catch(e){ if(e && e.name !== 'AbortError') toast('공유하지 못했어요'); } } });
@@ -716,6 +720,9 @@ function renderHub(enter){
     else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
     else if(k === 'emote' || k === 'town'){ setTab('town'); } });
 }
+
+/* 사용 기록 보내기(track.js) — 기본은 켬. 파일을 못 받았으면 켜짐으로만 보인다 */
+const trackOn = () => typeof window.trackOn === 'function' ? window.trackOn() : (()=>{ try{ return localStorage.getItem('lineup.share.track') !== '0'; }catch(e){ return true; } })();
 
 function renderPlayBits(){
   if(!ME?.profile?.play) return;

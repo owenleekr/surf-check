@@ -3,8 +3,9 @@
    누르면 전체 내역(날짜별). 안 본 업데이트가 있으면 NEW 표시 — 본 시점은 이 기기에만 기억한다.
    새 배포 때 맨 위에 한 줄 추가하면 된다(id 는 겹치지 않게). go 는 그 기능으로 바로 가는 버튼. */
 (function(){
-const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide';
+const SEEN = 'lineup.share.upd', HIDE = 'lineup.share.updhide', WEEK = 'lineup.share.updweek', WEEK_MS = 7 * 864e5;
 const UPDATES = [
+  { id:'u1018b', date:'10.18', t:'💡 개선 요청 · 메뉴 정리', items:[['💡','☰기타 › 개선 요청 — 불편한 점·원하는 기능·버그를 보내면 진행 상태와 답을 「내가 보낸 요청」에서 봐요'],['🗂️','마을·채팅·번개·숙소·카풀은 ☰기타 › 「가끔 쓰는 것」으로 옮겼어요'],['🆕','업데이트 카드는 「일주일 닫기」로 7일 동안 숨길 수 있어요'],['📊','앱을 더 좋게 만들려고 어떤 메뉴를 쓰는지만 세요(글 내용은 안 봐요) · 놀이 › 설정에서 끌 수 있어요']] },
   { id:'u1018a', date:'10.18', t:'🚤 기상특보 알림 · 해경 신고 바로가기', items:[['⚠️','양양 바다에 풍랑·강풍 주의보가 나면 홈 맨 위에 빨간 띠 — 기상청 특보 보기 · 해경 신고 바로'],['🚤','주의보 중 서핑은 해경 「기상특보활동신고」가 필요해요 · ☰기타 › 수상레저 신고'],['📝','내 신고 메모(장소·인원·시간)를 이 폰에만 저장해 두고 📋 복사 — 주민번호·전화번호는 저장하지 않아요']] },
   { id:'u1017b', date:'10.17', t:'⚔️ 원정 상성·보스 기술 · 해변 수호 스타일 균형', items:[['🌊','원정 — 🌊물결 › 🔥불꽃 › 🍃바람 상성, 편성 화면에 「상대는 ○에 약해요」 힌트','quest'],['👑','지역 보스 11마리마다 고유 기술(보호막·돌진·회복 졸개 등) — 등장할 때 한 줄 안내','quest'],['🐟','장비 +6부터는 귀한 물고기가 재료 · 보드·슈트 둘 다 +5면 세트 「파도 타는 자」','quest'],['⚖️','해변 수호 패들·슬램 균형 조정 · 파도 점프 맞바람 예고·밤바다 장애물 잘 보이게','defend']] },
   { id:'u1017a', date:'10.17', t:'🎮 게임 고도화 — 보드·업적 · 스타일 · 해변 탐사', items:[['🏄','파도 점프 — 보드 4종(작은 특기) · 🏅 업적 14개 · 🦀 거대 꽃게 보스 · 폭풍·밤바다 구간','game'],['📍','라인업 서핑 — 스팟 3곳(낙산·죽도·인구) · 📖 기술 도감 · 🎯 세션 목표 · 스케이트 🎵 프리라이드','play'],['🎨','해변 수호 — 스타일 3종(보드·패들·슬램) · 시너지 5종 · 🌟 전설 카드 · 새 적 · 무한 파도 매점','defend'],['🌊','원정 — 이야기를 깨면 끝없는 「해변 탐사」 · 💞 동료 인연 이야기 · 🏛️ 마을 명소 · 시간 따라 바뀌는 하늘','quest'],['🔊','모든 게임에 소리 켜기/끄기 버튼']] },
@@ -125,18 +126,23 @@ function go(k){
   else if(k === 'guide') window.open('/guide', '_blank', 'noopener');
   else if(k === 'me'){ setTab('home'); setTimeout(()=>{ const d = $u('bld-fold'); if(d){ d.open = true; d.scrollIntoView({ block:'start', behavior:'smooth' }); } }, 120); }
 }
-/* 홈 카드 — 안 본 업데이트가 있을 때만 뜬다. '다시 보지 않기'를 누르면 다음 업데이트가 나올 때까지 숨는다. */
+/* 홈 카드 — 안 본 업데이트가 있을 때만 뜬다. 버튼은 둘 — [자세히 보기](다 본 것으로 → 사라짐) · [일주일 닫기].
+   일주일 닫기: 7일 동안 숨고, 7일이 지나거나 그 뒤 더 새 업데이트가 나오면 다시 뜬다(본 것으로 치지 않는다).
+   예전 '다시 보지 않기'(HIDE = 그 업데이트 id)는 가입 직후에도 쓰므로 그대로 존중한다. */
 const hiddenFor = () => { try{ return localStorage.getItem(HIDE) || ''; }catch(e){ return ''; } };
+const weekHidden = () => { try{ const w = JSON.parse(localStorage.getItem(WEEK) || 'null');
+  return !!(w && typeof w.at === 'number' && w.id === UPDATES[0].id && Date.now() - w.at < WEEK_MS && Date.now() >= w.at); }catch(e){ return false; } };
+function week(){ try{ localStorage.setItem(WEEK, JSON.stringify({ at:Date.now(), id:UPDATES[0].id })); }catch(e){} card(); }
 function card(){
   const el = $u('home-upd'); if(!el) return;
   const u = UPDATES[0], n = unseen();
-  if(!n || hiddenFor() === u.id){ el.hidden = true; el.innerHTML = ''; return; }
+  if(!n || hiddenFor() === u.id || weekHidden()){ el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   el.innerHTML = `<button type="button" class="upd" id="upd-open"><span class="upd-h"><b>🆕 업데이트 · ${u.date}</b>${n ? `<em>NEW${n > 9 ? '' : ' ' + n}</em>` : ''}</span>
-    <span class="upd-t">${u.t}</span><span class="upd-l">${u.items.slice(0, 2).map(i=>`${i[0]} ${i[1].split(' — ')[0]}`).join('<br>')}</span><span class="upd-more">전체 보기 ›</span></button>
-    <button type="button" class="upd-x" id="upd-x" aria-label="다시 보지 않기" title="다시 보지 않기">다시 보지 않기</button>`;
+    <span class="upd-t">${u.t}</span><span class="upd-l">${u.items.slice(0, 2).map(i=>`${i[0]} ${i[1].split(' — ')[0]}`).join('<br>')}</span><span class="upd-more">자세히 보기 ›</span></button>
+    <button type="button" class="upd-wk" id="upd-week" title="7일 동안 이 카드를 숨겨요 · 새 소식이 나오면 다시 떠요">일주일 닫기</button>`;
   $u('upd-open').onclick = openAll;
-  $u('upd-x').onclick = ()=>{ try{ localStorage.setItem(HIDE, u.id); localStorage.setItem(SEEN, u.id); }catch(e){} card(); };
+  $u('upd-week').onclick = ()=>{ week(); if(typeof toast === 'function') toast('일주일 동안 숨겨요 · 새 소식이 나오면 다시 알려 드려요'); };
 }
 function openAll(){
   let sh = $u('upd-sheet');
@@ -152,7 +158,7 @@ function openAll(){
   try{ localStorage.setItem(SEEN, UPDATES[0].id); }catch(e){}
   card();
 }
-window.updCard = card; window.updOpen = openAll; window.UPDATES = UPDATES;
+window.updCard = card; window.updOpen = openAll; window.updWeek = week; window.UPDATES = UPDATES;
 window.updEvents = () => UPDATES.slice(0, 1).map(u=>({ ic:'🆕', who:'', text:`업데이트 — ${u.t}`, go:'upd' }));
 if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', card); else card();
 })();

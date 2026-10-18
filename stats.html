@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>SurfShare 사용 현황</title>
+<link rel="icon" href="icon2-180.png">
+<script src="config.js"></script>
+<style>
+/* 운영자만 보는 화면 — 바깥 글꼴·도구를 부르지 않는다 */
+:root{ --bg:#F4F6FB; --card:#FFFFFF; --ink:#1B1B2F; --ink2:#5B6275; --line:#E1E5EE; --sea:#2E6BFF; --sea2:#A9C3FF; --mint:#2FBF86; --sun:#F5B700; --coral:#E5484D; --chip:#EEF2FA }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --bg:#11131A; --card:#1B1E29; --ink:#ECEFF7; --ink2:#A3AAC0; --line:#2C3142; --sea:#6C97FF; --sea2:#34518F; --chip:#252A3A } }
+:root[data-theme="dark"]{ --bg:#11131A; --card:#1B1E29; --ink:#ECEFF7; --ink2:#A3AAC0; --line:#2C3142; --sea:#6C97FF; --sea2:#34518F; --chip:#252A3A }
+*{ box-sizing:border-box }
+body{ margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif; -webkit-text-size-adjust:100% }
+.wrap{ max-width:1080px; margin:0 auto; padding:16px 16px 60px }
+h1{ font-size:20px; margin:4px 0 2px } h2{ font-size:16px; margin:0 0 10px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap } h2 small{ font-size:12px; color:var(--ink2); font-weight:600 }
+.sub{ color:var(--ink2); font-size:13px }
+.bar{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:12px 0 4px }
+button, select, input, textarea{ font:inherit; color:inherit }
+.btn{ min-height:40px; padding:0 14px; border:1px solid var(--line); background:var(--card); border-radius:10px; cursor:pointer; font-weight:700 }
+.btn.pri{ background:var(--sea); color:#fff; border-color:var(--sea) }
+.btn[aria-pressed="true"]{ background:var(--ink); color:var(--bg); border-color:var(--ink) }
+.card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:12px; min-width:0 }
+.grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:12px }
+.grid > .card{ margin-top:0 }
+.kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px }
+.kpi{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px }
+.kpi b{ display:block; font-size:26px; line-height:1.2 } .kpi span{ font-size:12.5px; color:var(--ink2); font-weight:600 }
+.tbl{ width:100%; border-collapse:collapse; font-size:14px }
+.tbl th, .tbl td{ padding:8px 6px; border-top:1px solid var(--line); text-align:left; vertical-align:top }
+.tbl th{ font-size:12.5px; color:var(--ink2); border-top:0; white-space:nowrap }
+.tbl th button{ border:0; background:none; padding:4px 0; font-weight:700; color:inherit; cursor:pointer; min-height:32px }
+.tbl td.n, .tbl th.n{ text-align:right; font-variant-numeric:tabular-nums }
+.scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch }
+.rank{ list-style:none; margin:0; padding:0 }
+.rank li{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 10px; padding:6px 0; border-top:1px solid var(--line); font-size:14px }
+.rank li:first-child{ border-top:0 }
+.rank .lb{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap } .rank .v{ text-align:right; font-variant-numeric:tabular-nums; font-weight:700 } .rank .v small{ color:var(--ink2); font-weight:600 }
+.rank .meter{ grid-column:1 / -1; height:6px; background:var(--chip); border-radius:3px; overflow:hidden } .rank .meter i{ display:block; height:100%; background:var(--sea); border-radius:3px }
+.chip{ display:inline-block; padding:1px 8px; border-radius:999px; background:var(--chip); font-size:12px; font-weight:700; white-space:nowrap }
+.chip.app{ background:#DDF5EA; color:#146C49 } .chip.zero{ background:#FFE3E3; color:#A3262B }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .chip.app{ background:#173B2C; color:#8BE3BC } :root:not([data-theme="light"]) .chip.zero{ background:#4A1D20; color:#FFB4B6 } }
+.dim{ color:var(--ink2) }
+.gate{ max-width:420px; margin:40px auto }
+.gate input{ width:100%; min-height:46px; padding:0 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); margin-top:10px }
+.err{ color:var(--coral); font-weight:700; min-height:1.4em; font-size:13.5px; margin-top:6px }
+.chart svg{ display:block; width:100%; height:auto }
+.chart .b{ fill:var(--sea) } .chart .b2{ fill:var(--sea2) } .chart text{ fill:var(--ink2); font-size:11px } .chart .lv{ fill:var(--ink); font-weight:700 } .chart .ax{ stroke:var(--line) }
+.legend{ display:flex; gap:12px; font-size:12px; color:var(--ink2); margin-top:6px } .legend i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px }
+.fb{ border-top:1px solid var(--line); padding:12px 0 } .fb:first-of-type{ border-top:0 }
+.fb-hd{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:12.5px; color:var(--ink2); font-weight:600 }
+.fb-tx{ margin:6px 0; white-space:pre-wrap; word-break:break-word }
+.fb-ctl{ display:grid; grid-template-columns:140px minmax(0,1fr) auto; gap:8px; align-items:start }
+.fb-ctl select, .fb-ctl textarea{ border:1px solid var(--line); border-radius:10px; background:var(--card); padding:8px; min-height:40px }
+.fb-ctl textarea{ min-height:40px; resize:vertical; width:100% }
+@media (max-width:560px){ .fb-ctl{ grid-template-columns:1fr } .hide-s{ display:none } .tbl{ font-size:13px } .tbl th, .tbl td{ padding:7px 4px } #visits td:first-child{ word-break:break-all; max-width:110px } }
+.st-접수{ background:var(--chip) } .st-검토{ background:#FFF1BF; color:#6B5300 } .st-반영됨{ background:#DDF5EA; color:#146C49 } .st-보류{ background:#FFE3E3; color:#A3262B }
+.toast{ position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--ink); color:var(--bg); padding:10px 16px; border-radius:999px; font-weight:700; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; max-width:calc(100% - 32px) }
+.toast.on{ opacity:1 }
+label.ck{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ink2); min-height:40px }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📊 SurfShare 사용 현황</h1>
+  <div class="sub">운영자 전용 · 글 내용은 모으지 않아요(어느 메뉴를 썼는지만) · 기록은 180일 보관</div>
+
+  <section class="gate card" id="gate" hidden>
+    <h2>🔑 운영자 열쇠</h2>
+    <div class="sub">supabase-track.sql 맨 아래에서 직접 넣은 문장을 그대로 넣어 주세요. 이 기기에만 기억해요.</div>
+    <form id="gate-f"><input id="gate-k" type="password" autocomplete="current-password" placeholder="운영자 열쇠" aria-label="운영자 열쇠">
+    <div class="err" id="gate-err" role="alert"></div>
+    <button class="btn pri" type="submit" style="width:100%">열기</button></form>
+  </section>
+
+  <main id="app" hidden>
+    <div class="bar">
+      <span class="sub">기간</span>
+      <button class="btn" type="button" data-days="7" aria-pressed="false">7일</button>
+      <button class="btn" type="button" data-days="14" aria-pressed="true">14일</button>
+      <button class="btn" type="button" data-days="30" aria-pressed="false">30일</button>
+      <button class="btn" type="button" id="reload">↻ 새로고침</button>
+      <label class="ck"><input type="checkbox" id="hide-test" checked> 테스트 계정 숨기기</label>
+      <span style="flex:1"></span>
+      <button class="btn" type="button" id="logout">열쇠 지우기</button>
+    </div>
+    <div class="err" id="load-err" role="alert"></div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <section class="card chart"><h2>📈 날짜별 활성 사용자 <small id="chart-sub"></small></h2><div id="chart"></div>
+      <div class="legend"><span><i style="background:var(--sea)"></i>활성 사용자(명)</span><span><i style="background:var(--sea2)"></i>앱 열기(회)</span></div></section>
+
+    <section class="card"><h2>👥 사람별 마지막 접속 <small>눌러서 정렬 · 접속 = 앱을 연 횟수(30분 넘게 쉬면 새로)</small></h2>
+      <div class="scroll"><table class="tbl" id="visits"></table></div></section>
+
+    <div class="grid" style="margin-top:12px">
+      <section class="card"><h2>🧭 메뉴 · 탭 사용 순위 <small id="menu-sub"></small></h2><ul class="rank" id="menus"></ul></section>
+      <section class="card"><h2>⭐ 주요 행동</h2><ul class="rank" id="acts"></ul></section>
+    </div>
+    <div class="grid" style="margin-top:12px">
+      <section class="card"><h2>🎮 게임별</h2><div class="scroll"><table class="tbl" id="games"></table></div></section>
+      <section class="card"><h2>💤 안 쓰는 메뉴 <small>최근 14일 · 2번 이하</small></h2><ul class="rank" id="unused"></ul>
+        <div class="sub" style="margin-top:8px">기타 › 「가끔 쓰는 것」으로 옮길지 정할 때 참고하세요.</div></section>
+    </div>
+
+    <section class="card"><h2>💡 개선 요청 <small id="fb-sub"></small></h2>
+      <div class="bar" id="fb-filter" style="margin-top:0"></div>
+      <div id="fb-list"></div></section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function(){
+const C = window.SURF_CONFIG || {}, URL_ = String(C.supabaseUrl || '').replace(/\/$/, ''), KEY = C.supabaseKey || '';
+const KK = 'lineup.stats.key';
+const $ = id => document.getElementById(id);
+const esc = t => String(t == null ? '' : t).replace(/[<>&"']/g, c=>({ '<':'&lt;', '>':'&gt;', '&':'&amp;', '"':'&quot;', "'":'&#39;' }[c]));
+const num = v => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+const getK = () => { try{ return localStorage.getItem(KK) || ''; }catch(e){ return ''; } };
+const setK = v => { try{ v ? localStorage.setItem(KK, v) : localStorage.removeItem(KK); }catch(e){} };
+let tT; const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(tT); tT = setTimeout(()=>e.classList.remove('on'), 2200); };
+
+async function rpc(fn, args){
+  const r = await fetch(`${URL_}/rest/v1/rpc/${fn}`, { method:'POST', headers:{ apikey:KEY, Authorization:'Bearer ' + KEY, 'Content-Type':'application/json' }, body:JSON.stringify(args) });
+  const b = await r.json().catch(()=>null);
+  if(!r.ok){ const m = String(b && b.message || ''); throw Object.assign(new Error(/noadmin/.test(m) ? 'noadmin' : r.status === 404 ? 'nofn' : (m || 'HTTP ' + r.status)), { status:r.status }); }
+  return b;
+}
+
+/* 이름표 */
+const TAB = { home:'홈', food:'맛집', play:'놀이', cam:'캠', ride:'버스', bolt:'서핑번개', stay:'숙소', town:'마을 · 채팅', me:'꾸미기' };
+const MORE = { bolt:'서핑번개', stay:'숙소', car:'카풀', town:'마을 · 채팅', kcg:'수상레저 신고', guide:'사용 가이드', shop:'소품샵', a2hs:'홈 화면에 추가', settings:'설정', homeedit:'홈 편집', help:'처음 안내', feedback:'개선 요청', sub:'「가끔 쓰는 것」 펼치기' };
+const HUB = { game:'파도 점프', quest:'원정', defend:'해변 수호', skate:'서프스케이트', quiz:'코치 퀴즈', fort:'오늘의 운세', stamp:'해변 스탬프', badge:'배지 도감', rank:'동기 순위', shop:'소품샵', up:'강화소', surf:'라인업 서핑', me:'내 캐릭터', town:'마을', emote:'이모트' };
+const SET = { haptic:'진동', sound:'게임 소리', big:'글씨 크게', bday:'생일 알리기', a2hs:'홈 화면에 추가', guide:'사용 가이드', share:'앱 알리기', track:'사용 기록 보내기', feedback:'개선 요청' };
+const QA = { cam:'캠', bus:'버스', slog:'서핑 일지', checkin:'체크인' };
+const SHEET = { 'more-sheet':'기타 메뉴', 'fb-sheet':'개선 요청 창', 'upd-sheet':'업데이트 소식', 'quiz-sheet':'코치 퀴즈', 'play-sheet':'서퍼 도감', 'mail-sheet':'쪽지', 'home-edit':'홈 편집', 'sl-sheet':'서핑 일지 창' };
+const GAME = { jump:'🏄 파도 점프', surf:'🌊 라인업 서핑', skate:'🛹 서프스케이트', quest:'🗺️ 원정', defend:'🛡️ 해변 수호' };
+const ACT = { checkin:'체크인', checkout:'바다에서 나옴', slog_save:'서핑 일지 기록', ride_create:'카풀 올리기', ride_join:'카풀 타기·빠지기', stay_create:'숙소 올리기', stay_join:'숙소 합류·빠지기',
+  bolt_create:'번개 열기', bolt_join:'번개 참여·빠지기', chat_send:'마을 채팅', food_review:'맛집·스팟 댓글', place_add:'맛집·스팟 등록 요청', bday_comment:'생일 축하', bus_check:'버스 빈자리 확인',
+  bus_request:'버스 노선 요청', bus_report:'버스 자리 제보', kcg_open:'해경 신고 열기', feedback_send:'개선 요청 보냄', shop_buy:'소품 사기', update_open:'업데이트 소식 보기', react:'반응(👍)', drill:'훈련 체크',
+  note_send:'쪽지 보냄', stay_review:'숙소 평가', place_edit:'숙소 정보 고침' };
+function label(ev, t){
+  t = String(t || '');
+  if(ev === 'tab') return '탭 › ' + (TAB[t] || t);
+  if(ev === 'sheet') return '창 › ' + (SHEET[t] || t);
+  if(ev === 'menu'){ const [k, v] = t.split(':'); const M = { more:['기타', MORE], hub:['놀이', HUB], set:['설정', SET], qa:['홈 바로가기', QA], home:['홈 같이 가요', { bolt:'번개', car:'카풀', stay:'숙소' }], upd:['업데이트 가 보기', {}] }[k];
+    return M ? `${M[0]} › ${M[1][v] || v}` : t; }
+  if(ev === 'action') return ACT[t] || t;
+  return `${ev} ${t}`;
+}
+/* 안 쓰는 메뉴를 찾을 목록 — 쓰는 길이 여러 개면 합쳐 센다 */
+const CATALOG = [
+  ['맛집', [['tab','food']]], ['놀이', [['tab','play']]], ['캠', [['tab','cam']]], ['버스', [['tab','ride']]],
+  ['서핑번개', [['tab','bolt']]], ['숙소', [['tab','stay']]], ['카풀', [['menu','more:car'], ['menu','home:car']]], ['마을 · 채팅', [['tab','town']]],
+  ['수상레저 신고', [['menu','more:kcg'], ['action','kcg_open']]], ['소품샵', [['menu','more:shop'], ['menu','hub:shop']]], ['홈 편집', [['menu','more:homeedit']]], ['사용 가이드', [['menu','more:guide'], ['menu','set:guide']]],
+  ['홈 화면에 추가', [['menu','more:a2hs'], ['menu','set:a2hs']]], ['처음 안내', [['menu','more:help']]], ['개선 요청', [['sheet','fb-sheet']]], ['쪽지', [['sheet','mail-sheet']]], ['서핑 일지', [['sheet','sl-sheet']]],
+  ['파도 점프', [['game_start','jump']]], ['원정', [['game_start','quest']]], ['해변 수호', [['game_start','defend']]], ['서프스케이트', [['game_start','skate']]], ['라인업 서핑', [['game_start','surf']]],
+  ['코치 퀴즈', [['sheet','quiz-sheet']]], ['오늘의 운세', [['menu','hub:fort']]], ['해변 스탬프·배지', [['menu','hub:stamp'], ['menu','hub:badge']]], ['동기 순위', [['menu','hub:rank']]], ['강화소', [['menu','hub:up']]],
+  ['체크인', [['action','checkin']]], ['업데이트 소식', [['sheet','upd-sheet']]]];
+const TEST = id => /^(zz|test|qa)/i.test(String(id || ''));
+
+function rel(iso){ if(!iso) return '기록 없음'; const t = new Date(iso).getTime(); if(!t) return '—'; const m = Math.round((Date.now() - t) / 6e4);
+  if(m < 2) return '방금'; if(m < 60) return m + '분 전'; const h = Math.round(m / 60); if(h < 24) return h + '시간 전'; const d = Math.round(h / 24); if(d < 31) return d + '일 전'; return Math.round(d / 30) + '달 전'; }
+const secs = s => { s = num(s); if(!s) return '—'; const m = Math.floor(s / 60), r = Math.round(s % 60); return m ? `${m}분${r ? ' ' + r + '초' : ''}` : `${r}초`; };
+const dev = r => { const os = { ios:'아이폰', android:'안드로이드', mac:'맥', win:'윈도우', other:'기타' }[r.os] || (r.os ? String(r.os) : '');
+  const br = { kakao:'카톡', naver:'네이버', insta:'인스타', fb:'페북' }[r.br] || '';
+  if(!os && r.pwa == null) return '<span class="dim">—</span>';
+  return `${esc(os)} ${String(r.pwa) === '1' ? '<span class="chip app">홈 화면 앱</span>' : `<span class="chip">${br ? esc(br) + ' 안' : '브라우저'}</span>`}`; };
+
+let DAYS = 14, U = null, U14 = null, V = [], FB = [], fbFilter = '전체', sortK = 'last_seen', sortD = -1;
+
+async function load(){
+  const k = getK(); if(!k) return showGate();
+  $('load-err').textContent = ''; $('reload').disabled = true;
+  try{
+    const [u, v, f] = await Promise.all([rpc('admin_usage', { p_key:k, p_days:DAYS }), rpc('admin_visits', { p_key:k, p_days:30 }), rpc('admin_feedback', { p_key:k })]);
+    U = u || {}; V = Array.isArray(v) ? v : []; FB = Array.isArray(f) ? f : [];
+    U14 = DAYS === 14 ? U : await rpc('admin_usage', { p_key:k, p_days:14 }).catch(()=>U);
+    $('gate').hidden = true; $('app').hidden = false; render();
+  }catch(e){
+    if(e.message === 'noadmin'){ setK(''); showGate('열쇠가 맞지 않아요'); return; }
+    $('app').hidden = false; $('gate').hidden = true;
+    $('load-err').textContent = e.message === 'nofn' ? '서버에 함수가 아직 없어요 — supabase-track.sql 을 먼저 실행해 주세요' : /fetch|Load failed|network/i.test(e.message) ? '서버에 닿지 않아요 · 신호 확인' : '불러오지 못했어요 · ' + e.message;
+  }finally{ $('reload').disabled = false; }
+}
+function showGate(msg){ $('app').hidden = true; $('gate').hidden = false; $('gate-err').textContent = msg || ''; setTimeout(()=>$('gate-k').focus(), 30); }
+
+function render(){ kpis(); chart(); visits(); menus(); acts(); games(); unused(); feedback(); }
+
+function kpis(){
+  const vs = V.filter(r=>!($('hide-test').checked && TEST(r.id)) && r.last_seen && Date.now() - new Date(r.last_seen) < 30 * 864e5);
+  const app = vs.filter(r=>String(r.pwa) === '1').length;
+  const k = [['오늘 활성', num(U.dau) + '명'], ['7일 활성', num(U.wau) + '명'], ['30일 활성', num(U.mau) + '명'], ['오늘 앱 열기', num(U.opens_today) + '회'],
+    ['홈 화면 앱으로', vs.length ? Math.round(app / vs.length * 100) + '%' : '—'], ['새 개선 요청', FB.filter(f=>f.status === '접수').length + '건']];
+  $('kpis').innerHTML = k.map(([t, v])=>`<div class="kpi"><b>${esc(v)}</b><span>${esc(t)}</span></div>`).join('');
+}
+
+function chart(){
+  const by = {}; (U.daily || []).forEach(d=>{ by[String(d.d).slice(0, 10)] = d; });
+  const days = []; const base = new Date(); base.setHours(12, 0, 0, 0);
+  for(let i = DAYS - 1; i >= 0; i--){ const x = new Date(base - i * 864e5); const key = `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; days.push([key, by[key] || { u:0, s:0 }]); }
+  const W = 640, H = 200, L = 8, B = 26, T = 18, n = days.length, bw = (W - L * 2) / n;
+  const mx = Math.max(1, ...days.map(([, d])=>Math.max(num(d.u), num(d.s))));
+  const y = v => T + (H - T - B) * (1 - num(v) / mx);
+  const lab = Math.ceil(n / 10);
+  let g = `<line class="ax" x1="${L}" x2="${W - L}" y1="${H - B}" y2="${H - B}"/>`;
+  days.forEach(([k, d], i)=>{ const x = L + i * bw, w = Math.max(2, bw * .38);
+    g += `<rect class="b2" x="${(x + bw * .5).toFixed(1)}" y="${y(d.s).toFixed(1)}" width="${w.toFixed(1)}" height="${(H - B - y(d.s)).toFixed(1)}" rx="2"><title>${esc(k)} 앱 열기 ${num(d.s)}회</title></rect>`;
+    g += `<rect class="b" x="${(x + bw * .5 - w).toFixed(1)}" y="${y(d.u).toFixed(1)}" width="${w.toFixed(1)}" height="${(H - B - y(d.u)).toFixed(1)}" rx="2"><title>${esc(k)} 활성 ${num(d.u)}명</title></rect>`;
+    if(n <= 14 && num(d.u)) g += `<text class="lv" x="${(x + bw * .5 - w / 2).toFixed(1)}" y="${(y(d.u) - 4).toFixed(1)}" text-anchor="middle">${num(d.u)}</text>`;
+    if(i % lab === 0 || i === n - 1) g += `<text x="${(x + bw / 2).toFixed(1)}" y="${H - 8}" text-anchor="middle">${esc(k.slice(5).replace('-', '.'))}</text>`; });
+  $('chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="최근 ${DAYS}일 날짜별 활성 사용자">${g}</svg>`;
+  $('chart-sub').textContent = `최근 ${DAYS}일 · 가장 많은 날 ${Math.max(0, ...days.map(([, d])=>num(d.u)))}명`;
+}
+
+function visits(){
+  const rows = V.filter(r=>!($('hide-test').checked && TEST(r.id)));
+  const key = { name:r=>String(r.name || ''), cohort:r=>String(r.cohort || ''), last_seen:r=>r.last_seen ? new Date(r.last_seen).getTime() : 0, s7:r=>num(r.s7), s30:r=>num(r.s30), dev:r=>`${r.os || ''}${r.pwa || ''}` }[sortK];
+  rows.sort((a, b)=>{ const x = key(a), y = key(b); return (x > y ? 1 : x < y ? -1 : 0) * sortD; });
+  const th = (k, t, c) => `<th class="${c || ''}" aria-sort="${sortK === k ? (sortD > 0 ? 'ascending' : 'descending') : 'none'}"><button type="button" data-sort="${k}">${t}${sortK === k ? (sortD > 0 ? ' ▲' : ' ▼') : ''}</button></th>`;
+  $('visits').innerHTML = `<thead><tr>${th('name', '이름')}${th('cohort', '기수')}${th('last_seen', '마지막 접속')}${th('s7', '7일 접속', 'n')}${th('s30', '30일', 'n hide-s')}${th('dev', '기기')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr><td>${esc(r.name || r.id)}</td><td>${esc(r.cohort || '')}</td><td title="${esc(r.last_seen || '')}">${esc(rel(r.last_seen))}</td><td class="n">${num(r.s7)}</td><td class="n hide-s">${num(r.s30)}</td><td>${dev(r)}</td></tr>`).join('')
+      || '<tr><td colspan="6" class="dim">아직 기록이 없어요</td></tr>'}</tbody>`;
+}
+
+function rankList(el, rows, empty){
+  const mx = Math.max(1, ...rows.map(r=>num(r.n)));
+  el.innerHTML = rows.map(r=>`<li><span class="lb">${esc(r.lb)}</span><span class="v">${num(r.n)}회 <small>· ${num(r.u)}명</small></span><span class="meter"><i style="width:${Math.max(2, Math.round(num(r.n) / mx * 100))}%"></i></span></li>`).join('')
+    || `<li class="dim">${esc(empty)}</li>`;
+}
+function menus(){
+  const rows = (U.rows || []).filter(r=>['tab', 'menu', 'sheet'].includes(r.ev)).map(r=>({ lb:label(r.ev, r.target), n:r.n, u:r.u })).sort((a, b)=>num(b.n) - num(a.n)).slice(0, 30);
+  rankList($('menus'), rows, '아직 기록이 없어요'); $('menu-sub').textContent = `최근 ${DAYS}일 · 횟수 · 사람 수`;
+}
+function acts(){ rankList($('acts'), (U.rows || []).filter(r=>r.ev === 'action').map(r=>({ lb:label('action', r.target), n:r.n, u:r.u })).sort((a, b)=>num(b.n) - num(a.n)), '아직 기록이 없어요'); }
+function games(){
+  const G = (U.games || []).slice().sort((a, b)=>num(b.starts) - num(a.starts));
+  $('games').innerHTML = `<thead><tr><th>게임</th><th class="n">연 횟수</th><th class="n">끝낸 판</th><th class="n">평균 한 판</th><th class="n">사람</th></tr></thead>
+    <tbody>${G.map(g=>`<tr><td>${esc(GAME[g.g] || g.g)}</td><td class="n">${num(g.starts)}</td><td class="n">${num(g.ends)}</td><td class="n">${esc(secs(g.dur))}</td><td class="n">${num(g.u)}</td></tr>`).join('') || '<tr><td colspan="5" class="dim">아직 기록이 없어요</td></tr>'}</tbody>`;
+}
+function unused(){
+  const R = (U14 && U14.rows) || [], G = (U14 && U14.games) || [];
+  const cnt = (ev, t) => ev === 'game_start' ? G.filter(g=>g.g === t).reduce((a, g)=>a + num(g.starts), 0) : R.filter(r=>r.ev === ev && r.target === t).reduce((a, r)=>a + num(r.n), 0);
+  const ppl = (ev, t) => ev === 'game_start' ? G.filter(g=>g.g === t).reduce((a, g)=>Math.max(a, num(g.u)), 0) : R.filter(r=>r.ev === ev && r.target === t).reduce((a, r)=>Math.max(a, num(r.u)), 0);
+  const rows = CATALOG.map(([lb, ks])=>({ lb, n:ks.reduce((a, [e, t])=>a + cnt(e, t), 0), u:ks.reduce((a, [e, t])=>Math.max(a, ppl(e, t)), 0) })).filter(r=>r.n <= 2).sort((a, b)=>a.n - b.n);
+  $('unused').innerHTML = rows.map(r=>`<li><span class="lb">${esc(r.lb)}</span><span class="v">${r.n ? `${r.n}회 <small>· ${r.u}명</small>` : '<span class="chip zero">0회</span>'}</span></li>`).join('') || '<li class="dim">모든 메뉴가 3번 넘게 쓰였어요 👏</li>';
+}
+
+const CAT = { ux:'😣 불편해요', idea:'✨ 기능 요청', bug:'🐞 버그', praise:'💛 칭찬' };
+const STS = ['접수', '검토 중', '반영됨', '보류'];
+const SCR = { home:'홈', food:'맛집', play:'놀이', cam:'캠', ride:'버스', bolt:'번개', stay:'숙소', town:'마을', log:'일지', etc:'기타' };
+function feedback(){
+  const all = FB.filter(f=>!($('hide-test').checked && TEST(f.user_id)));
+  const cnt = s => all.filter(f=>s === '전체' || f.status === s).length;
+  $('fb-filter').innerHTML = ['전체', ...STS].map(s=>`<button class="btn" type="button" data-fbf="${esc(s)}" aria-pressed="${fbFilter === s}">${esc(s)} ${cnt(s)}</button>`).join('');
+  const rows = all.filter(f=>fbFilter === '전체' || f.status === fbFilter);
+  $('fb-sub').textContent = `${all.length}건 · 답을 남기면 보낸 사람의 「내가 보낸 요청」에 보여요`;
+  $('fb-list').innerHTML = rows.map(f=>`<div class="fb" data-fid="${esc(f.id)}">
+      <div class="fb-hd"><span class="chip">${esc(CAT[f.cat] || f.cat)}</span><b style="color:var(--ink)">${esc(f.name || f.user_id)}</b><span>${esc(f.cohort || '')}</span>
+        ${f.screen ? `<span>· ${esc(SCR[f.screen] || f.screen)}</span>` : ''}<span>· ${esc(rel(f.created_at))}</span>${f.ver ? `<span>· ${esc(f.ver)}</span>` : ''}
+        <span class="chip st-${esc(String(f.status || '').split(' ')[0])}">${esc(f.status)}</span></div>
+      <div class="fb-tx">${esc(f.text)}</div>
+      <div class="fb-ctl"><select aria-label="상태" data-fst>${STS.map(s=>`<option${s === f.status ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select>
+        <textarea data-frp maxlength="500" rows="1" placeholder="답 남기기(선택) — 보낸 사람에게 보여요" aria-label="답">${esc(f.reply || '')}</textarea>
+        <button class="btn pri" type="button" data-fsave>저장</button></div></div>`).join('') || '<div class="dim">아직 없어요</div>';
+}
+
+document.addEventListener('click', async e=>{
+  const d = e.target.closest('[data-days]'); if(d){ DAYS = +d.dataset.days; document.querySelectorAll('[data-days]').forEach(b=>b.setAttribute('aria-pressed', String(b === d))); load(); return; }
+  const s = e.target.closest('[data-sort]'); if(s){ const k = s.dataset.sort; if(sortK === k) sortD = -sortD; else { sortK = k; sortD = (k === 'name' || k === 'cohort') ? 1 : -1; } visits(); return; }
+  const f = e.target.closest('[data-fbf]'); if(f){ fbFilter = f.dataset.fbf; feedback(); return; }
+  const sv = e.target.closest('[data-fsave]');
+  if(sv){ const box = sv.closest('[data-fid]'), id = Number(box.dataset.fid), st = box.querySelector('[data-fst]').value, rp = box.querySelector('[data-frp]').value.trim().slice(0, 500);
+    sv.disabled = true; sv.textContent = '저장 중…';
+    try{ await rpc('admin_feedback_update', { p_key:getK(), p_id:id, p_status:st, p_reply:rp });
+      const row = FB.find(x=>Number(x.id) === id); if(row){ row.status = st; row.reply = rp || null; }
+      toast('저장했어요'); feedback(); kpis(); }
+    catch(err){ if(err.message === 'noadmin'){ setK(''); showGate('열쇠가 맞지 않아요'); } else { toast('저장하지 못했어요'); sv.disabled = false; sv.textContent = '저장'; } }
+  }
+});
+$('reload').onclick = load;
+$('hide-test').onchange = render;
+$('logout').onclick = ()=>{ setK(''); showGate(); };
+$('gate-f').onsubmit = e=>{ e.preventDefault(); const v = $('gate-k').value.trim(); if(v.length < 16) { $('gate-err').textContent = '열쇠는 16자 이상이에요'; return; } setK(v); $('gate-k').value = ''; $('gate-err').textContent = '확인 중…'; load(); };
+if(!URL_) $('load-err').textContent = '서버 설정이 없어요 (config.js)';
+load();
+})();
+</script>
+</body>
+</html>

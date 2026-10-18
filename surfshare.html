@@ -86,6 +86,8 @@ window.__bootFail = (files) => {
 <script src="waves.js" defer></script>
 <script src="kcg.js" defer></script>
 <script src="bus.js" defer></script>
+<script src="feedback.js" defer></script>
+<script src="track.js" defer></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#363552; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
        --mint:#4DE1A5; --coral:#FF6B6B; --grape:#9B6BFF; --sand:#F2E3B8; --grid:rgba(27,27,47,.15) }
@@ -566,6 +568,13 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .more-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px }
 .more-it{ position:relative; display:flex; flex-direction:column; align-items:flex-start; gap:2px; min-height:88px; padding:10px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF9E6; border:2px solid var(--ink); box-shadow:0 2px 6px rgba(18,36,95,.14); cursor:pointer }
 .more-it i{ font-style:normal; font-size:26px; font-family:sans-serif } .more-it b{ font-size:15px } .more-it small{ font-size:12px; color:#5B6275; font-weight:700 }
+.more-sub{ margin-top:12px; border-top:2px dashed var(--grid); padding-top:4px }
+.more-sub > summary{ display:flex; align-items:center; gap:8px; min-height:48px; padding:0 4px; font-size:14.5px; font-weight:800; cursor:pointer; list-style:none }
+.more-sub > summary::-webkit-details-marker{ display:none }
+.more-sub > summary::after{ content:'▾'; margin-left:auto; font-size:14px; transition:transform .15s } .more-sub[open] > summary::after{ transform:rotate(180deg) }
+.more-sub > summary small{ font-size:12px; color:#5B6275; font-weight:700 }
+.more-sub > summary em{ font-style:normal; font-size:11px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink); border-radius:999px }
+.more-sub-grid{ margin-top:4px }
 .more-it em{ position:absolute; top:8px; right:8px; font-style:normal; font-size:11px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
 /* 이번주의 파도 */
 .wv-card{ padding:10px; background:#E6F6FF; border:2px solid var(--ink); box-shadow:0 2px 6px rgba(18,36,95,.14) }
@@ -591,7 +600,10 @@ html, body{ overscroll-behavior-y:contain }        /* 브라우저 기본 당겨
 .rec-btns{ display:flex; gap:6px; margin-top:8px; padding-left:40px } .rec-btns .btn{ min-height:40px }
 /* 홈 — 업데이트 소식 */
 .upd{ display:flex; flex-direction:column; align-items:flex-start; gap:3px; width:100%; margin:0 0 12px; padding:10px 12px; text-align:left; font-family:inherit; color:var(--ink); background:#FFF3C4; border:2px solid var(--ink); box-shadow:0 2px 6px rgba(18,36,95,.14); cursor:pointer }
-#home-upd{ position:relative; margin:0 0 12px } #home-upd .upd{ margin:0 }
+#home-upd{ position:relative; margin:0 0 12px } #home-upd .upd{ margin:0; padding-bottom:52px }
+/* 일주일 닫기 — 왼쪽 아래, 자세히 보기는 오른쪽 아래(둘 다 손가락 크기) */
+.upd-wk{ position:absolute; left:10px; bottom:9px; min-height:38px; padding:0 12px; font-family:inherit; font-size:12.5px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); border-radius:999px; cursor:pointer }
+#home-upd .upd-more{ position:absolute; right:10px; bottom:9px; min-height:38px; display:flex; align-items:center; margin:0; padding:0 12px; color:#fff; background:var(--sea); border:2px solid var(--ink); border-radius:999px; pointer-events:none }
 .upd-x{ position:absolute; right:8px; top:8px; min-height:30px; padding:0 8px; font-size:0 !important; font-family:inherit; font-size:11.5px; font-weight:800; color:#5B6275; background:#fff; border:2px solid var(--ink); cursor:pointer }
 .upd-h{ display:flex; align-items:center; gap:6px; width:100%; padding-right:40px }
 .upd-x::after{ content:'✕'; font-size:14px } .upd-h b{ font-size:12.5px; color:#8A5A00 } .upd-h em{ font-style:normal; font-size:10.5px; font-weight:800; padding:1px 6px; background:var(--coral); color:#fff; border:2px solid var(--ink) }
@@ -1766,19 +1778,26 @@ body{ word-break:keep-all; overflow-wrap:break-word }
   <div class="sheet-in">
     <div class="sheet-hd"><span class="t">☰ 기타</span><button class="btn sm ghost" data-moreclose>닫기</button></div>
     <div class="more-grid">
-      <button type="button" class="more-it" data-more="bolt"><i>⚡</i><b>서핑번개</b><small>언제 같이 들어갈지</small><em id="more-bolt" hidden></em></button>
-      <button type="button" class="more-it" data-more="stay"><i>🏠</i><b>숙소</b><small>같이 쓰기 · 별점</small><em id="more-stay" hidden></em></button>
-      <button type="button" class="more-it" data-more="car"><i>🚗</i><b>카풀</b><small>같이 타고 내려가기</small></button>
-      <button type="button" class="more-it" data-more="town"><i>🏘</i><b>마을 · 채팅</b><small>캐릭터들이 모인 곳</small></button>
       <button type="button" class="more-it" data-more="kcg"><i>🚤</i><b>수상레저 신고</b><small>기상특보 · 해경 신고 링크</small></button>
+      <button type="button" class="more-it" data-more="feedback"><i>💡</i><b>개선 요청</b><small>불편한 점 · 바라는 기능</small></button>
       <button type="button" class="more-it" data-more="guide"><i>📖</i><b>사용 가이드</b><small>맛집·스팟 등록하는 법</small></button>
       <button type="button" class="more-it" data-more="shop"><i>🛍️</i><b>소품샵</b><small>서핑 용품 · 소품 · 옷</small></button>
       <button type="button" class="more-it" data-more="a2hs"><i>📲</i><b>홈 화면에 추가</b><small>아이콘으로 바로 열기</small></button>
-      <button type="button" class="more-it" data-more="settings"><i>⚙️</i><b>설정</b><small>진동 · 소리 · 글씨 크게</small></button>
+      <button type="button" class="more-it" data-more="settings"><i>⚙️</i><b>설정</b><small>진동 · 소리 · 사용 기록</small></button>
       <button type="button" class="more-it" data-more="homeedit"><i>🧩</i><b>홈 편집</b><small>안 쓰는 섹션 숨기기</small></button>
-      <button type="button" class="more-it" data-more="help" id="help"><i>💡</i><b>처음 안내 다시 보기</b><small>탭마다 뭐가 있는지</small></button>
+      <button type="button" class="more-it" data-more="help" id="help"><i>🧭</i><b>처음 안내 다시 보기</b><small>탭마다 뭐가 있는지</small></button>
       <button type="button" class="more-it" id="out"><i>🚪</i><b>로그아웃</b><small>이 기기에서 나가기</small></button>
     </div>
+    <!-- 가끔 쓰는 것 — 쓰임이 적어 접어 둔다(화면·기능·바로가기 ?go= 는 그대로) -->
+    <details class="more-sub" id="more-sub">
+      <summary><span>🗂️ 가끔 쓰는 것</span><small>마을 · 번개 · 숙소 · 카풀</small><em id="more-sub-n" hidden></em></summary>
+      <div class="more-grid more-sub-grid">
+        <button type="button" class="more-it" data-more="town"><i>🏘</i><b>마을 · 채팅</b><small>캐릭터들이 모인 곳</small></button>
+        <button type="button" class="more-it" data-more="bolt"><i>⚡</i><b>서핑번개</b><small>언제 같이 들어갈지</small><em id="more-bolt" hidden></em></button>
+        <button type="button" class="more-it" data-more="stay"><i>🏠</i><b>숙소</b><small>같이 쓰기 · 별점</small><em id="more-stay" hidden></em></button>
+        <button type="button" class="more-it" data-more="car"><i>🚗</i><b>카풀</b><small>같이 타고 내려가기</small></button>
+      </div>
+    </details>
   </div>
 </div>
 
@@ -3295,17 +3314,19 @@ $('me-av').style.cursor = 'pointer'; $('me-av').setAttribute('role', 'button'); 
 $('me-av').onclick = ()=>{ const d = $('bld-fold'); if(d){ d.open = true; d.dispatchEvent(new Event('toggle')); setTimeout(()=>d.scrollIntoView({ block:'start', behavior:'smooth' }), 60); } };
 $('help').onclick = ()=>{ if($('onb').hidden) onbStart(); else onbEnd(); };
 
-/* ── 기타 메뉴 ── 번개·숙소·카풀·마을은 쓰임이 줄어 아래 탭에서 빼고 여기로 모았다(화면·기능은 그대로) */
+/* ── 기타 메뉴 ── 번개·숙소·카풀·마을은 쓰임이 줄어 아래 탭에서 빼고 여기로 모았다(화면·기능은 그대로).
+   10/18 — 그마저 「가끔 쓰는 것」으로 접었다. 놀이 메뉴의 마을 카드도 여기로. 무엇을 접을지는 /stats 「안 쓰는 메뉴」를 보고 정한다 */
 function moreDots(){
   let n = 0; ['bolt', 'stay'].forEach(k=>{ const d = $(k + '-dot'), e = $('more-' + k); const v = d && !d.hidden ? d.textContent : '';
     if(e){ e.hidden = !v; e.textContent = v ? `새 글 ${v}` : ''; } if(v) n++; });
   const md = $('more-dot'); if(md) md.hidden = !n;
+  const sn = $('more-sub-n'); if(sn){ sn.hidden = !n; sn.textContent = n ? '새 글' : ''; }      // 접어 둔 칸에도 — 펼치지 않아도 보이게
 }
 $('t-more').onclick = ()=>{ moreDots(); $('more-sheet').hidden = false; };
 $('more-sheet').addEventListener('click', e=>{
   if(e.target.closest('[data-moreclose]')){ $('more-sheet').hidden = true; return; }
   const b = e.target.closest('[data-more]'); if(!b) return; const k = b.dataset.more; $('more-sheet').hidden = true;
-  if(k === 'car') window.carOpen?.(); else if(k === 'kcg') window.kcgOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'shop') window.shopOpen?.(); else if(k === 'homeedit') window.homeEditOpen?.(); else if(k === 'settings'){ setTab('play'); setTimeout(()=>{ const h = document.querySelector('#play-hub .hubset'); if(h){ h.scrollIntoView({ block:'center', behavior:'smooth' }); h.classList.add('flash'); setTimeout(()=>h.classList.remove('flash'), 1600); } }, 250); } else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
+  if(k === 'car') window.carOpen?.(); else if(k === 'feedback') window.feedbackOpen?.(); else if(k === 'kcg') window.kcgOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'shop') window.shopOpen?.(); else if(k === 'homeedit') window.homeEditOpen?.(); else if(k === 'settings'){ setTab('play'); setTimeout(()=>{ const h = document.querySelector('#play-hub .hubset'); if(h){ h.scrollIntoView({ block:'center', behavior:'smooth' }); h.classList.add('flash'); setTimeout(()=>h.classList.remove('flash'), 1600); } }, 250); } else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
 });
 
 /* ── 탭 ─────────────────────────────────────────────────── */
@@ -4437,10 +4458,12 @@ async function syncMe(){
   catch(e){}
 }
 
-/* 앱 아이콘 길게 누르기 바로가기(manifest shortcuts) — /surfshare?go=slog|bus|cam|game|food */
+/* 앱 아이콘 길게 누르기 바로가기(manifest shortcuts) — /surfshare?go=slog|bus|cam|game|food
+   기타로 옮긴 것도 그대로 열린다 — ?go=town|bolt|stay|car|kcg|feedback */
 function goFromUrl(){ const g = new URLSearchParams(location.search).get('go'); if(!g) return;
   try{ history.replaceState(history.state, '', location.pathname); }catch(e){}
-  if(g === 'slog') window.surfLogOpen?.(); else if(g === 'bus') setTab('ride'); else if(g === 'cam') setTab('cam'); else if(g === 'game') window.gameOpen?.(); else if(g === 'food') setTab('food'); }
+  if(g === 'slog') window.surfLogOpen?.(); else if(g === 'bus') setTab('ride'); else if(g === 'cam') setTab('cam'); else if(g === 'game') window.gameOpen?.(); else if(g === 'food') setTab('food');
+  else if(g === 'town' || g === 'bolt' || g === 'stay') setTab(g); else if(g === 'car') window.carOpen?.(); else if(g === 'kcg') window.kcgOpen?.(); else if(g === 'feedback') window.feedbackOpen?.(); }
 function start(){
   $('login').hidden = true; $('main').hidden = false; $('foot').hidden = true; sceneOff();
   $('nav').hidden = false; document.body.classList.add('has-nav');

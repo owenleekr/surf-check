@@ -27,8 +27,11 @@ function sync(){
 }
 new MutationObserver(()=>{ if(!busy){ busy = true; queueMicrotask(sync); } })
   .observe(document.body, { subtree:true, childList:true, attributes:true, attributeFilter:['hidden'] });
+/* 창을 닫으면서 다른 탭으로 간 경우(☰기타 › 마을·번개 등) — 창 기록을 되돌리는 동안엔 탭 칸을 못 쌓는다(되돌리기가 그 칸을 지운다).
+   되돌리기가 끝난 뒤 홈이 아니면 그때 한 칸 쌓는다. 안 그러면 뒤로가기 한 번에 앱이 통째로 닫혔다 */
+function reTab(){ if(depth === 0 && !tabBase && document.body.classList.contains('has-nav') && !document.body.classList.contains('on-home')){ history.pushState({ tab:1 }, ''); tabBase = true; } }
 addEventListener('popstate', ()=>{
-  if(skip){ skip--; return; }
+  if(skip){ skip--; if(!skip) reTab(); return; }
   if(depth > 0){ depth--; if(!closeTop()) depth++; return; }
   /* 마을 사람 카드(창이 아니라 그림 위 카드)도 뒤로가기로 닫는다 */
   const vc = document.querySelector('.vcard'); if(vc){ vc.remove(); if(tabBase) history.pushState({ tab:1 }, ''); return; }
@@ -41,7 +44,7 @@ let wasHome = document.body.classList.contains('on-home');
 new MutationObserver(()=>{
   const home = document.body.classList.contains('on-home'); if(home === wasHome) return; wasHome = home;
   if(!document.body.classList.contains('has-nav')) return;
-  if(!home && !tabBase && depth === 0){ history.pushState({ tab:1 }, ''); tabBase = true; }
+  if(!home && !tabBase && depth === 0 && !skip){ history.pushState({ tab:1 }, ''); tabBase = true; }
   else if(home && tabBase && depth === 0 && !goingHome){ tabBase = false; skip++; history.back(); }
   goingHome = false;
 }).observe(document.body, { attributes:true, attributeFilter:['class'] });

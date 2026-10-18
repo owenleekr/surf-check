@@ -1,4 +1,4 @@
-/* 아래 탭 — 주력 5개(홈·맛집·놀이·캠·버스) + 기타(번개·숙소·카풀·마을·가이드·홈 화면 추가), 버스 탭은 버스 빈자리가 먼저, 노선 추가 요청 */
+/* 아래 탭 — 주력 5개(홈·맛집·놀이·캠·버스) + 기타(개선 요청·가이드·홈 화면 추가 … · 가끔 쓰는 것: 번개·숙소·카풀·마을), 버스 탭은 버스 빈자리가 먼저, 노선 추가 요청 */
 import { open } from './mock.mjs';
 import fs from 'fs';
 const bus = u => ({ fetched:new Date().toISOString(), buses:[{ t:'23:59', co:'금강고속', dur:'2:40', grade:'일반', fare:21600, left:0, total:41 }] });
@@ -20,6 +20,7 @@ await t.S(()=>document.querySelector('[data-more="bolt"]').click()); await t.sle
 console.log('번개로', await t.S(()=>({ 탭:state.tab, 기타눌림:document.getElementById('t-more').getAttribute('aria-pressed') })));
 await t.S(()=>{ document.getElementById('t-more').click(); document.querySelector('[data-more="car"]').click(); }); await t.sleep(300);
 console.log('카풀로', await t.S(()=>({ 탭:state.tab, 보기:document.getElementById('pane-ride').dataset.view })));
-await t.S(()=>{ setTab('play'); }); await t.sleep(300); await t.S(()=>document.querySelector('[data-hub="town"]').click()); await t.sleep(300);
-console.log('놀이→마을', await t.S(()=>state.tab));
+/* 10/18 — 마을 카드는 놀이 메뉴에서 빠져 기타 › 가끔 쓰는 것으로 옮겼다(qa/menu.mjs) */
+await t.S(()=>{ document.getElementById('t-more').click(); document.querySelector('#more-sub').open = true; document.querySelector('[data-more="town"]').click(); }); await t.sleep(300);
+console.log('기타→마을', await t.S(()=>state.tab));
 console.log('errs', t.errs); await t.b.close(); process.exit(0);

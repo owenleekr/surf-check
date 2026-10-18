@@ -42,6 +42,19 @@
           "value": "camera=(), microphone=(), payment=()"
         }
       ]
+    },
+    {
+      "source": "/stats",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
     }
   ],
   "regions": [
