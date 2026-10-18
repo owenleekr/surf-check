@@ -84,6 +84,7 @@ window.__bootFail = (files) => {
 <script src="icons.js" defer></script>
 <script src="recommend.js" defer></script>
 <script src="waves.js" defer></script>
+<script src="kcg.js" defer></script>
 <script src="bus.js" defer></script>
 <style>
 :root{ --paper:#FFF9E6; --ink:#1B1B2F; --ink2:#363552; --sea:#2E6BFF; --deep:#12245F; --sun:#FFD23F;
@@ -1769,6 +1770,7 @@ body{ word-break:keep-all; overflow-wrap:break-word }
       <button type="button" class="more-it" data-more="stay"><i>🏠</i><b>숙소</b><small>같이 쓰기 · 별점</small><em id="more-stay" hidden></em></button>
       <button type="button" class="more-it" data-more="car"><i>🚗</i><b>카풀</b><small>같이 타고 내려가기</small></button>
       <button type="button" class="more-it" data-more="town"><i>🏘</i><b>마을 · 채팅</b><small>캐릭터들이 모인 곳</small></button>
+      <button type="button" class="more-it" data-more="kcg"><i>🚤</i><b>수상레저 신고</b><small>기상특보 · 해경 신고 링크</small></button>
       <button type="button" class="more-it" data-more="guide"><i>📖</i><b>사용 가이드</b><small>맛집·스팟 등록하는 법</small></button>
       <button type="button" class="more-it" data-more="shop"><i>🛍️</i><b>소품샵</b><small>서핑 용품 · 소품 · 옷</small></button>
       <button type="button" class="more-it" data-more="a2hs"><i>📲</i><b>홈 화면에 추가</b><small>아이콘으로 바로 열기</small></button>
@@ -3303,7 +3305,7 @@ $('t-more').onclick = ()=>{ moreDots(); $('more-sheet').hidden = false; };
 $('more-sheet').addEventListener('click', e=>{
   if(e.target.closest('[data-moreclose]')){ $('more-sheet').hidden = true; return; }
   const b = e.target.closest('[data-more]'); if(!b) return; const k = b.dataset.more; $('more-sheet').hidden = true;
-  if(k === 'car') window.carOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'shop') window.shopOpen?.(); else if(k === 'homeedit') window.homeEditOpen?.(); else if(k === 'settings'){ setTab('play'); setTimeout(()=>{ const h = document.querySelector('#play-hub .hubset'); if(h){ h.scrollIntoView({ block:'center', behavior:'smooth' }); h.classList.add('flash'); setTimeout(()=>h.classList.remove('flash'), 1600); } }, 250); } else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
+  if(k === 'car') window.carOpen?.(); else if(k === 'kcg') window.kcgOpen?.(); else if(k === 'guide') window.open('/guide', '_blank', 'noopener'); else if(k === 'a2hs') window.a2hsOpen?.(); else if(k === 'shop') window.shopOpen?.(); else if(k === 'homeedit') window.homeEditOpen?.(); else if(k === 'settings'){ setTab('play'); setTimeout(()=>{ const h = document.querySelector('#play-hub .hubset'); if(h){ h.scrollIntoView({ block:'center', behavior:'smooth' }); h.classList.add('flash'); setTimeout(()=>h.classList.remove('flash'), 1600); } }, 250); } else if(k === 'help'){} else setTab(k);   // 처음 안내는 버튼 자체(#help)가 띄운다
 });
 
 /* ── 탭 ─────────────────────────────────────────────────── */

@@ -107,7 +107,8 @@ function detail(i){
     document.body.appendChild(sh);
     sh.addEventListener('click', e=>{ if(e.target.closest('[data-wvclose]')){ sh.hidden = true; return; }
       const c = e.target.closest('[data-wvcam]'); if(c){ sh.hidden = true; if(typeof setSea === 'function') setSea(c.dataset.wvcam); setTab('cam'); }
-      const n = e.target.closest('[data-wvday]'); if(n) detail(+n.dataset.wvday); }); }
+      const n = e.target.closest('[data-wvday]'); if(n) detail(+n.dataset.wvday);
+      if(e.target.closest('[data-wvkcg]')){ sh.hidden = true; window.kcgOpen?.(); } }); }
   $w('wv-t').textContent = `🌊 ${L.full} 파도`;
   const sunOk = d.sun && /^\d{2}:\d{2}$/.test(d.sun.rise || '') && /^\d{2}:\d{2}$/.test(d.sun.set || '');
   const row = (lbl, x) => x ? `<div class="wv-r"><span class="wv-rl">${lbl}</span><span class="wv-rv"><b>${x.h}m</b> · ${x.p}초 · ${comp(x.dir)}쪽 파도<br><small>바람 ${comp(x.wd)}풍 ${x.w}m/s · ${sky(x.code)} ${x.tmp ?? ''}° · 비 ${x.rain}%</small></span><span class="wv-s s${x.s}">${stars(x.s)}</span></div><div class="wv-why">${esc(x.why)}</div>` : '';
@@ -117,7 +118,8 @@ function detail(i){
       ${s.cam ? `<button type="button" class="btn sm blue" data-wvcam="${esc(s.cam)}">📹 캠</button>` : ''}</div>`).join('')}</div>` : ''}
     ${d.regions.map(r=>`<div class="wv-reg"><h4>${esc(r.n)}</h4>${row('오전', r.am)}${row('오후', r.pm)}</div>`).join('')}
     <div class="wv-days">${fc.days.map((x, k)=>{ const l = dayLbl(x.day, k); return `<button type="button" data-wvday="${k}" aria-pressed="${k === i}"${l.wk ? ' class="wk"' : ''}>${l.dow} ${l.date}</button>`; }).join('')}</div>
-    <div class="note" style="margin-top:10px">예보: ${esc(fc.src || 'Open-Meteo')} 모델 값이라 실제와 다를 수 있어요 — 나가기 전에 📹 캠으로 한 번 확인하세요. 별점은 입문~초중급 기준.</div>`;
+    <div class="note" style="margin-top:10px">예보: ${esc(fc.src || 'Open-Meteo')} 모델 값이라 실제와 다를 수 있어요 — 나가기 전에 📹 캠으로 한 번 확인하세요. 별점은 입문~초중급 기준.</div>
+    ${window.kcgOpen ? `<button type="button" class="btn sm ghost wv-kcg" data-wvkcg>🚤 기상특보 · 해경 수상레저 신고</button>` : ''}`;
   sh.hidden = false;
 }
 function wire(root){ root.querySelectorAll('[data-wvday]').forEach(b=>b.onclick = ()=>detail(+b.dataset.wvday)); }

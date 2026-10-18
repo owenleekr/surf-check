@@ -38,7 +38,7 @@ function bar(){
   let el = document.getElementById('bday-bar');
   if(!list.length){ if(el) el.hidden = true; return; }
   if(!el){ el = document.createElement('button'); el.type = 'button'; el.id = 'bday-bar'; el.className = 'bday-bar';
-    el.onclick = ()=>openSheet(); home.insertBefore(el, home.firstChild); }
+    el.onclick = ()=>openSheet(); const ab = document.getElementById('adv-bar'); home.insertBefore(el, ab && ab.parentNode === home ? ab.nextSibling : home.firstChild); }   // 기상특보 띠(kcg.js)가 있으면 그 아래
   const me = list.find(mine), n = list.reduce((a, p)=>a + count(p), 0);
   const others = list.filter(p=>!mine(p)).map(p=>esc(p.name) + '님');
   el.innerHTML = me
