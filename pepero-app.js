@@ -406,7 +406,8 @@ function poster(g, X, o){
     title(g, '우리들의 아름다웠던 추억', W / 2, y0, 70, 980);
     g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 12; g.fillStyle = '#fff'; g.font = `800 31px ${FONT}`;
     g.fillText('작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요.', W / 2, y0 + 66); g.fillText('겨울 바다에서도, 다시 만나요 🌊', W / 2, y0 + 110); g.restore();
-    const foot = X.name ? pill(g, '양양서핑학교 서프 버디 ' + String(X.name).slice(0, 10), W / 2, y0 + 142, 32, '#fff', '#F2C9D3') : y0 + 190;   // 이름 알약과 날짜 줄은 같은 가운데 축, 20px 간격
+    g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#fff'; g.font = `800 28px ${FONT}`; g.fillText('양양서핑학교 가을학기 6기', W / 2, y0 + 160); g.restore();
+    const foot = X.name ? pill(g, '서프 버디 ' + String(X.name).slice(0, 10), W / 2, y0 + 184, 34, '#fff', '#F2C9D3') : y0 + 232;   // 학기 줄 · 이름 알약 · 날짜 줄은 같은 가운데 축
     g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 27px ${FONT}`; g.fillText('2026.11.11 낙산 해변', W / 2, foot + 20 + 15); g.restore();
     g.globalAlpha = 1; }
   if(o.fade > 0){ g.fillStyle = `rgba(20,10,20,${o.fade})`; g.fillRect(0, 0, W, H); }
@@ -584,7 +585,7 @@ function ctl(){
   if(res && ph !== 'pop'){
     const p = prizeOf(res); hint.textContent = '';
     el.innerHTML = `<div class="pep-res"><img src="img/pepero/${stickerOf(p)}.webp" alt="" width="76" height="76" onerror="this.hidden=true"><div><span>${esc(p.rank || '선물')}</span><b>${esc(p.n)}</b><small>${res.mine === false ? '이 이름은 다른 기기에서 이미 받았어요.<br>받은 폰에서 열어 주세요 — 문제가 있으면 오웬에게 알려 주세요.' : '아래 버튼으로 기프티콘을 열어<br>매장에서 보여 주세요.'}</small></div></div>
-      <div class="pp-letter"><p>우리가 함께 나눈 추억, 가을 바다에서 시작해서 어느새 겨울 바다가 되어 가요.</p><b>작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요.</b><p>겨울 바다에서도, 다시 만나요 🌊</p><small>양양서핑학교 서프 버디 ${esc(me.name)} · 2026.11.11 낙산 해변</small></div>
+      <div class="pp-letter"><p>우리가 함께 나눈 추억, 가을 바다에서 시작해서 어느새 겨울 바다가 되어 가요.</p><b>작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요.</b><p>겨울 바다에서도, 다시 만나요 🌊</p><small>양양서핑학교 가을학기 6기<br>서프 버디 ${esc(me.name)} · 2026.11.11 낙산 해변</small></div>
       ${res.mine === false ? '' : '<button type="button" class="btn pep-big pep-open" data-popen>🎁 당첨된 기프티콘 열기</button>'}
       <button type="button" class="btn pep-big pep-brag" data-pimgsh>📸 서프 버디에게 추억 나누기</button>
       <div class="pep-share"><button type="button" class="btn sm" data-pimg>💾 추억 사진 저장</button><button type="button" class="btn sm mint" data-pvid>🎬 스토리 영상 만들기</button></div><div id="pep-vid" class="pep-vid"></div>
