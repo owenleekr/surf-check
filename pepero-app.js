@@ -95,7 +95,7 @@ async function claim(){
   if(r.mine) send(); return res;
 }
 /* ── 그림 — 낙산 해변 클레이 일러스트(img/pepero/*.webp). bg: 해변(의상대·보드 넷 = 1111) · tug: 물속 단면 · gift: 선물상자 · p1~p4: 경품 스티커 ── */
-const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p2', 'p4', 'ice'];
+const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p2', 'ice', 'logo-w'];
 function want(ns){ return Promise.all(ns.map(n=>PICP[n] || (PICP[n] = new Promise(ok=>{ const im = new Image();
   im.onload = ()=>{ PIC[n] = im; ok(); }; im.onerror = ()=>{ delete PICP[n]; ok(); }; im.src = `img/pepero/${n}.webp`; })))); }   // 못 받으면 다음에 다시 — 그동안은 색으로 그린다
 const stickerOf = p => p && KINDS[p.id] ? KINDS[p.id].pic : 'gift';
@@ -268,93 +268,58 @@ function prizeScene(g, s, X, t){
   const im = PIC.gift; if(im){ const w = 350 * im.width / im.height; g.drawImage(im, -w / 2, -350, w, 350); } else{ g.textAlign = 'center'; g.font = `240px ${FONT}`; g.fillText('🎁', 0, -60); }
   g.restore();
 }
-/* ── 서핑 네컷 — 사진관 네 컷 띠(1080×1920). ① 패들 ② 라인업에서 기다림 ③ 발밑에 걸림 ④ 선물 든 나 ──
-   컷마다 필름 사진처럼(비네트·플래시 번짐·주황 날짜 글씨), 둘레는 파스텔 틀 + 클레이 스티커. 화면 공개·스토리 이미지·영상이 같은 그림을 쓴다 */
-const CW = 460, CH = 620, SLOTS = [[70, 300], [550, 300], [70, 940], [550, 940]];
-const LABEL = ['① 패들 패들!', '② 세트 기다리는 중', '③ 발밑에 걸렸다!', '④ 바다가 준 선물'];
-function world(g, im, x, y, w, h){   // 1080×1920 장면의 한 부분을 컷 하나에 꽉 채운다
-  if(!im){ const gr = g.createLinearGradient(0, 0, 0, CH); gr.addColorStop(0, '#9FD8F5'); gr.addColorStop(.5, '#5CC6D0'); gr.addColorStop(1, '#F6E3BD'); g.fillStyle = gr; g.fillRect(0, 0, CW, CH); return; }
-  const f = im.width / W; g.drawImage(im, x * f, y * f, w * f, h * f, 0, 0, CW, CH);
+/* ── 공유 포스터 — 「아름다웠던 가을 바다의 추억」 서프 버디 단체 사진(1080×1920) ──
+   내 캐릭터가 가운데 앞에서 선물을 들고, 나머지 일곱은 라인업에 반쯤 잠겨 앉거나 모래사장에 서 있다. 노을빛 보정·빛 번짐·비네트.
+   화면 공개·스토리 이미지·영상이 같은 그림을 쓴다. 기프티콘 그림은 여기에 절대 안 들어간다(종류 아이콘만) */
+const CREW_IDS = ['m1', 'f1', 'm2', 'f2', 'm3', 'f3', 'm4', 'f4'], SEA = [[170, 1128], [405, 1108], [690, 1138], [935, 1118]], SAND = [[160, 1600, 420], [348, 1652, 450], [935, 1640, 450]];
+let crew = { key:null, p:null, list:[] };
+function loadCrew(){
+  const mine = lookOf(me); if(crew.key === mine) return crew.p;
+  const ids = CREW_IDS.filter(id=>id !== mine);
+  crew = { key:mine, list:[], p:Promise.all(ids.map((id, i)=>new Promise(ok=>{ const im = new Image(); im.onload = ()=>ok(im); im.onerror = ()=>ok(null); im.src = charSrc(id, i < 4 ? 'sit' : 'gift'); }))).then(l=>{ crew.list = l; }) };
+  return crew.p;
 }
-function fig(g, im, cx, by, h){ if(!im) return; const w = h * im.width / im.height; g.drawImage(im, cx - w / 2, by - h, w, h); }
-function starburst(g, x, y, r, rot, face){ g.save(); g.translate(x, y); g.rotate(rot); g.beginPath(); for(let i = 0; i < 28; i++){ const a = i / 28 * 6.283, rr2 = i % 2 ? r * .8 : r; g.lineTo(Math.cos(a) * rr2, Math.sin(a) * rr2); } g.closePath();
-  g.fillStyle = 'rgba(120,60,0,.18)'; g.save(); g.translate(4, 8); g.fill(); g.restore(); g.fillStyle = face; g.fill(); g.restore(); }
-function clayStar(g, x, y, r, rot){ g.save(); g.translate(x, y); g.rotate(rot);
-  const path = ()=>{ g.beginPath(); for(let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, q = i % 2 ? r * .48 : r; g.lineTo(Math.cos(a) * q, Math.sin(a) * q); } g.closePath(); };
-  g.lineJoin = 'round'; g.lineWidth = r * .22; g.translate(0, r * .14); path(); g.strokeStyle = g.fillStyle = '#E7B640'; g.fill(); g.stroke(); g.translate(0, -r * .14); path(); g.strokeStyle = g.fillStyle = '#FFD86B'; g.fill(); g.stroke();
-  g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.ellipse(-r * .2, -r * .3, r * .18, r * .1, -.5, 0, 7); g.fill(); g.restore(); }
-function sticker(g, im, x, y, sz, rot){ if(!im) return; const f = sz / Math.max(im.width, im.height); g.save(); g.translate(x, y); g.rotate(rot); g.shadowColor = 'rgba(80,40,60,.3)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
-  g.drawImage(im, -im.width * f / 2, -im.height * f / 2, im.width * f, im.height * f); g.restore(); }
-let CUTS = null;
-function cuts(X){
-  const key = [imgs.key, X.prize && X.prize.id, ...ALL.map(n=>PIC[n] ? 1 : 0), X.pad ? 1 : 0, X.sit ? 1 : 0, X.gift ? 1 : 0].join('|');
-  if(CUTS && CUTS.key === key) return CUTS.c;
-  const c = [0, 1, 2, 3].map(i=>{ const cv = document.createElement('canvas'); cv.width = CW; cv.height = CH; const g = cv.getContext('2d');
-    if(i === 0){ world(g, PIC.bg, 300, 640, 700, 943);
-      g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineCap = 'round'; g.lineWidth = 6; [[30, 380, 110], [10, 430, 90], [40, 470, 120]].forEach(([x, y, l])=>{ g.beginPath(); g.moveTo(x, y); g.lineTo(x + l, y); g.stroke(); });
-      fig(g, X.pad, 250, 480, 250 * (X.pad ? X.pad.height / X.pad.width : 1) * 1.65);
-      g.fillStyle = '#fff'; [[420, 420, 9], [440, 395, 6], [400, 445, 7], [452, 430, 5], [118, 462, 7], [96, 448, 5]].forEach(([x, y, r])=>{ g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); }
-    if(i === 1){ world(g, PIC.bg, 0, 520, 620, 836);
-      g.save(); g.globalCompositeOperation = 'screen'; const gr = g.createRadialGradient(111, 308, 6, 111, 308, 300); gr.addColorStop(0, 'rgba(255,236,190,.95)'); gr.addColorStop(1, 'rgba(255,190,140,0)'); g.fillStyle = gr; g.fillRect(0, 0, CW, CH); g.restore();
-      fig(g, sunk(X.sit), 300, 500, 330); if(X.sit) ripple(g, 300, 500, 330 * X.sit.width / X.sit.height, 330, 0); }
-    if(i === 2){ world(g, PIC.tug, 140, 760, 700, 943);
-      g.save(); g.globalCompositeOperation = 'screen'; for(let j = 0; j < 3; j++){ const x0 = 40 + j * 150, gr = g.createLinearGradient(0, 0, 0, CH); gr.addColorStop(0, 'rgba(220,255,250,.3)'); gr.addColorStop(1, 'rgba(220,255,250,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + 50, 0); g.lineTo(x0 + 170, CH); g.lineTo(x0 + 60, CH); g.closePath(); g.fill(); } g.restore();
-      for(let j = 0; j < 9; j++) bubble(g, 120 + (j * 97) % 260, 80 + (j * 131) % 360, 8 + (j % 3) * 6);
-      g.save(); g.translate(372, 118); g.rotate(.12); pill(g, '!', 0, -50, 84, '#FFE08A', '#E7B640'); g.restore(); }
-    if(i === 3){ world(g, soft('bg') || PIC.bg, 190, 700, 700, 943);
-      g.save(); g.globalCompositeOperation = 'screen'; g.translate(230, 300); const gr = g.createRadialGradient(0, 0, 20, 0, 0, 420); gr.addColorStop(0, 'rgba(255,240,200,.75)'); gr.addColorStop(1, 'rgba(255,240,200,0)'); g.fillStyle = gr;
-        for(let j = 0; j < 12; j++){ const a = j / 12 * 6.283; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, 600, a, a + .2); g.closePath(); g.fill(); } g.restore();
-      fig(g, X.gift, 210, 600, 500);
-      const p = X.prize; if(p){ starburst(g, 352, 132, 100, .2, '#FFE08A'); sticker(g, PIC[stickerOf(p)], 352, 118, 120, -.15);
-        g.textAlign = 'center'; g.fillStyle = INK; g.font = `900 30px ${FONT}`; g.fillText(p.rank || '선물', 352, 205); } }
-    /* 필름 사진 느낌 — 따뜻한 색 · 플래시 번짐 · 비네트 · 주황 날짜 */
-    g.save(); g.globalCompositeOperation = 'soft-light'; g.fillStyle = 'rgba(255,190,140,.35)'; g.fillRect(0, 0, CW, CH);
-    g.globalCompositeOperation = 'screen'; const fl = g.createRadialGradient(90, 70, 10, 90, 70, 300); fl.addColorStop(0, 'rgba(255,255,255,.35)'); fl.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = fl; g.fillRect(0, 0, CW, CH);
-    g.globalCompositeOperation = 'source-over'; const v = g.createRadialGradient(CW / 2, CH / 2, CH * .3, CW / 2, CH / 2, CH * .72); v.addColorStop(0, 'rgba(40,20,40,0)'); v.addColorStop(1, 'rgba(40,20,40,.38)'); g.fillStyle = v; g.fillRect(0, 0, CW, CH); g.restore();
-    g.save(); g.font = `700 30px "Courier New",monospace`; g.textAlign = 'right'; g.shadowColor = '#FF6A00'; g.shadowBlur = 10; g.fillStyle = '#FFB060'; g.fillText("'26 11 11", CW - 22, CH - 24); g.restore();
-    g.save(); g.font = `900 26px ${FONT}`; const lw = g.measureText(LABEL[i]).width + 28; g.fillStyle = 'rgba(255,255,255,.92)'; rr(g, 16, 16, lw, 46, 23); g.fill(); g.fillStyle = INK; g.textAlign = 'left'; g.fillText(LABEL[i], 30, 48); g.restore();
-    return cv; });
-  CUTS = { key, c }; return c;
-}
-function dateStamp(g, x, y, rot){
-  g.save(); g.translate(x, y); g.rotate(rot);
-  g.fillStyle = '#E86F86'; g.beginPath(); g.arc(0, 7, 86, 0, 7); g.fill(); g.fillStyle = '#FF8FA3'; g.beginPath(); g.arc(0, 0, 86, 0, 7); g.fill();
-  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 4; g.setLineDash([9, 8]); g.beginPath(); g.arc(0, 0, 77, 0, 7); g.stroke(); g.setLineDash([]);
-  g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = `900 24px ${FONT}`; g.fillText('2026', 0, -24); g.font = `900 50px ${FONT}`; g.fillText('11.11', 0, 22); g.font = `900 17px ${FONT}`; g.fillText('빼빼로데이', 0, 46);
+function grade(g, a){
+  g.save(); g.globalCompositeOperation = 'soft-light'; const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, `rgba(255,150,90,${.55 * a})`); gr.addColorStop(.5, `rgba(255,190,120,${.35 * a})`); gr.addColorStop(1, `rgba(255,170,120,${.3 * a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'screen'; const b = g.createRadialGradient(SUN[0], SUN[1], 10, SUN[0], SUN[1], 700); b.addColorStop(0, `rgba(255,220,160,${.7 * a})`); b.addColorStop(.4, `rgba(255,170,110,${.22 * a})`); b.addColorStop(1, 'rgba(255,170,110,0)'); g.fillStyle = b; g.fillRect(0, 0, W, H);
+  g.globalCompositeOperation = 'source-over'; const v = g.createRadialGradient(W / 2, H * .5, H * .34, W / 2, H * .5, H * .8); v.addColorStop(0, 'rgba(40,15,30,0)'); v.addColorStop(1, `rgba(40,15,30,${.42 * a})`); g.fillStyle = v; g.fillRect(0, 0, W, H);
   g.restore();
 }
-const CONF = Array.from({ length:90 }, (_, i)=>({ a:(i * 137.5) % 360 * Math.PI / 180, v:500 + (i * 53) % 900, s:9 + (i % 4) * 4, c:CFC[i % 6], r:i * .9 }));
-/* 띠 그리기 — o: { n 붙은 컷 수, fly:[i, p] 날아드는 컷, shake 넷째 칸 상자 흔들림, lines 아랫줄 보임, conf 꽃가루 시간, flash, t } */
-function strip(g, X, o){
-  const t = o.t || 0, C = cuts(X);
-  const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#FFD3DF'); bg.addColorStop(1, '#FFE6C4'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-  g.fillStyle = 'rgba(255,255,255,.42)'; for(let y = 30, r = 0; y < H; y += 56, r++) for(let x = r % 2 ? 58 : 30; x < W; x += 56){ g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); }
-  pill(g, '양양서핑학교 서프 버디 · 낙산 해변', W / 2 - 60, 84, 34, '#fff', '#F2C9D3');
-  title(g, '낙산 서핑 네컷', W / 2 - 60, 260, 96, 760);
-  SLOTS.forEach(([x, y], i)=>{
-    g.save(); g.fillStyle = 'rgba(150,70,90,.18)'; rr(g, x + 4, y + 8, CW, CH, 22); g.fill(); g.restore();
-    if(i < o.n && !(o.fly && o.fly[0] === i)){ g.save(); rr(g, x, y, CW, CH, 22); g.clip(); g.drawImage(C[i], x, y); g.restore(); }
-    else{ g.fillStyle = '#F7C3CF'; rr(g, x, y, CW, CH, 22); g.fill(); g.globalAlpha = .55; g.textAlign = 'center'; g.font = `90px ${FONT}`; g.fillText(i === 3 ? '🎁' : '📷', x + CW / 2, y + CH / 2 + 30); g.globalAlpha = 1; }
-  });
-  if(o.shake > 0 && PIC.gift && o.n < 4){ const [x, y] = SLOTS[3], a = Math.sin(t * 46) * .22 * o.shake, s = 1 + .08 * o.shake * Math.abs(Math.sin(t * 11));
-    g.save(); g.translate(x + CW / 2, y + CH * .72); g.rotate(a); g.scale(s, s); const w = 330 * PIC.gift.width / PIC.gift.height; g.drawImage(PIC.gift, -w / 2, -330, w, 330); g.restore(); }
-  sticker(g, PIC.p2, 1000, 330, 200, .55); sticker(g, PIC.p4, 96, 1548, 170, -.3); sticker(g, PIC.gift, 1000, 1578, 160, .14);
-  clayStar(g, 46, 920, 34, .2); clayStar(g, 1042, 1000, 26, -.3); clayStar(g, 536, 935, 20, .4);
-  dateStamp(g, 948, 168, .18);
-  const la = o.lines == null ? 1 : o.lines;
-  if(la > 0){ g.globalAlpha = la; const dy = (1 - la) * 30;
-    if(X.name) pill(g, '서프 버디 ' + String(X.name).slice(0, 10), W / 2, 1596 + dy, 44, '#fff', '#F2C9D3');
-    if(X.prize){ const tx = `건진 선물: ${X.prize.ic} ${X.prize.short}`; g.textAlign = 'center'; g.fillStyle = INK; fit(g, tx, 880, 50, 900); g.fillText(tx, W / 2, 1752 + dy); }
-    g.fillStyle = '#A0687E'; g.font = `800 30px ${FONT}`; g.textAlign = 'center'; g.fillText('surf.owenai.xyz/pepero', W / 2, 1822 + dy); g.globalAlpha = 1; }
-  if(o.fly){ const [i, p] = o.fly, e = 1 - Math.pow(1 - p, 3), [sx, sy] = SLOTS[i], bw = 940, bh = bw * CH / CW, bx = (W - bw) / 2, by = (H - bh) / 2;
-    const x = bx + (sx - bx) * e, y = by + (sy - by) * e, w = bw + (CW - bw) * e, h = bh + (CH - bh) * e;
-    g.save(); g.translate(x + w / 2, y + h / 2); g.rotate(-.04 * (1 - e)); g.shadowColor = 'rgba(60,20,40,.4)'; g.shadowBlur = 40 * (1 - e); g.fillStyle = '#fff'; rr(g, -w / 2 - 10, -h / 2 - 10, w + 20, h + 20, 28); g.fill(); g.shadowBlur = 0;
-    rr(g, -w / 2, -h / 2, w, h, 22); g.clip(); g.drawImage(C[i], -w / 2, -h / 2, w, h); g.restore(); }
-  if(o.conf != null && o.conf >= 0 && o.conf < 2.6){ const k = o.conf;
-    for(const c of CONF){ const x = 540 + Math.cos(c.a) * c.v * k * .9, y = 960 + Math.sin(c.a) * c.v * k * .9 + 900 * k * k; if(y > H + 40) continue;
-      g.save(); g.globalAlpha = Math.max(0, 1 - k / 2.6); g.translate(x, y); g.rotate(c.r + k * 8); g.fillStyle = c.c; rr(g, -c.s / 2, -c.s * 1.6, c.s, c.s * 3.2, c.s / 2); g.fill(); g.restore(); } }
-  if(o.flash > 0){ g.fillStyle = `rgba(255,255,255,${Math.min(1, o.flash)})`; g.fillRect(0, 0, W, H); }
+/* 장면(세계 좌표) — 바다·라인업 버디·모래 버디·나 */
+function crewWorld(g, X, t){
+  back(g, PIC.bg, t, 1.02, 540, 1150); sunFx(g, t, .8);
+  crew.list.slice(0, 4).forEach((im, i)=>{ if(!im) return; const [x, y] = SEA[i], h = 250, w = h * im.width / im.height, b = Math.sin(t * 2 + i * 1.7) * 5;
+    g.drawImage(sunk(im), x - w / 2, y - h + b, w, h); ripple(g, x, y + b, w, h, t + i * .3); });
+  crew.list.slice(4).forEach((im, i)=>{ if(!im) return; const [x, y, h] = SAND[i], w = h * im.width / im.height;
+    g.fillStyle = 'rgba(90,50,30,.25)'; g.beginPath(); g.ellipse(x, y - 6, w * .4, 18, 0, 0, 7); g.fill(); g.drawImage(im, x - w / 2, y - h, w, h); });
+  if(X.gift){ const h = 720, w = h * X.gift.width / X.gift.height, b = Math.sin(t * 2.4) * 5;
+    g.fillStyle = 'rgba(90,50,30,.3)'; g.beginPath(); g.ellipse(590, 1752, w * .42, 26, 0, 0, 7); g.fill(); g.drawImage(X.gift, 590 - w / 2, 1760 - h + b, w, h); }
 }
+/* o: { cam:[z, fx, fy], badge 0~1, text 0~1, t } */
+function poster(g, X, o){
+  const t = o.t || 0, [z, fx, fy] = o.cam || [1, 540, 960];
+  g.save(); cam(g, z, fx, fy); crewWorld(g, X, t); g.restore();
+  grade(g, 1);
+  if(o.text > 0){ const a = Math.min(1, o.text), dy = (1 - a) * 24; g.globalAlpha = a;
+    if(PIC['logo-w']){ const im = PIC['logo-w'], h = 64, w = h * im.width / im.height; g.save(); g.shadowColor = 'rgba(40,15,30,.5)'; g.shadowBlur = 14; g.drawImage(im, W / 2 - w / 2, 92, w, h); g.restore(); }
+    title(g, '아름다웠던', W / 2, 318 + dy, 104, 960); title(g, '가을 바다의 추억', W / 2, 446 + dy, 104, 960);
+    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.6)'; g.shadowBlur = 16; g.fillStyle = '#fff'; g.font = `900 46px ${FONT}`; g.fillText('겨울 바다에서 다시 만나요 🌊', W / 2, 540 + dy); g.restore();
+    pill(g, '11.11 낙산 해변', W / 2, 584 + dy, 32, 'rgba(255,255,255,.92)', 'rgba(232,190,160,.9)');
+    if(X.name) pill(g, '양양서핑학교 서프 버디 ' + String(X.name).slice(0, 10), W / 2, 1772, 36, '#fff', '#F2C9D3');
+    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 28px ${FONT}`; g.fillText('surf.owenai.xyz/pepero', W / 2, 1878); g.restore();
+    g.globalAlpha = 1; }
+  const p = X.prize; if(p && o.badge > 0){ const k = Math.min(1, o.badge), sc = .4 + .6 * easeBack(k);
+    g.save(); g.translate(850, 1010); g.scale(sc, sc); g.rotate(.12);
+    g.save(); g.shadowColor = 'rgba(80,30,50,.4)'; g.shadowBlur = 24; g.shadowOffsetY = 10; g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 112, 0, 7); g.fill(); g.restore();
+    g.fillStyle = '#FFF4DE'; g.beginPath(); g.arc(0, 0, 98, 0, 7); g.fill();
+    sticker(g, PIC[stickerOf(p)], 0, -16, 120, -.12);
+    pill(g, p.rank, 0, 50, 26, p.id === 'br' ? '#FFC2CD' : '#FFE08A', p.id === 'br' ? '#EE8FA3' : '#E7B640');
+    g.restore(); }
+  if(o.grain && !X.rm){ g.save(); g.globalCompositeOperation = 'overlay'; g.globalAlpha = .45; if(!g.__gp) g.__gp = g.createPattern(grain(), 'repeat'); g.fillStyle = g.__gp; const ox = (t * 997 % 160) | 0; g.translate(-ox, -ox); g.fillRect(0, 0, W + 160, H + 160); g.restore(); }
+  if(o.fade > 0){ g.fillStyle = `rgba(20,10,20,${o.fade})`; g.fillRect(0, 0, W, H); }
+}
+function sticker(g, im, x, y, sz, rot){ if(!im) return; const f = sz / Math.max(im.width, im.height); g.save(); g.translate(x, y); g.rotate(rot); g.shadowColor = 'rgba(80,40,60,.3)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
+  g.drawImage(im, -im.width * f / 2, -im.height * f / 2, im.width * f, im.height * f); g.restore(); }
 /* ── 소리 — 「우쿨렐레 서프 팝」, 브라우저에서 바로 만든다(녹음 파일·저작권 없음). 104 BPM, C–G–Am–F.
    뜯는 줄은 Karplus-Strong(잡음을 짧은 지연선에 돌려 줄 소리로), 박수·셰이커는 걸러 낸 잡음, 종은 사인파 셋. 같은 함수를 화면 배경 음악·영상 소리·효과음이 같이 쓴다 ── */
 const BPM = 104, BEAT = 60 / BPM, NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
@@ -449,7 +414,7 @@ function post(g, s, X, t){
 }
 function paint(g, s, X){
   const ph = s.ph, t = X.rm ? 0 : s.t;
-  if(ph === 'reveal'){ const k = X.rm ? 9 : s.k; strip(g, X, { t, n:4, lines:Math.min(1, k / .8), conf:k < 2.6 ? k : -1, flash:Math.max(0, .8 - k * 2.5) }); return; }   // 공개 = 서핑 네컷 띠(내보내는 그림과 같다)
+  if(ph === 'reveal'){ const k = X.rm ? 9 : s.k; poster(g, X, { t, badge:(k - .3) / .45, text:k / .8, grain:1, fade:Math.max(0, .6 - k * 1.5) }); return; }   // 공개 = 단체 포스터(내보내는 그림과 같다)
   const tugA = ph === 'tug' ? (X.rm ? 1 : Math.min(1, s.k / .6)) : ph === 'pop' ? (X.rm ? 0 : Math.max(0, 1 - s.k / .35)) : 0;
   if(tugA < 1){
     const beach = ph !== 'pop' && ph !== 'reveal';
@@ -569,6 +534,7 @@ async function play(){
   sizeCv(); ctl(); paintWall();
   last = 0; if(!raf) raf = requestAnimationFrame(loop);
   loadImgs().then(()=>{ if(X){ X.pad = imgs.pad; X.sit = imgs.sit; X.gift = imgs.gift; } });
+  loadCrew();
   pullWall();
   await pullMine();
   if(res && S.ph === 'intro'){ go(S, 'reveal'); S.k = 1; X.prize = prizeOf(res); }
@@ -595,39 +561,32 @@ async function start(){
 }
 const act = () => S && (S.ph === 'walk' ? walk() : S.ph === 'paddle' ? paddle() : S.ph === 'tug' ? pull() : 0);   // 그림을 눌러도 같은 동작
 
-/* ── 스토리 내보내기 — 서핑 네컷 PNG · 박자에 맞춘 약 7초 릴스 영상(음악·셔터·꽃가루 소리까지 영상에 담는다) ── */
+/* ── 스토리 내보내기 — 단체 포스터 PNG · 약 7.6초 영상(라인업 버디들을 천천히 훑다가 내 캐릭터에 멈추고, 선물 배지 → 문구 → 끝 화면, 우쿨렐레 음악까지 영상에 담는다) ── */
 function storyCanvas(){ const c = document.createElement('canvas'); c.width = W; c.height = H; return c; }
 async function png(){
-  await loadImgs(); await want(ALL); const c = storyCanvas();
-  strip(c.getContext('2d'), assets(), { n:4, lines:1 });
+  await Promise.all([loadImgs(), want(ALL), loadCrew()]); const c = storyCanvas();
+  poster(c.getContext('2d'), Object.assign(assets(), { rm:true }), { badge:1, text:1 });
   return new Promise(ok=>c.toBlob(ok, 'image/png'));
 }
 const MIMES = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
-/* 박자표(박 단위) — 컷 셋은 박자에 찰칵, 상자가 흔들리며 쌓이다가 8박에 꽃가루와 함께 넷째 컷, 띠가 자리 잡고 끝 */
-const SNAP = [1, 3, 5], SHAKE = [6, 8], REVEAL = 8, REEL_END = 12.6;
+const REEL_END = 7.6, PAN = 3.4, SETTLE = 4.6, BADGE = 4.7, TXT = 5.2;
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 function reel(g, X, el){
-  const b = el / BEAT, fly = [], o = { t:el, n:0, lines:0, flash:0, shake:0, conf:-1 };
-  SNAP.forEach((sb, i)=>{ if(b >= sb){ o.n = i + 1; const p = (el - sb * BEAT - .18) / .32; if(p < 1) o.fly = [i, Math.max(0, p)]; o.flash = Math.max(o.flash, 1 - (el - sb * BEAT) / .22); } });
-  if(b >= SHAKE[0] && b < REVEAL) o.shake = (b - SHAKE[0]) / (SHAKE[1] - SHAKE[0]);
-  if(b >= REVEAL){ o.n = 4; const p = (el - REVEAL * BEAT - .7) / .4; if(p < 1) o.fly = [3, Math.max(0, p)]; o.flash = Math.max(o.flash, 1 - (el - REVEAL * BEAT) / .3); o.conf = el - REVEAL * BEAT; }
-  o.lines = Math.max(0, Math.min(1, (b - REVEAL - 2) / 1.2));
-  if(b < SNAP[0]) o.lines = 0;
-  strip(g, X, o);
-  if(b < SNAP[0]){ const k = b / SNAP[0]; g.fillStyle = `rgba(43,35,64,${.55 * (1 - k)})`; g.fillRect(0, 0, W, H);
-    g.textAlign = 'center'; g.font = `900 120px ${FONT}`; g.fillStyle = '#fff'; g.save(); g.translate(540, 980); const s = 1 + .2 * (1 - k); g.scale(s, s); g.fillText('찰칵!', 0, 0); g.restore(); }
+  let camv;
+  if(el < PAN){ const k = ease(el / PAN); camv = [1.7, 220 + (860 - 220) * k, 1080]; }   // 라인업을 왼쪽에서 오른쪽으로
+  else{ const k = ease(Math.min(1, (el - PAN) / (SETTLE - PAN))); camv = [1.7 + (1 - 1.7) * k, 860 + (540 - 860) * k, 1080 + (960 - 1080) * k]; }   // 물러서며 나에게
+  poster(g, X, { t:el, cam:camv, badge:(el - BADGE) / .45, text:(el - TXT) / .8, grain:1, fade:Math.max(0, 1 - el / .5) });
 }
-function score(ctx, out, a0){   // 영상 소리 — 음악 3마디 + 효과음, a0 = 0박의 시각
-  for(let i = 0; i < 3; i++) bar(ctx, out, a0 + i * 4 * BEAT, i);
-  strum(ctx, out, a0 + 12 * BEAT, CHORDS[0], 1, 0); tone(ctx, out, a0 + 12 * BEAT, NOTE(ROOT[0]), .25, 1);
-  SNAP.forEach(sb=>shutter(ctx, out, a0 + sb * BEAT));
-  for(let x = SHAKE[0]; x < REVEAL; x += .25 - (x - SHAKE[0]) * .06) clap(ctx, out, a0 + x * BEAT, .35 + (x - SHAKE[0]) * .3);   // 점점 빨라지는 두두두
-  sparkle(ctx, out, a0 + REVEAL * BEAT); chime(ctx, out, a0 + 12 * BEAT, .8);
+function score(ctx, out, a0){
+  bar(ctx, out, a0, 0); bar(ctx, out, a0 + 4 * BEAT, 1); bar(ctx, out, a0 + 8 * BEAT, 2);
+  strum(ctx, out, a0 + 12 * BEAT, CHORDS[0], 1, 0); tone(ctx, out, a0 + 12 * BEAT, NOTE(ROOT[0]), .25, 1.2);
+  sparkle(ctx, out, a0 + BADGE); chime(ctx, out, a0 + TXT + .3, .7);
 }
 async function video(onP){
-  await loadImgs(); await want(ALL); cuts(assets());
+  await Promise.all([loadImgs(), want(ALL), loadCrew()]);
   const mime = typeof MediaRecorder === 'undefined' ? null : MIMES.find(m=>{ try{ return MediaRecorder.isTypeSupported(m); }catch(e){ return false; } });
   const c = storyCanvas(); if(!mime || !c.captureStream) throw new Error('norec');
-  const g = c.getContext('2d'), A = assets(), DUR = REEL_END * BEAT;
+  const g = c.getContext('2d'), A = Object.assign(assets(), { rm:false });
   let ac = null, dest = null;
   try{ const AC = window.AudioContext || window.webkitAudioContext; ac = new AC(); await Promise.race([ac.resume(), new Promise(r=>setTimeout(r, 300))]); dest = ac.createMediaStreamDestination(); }catch(e){ dest = null; }
   reel(g, A, 0);
@@ -643,8 +602,8 @@ async function video(onP){
     rec.start(250);
     iv = setInterval(()=>{
       const el = Math.max(0, (performance.now() - t0) / 1000);
-      reel(g, A, el); onP?.(Math.min(1, el / DUR));
-      if(el >= DUR){ clearInterval(iv); try{ rec.stop(); }catch(e){} }
+      reel(g, A, el); onP?.(Math.min(1, el / REEL_END));
+      if(el >= REEL_END){ clearInterval(iv); try{ rec.stop(); }catch(e){} }
     }, 1000 / 30);
   });
 }
