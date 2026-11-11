@@ -37,7 +37,7 @@ async function page(rows, opts = {}){
   await p.evaluateOnNewDocument(()=>{ window.__draws = []; const d = CanvasRenderingContext2D.prototype.drawImage;   // 어떤 그림을 어디에 그렸나(story: 1080×1920 캔버스)
     CanvasRenderingContext2D.prototype.drawImage = function(im, ...a){ if(im instanceof HTMLImageElement){ const m = this.getTransform(); window.__draws.push({ src:(im.getAttribute('src') || '').slice(0, 60), y:m.f, story:this.canvas.width === 1080 && this.canvas.height === 1920 }); } return d.call(this, im, ...a); };
     window.__texts = []; const ft = CanvasRenderingContext2D.prototype.fillText; CanvasRenderingContext2D.prototype.fillText = function(t, ...a){ if(this.canvas.width === 1080) window.__texts.push(String(t)); return ft.call(this, t, ...a); }; });
-  await p.goto(PAGE, { waitUntil:'domcontentloaded' }); await p.evaluate(()=>localStorage.clear());
+  await p.goto(PAGE, { waitUntil:'domcontentloaded' }); await p.evaluate(ls=>{ localStorage.clear(); for(const k in ls) localStorage.setItem(k, ls[k]); }, opts.ls || {});   // ls: 이 기기에 미리 둘 것(열쇠·결과)
   await p.goto(PAGE + (opts.q || ''), { waitUntil:'networkidle2' });
   const S = (f, ...a) => p.evaluate(f, ...a), sleep = ms => new Promise(r=>setTimeout(r, ms));
   return { b, p, errs, posts, rpcs, gets, S, sleep };
@@ -184,10 +184,33 @@ for(const w of [320, 360, 390]){
   ok(a <= 0 && c <= 0 && d <= 0 && cv, `${w}px 넘침 없음 ${JSON.stringify({ a, c, d, cv })}`);
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
 
-/* 4) 기간 밖 — 「이벤트가 끝났어요」 */
-{ const { b, errs, S, sleep } = await page(talk, { at:OFF });
-  await pickName(S, sleep, '김도훈'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(800);
-  ok(await S(()=>/끝났어요/.test(document.querySelector('#pep-ctl').textContent) && !!document.querySelector('[data-pgo][disabled]')), '11.20 → 「이벤트가 끝났어요」');
+/* 4) 뽑기 마감(11.12 00:00) 뒤 — 페이지는 열리고, 이 기기가 받은 이름만 「다시 보기」, 남이 받은 이름 「받음 ✓」, 나머지 「마감」 */
+{ const row = n => ({ id:'pepero26:' + n, target:'pepero:2026', user_id:'roster:' + n, name:n, cohort:'6기', text:n === '정선아' ? 'br|🍦 베스킨라빈스 아이스크림' : 'pepero|🍫 빼빼로', created_at:now });
+  const TOK = 'b'.repeat(32), ls = { 'lineup.pepero.tok:정선아':TOK, 'lineup.pepero2026:정선아':JSON.stringify({ id:'br', text:'br|🍦 베스킨라빈스 아이스크림', at:Date.now(), sent:1, mine:true }) };
+  for(const at of [Date.parse('2026-11-12T00:00:30+09:00'), OFF]){
+    const { b, p, errs, posts, rpcs, S, sleep } = await page([...talk, row('김도훈'), row('정선아')], { at, ls });
+    const e = await S(()=>{ const c = n => { const x = document.querySelector(`[data-name="${n}"]`); return { dis:x.disabled, t:x.textContent, mine:x.hasAttribute('data-mine') }; };
+      return { note:document.getElementById('pp-closed').hidden ? '' : document.getElementById('pp-closed').textContent, top:document.getElementById('pp-mine').textContent, kim:c('김도훈'), tae:c('김태은'), jin:c('장진혁'), sun:c('정선아'), off:document.querySelectorAll('.pp-name.off').length, again:document.getElementById('pp-again').hidden }; });
+    ok(/자정에 마감됐어요/.test(e.note) && e.kim.dis && /받음 ✓/.test(e.kim.t) && e.tae.dis && /마감/.test(e.tae.t) && e.jin.dis && /마감/.test(e.jin.t) && !e.sun.dis && e.sun.mine && /정선아님 선물 다시 보기/.test(e.top) && e.off === 23 && e.again,
+      `${new Date(at).toISOString().slice(0, 16)} 마감 뒤 — 안내 · 받음 ✓ · 마감 · 내 이름만 다시 보기: ` + JSON.stringify({ ...e, note:!!e.note }));
+    if(at === OFF){ await shot(p, 'pepero-11-closed-enter');
+      await S(()=>document.querySelector('#pp-mine [data-mine]').click()); await sleep(900);
+      ok(await S(()=>_pepero.S.ph === 'reveal' && /베스킨라빈스/.test(document.querySelector('.pep-res')?.textContent || '') && !!document.querySelector('[data-popen]') && !!document.querySelector('[data-preplay]')), '마감 뒤에도 내 선물 다시 보기 → 결과·열기·처음부터');
+      await S(()=>document.querySelector('[data-popen]').click()); await sleep(500);
+      const go = rpcs.filter(x=>x[0] === 'gift_open');
+      ok(go.length === 1 && go[0][1].p_token === TOK && go[0][1].p_name === '정선아', '마감 뒤 기프티콘 열기 — 저장된 열쇠로 gift_open');
+      await S(()=>document.querySelector('[data-pgclose]').click()); await S(()=>document.querySelector('[data-preplay]').click()); await sleep(300);
+      await S(()=>_pepero.walk()); await sleep(400); await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
+      await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100); for(let i = 0; i < 6; i++){ await S(()=>_pepero.next()); await sleep(150); }
+      ok(await S(()=>_pepero.S.ph === 'reveal') && !rpcs.some(x=>x[0] === 'gift_claim') && !posts.length, '마감 뒤 이야기 다시 보기 — gift_claim·쓰기 없음'); }
+    ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); } }
+/* 4b) 마감 전 시계여도 서버가 closed — 「선물 지급이 마감됐어요」, 선물 장면으로 안 감, 그 뒤 이름들 「마감」 */
+{ const { b, p, errs, posts, S, sleep } = await page(talk, { rpc:{ gift_claim:()=>[200, { closed:true }] } });
+  await pickName(S, sleep, '김태은'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(800); await playThrough(S, sleep);
+  const c = await S(()=>({ ph:_pepero.S.ph, t:document.getElementById('pep-ctl').textContent, res:_pepero.res }));
+  ok(/선물 지급이 마감됐어요/.test(c.t) && c.ph === 'pop' && c.res && c.res.closed && !posts.length && await S(()=>!localStorage.getItem('lineup.pepero2026:김태은')), 'closed:true → 「선물 지급이 마감됐어요」, 선물·이야기로 안 넘어감, 저장·쓰기 없음: ' + c.ph);
+  await S(()=>document.querySelector('#pep-ctl [data-pback]').click()); await sleep(400);
+  ok(await S(()=>{ const x = document.querySelector('[data-name="김태은"]'); return x.disabled && /마감/.test(x.textContent) && !document.getElementById('pp-closed').hidden; }), 'closed 뒤 입장 화면 — 「마감」 + 안내');
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
 
 /* 5) SurfShare — 11.11 홈 띠·놀이 카드가 /pepero 로, 기간 밖엔 없음 */

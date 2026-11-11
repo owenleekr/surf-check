@@ -7,8 +7,9 @@
    당첨 뒤 인스타 스토리용 그림(1080×1920 PNG)과 짧은 영상(약 11초)을 폰에서 만든다 — 서버로는 당첨 한 줄만 간다.
    그림은 클레이 일러스트(img/pepero, GPT·제미나이로 그려 다듬음) 위에 카메라 이동·색 보정·빛 번짐·비네트·필름 결을 얹은 시네마틱 연출. */
 (function(){
-/* 이벤트 기간(한국 시간) — 도전이 열리는 때. 바꾸려면 여기와 pepero.js(앱 띠) 둘 다 */
-const START = Date.parse('2026-11-11T00:00:00+09:00'), END = Date.parse('2026-11-13T00:00:00+09:00');
+/* 이벤트 기간(한국 시간) — 뽑기는 START ~ DRAW_END(11.11 자정)까지. 페이지는 그 뒤에도 계속 열린다(받은 사람은 「내 선물 다시 보기」).
+   여기 시계는 화면만 정한다 — 마감은 서버(gift_claim 의 closed)가 지킨다. 앱 띠는 pepero.js 따로 */
+const START = Date.parse('2026-11-11T00:00:00+09:00'), DRAW_END = Date.parse('2026-11-12T00:00:00+09:00');
 const TARGET = 'pepero:2026', LS = 'lineup.pepero2026:', LSME = 'lineup.pepero.me';
 /* 경품 — 24명에게 기프티콘 하나씩(GS25 빼빼로 15 · 배스킨라빈스 싱글레귤러 9). 누가 무엇을 받을지는 서버가 정한다(supabase-gift.sql 의 gift_claim).
    기프티콘 그림은 서버에만 있고(gift_open, 받은 폰의 열쇠가 맞을 때만) 이 기기에도 공유 그림에도 남기지 않는다 */
@@ -24,7 +25,9 @@ const RM = (()=>{ try{ return matchMedia('(prefers-reduced-motion: reduce)').mat
 /* 시연 모드(?demo=1) — 사람들 앞에서 몇 번이고 돌려 보는 용. 뽑기는 진짜 랜덤이지만 서버에 아무것도 안 쓰고, 이름도 안 잠그고, 새로 열면 다 잊는다(기간과도 상관없이 열린다) */
 const DEMO = /(^|[?&])demo=1(&|$)/.test(location.search), MEM = {};
 const store = { get:k => DEMO ? (MEM[k] ?? null) : localStorage.getItem(k), set:(k, v) => { if(DEMO) MEM[k] = v; else localStorage.setItem(k, v); } };
-const live = () => { const n = Date.now(); return DEMO || (n >= START && n < END); };
+let SHUT = false;   // 서버가 「마감」(closed)이라고 답했다
+const closed = () => !DEMO && (SHUT || Date.now() >= DRAW_END);
+const live = () => { const n = Date.now(); return DEMO || (n >= START && !closed()); };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 const label = p => `${p.ic} ${p.short}`;
@@ -54,7 +57,7 @@ const rpc = (fn, body) => api('rpc/' + fn, { method:'POST', body:JSON.stringify(
 /* 이 이름의 열쇠 — 처음 받을 때 이 기기에서 만든 32자. 서버는 이 열쇠로 「받은 폰」을 알아본다 */
 function tok(make){ const k = 'lineup.pepero.tok:' + me.name; let v = null; try{ v = localStorage.getItem(k); }catch(e){}
   if(!v && make){ v = [...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2, '0')).join(''); try{ localStorage.setItem(k, v); }catch(e){} } return v; }
-const prizeOf = r => r && !r.soldout && (KINDS[r.id] || { id:r.id, rank:'선물', ic:'🎁', n:seen(r).slice(0, 30) || '선물', short:seen(r).slice(0, 20) || '선물' });
+const prizeOf = r => r && !r.soldout && !r.closed && (KINDS[r.id] || { id:r.id, rank:'선물', ic:'🎁', n:seen(r).slice(0, 30) || '선물', short:seen(r).slice(0, 20) || '선물' });
 function loadRes(){ res = null; try{ const v = JSON.parse(store.get(LS + me.name) || 'null'); if(v && typeof v.id === 'string') res = v; }catch(e){} }
 function saveRes(){ try{ store.set(LS + me.name, JSON.stringify(res)); }catch(e){} }
 /* 이미 받은 이름 — 서버 당첨 줄(wall)·서버가 「다른 기기 것」이라 한 이름(TAKEN)·이 기기에 남은 결과(mine:false). 시연은 아무것도 안 잠근다.
@@ -103,6 +106,7 @@ async function claim(){
   let r;
   if(DEMO) r = { kind:crypto.getRandomValues(new Uint8Array(1))[0] % 24 < 15 ? 'pepero' : 'br', mine:true };
   else r = await rpc('gift_claim', { p_name:me.name, p_token:tok(true) });
+  if(r && r.closed){ SHUT = true; res = { id:'', closed:1, sent:1 }; return res; }   // 마감 — 저장하지 않고 선물로 넘어가지 않는다
   if(!r || r.soldout || !KINDS[r.kind]){ res = { id:'', soldout:1, sent:1 }; return res; }   // 저장하지 않는다 — 다음에 열면 다시 묻는다
   const k = KINDS[r.kind]; res = { id:k.id, text:`${k.id}|${label(k)}`, at:Date.now(), sent:r.mine ? 0 : 1, mine:!!r.mine }; saveRes();
   if(r.mine) send(); else TAKEN.add(me.name); return res;
@@ -565,6 +569,7 @@ function paintList(){
   const chip = p => { const n = esc(p.name), role = p.staff ? `<small>${esc(p.cohort)}</small>` : '';
     if(mineHere(p.name)) return `<button type="button" class="pp-name mine" data-name="${n}" data-mine="${n}">${n}${role}<em>🎁 내 선물 다시 보기</em></button>`;
     if(takenBy(p.name)) return `<button type="button" class="pp-name off" data-name="${n}" disabled aria-disabled="true" aria-label="${n} — 이미 받았어요">${n}${role}<em>받음 ✓</em></button>`;
+    if(closed()) return `<button type="button" class="pp-name off" data-name="${n}" disabled aria-disabled="true" aria-label="${n} — 마감">${n}${role}<em>마감</em></button>`;
     return `<button type="button" class="pp-name" data-name="${n}">${n}${role}</button>`; };
   const grp = (t, ps) => ps.length ? `<h3 class="pp-grp">${t}</h3><div class="pp-chips">${ps.map(chip).join('')}</div>` : '';
   $('pp-list').innerHTML = list.length ? grp('양양서핑학교 6기', list.filter(p=>!p.staff)) + grp('코치·매니저', list.filter(p=>p.staff))
@@ -575,7 +580,8 @@ function enterList(){
   paintList();
   const mine = PEOPLE.filter(p=>mineHere(p.name)), top = $('pp-mine');
   top.hidden = mine.length !== 1; top.innerHTML = mine.length === 1 ? `<button type="button" class="btn pep-big pep-open" data-mine="${esc(mine[0].name)}">🎁 ${esc(mine[0].name)}님 선물 다시 보기</button>` : '';
-  const again = $('pp-again'), show_ = !!me && !mineHere(me.name) && !takenBy(me.name); again.hidden = !show_;
+  $('pp-closed').hidden = !closed();
+  const again = $('pp-again'), show_ = !!me && !mineHere(me.name) && !takenBy(me.name) && !closed(); again.hidden = !show_;
   again.innerHTML = show_ ? `<button type="button" class="btn pep-big" data-pagain>${esc(me.name)} 님으로 계속하기 ›</button>` : '';
 }
 /* 내 선물 다시 보기 — 이야기를 건너뛰고 결과 화면으로. 새로 뽑지 않는다(gift_claim 안 부름) */
@@ -607,6 +613,7 @@ function pickName(name){
 function ctl(){
   const el = $('pep-ctl'), hint = $('pep-hint'); if(!el) return;
   const ph = S ? S.ph : 'intro';
+  if(res && res.closed){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>🌙</span><b>선물 지급이 마감됐어요</b><small>빼빼로 이벤트 선물 지급은 11월 11일 자정에 마감됐어요.</small></div></div><button type="button" class="btn sm ghost" data-pback>‹ 처음으로</button>'; return; }
   if(res && res.soldout){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>앗</span><b>선물이 모두 나갔어요</b><small>문제가 있으면 오웬에게 알려 주세요.</small></div></div>'; return; }
   if(['prize', 'alone', 'gather', 'ride', 'together'].includes(ph)){ const p = prizeOf(res); hint.textContent = ph === 'prize' ? (p ? p.short + ' 당첨!' : '') : (CAP[ph] || [])[1] || ''; el.innerHTML = '<button type="button" class="btn sm ghost" data-pskip>다음 장면 ›</button>'; return; }
   if(res && ph !== 'pop' && (!S || !S.re || ph === 'reveal')){
@@ -624,7 +631,7 @@ function ctl(){
     const open = live(), wait = !!checking; hint.textContent = '';
     el.innerHTML = `<p class="pep-intro"><b>가을 낙산에서 함께 탔던 우리, 겨울 바다에서 다시 만나요</b>
       혼자 나간 겨울 라인업, 리시 끝에 걸린 건 바다가 보낸 빼빼로데이 선물상자! 꽝은 없어요.</p>
-      <button type="button" class="btn pep-big" data-pgo ${open && !wait ? '' : 'disabled'}>${!open ? (Date.now() < START ? '11월 11일에 열려요' : '이벤트가 끝났어요') : wait ? '확인하는 중…' : '🏖️ 해변으로 출발'}</button>
+      <button type="button" class="btn pep-big" data-pgo ${open && !wait ? '' : 'disabled'}>${!open ? (Date.now() < START ? '11월 11일에 열려요' : '선물 지급이 마감됐어요') : wait ? '확인하는 중…' : '🏖️ 해변으로 출발'}</button>
       <small class="pep-note">24명 모두 하나씩 · 🍫 GS25 빼빼로 또는 🍦 베스킨라빈스 싱글레귤러 기프티콘</small>`;
     return;
   }
@@ -661,7 +668,7 @@ function loop(now){
   step(S, dt, RM);
   if(S.ph === 'walk' && S.k > WALK_END){ go(S, 'paddle'); splash(S, 420, 1300, 12); ctl(); }
   else if(S.ph === 'wait' && S.k > 2.8){ go(S, 'tug'); navigator.vibrate?.([30, 40, 30, 40, 60]); ctl(); }
-  else if(S.ph === 'pop' && S.k > 1.8 && res){ X.prize = prizeOf(res); next(); }
+  else if(S.ph === 'pop' && S.k > 1.8 && res && res.id){ X.prize = prizeOf(res); next(); }
   else if(S.ph === 'prize' && S.k > 2.9) next();
   else if(S.ph === 'alone' && S.k > 3) next();
   else if(S.ph === 'gather' && S.k > 4.6) next();
@@ -701,7 +708,7 @@ function pull(){
   if(!S || S.ph !== 'tug') return;
   S.pulls++; S.pk = S.t; splash(S, 300, TY - 10, 10); sfx((c, o, t)=>clap(c, o, t, .9)); navigator.vibrate?.(18);
   if(S.pulls >= 3){ go(S, 'pop'); splash(S, 540, 1500, 20);
-    claim().then(()=>{ if(X) X.prize = prizeOf(res); }).catch(e=>{ go(S, 'tug'); S.pulls = 2; ctl(); say(/noname|notoken/.test(e && e.message) ? '선물을 받을 수 없는 이름이에요 — 오웬에게 알려 주세요' : '신호가 약해요 — 한 번 더 당겨 주세요'); }); }   // 서버가 답할 때까지 상자가 떠 있다
+    claim().then(()=>{ if(X) X.prize = prizeOf(res); ctl(); }).catch(e=>{ go(S, 'tug'); S.pulls = 2; ctl(); say(/noname|notoken/.test(e && e.message) ? '선물을 받을 수 없는 이름이에요 — 오웬에게 알려 주세요' : '신호가 약해요 — 한 번 더 당겨 주세요'); }); }   // 서버가 답할 때까지 상자가 떠 있다
   ctl();
 }
 async function start(){
@@ -711,7 +718,7 @@ async function start(){
 }
 const ENDING = ['pop', 'prize', 'alone', 'gather', 'ride', 'together', 'reveal'];
 function next(){   // 이야기 다음 장면 — 시간이 되거나 그림을 누르면(건너뛰기)
-  const i = ENDING.indexOf(S.ph); if(i < 0 || i >= ENDING.length - 1 || !res) return;
+  const i = ENDING.indexOf(S.ph); if(i < 0 || i >= ENDING.length - 1 || !res || !res.id) return;   // 마감·모두 나감이면 선물 장면으로 안 간다
   go(S, ENDING[i + 1]); if(X) X.prize = prizeOf(res);
   if(S.ph === 'reveal' || S.ph === 'prize'){ navigator.vibrate?.([20, 40, 20]); sfx(sparkle); }
   if(S.ph === 'ride') sfx(cheer);
