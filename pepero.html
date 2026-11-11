@@ -53,6 +53,7 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
 .pp-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px; padding-right:58px }
 .pp-top b{ font-size:14px; font-weight:900; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .pp-foot{ margin-top:18px; text-align:center; font-size:12.5px; color:var(--ink2) } .pp-foot a{ color:#C2456A; font-weight:800 }
+.pp-by{ margin:2px 0 0; text-align:center } .pp-by a{ display:inline-flex; align-items:center; min-height:44px; padding:0 14px; font-size:12px; font-weight:700; color:var(--ink2); text-decoration:none; opacity:.85 } .pp-by a:hover, .pp-by a:focus-visible{ text-decoration:underline; opacity:1 }
 .pp-demo{ margin:0 auto 10px; width:max-content; max-width:100%; background:#2B2340; color:#FFE08A; font-weight:900; font-size:12.5px; border-radius:999px; padding:5px 14px }
 .pp-snd{ position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:8; width:48px; height:48px; border:0; border-radius:50%; background:#fff; font-size:22px; cursor:pointer;
   box-shadow:inset 0 -4px 0 rgba(60,30,60,.1), inset 0 3px 0 #fff, 0 4px 0 #E8D6B6, 0 8px 16px rgba(90,60,120,.18) }
@@ -133,6 +134,7 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
     <p id="pep-hint" class="pep-hint" aria-live="polite"></p><div id="pep-ctl" class="pep-ctl"></div><div id="pep-wall" class="pep-wall"></div>
   </section>
   <p class="pp-foot">양양서핑학교 6기 · <a href="/surfshare">SurfShare 열기</a></p>
+  <p class="pp-by"><a href="https://ax.owenai.xyz" target="_blank" rel="noopener">만든 사람 · 에스에이치테크 ↗</a></p>
   <div id="pp-gc" class="pp-gc" role="dialog" aria-modal="true" aria-label="당첨된 기프티콘" hidden><div class="pp-gc-in">
     <p>매장에서 이 화면을 보여 주세요<br><small>화면 밝기를 올리면 잘 찍혀요</small></p>
     <img alt="당첨된 기프티콘" draggable="false" oncontextmenu="return false">

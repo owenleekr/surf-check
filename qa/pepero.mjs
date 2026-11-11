@@ -1,6 +1,7 @@
 /* 🎁 11.11 낙산 해변 빼빼로 선물 — 따로 선 페이지(pepero.html + pepero-app.js)와 SurfShare 홈 띠(pepero.js).
    이름 찾기(명단·코치·뺀 이름) → 정해 둔 성별 캐릭터 → 가을 낙산(autumn-open) → 식으며 나만 남음 → 패들 → 세트 → 리시 ×3 → 선물 · place_talk 한 줄(이름당 하나) ·
    서버에 그 이름 줄이 있으면 안 뽑음 · 다시 열면 같은 결과 · 스토리 그림 1080×1920 · 영상 · 이스케이프 · 좁은 폭 · 기간 밖 ·
+   끌어올린 뒤 선물 공개(「○○ 당첨!」) → 혼자 · 버디들은 한 장 그림(gather) · 포스터 끝줄에 주소 없음 · 에스에이치테크 꼬리말 링크 ·
    마지막 사진의 정면 「나」는 받은 종류 그림 하나만 받고(빼빼로 → -pep, 아이스크림 → -br), 선물 아이콘은 몸이 아니라 머리 위 배지에만 · 공유물엔 기프티콘 그림 없음.
    SHOTS=<폴더> 를 주면 화면·그림·영상을 거기 저장한다 */
 import puppeteer from 'puppeteer-core';
@@ -34,7 +35,8 @@ async function page(rows, opts = {}){
     return r.respond({ status:200, headers:CORS, contentType:'application/json', body:JSON.stringify(rows) }); });
   await p.evaluateOnNewDocument(clock, opts.at || ON);
   await p.evaluateOnNewDocument(()=>{ window.__draws = []; const d = CanvasRenderingContext2D.prototype.drawImage;   // 어떤 그림을 어디에 그렸나(story: 1080×1920 캔버스)
-    CanvasRenderingContext2D.prototype.drawImage = function(im, ...a){ if(im instanceof HTMLImageElement){ const m = this.getTransform(); window.__draws.push({ src:(im.getAttribute('src') || '').slice(0, 60), y:m.f, story:this.canvas.width === 1080 && this.canvas.height === 1920 }); } return d.call(this, im, ...a); }; });
+    CanvasRenderingContext2D.prototype.drawImage = function(im, ...a){ if(im instanceof HTMLImageElement){ const m = this.getTransform(); window.__draws.push({ src:(im.getAttribute('src') || '').slice(0, 60), y:m.f, story:this.canvas.width === 1080 && this.canvas.height === 1920 }); } return d.call(this, im, ...a); };
+    window.__texts = []; const ft = CanvasRenderingContext2D.prototype.fillText; CanvasRenderingContext2D.prototype.fillText = function(t, ...a){ if(this.canvas.width === 1080) window.__texts.push(String(t)); return ft.call(this, t, ...a); }; });
   await p.goto(PAGE, { waitUntil:'domcontentloaded' }); await p.evaluate(()=>localStorage.clear());
   await p.goto(PAGE + (opts.q || ''), { waitUntil:'networkidle2' });
   const S = (f, ...a) => p.evaluate(f, ...a), sleep = ms => new Promise(r=>setTimeout(r, ms));
@@ -46,7 +48,7 @@ async function playThrough(S, sleep){
   await S(()=>_pepero.walk()); await sleep(400);   // 가을 → 겨울 건너뛰기
   await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
   await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
-  for(let i = 0; i < 4; i++){ await S(()=>_pepero.next()); await sleep(150); }   // 혼자 → 버디들 → 다 같이(건너뛰기)
+  for(let i = 0; i < 5; i++){ await S(()=>_pepero.next()); await sleep(150); }   // 선물 공개 → 혼자 → 버디들 → 다 같이(건너뛰기)
   await sleep(300);
 }
 const blob = (S, fn) => S(async f => { const b = await window._pepero[f](); const a = new Uint8Array(await b.arrayBuffer()); let s = ''; for(let i = 0; i < a.length; i += 32768) s += String.fromCharCode(...a.subarray(i, i + 32768));
@@ -59,6 +61,8 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
     wall:document.querySelectorAll('#pep-wall .pep-w').length }));
   ok(en.names.length === 24 && !en.names.includes('이성현') && !en.names.includes('루비') && en.names.includes('김도훈') && en.coach === 6 && en.grp === '양양서핑학교 6기,코치·매니저', `명단 24명(6기 18 + 코치·매니저 6, 이성현·루비 등 뺌): ${en.names.length}`);
   await shot(p, 'pepero-1-enter');
+  const by = await S(()=>{ const a = document.querySelector('.pp-by a'), r = a.getBoundingClientRect(); return { href:a.href, tg:a.target, rel:a.rel, h:r.height, t:a.textContent, mid:Math.abs(r.left + r.width / 2 - innerWidth / 2) < 2 }; });
+  ok(by.href === 'https://ax.owenai.xyz/' && by.tg === '_blank' && /noopener/.test(by.rel) && by.h >= 44 && by.mid && /에스에이치테크/.test(by.t), '꼬리말 「만든 사람 · 에스에이치테크 ↗」 새 탭·44px·가운데: ' + JSON.stringify(by));
   await S(()=>document.getElementById('pp-snd').click());
   ok(await S(()=>document.getElementById('pp-snd').getAttribute('aria-pressed') === 'true' && localStorage.getItem('lineup.pepero.sound') === '1'), '🔊 배경 음악 켜기 · 기억');
   await S(()=>document.getElementById('pp-snd').click());
@@ -97,9 +101,13 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   await S(()=>document.getElementById('pep-cv').click()); await sleep(100);   // 그림을 눌러도 당겨진다
   for(let i = 0; i < 2; i++){ await S(()=>document.querySelector('[data-ppull]').click()); await sleep(100); }
   await sleep(2100);
-  ok(await S(()=>_pepero.S.ph) === 'alone', '선물 뒤 「여전히 혼자라 쓸쓸해요」');
+  const pz = await S(()=>({ ph:_pepero.S.ph, hint:document.getElementById('pep-hint').textContent, skip:!!document.querySelector('[data-pskip]') }));
+  ok(pz.ph === 'prize' && pz.hint === '베스킨라빈스 아이스크림 당첨!' && pz.skip, '끌어올리면 먼저 선물 공개(「베스킨라빈스 아이스크림 당첨!」 + 다음 장면): ' + JSON.stringify(pz));
   await S(()=>document.querySelector('[data-pskip]').click()); await sleep(200);
-  ok(await S(()=>_pepero.S.ph) === 'gather', '다음 장면 → 버디들이 모여요');
+  ok(await S(()=>_pepero.S.ph) === 'alone', '그다음 「여전히 혼자라 쓸쓸해요」');
+  await S(()=>document.querySelector('[data-pskip]').click()); await sleep(200);
+  ok(await S(()=>_pepero.S.ph) === 'gather', '다음 장면 → 버디들이 모여요'); await sleep(300);
+  ok(gets.includes('gather.webp') && await S(()=>window.__draws.some(d=>/gather\.webp/.test(d.src))), '버디들이 다가오는 장면은 한 장 그림(gather.webp)');
   for(let i = 0; i < 3; i++){ await S(()=>document.getElementById('pep-cv').click()); await sleep(200); }   // 다 같이 파도 → 나눠 먹기 → 공개
   await sleep(200);
   const rv = await S(()=>({ ph:_pepero.S.ph, res:_pepero.res, card:document.querySelector('.pep-res')?.textContent.replace(/\s+/g, ' '), open:!!document.querySelector('[data-popen]') }));
@@ -131,6 +139,8 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   const ice = dr.filter(d=>d.story && /ice\.webp/.test(d.src));
   ok(ice.length && ice.every(d=>d.y < 830), '선물 아이콘은 머리 위 배지에만(몸에 붙은 아이콘 없음): ' + ice.map(d=>Math.round(d.y)));
   ok(!dr.some(d=>/^data:/.test(d.src)), '공유 그림·영상에 기프티콘(data:) 그림을 그리지 않음');
+  const tx = await S(()=>window.__texts);
+  ok(tx.includes('2026.11.11 낙산 해변') && !tx.some(t=>/owenai|surf\.|에스에이치테크/.test(t)), '포스터·영상 끝줄은 「2026.11.11 낙산 해변」만(주소·꼬리말 없음)');
   /* 다시 열기 → 이름 기억, 같은 결과, 새로 안 보냄 */
   await p.reload({ waitUntil:'networkidle2' }); await sleep(500);
   ok(await S(()=>!document.getElementById('pp-again').hidden && /장진혁/.test(document.getElementById('pp-again').textContent)), '다시 열면 「장진혁 님으로 계속하기」');

@@ -12,8 +12,8 @@ const START = Date.parse('2026-11-11T00:00:00+09:00'), END = Date.parse('2026-11
 const TARGET = 'pepero:2026', LS = 'lineup.pepero2026:', LSME = 'lineup.pepero.me';
 /* 경품 — 24명에게 기프티콘 하나씩(GS25 빼빼로 15 · 배스킨라빈스 싱글레귤러 9). 누가 무엇을 받을지는 서버가 정한다(supabase-gift.sql 의 gift_claim).
    기프티콘 그림은 서버에만 있고(gift_open, 받은 폰의 열쇠가 맞을 때만) 이 기기에도 공유 그림에도 남기지 않는다 */
-const KINDS = { pepero:{ id:'pepero', rank:'빼빼로', tag:'빼빼로', ic:'🍫', n:'GS25 빼빼로 기프티콘', short:'빼빼로', pic:'p2', pose:'pep' },
-  br:{ id:'br', rank:'아이스크림', tag:'베스킨라빈스', ic:'🍦', n:'베스킨라빈스 싱글레귤러 기프티콘', short:'베스킨라빈스 아이스크림', pic:'ice', pose:'br' } };
+const KINDS = { pepero:{ id:'pepero', rank:'빼빼로', tag:'빼빼로', ic:'🍫', n:'GS25 빼빼로 기프티콘', short:'빼빼로', pic:'p2', big:'p1', pose:'pep' },
+  br:{ id:'br', rank:'아이스크림', tag:'베스킨라빈스', ic:'🍦', n:'베스킨라빈스 싱글레귤러 기프티콘', short:'베스킨라빈스 아이스크림', pic:'ice', big:'ice', pose:'br' } };
 /* 캐릭터 — 남자/여자 탭에서 넷 중 하나(이름으로 성별을 짐작하지 않는다 — 본인이 고른다).
    클레이 캐릭터 그림(GPT) 한 사람에 세 자세: pad 엎드려 패들 · sit 보드에 앉아 기다리기 · gift 선물상자 들고 서기 → img/pepero/<id>-<자세>.webp */
 const LOOKS = { m:[ { id:'m1', ko:'웻슈트' }, { id:'m2', ko:'버킷햇' }, { id:'m3', ko:'곱슬머리' }, { id:'m4', ko:'금발 곱슬' } ],
@@ -97,7 +97,7 @@ async function claim(){
   if(r.mine) send(); return res;
 }
 /* ── 그림 — 낙산 해변 클레이 일러스트(img/pepero/*.webp). autumn-open: 가을 낙산의 친구들(첫 장면) · bg: 빈 해변 · tug: 물속 단면 · gift: 선물상자 · p1~p4: 경품 스티커 ── */
-const PIC = {}, PICP = {}, ALL = ['autumn-open', 'bg', 'tug', 'gift', 'p2', 'ice', 'logo-w', 'ending-center', 'ride'];
+const PIC = {}, PICP = {}, ALL = ['autumn-open', 'bg', 'tug', 'gift', 'p1', 'p2', 'ice', 'logo-w', 'ending-center', 'ride', 'gather'];
 function want(ns){ return Promise.all(ns.map(n=>PICP[n] || (PICP[n] = new Promise(ok=>{ const im = new Image();
   im.onload = ()=>{ PIC[n] = im; ok(); }; im.onerror = ()=>{ delete PICP[n]; ok(); }; im.src = `img/pepero/${n}.webp`; })))); }   // 못 받으면 다음에 다시 — 그동안은 색으로 그린다
 const stickerOf = p => p && KINDS[p.id] ? KINDS[p.id].pic : 'gift';
@@ -180,7 +180,7 @@ function sunFx(g, t, a, sun = SUN){
 const WALK_END = 4.2;   // 걷기(walk) 장면 길이 — 첫 1.3초는 「가을의 낙산은…」 자막 그대로
 function cold(){
   const im = PIC['autumn-open']; if(!im) return null; if(PIC['autumn-open~c']) return PIC['autumn-open~c'];
-  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d');
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
   g.drawImage(im, 0, 0); g.globalCompositeOperation = 'saturation'; g.fillStyle = 'rgba(128,128,128,.8)'; g.fillRect(0, 0, c.width, c.height);
   g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(80,110,185,.3)'; g.fillRect(0, 0, c.width, c.height);   // 바랜 겨울빛
   return PIC['autumn-open~c'] = c;
@@ -222,7 +222,7 @@ const WL = .64;   // 물높이 — 그림 위에서부터 64%
 /* wl 물높이(그림 위에서부터 비율) · edge 물선 바로 아래 지우는 세기(0 이면 부드럽게, 클수록 물결 모양 물선이 또렷) */
 function sunk(im, wl = WL, edge = 0){
   if(!im) return null; const ck = `__sunk${wl}_${edge}`; if(im[ck]) return im[ck];
-  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'), h = im.height;
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'), h = im.height; g.imageSmoothingQuality = 'high';
   g.drawImage(im, 0, 0);
   g.globalCompositeOperation = 'source-atop'; const tint = g.createLinearGradient(0, h * wl - 6, 0, h); tint.addColorStop(0, 'rgba(70,190,205,0)'); tint.addColorStop(.08, 'rgba(70,190,205,.55)'); tint.addColorStop(1, 'rgba(40,150,190,.7)'); g.fillStyle = tint; g.fillRect(0, 0, c.width, h);
   g.globalCompositeOperation = 'destination-out'; const er = g.createLinearGradient(0, h * wl - 4, 0, h); er.addColorStop(0, `rgba(0,0,0,${edge})`); er.addColorStop(.12, `rgba(0,0,0,${Math.max(.55, edge + .2)})`); er.addColorStop(.6, 'rgba(0,0,0,.9)'); er.addColorStop(1, 'rgba(0,0,0,1)'); g.fillStyle = er;
@@ -236,8 +236,7 @@ function ripple(g, bx, by, w, h, t, wl = WL, rx = .3){   // bx·by = 그림 가�
   g.globalAlpha = (1 - rp) * .6; g.beginPath(); g.ellipse(bx, y, w * (rx + .04 + rp * .22), h * (.034 + rp * .02), 0, 0, 7); g.stroke();
   g.restore();
 }
-/* 겨울 해변 — 혼자(뒷모습) → 버디들이 보드를 들고 하나둘 → 다 같이 패들해서 겨울 바다로 */
-const GATHER = [[540, 1395, 270], [190, 1425, 300], [890, 1430, 300], [340, 1500, 350], [745, 1505, 350], [95, 1640, 420], [995, 1650, 420]];
+/* 겨울 해변 — 혼자(뒷모습) → 눈 덮인 해변을 걸어오는 버디들(gather 그림) → 다 같이 파도(ride) → 단체 사진 */
 const easeO = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
 function winterScene(g, s, X, t){
   if(s.ph === 'ride'){   // 다 같이, 각자의 파도 위에서 — 물보라 튀며 다가간다
@@ -257,34 +256,57 @@ function winterScene(g, s, X, t){
     const fl = 1 - (k - SHOT) / .3; if(fl > 0 && !X.rm){ g.fillStyle = `rgba(255,255,255,${fl})`; g.fillRect(0, 0, W, H); }
     return;
   }
+  if(s.ph === 'gather'){ const k = X.rm ? 1 : easeO(s.k / 4.6); back(g, PIC.gather || PIC.bg, t, 1.02 + .1 * k, 540, 1150); return; }   // 눈 덮인 해변을 걸어오는 버디들(한 장 그림)로 천천히 다가간다
   back(g, PIC.bg, t, 1.12, 540, 1300);
-  if(s.ph === 'gather') GATHER.map((p, i)=>[p, i]).sort((a, b)=>a[0][1] - b[0][1]).forEach(([[gx, gy, gh], i])=>{ const im = crew.walk[i]; if(!im) return;
-    const k = X.rm ? 1 : easeO((s.k - .3 - i * .5) / .7); if(k <= 0) return;
-    const from = gx < 540 ? -260 : gx > 540 ? 1340 : 540, x = from + (gx - from) * k, y = gy - (gx === 540 ? (1 - k) * 160 : 0) - Math.abs(Math.sin(k * Math.PI * 3)) * 14 * (1 - k), w = gh * im.width / im.height;
-    g.globalAlpha = Math.min(1, k * 2); g.fillStyle = 'rgba(60,70,110,.25)'; g.beginPath(); g.ellipse(x, y - 6, w * .4, 16, 0, 0, 7); g.fill(); g.drawImage(im, x - w / 2, y - gh, w, gh); g.globalAlpha = 1; });
   const im = X.alone; if(im){ const w = Math.min(760, 700 * im.width / im.height * 1.3), h = w * im.height / im.width; g.drawImage(im, 540 - w / 2, H - 120 - h, w, h); }   // 아래는 검은 띠에 묻힌다
 }
-/* 발밑 단면 — 들어설 때 뒤로 빠지며(드러내기) 보여 주고, 리시를 당길수록 선물상자 쪽으로 다가간다 */
+/* 리시 당기기 — 물 위의 나를 크게(화면 높이 1/3쯤, 물선 TY 위로) 등 뒤 빛·테두리 빛으로 또렷하게, 물 아래엔 리시 끝에 걸린 선물상자.
+   당길 때마다(s.pk) 몸을 뒤로 젖히고 리시가 팽팽해진다. 자막은 위, 버튼은 그림 밖이라 캐릭터를 가리지 않는다 */
+const TY = 940, TWL = .74;   // 물선(화면) · 그림 위에서부터 물높이 — 보드 윗면까지 물 위로
 function tugScene(g, s, X, t){
-  const inK = X.rm ? 1 : Math.min(1, s.k / 1.4), z = 1.04 + s.pulls * .07 + .3 * Math.pow(1 - inK, 3) + (s.ph === 'pop' ? .25 * Math.min(1, s.k / .35) : 0);
-  g.save();
-  if(s.ph === 'tug' && !X.rm){ const m = 1 + s.pulls * .6; g.translate(Math.sin(s.t * 47) * 5 * m, Math.sin(s.t * 39) * 4 * m); }
-  back(g, PIC.tug, t, z, 487, 1462);
-  /* 물 위는 내 캐릭터로 — 원래 그림의 위쪽(다른 서퍼)을 바다 풍경으로 덮고, 내가 보드에 앉아 발밑을 내려다본다 */
-  g.save(); cam(g, z, 487, 1462);
-  if(PIC.bg){ const f = PIC.bg.width / W; g.drawImage(PIC.bg, 0, 700 * f, W * f, 560 * f, -40, -20, W + 80, 600); }
-  const wl = g.createLinearGradient(0, 520, 0, 610); wl.addColorStop(0, 'rgba(120,215,225,0)'); wl.addColorStop(1, 'rgba(120,215,225,.95)'); g.fillStyle = wl; g.fillRect(-40, 520, W + 80, 90);
-  if(X.sit){ const h = 440, w = h * X.sit.width / X.sit.height; g.drawImage(sunk(X.sit), 360 - w / 2, 610 - h, w, h); ripple(g, 360, 610, w, h, t); }
-  g.save(); g.translate(560, 250); g.rotate(.15); pill(g, '!', 0, -50, 80, '#FFE08A', '#E7B640'); g.restore();
-  g.restore();
+  const inK = X.rm ? 1 : Math.min(1, s.k / 1.4), z = 1 + .1 * Math.pow(1 - inK, 3) + (s.ph === 'pop' ? .2 * Math.min(1, s.k / .35) : 0);
+  const e = X.rm || s.pk == null ? 1 : Math.min(1, (s.t - s.pk) / .55), jolt = Math.sin(e * Math.PI) * (1 - e * .3), ten = Math.min(1, .35 + s.pulls * .2 + jolt * .5);
+  g.save(); cam(g, z, 540, 1000);
+  if(s.ph === 'tug' && !X.rm){ const m = 1 + s.pulls * .4; g.translate(Math.sin(s.t * 47) * 3 * m, Math.sin(s.t * 39) * 2 * m); }
+  if(PIC.tug) g.drawImage(PIC.tug, -20, TY - 632, W + 40, H + 20);   // 물 아래 — 그림의 물선(632)을 TY 에 맞춰 상자를 아래쪽으로
+  else{ g.fillStyle = '#4FC3D8'; g.fillRect(0, TY, W, H); }
+  if(PIC.bg){ const f = PIC.bg.width / W; g.drawImage(PIC.bg, 130 * f, 500 * f, 820 * f, 650 * f, -40, -40, W + 80, TY + 50); }   // 물 위 — 하늘과 바다(그림 속 다른 서퍼를 덮는다)
+  const wl = g.createLinearGradient(0, TY - 90, 0, TY + 10); wl.addColorStop(0, 'rgba(120,215,225,0)'); wl.addColorStop(1, 'rgba(120,215,225,.95)'); g.fillStyle = wl; g.fillRect(-40, TY - 90, W + 80, 100);
+  const im = X.sit, h = 640, w = im ? h * im.width / im.height : 0, bx = 560 - 26 * jolt, lean = -.22 * jolt, sp = im && sunk(im, TWL, .3);
+  g.save(); g.globalCompositeOperation = 'screen'; const bl = g.createRadialGradient(bx, TY - 230, 30, bx, TY - 230, 430); bl.addColorStop(0, 'rgba(255,240,205,.6)'); bl.addColorStop(1, 'rgba(255,240,205,0)'); g.fillStyle = bl; g.fillRect(0, 0, W, TY + 200); g.restore();   // 등 뒤 빛
+  /* 리시 — 보드 꼬리에서 물속으로, 당길수록 팽팽 */
+  const tx = bx - w * .44 * Math.cos(lean), ty = TY - h * .01, ex = 250, ey = TY + 120;
+  g.strokeStyle = '#2E2A36'; g.lineWidth = 11; g.lineCap = 'round'; g.beginPath(); g.moveTo(tx, ty); g.quadraticCurveTo((tx + ex) / 2 - 10, (ty + ey) / 2 + 60 * (1 - ten), ex, ey); g.stroke();
+  if(im){ g.save(); g.translate(bx, TY); g.rotate(lean);
+    g.shadowColor = 'rgba(255,248,228,.95)'; g.shadowBlur = 28; g.drawImage(sp, -w / 2, -h * TWL, w, h);   // 테두리 빛
+    g.shadowBlur = 6; g.shadowColor = 'rgba(255,255,255,.9)'; g.drawImage(sp, -w / 2, -h * TWL, w, h); g.shadowBlur = 0;
+    ripple(g, 0, h * (1 - TWL), w, h, t, TWL, .42); g.restore();
+    g.save(); g.translate(bx + w * .36, TY - h * TWL + 40); g.rotate(.15); pill(g, '!', 0, -50, 70, '#FFE08A', '#E7B640'); g.restore(); }
+  else{ board(g, bx, TY, 430, 52, 0); }
   g.restore();
   g.save(); g.globalCompositeOperation = 'screen';   // 물속 빛줄기
-  for(let i = 0; i < 4; i++){ const x0 = 180 + i * 230 + Math.sin(t * .5 + i) * 40, gr = g.createLinearGradient(0, 560, 0, 1700);
-    gr.addColorStop(0, 'rgba(220,255,250,.28)'); gr.addColorStop(1, 'rgba(220,255,250,0)'); g.fillStyle = gr;
-    g.beginPath(); g.moveTo(x0, 560); g.lineTo(x0 + 70, 560); g.lineTo(x0 + 260, 1700); g.lineTo(x0 + 90, 1700); g.closePath(); g.fill(); }
+  for(let i = 0; i < 4; i++){ const x0 = 180 + i * 230 + Math.sin(t * .5 + i) * 40, gr = g.createLinearGradient(0, TY, 0, 1770);
+    gr.addColorStop(0, 'rgba(220,255,250,.24)'); gr.addColorStop(1, 'rgba(220,255,250,0)'); g.fillStyle = gr;
+    g.beginPath(); g.moveTo(x0, TY + 20); g.lineTo(x0 + 70, TY + 20); g.lineTo(x0 + 220, 1770); g.lineTo(x0 + 90, 1770); g.closePath(); g.fill(); }
   g.restore();
-  for(let i = 0; i < 18; i++){ const sp = 120 + (i % 5) * 40, y = 1560 - ((t * sp + i * 97) % 1000), x = 487 + Math.sin(i * 12.9 + t * 1.3) * (60 + (i % 4) * 60);
-    bubble(g, x, y, 10 + (i % 4) * 7); }
+  for(let i = 0; i < 14; i++){ const sp = 120 + (i % 5) * 40, y = 1720 - ((t * sp + i * 97) % (1720 - TY - 40)), x = 560 + Math.sin(i * 12.9 + t * 1.3) * (60 + (i % 4) * 70);
+    bubble(g, x, y, 9 + (i % 4) * 6); }
+}
+/* 선물 공개 — 떠오른 상자가 들썩이다 열리고, 큰 클레이 선물(빼빼로 상자·아이스크림)이 튀어 올라 「○○ 당첨!」, 양옆 꽃가루. 약 2.5초(또는 누르면) 뒤 「선물은 기쁘지만…」 */
+function prizeOpen(g, s, X, t){
+  const k = X.rm ? 9 : s.k, p = X.prize, op = easeO((k - .45) / .45), big = p && KINDS[p.id] ? PIC[KINDS[p.id].big] : PIC[stickerOf(p)];
+  back(g, PIC.bg, t, 1.02, 540, 1150); sunFx(g, t, .55); dof(g, t, 1); g.fillStyle = 'rgba(255,240,225,.14)'; g.fillRect(0, 0, W, H); rays(g, 540, 760, t, .45 + .5 * op);
+  if(op < 1 && PIC.gift){ const im = PIC.gift, sh = k < .45 && !X.rm ? Math.sin(k * 60) * .07 : 0, sc = 1 - .35 * op, w = 350 * im.width / im.height;   // 들썩 → 작아지며 사라짐
+    g.save(); g.globalAlpha = 1 - op; g.translate(540, 905 + op * 80); g.rotate(sh); g.scale(sc, sc); g.drawImage(im, -w / 2, -350, w, 350); g.restore(); }
+  if(op > 0 && p){
+    if(!X.rm) CF.forEach((c, i)=>{ const y = (k * c.sp + c.ph) % 1700 + 120, a = Math.min(1, op * 2); g.save(); g.globalAlpha = a; g.translate(c.x, y); g.rotate(c.r + k * 3); g.fillStyle = CFC[i % CFC.length]; g.fillRect(-c.s / 2, -c.s * .3, c.s, c.s * .6); g.restore(); });
+    const sc = X.rm ? 1 : easeBack(op), y = 760 - 120 * op;
+    g.save(); g.globalAlpha = Math.min(1, op * 1.5); g.translate(540, y); g.scale(sc, sc);
+    g.fillStyle = 'rgba(255,253,246,.92)'; g.beginPath(); g.arc(0, 0, 250, 0, 7); g.fill(); g.restore();
+    if(big){ g.save(); g.globalAlpha = Math.min(1, op * 1.5); sticker(g, big, 540, y, 400 * sc, -.06); g.restore(); }
+    const ta = X.rm ? 1 : Math.min(1, (k - .7) / .35); if(ta > 0){ g.globalAlpha = ta; title(g, `${p.short} 당첨!`, W / 2, 1150, 96, 980);
+      g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(30,15,40,.6)'; g.shadowBlur = 14; g.fillStyle = '#fff'; g.font = `800 38px ${FONT}`; g.fillText(p.n, W / 2, 1230); g.restore(); g.globalAlpha = 1; }
+  }
 }
 const easeBack = x => 1 + 2.70158 * Math.pow(x - 1, 3) + 1.70158 * Math.pow(x - 1, 2);
 const CF = Array.from({ length:40 }, (_, i)=>({ x:i % 2 ? (i * 37) % 160 : 920 + (i * 41) % 160,   // 양옆으로만 — 제목·선물·카드를 가리지 않게
@@ -352,7 +374,7 @@ function photo(X){
   const base = PIC['ending-center'], fn = frontOf(X); if(fn && !ASKED.has(fn)){ ASKED.add(fn); want([fn]); }   // 매 장면마다 다시 묻지 않게 한 번만(내보내기는 따로 기다린다)
   const fr = fn && PIC[fn], im = fr || X.sit, key = [imgs.key, X.prize && X.prize.id, X.name, !!X.sit, !!fr, !!base, !!(X.prize && PIC[stickerOf(X.prize)])].join('|');
   if(!base){ PIC['ending-me'] = null; return; } if(PIC['ending-me'] && PIC['ending-me'].__k === key) return;
-  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); c.__k = key;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; c.__k = key;
   g.drawImage(base, 0, 0, W, H);
   if(im){ const h = fr ? 500 : 520, w = h * im.width / im.height, bx = 540, by = fr ? 1335 : 1300, wl = fr ? WLF : WL, sp = sunk(im, wl, fr ? .4 : 0);
     const tmp = document.createElement('canvas'); tmp.width = sp.width; tmp.height = sp.height; const tg = tmp.getContext('2d'); tg.drawImage(sp, 0, 0); tg.globalCompositeOperation = 'source-atop'; tg.fillStyle = 'rgba(255,160,110,.16)'; tg.fillRect(0, 0, tmp.width, tmp.height);   // 노을빛 맞추기
@@ -385,7 +407,7 @@ function poster(g, X, o){
     g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 12; g.fillStyle = '#fff'; g.font = `800 31px ${FONT}`;
     g.fillText('작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요.', W / 2, y0 + 66); g.fillText('겨울 바다에서도, 다시 만나요 🌊', W / 2, y0 + 110); g.restore();
     const foot = X.name ? pill(g, '양양서핑학교 서프 버디 ' + String(X.name).slice(0, 10), W / 2, y0 + 142, 32, '#fff', '#F2C9D3') : y0 + 190;   // 이름 알약과 날짜 줄은 같은 가운데 축, 20px 간격
-    g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 27px ${FONT}`; g.fillText('2026.11.11 낙산 해변 · surf.owenai.xyz/pepero', W / 2, foot + 20 + 15); g.restore();
+    g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 27px ${FONT}`; g.fillText('2026.11.11 낙산 해변', W / 2, foot + 20 + 15); g.restore();
     g.globalAlpha = 1; }
   if(o.fade > 0){ g.fillStyle = `rgba(20,10,20,${o.fade})`; g.fillRect(0, 0, W, H); }
 }
@@ -451,7 +473,7 @@ function splash(s, x, y, n){ for(const q of s.sp){ if(n <= 0) break; if(q.a > 0)
 function step(s, dt, rm){
   s.t += dt; s.k += dt;
   const pt = s.ph === 'intro' || s.ph === 'walk' ? 0 : s.ph === 'paddle' ? s.n / 5 : 1, e = rm ? 1 : Math.min(1, dt * 3);
-  const SV = { intro:0, walk:s.k < 1.1 ? 0 : .85, paddle:.68, wait:.72, tug:.8, pop:.9, alone:1, gather:1, ride:.55, together:.35, reveal:1 }; s.sv += ((SV[s.ph] || 0) - s.sv) * (rm ? 1 : Math.min(1, dt * .8));   // 가을 → 겨울
+  const SV = { intro:0, walk:s.k < 1.1 ? 0 : .85, paddle:.68, wait:.72, tug:.8, pop:.9, prize:.9, alone:1, gather:1, ride:.55, together:.35, reveal:1 }; s.sv += ((SV[s.ph] || 0) - s.sv) * (rm ? 1 : Math.min(1, dt * .8));   // 가을 → 겨울
   s.pg += (pt - s.pg) * e;
   const c = CAM[s.ph] || CAM.intro, cx = c[1], ce = rm ? 1 : Math.min(1, dt * 1.1);   // 천천히 따라붙는 카메라
   s.cz += (c[0] - s.cz) * ce; s.cx += (cx - s.cx) * ce; s.cy += (c[2] - s.cy) * ce;
@@ -460,11 +482,11 @@ function step(s, dt, rm){
 }
 /* 장면 자막 — 이야기 순서. 위쪽에 영화 자막처럼(물속 장면은 가운데) */
 const CAP = { intro:['가을의 낙산은', '웃음소리와 함성, 응원으로 가득했어요'], walk:['이제는…', '어쩐지 나만 남은 것 같아요'], paddle:['쓸쓸히 바다로 나가며', '동기들을 떠올려요'],
-  wait:['어느새 바다는 겨울이 되었어요', '라인업에서 세트를 기다려요'], tug:['쓸쓸히 떠 있는데…', '발밑에 뭔가 걸렸어요!'], alone:['선물은 기쁘지만…', '여전히 혼자라 쓸쓸해요'], gather:['그때, 멀리서 웃음소리가 들려와요', '버디들이 하나둘, 바다로 모여요'], ride:['겨울 바다에서', '누군가는 파도를 타고, 누군가는 응원해요'], together:['파도에서 나와', '함께 나눠 먹으며 웃어요'], pop:['끌어올려 보니,', '선물이었어요 🎁'] };
+  wait:['어느새 바다는 겨울이 되었어요', '라인업에서 세트를 기다려요'], tug:['쓸쓸히 떠 있는데…', '발밑에 뭔가 걸렸어요!'], alone:['선물은 기쁘지만…', '여전히 혼자라 쓸쓸해요'], gather:['그때, 멀리서 웃음소리가 들려와요', '버디들이 하나둘, 나에게 다가와요'], ride:['겨울 바다에서', '누군가는 파도를 타고, 누군가는 응원해요'], together:['파도에서 나와', '함께 나눠 먹으며 웃어요'], pop:['끌어올려 보니,', '선물이었어요 🎁'] };
 function caption(g, s, X){
   let c = CAP[s.ph], k = s.k; if(!c || (s.ph === 'together' && (X.rm || s.k >= SHOT))) return;
   if(s.ph === 'walk'){ if(k < 1.3 && !X.rm){ c = CAP.intro; k = 9; } else k -= 1.3; }   // 출발 뒤 잠깐은 함성과 함께 첫 자막 그대로
-  const a = X.rm ? 1 : Math.min(1, k / .5), y = (s.ph === 'tug' ? 820 : 300) + (1 - a) * 24, main = c[1];
+  const a = X.rm ? 1 : Math.min(1, k / .5), y = 300 + (1 - a) * 24, main = c[1];
   g.save(); g.globalAlpha = a; g.textAlign = 'center';
   g.shadowColor = 'rgba(30,15,40,.6)'; g.shadowBlur = 22; g.shadowOffsetY = 4;
   g.fillStyle = '#FFE2B8'; g.font = `800 38px ${FONT}`; g.fillText(c[0], W / 2, y);
@@ -490,7 +512,7 @@ function post(g, s, X, t){
   snow(g, t, sv > .6 ? (sv - .6) / .4 : 0);
   const v = g.createRadialGradient(W / 2, H * .48, H * .32, W / 2, H * .5, H * .78); v.addColorStop(0, 'rgba(30,15,40,0)'); v.addColorStop(1, `rgba(30,15,40,${s.ph === 'reveal' ? .32 : .5})`);
   g.fillStyle = v; g.fillRect(0, 0, W, H);
-  if(s.ph !== 'tug'){ const sc = g.createLinearGradient(0, 0, 0, 560); sc.addColorStop(0, 'rgba(30,15,40,.4)'); sc.addColorStop(1, 'rgba(30,15,40,0)'); if(CAP[s.ph]){ g.fillStyle = sc; g.fillRect(0, 0, W, 560); } }
+  if(CAP[s.ph]){ const sc = g.createLinearGradient(0, 0, 0, 560); sc.addColorStop(0, 'rgba(30,15,40,.4)'); sc.addColorStop(1, 'rgba(30,15,40,0)'); g.fillStyle = sc; g.fillRect(0, 0, W, 560); }
   const lb = s.ph === 'reveal' ? (X.rm ? 0 : 150 * Math.max(0, 1 - s.k / .7)) : 150;
   if(lb > 0){ g.fillStyle = '#140E1A'; g.fillRect(0, 0, W, lb); g.fillRect(0, H - lb, W, lb); }
   if(s.ph === 'pop' && !X.rm){ const f = Math.max(0, 1 - Math.abs(s.k - .32) / .3); if(f > 0){ g.fillStyle = `rgba(255,250,235,${f * .8})`; g.fillRect(0, 0, W, H); } }   // 물 밖으로 나오는 순간 번쩍
@@ -505,6 +527,7 @@ function paint(g, s, X){
   if(ph === 'together' || ph === 'reveal') photo(X);
   if(ph === 'reveal'){ const k = X.rm ? 9 : s.k; poster(g, X, { t, text:k / .8, fade:Math.max(0, .6 - k * 1.5) }); return; }   // 공개 = 단체 포스터(내보내는 그림과 같다)
   const tugA = ph === 'tug' ? (X.rm ? 1 : Math.min(1, s.k / .6)) : ph === 'pop' ? (X.rm ? 0 : Math.max(0, 1 - s.k / .35)) : 0;
+  if(ph === 'prize'){ prizeOpen(g, s, X, t); post(g, s, X, t); return; }
   if(ph === 'alone' || ph === 'gather' || ph === 'ride' || ph === 'together'){ winterScene(g, s, X, t); post(g, s, X, t); caption(g, s, X); return; }
   if(tugA < 1){
     const beach = ph !== 'pop' && ph !== 'reveal';
@@ -516,7 +539,7 @@ function paint(g, s, X){
     else prizeScene(g, s, X, t);
   }
   if(tugA > 0){ g.globalAlpha = tugA; tugScene(g, s, X, t); g.globalAlpha = 1;
-    if(ph === 'tug'){ g.fillStyle = '#fff'; for(const q of s.sp) if(q.a > 0){ g.globalAlpha = Math.max(0, q.a) * .8; bubble(g, q.x, q.y, 9); } g.globalAlpha = 1; } }
+    if(ph === 'tug'){ g.fillStyle = '#fff'; for(const q of s.sp) if(q.a > 0){ g.globalAlpha = Math.max(0, q.a) * .8; g.beginPath(); g.arc(q.x, q.y, 9, 0, 7); g.fill(); } g.globalAlpha = 1; } }
   post(g, s, X, t);
   caption(g, s, X);
 }
@@ -557,7 +580,7 @@ function ctl(){
   const el = $('pep-ctl'), hint = $('pep-hint'); if(!el) return;
   const ph = S ? S.ph : 'intro';
   if(res && res.soldout){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>앗</span><b>선물이 모두 나갔어요</b><small>문제가 있으면 오웬에게 알려 주세요.</small></div></div>'; return; }
-  if(['alone', 'gather', 'ride', 'together'].includes(ph)){ hint.textContent = (CAP[ph] || [])[1] || ''; el.innerHTML = '<button type="button" class="btn sm ghost" data-pskip>다음 장면 ›</button>'; return; }
+  if(['prize', 'alone', 'gather', 'ride', 'together'].includes(ph)){ const p = prizeOf(res); hint.textContent = ph === 'prize' ? (p ? p.short + ' 당첨!' : '') : (CAP[ph] || [])[1] || ''; el.innerHTML = '<button type="button" class="btn sm ghost" data-pskip>다음 장면 ›</button>'; return; }
   if(res && ph !== 'pop'){
     const p = prizeOf(res); hint.textContent = '';
     el.innerHTML = `<div class="pep-res"><img src="img/pepero/${stickerOf(p)}.webp" alt="" width="76" height="76" onerror="this.hidden=true"><div><span>${esc(p.rank || '선물')}</span><b>${esc(p.n)}</b><small>${res.mine === false ? '이 이름은 다른 기기에서 이미 받았어요.<br>받은 폰에서 열어 주세요 — 문제가 있으면 오웬에게 알려 주세요.' : '아래 버튼으로 기프티콘을 열어<br>매장에서 보여 주세요.'}</small></div></div>
@@ -610,19 +633,20 @@ function loop(now){
   if(S.ph === 'walk' && S.k > WALK_END){ go(S, 'paddle'); splash(S, 420, 1300, 12); ctl(); }
   else if(S.ph === 'wait' && S.k > 2.8){ go(S, 'tug'); navigator.vibrate?.([30, 40, 30, 40, 60]); ctl(); }
   else if(S.ph === 'pop' && S.k > 1.8 && res){ X.prize = prizeOf(res); next(); }
+  else if(S.ph === 'prize' && S.k > 2.9) next();
   else if(S.ph === 'alone' && S.k > 3) next();
   else if(S.ph === 'gather' && S.k > 4.6) next();
   else if(S.ph === 'ride' && S.k > 3.5) next();
   else if(S.ph === 'together' && S.k > SHOT + 2.2) next();
   if(S.ph === 'together' && S.k >= SHOT && !S.shot){ S.shot = 1; sfx(shutter); navigator.vibrate?.(30); }
-  if(S.ph === 'gather'){ const n = Math.max(0, Math.min(7, Math.floor((S.k - .3) / .5) + 1)); if(n > (S.gn || 0)){ S.gn = n; if(n === 1 || n === 7) sfx(cheer); sfx((c, o, t)=>{ tone(c, o, t, NOTE([72, 74, 76, 79, 81, 84, 86][n - 1]), .12, .5, 'triangle'); hit(c, o, t, .05, .12, ['bandpass', 400, 1]); }); } }
+  if(S.ph === 'gather'){ const n = S.k > 1.6 ? 2 : S.k > .2 ? 1 : 0; if(n > (S.gn || 0)){ S.gn = n; sfx(n === 1 ? (c, o, t)=>{ const f = c.createGain(); f.gain.value = .4; f.connect(o); cheer(c, f, t); } : cheer); } }   // 멀리서 웃음소리 → 가까이
   paint(cv.getContext('2d'), S, X);
   raf = requestAnimationFrame(loop);
 }
 function sizeCv(){
   cv = $('pep-cv'); const w = Math.max(160, Math.round(cv.getBoundingClientRect().width * Math.min(2, devicePixelRatio || 1)));
   if(cv.width !== w){ cv.width = w; cv.height = Math.round(w * H / W); }
-  const g = cv.getContext('2d'); g.setTransform(w / W, 0, 0, w / W, 0, 0); g.__gp = null;
+  const g = cv.getContext('2d'); g.setTransform(w / W, 0, 0, w / W, 0, 0); g.imageSmoothingQuality = 'high'; g.__gp = null;   // 기본(low)은 줄여 그릴 때 가장자리가 계단져 보인다
   X = assets();
 }
 async function play(){
@@ -646,7 +670,7 @@ function paddle(){
 }
 function pull(){
   if(!S || S.ph !== 'tug') return;
-  S.pulls++; splash(S, 487, 1320, 10); sfx((c, o, t)=>clap(c, o, t, .9)); navigator.vibrate?.(18);
+  S.pulls++; S.pk = S.t; splash(S, 300, TY - 10, 10); sfx((c, o, t)=>clap(c, o, t, .9)); navigator.vibrate?.(18);
   if(S.pulls >= 3){ go(S, 'pop'); splash(S, 540, 1500, 20);
     claim().then(()=>{ if(X) X.prize = prizeOf(res); }).catch(e=>{ go(S, 'tug'); S.pulls = 2; ctl(); say(/noname|notoken/.test(e && e.message) ? '선물을 받을 수 없는 이름이에요 — 오웬에게 알려 주세요' : '신호가 약해요 — 한 번 더 당겨 주세요'); }); }   // 서버가 답할 때까지 상자가 떠 있다
   ctl();
@@ -656,18 +680,18 @@ async function start(){
   await pullMine(); if(res){ go(S, 'reveal'); S.k = 1; X.prize = prizeOf(res); return ctl(); }   // 다른 기기에서 이 이름으로 이미 뽑았다
   go(S, 'walk'); sfx(cheer); loadCrew(); ctl();
 }
-const ENDING = ['pop', 'alone', 'gather', 'ride', 'together', 'reveal'];
+const ENDING = ['pop', 'prize', 'alone', 'gather', 'ride', 'together', 'reveal'];
 function next(){   // 이야기 다음 장면 — 시간이 되거나 그림을 누르면(건너뛰기)
   const i = ENDING.indexOf(S.ph); if(i < 0 || i >= ENDING.length - 1 || !res) return;
   go(S, ENDING[i + 1]); if(X) X.prize = prizeOf(res);
-  if(S.ph === 'reveal'){ navigator.vibrate?.([20, 40, 20]); sfx(sparkle); }
+  if(S.ph === 'reveal' || S.ph === 'prize'){ navigator.vibrate?.([20, 40, 20]); sfx(sparkle); }
   if(S.ph === 'ride') sfx(cheer);
   ctl();
 }
-const act = () => S && (S.ph === 'walk' ? walk() : S.ph === 'paddle' ? paddle() : S.ph === 'tug' ? pull() : ['alone', 'gather', 'ride', 'together'].includes(S.ph) ? next() : 0);   // 그림을 눌러도 같은 동작   // 그림을 눌러도 같은 동작
+const act = () => S && (S.ph === 'walk' ? walk() : S.ph === 'paddle' ? paddle() : S.ph === 'tug' ? pull() : ['prize', 'alone', 'gather', 'ride', 'together'].includes(S.ph) ? next() : 0);   // 그림을 눌러도 같은 동작
 
 /* ── 스토리 내보내기 — 단체 포스터 PNG · 약 15.6초 추억 영상(가을 → 겨울 → 다시 함께, 우쿨렐레 음악·효과음까지 영상에 담는다) ── */
-function storyCanvas(){ const c = document.createElement('canvas'); c.width = W; c.height = H; return c; }
+function storyCanvas(){ const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').imageSmoothingQuality = 'high'; return c; }
 async function png(){
   await Promise.all([loadImgs(), want(ALL), loadCrew()]); await want([frontOf(assets())].filter(Boolean)); const c = storyCanvas();
   poster(c.getContext('2d'), Object.assign(assets(), { rm:true }), { text:1 });
@@ -688,7 +712,7 @@ function score(ctx, out, a0){
   for(let i = 0, t = 0; t < REEL_END - .5; i++, t += 4 * BEAT) if(t + 4 * BEAT <= q0 + .3 || t >= q1 - .3) bar(ctx, out, a0 + t, i);
   strum(ctx, out, a0 + q0, CHORDS[2], .5, 0); strum(ctx, out, a0 + q0 + 1.3, CHORDS[3], .4, 0); strum(ctx, out, a0 + at('alone') + .2, CHORDS[2], .35, 0);
   const far = ctx.createGain(); far.gain.value = .4; far.connect(out);   // 멀리서 들려오는 웃음소리
-  cheer(ctx, out, a0 + .1); cheer(ctx, far, a0 + q1 + .1); cheer(ctx, out, a0 + at('ride')); shutter(ctx, out, a0 + at('together') + SHOT);
+  cheer(ctx, out, a0 + .1); cheer(ctx, far, a0 + q1 + .1); cheer(ctx, out, a0 + q1 + 1.5); cheer(ctx, out, a0 + at('ride')); shutter(ctx, out, a0 + at('together') + SHOT);
   sparkle(ctx, out, a0 + at('reveal') + .1); chime(ctx, out, a0 + REEL_END - 1, .7);
 }
 async function video(onP){
