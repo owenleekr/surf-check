@@ -19,11 +19,6 @@
       "source": "/",
       "destination": "/surfshare",
       "permanent": false
-    },
-    {
-      "source": "/pepero",
-      "destination": "/surfshare?go=pepero",
-      "permanent": false
     }
   ],
   "headers": [

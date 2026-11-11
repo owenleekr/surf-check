@@ -658,7 +658,7 @@ function renderHub(enter){
     <div class="pt" style="margin-top:16px">놀이 메뉴</div>
     <div class="hubgrid">
       ${card(0,'🏄','파도 점프', `메인 게임 · 쉬움 ${p.best || 0} · 어려움 ${p.hbest || 0} · 🗓️ 오늘 ${dsc != null ? dsc : '도전 전'}`, dsc == null ? '챌린지' : '', 'game').replace('class="hubcard"', 'class="hubcard wide main"')}
-      ${window.peperoLive?.() ? card(0,'🍫','빼빼로 서핑', '11.11 이벤트 · 발밑에 걸린 선물 · 꽝 없음', 'EVENT', 'pepero').replace('class="hubcard"', 'class="hubcard wide"') : ''}
+      ${window.peperoLive?.() ? card(0,'🎁','낙산 해변 빼빼로 선물', '11.11 · 양양서핑학교 서프 버디 · 이름 찾고 탐험 · 꽝 없음', 'EVENT', 'pepero').replace('class="hubcard"', 'class="hubcard wide"') : ''}
       ${card(0,'🗺️','전설의 보드 원정', qSg(p.qb) ? `마을 주민 부탁 RPG · 마을 ${Math.min(11, Math.floor(qSg(p.qb) / 4) + 1)}/11 · ⭐${qStars(p.qb)}` : '마을을 걷고 주민 부탁을 들어주는 RPG', qSg(p.qb) ? '' : 'NEW', 'quest')}
       ${card(0,'🛡️','해변 수호', p.df ? `⭐ ${(Array.isArray(p.df.st) ? p.df.st : []).slice(0, 3).reduce((a, v) => a + _num(v, 3), 0)}/9 · 웨이브 ${_num(p.df.best, 15)}/15${dfInf(p.df.inf).w ? `<br><span style="white-space:nowrap">🌀 무한 웨이브 ${dfInf(p.df.inf).w}</span>` : ''}` : '학교를 지켜라 · 액션', p.df ? '' : 'NEW', 'defend')}
       ${card(0,'🛹','서프스케이트', `땅에서 펌핑 · ${Object.keys(p.sk?.real || {}).length}일 탐`, (p.sk?.n || 0) ? '' : 'NEW', 'skate')}
