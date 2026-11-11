@@ -1,6 +1,7 @@
 /* 🎁 11.11 낙산 해변 빼빼로 선물 — 따로 선 페이지(pepero.html + pepero-app.js)와 SurfShare 홈 띠(pepero.js).
-   이름 찾기(명단·코치·뺀 이름) → 남자/여자 탭 캐릭터 → 탐험(보드 넷 → 패들 → 세트 → 리시 ×3) → 선물 · place_talk 한 줄(이름당 하나) ·
-   서버에 그 이름 줄이 있으면 안 뽑음 · 다시 열면 같은 결과 · 스토리 그림 1080×1920 · 영상 · 이스케이프 · 좁은 폭 · 기간 밖.
+   이름 찾기(명단·코치·뺀 이름) → 정해 둔 성별 캐릭터 → 가을 낙산(autumn-open) → 식으며 나만 남음 → 패들 → 세트 → 리시 ×3 → 선물 · place_talk 한 줄(이름당 하나) ·
+   서버에 그 이름 줄이 있으면 안 뽑음 · 다시 열면 같은 결과 · 스토리 그림 1080×1920 · 영상 · 이스케이프 · 좁은 폭 · 기간 밖 ·
+   마지막 사진의 정면 「나」는 받은 종류 그림 하나만 받고(빼빼로 → -pep, 아이스크림 → -br), 선물 아이콘은 몸이 아니라 머리 위 배지에만 · 공유물엔 기프티콘 그림 없음.
    SHOTS=<폴더> 를 주면 화면·그림·영상을 거기 저장한다 */
 import puppeteer from 'puppeteer-core';
 import { open as openApp } from './mock.mjs';
@@ -18,28 +19,31 @@ const CORS = { 'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Headers'
 /* 페이지 열기 — supabase 는 가짜로 받는다(place_talk 읽기 · 쓰기 기록) */
 async function page(rows, opts = {}){
   const b = await puppeteer.launch({ executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless:'new', args:['--autoplay-policy=no-user-gesture-required'] });
-  const p = await b.newPage(), errs = [], posts = [], rpcs = [];
+  const p = await b.newPage(), errs = [], posts = [], rpcs = [], gets = [];
   const RPC = Object.assign({ gift_claim:()=>[200, { kind:'br', mine:true }], gift_open:()=>[200, 'data:image/jpeg;base64,/9j/AAAA'] }, opts.rpc || {});
   p.on('pageerror', e=>errs.push(String(e).slice(0, 160)));
   p.on('console', m=>{ if(m.type() === 'error' && !/Failed to load resource|net::ERR/.test(m.text())) errs.push('console:' + m.text().slice(0, 140)); });
   await p.setViewport({ width:opts.width || 390, height:opts.height || 844, deviceScaleFactor:2, isMobile:true, hasTouch:true });
   await p.setRequestInterception(true);
   p.on('request', r=>{ const u = r.url(), m = r.method();
+    if(/\/img\/pepero\//.test(u)) gets.push(u.split('/img/pepero/')[1]);
     if(!u.includes('supabase')) return r.continue();
     if(m === 'OPTIONS') return r.respond({ status:204, headers:CORS, body:'' });
     if(m === 'POST' && u.includes('/rpc/')){ const fn = u.split('/rpc/')[1].split('?')[0], body = JSON.parse(r.postData() || '{}'); rpcs.push([fn, body]); const [st, js] = RPC[fn](body); return r.respond({ status:st, headers:CORS, contentType:'application/json', body:JSON.stringify(js) }); }
     if(m === 'POST'){ try{ posts.push([u.split('rest/v1/')[1], JSON.parse(r.postData())]); }catch(e){} return r.respond({ status:201, headers:CORS, body:'' }); }
     return r.respond({ status:200, headers:CORS, contentType:'application/json', body:JSON.stringify(rows) }); });
   await p.evaluateOnNewDocument(clock, opts.at || ON);
+  await p.evaluateOnNewDocument(()=>{ window.__draws = []; const d = CanvasRenderingContext2D.prototype.drawImage;   // 어떤 그림을 어디에 그렸나(story: 1080×1920 캔버스)
+    CanvasRenderingContext2D.prototype.drawImage = function(im, ...a){ if(im instanceof HTMLImageElement){ const m = this.getTransform(); window.__draws.push({ src:(im.getAttribute('src') || '').slice(0, 60), y:m.f, story:this.canvas.width === 1080 && this.canvas.height === 1920 }); } return d.call(this, im, ...a); }; });
   await p.goto(PAGE, { waitUntil:'domcontentloaded' }); await p.evaluate(()=>localStorage.clear());
   await p.goto(PAGE + (opts.q || ''), { waitUntil:'networkidle2' });
   const S = (f, ...a) => p.evaluate(f, ...a), sleep = ms => new Promise(r=>setTimeout(r, ms));
-  return { b, p, errs, posts, rpcs, S, sleep };
+  return { b, p, errs, posts, rpcs, gets, S, sleep };
 }
 /* 출발부터 공개까지 빨리 */
 async function playThrough(S, sleep){
   await S(()=>document.querySelector('[data-pgo]').click()); await sleep(300);
-  await S(()=>{ for(let i = 0; i < 4; i++) _pepero.walk(); }); await sleep(1900);
+  await S(()=>_pepero.walk()); await sleep(400);   // 가을 → 겨울 건너뛰기
   await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
   await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
   for(let i = 0; i < 4; i++){ await S(()=>_pepero.next()); await sleep(150); }   // 혼자 → 버디들 → 다 같이(건너뛰기)
@@ -50,7 +54,7 @@ const blob = (S, fn) => S(async f => { const b = await window._pepero[f](); cons
 const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[data-name="${n}"]`).click(), n); await sleep(300); };
 
 /* 1) 이름 → 캐릭터 → 탐험 → 선물 → 내보내기 */
-{ const { b, p, errs, posts, rpcs, S, sleep } = await page(talk);
+{ const { b, p, errs, posts, rpcs, gets, S, sleep } = await page(talk);
   const en = await S(()=>({ names:[...document.querySelectorAll('[data-name]')].map(x=>x.dataset.name), coach:document.querySelectorAll('.pp-name small').length, grp:[...document.querySelectorAll('.pp-grp')].map(x=>x.textContent).join(),
     wall:document.querySelectorAll('#pep-wall .pep-w').length }));
   ok(en.names.length === 24 && !en.names.includes('이성현') && !en.names.includes('루비') && en.names.includes('김도훈') && en.coach === 6 && en.grp === '양양서핑학교 6기,코치·매니저', `명단 24명(6기 18 + 코치·매니저 6, 이성현·루비 등 뺌): ${en.names.length}`);
@@ -77,12 +81,12 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   const wl = await S(()=>{ const w = document.getElementById('pep-wall'); return { n:w.querySelectorAll('.pep-w').length, xss:!!w.querySelector('img, b b, span b'), food:w.textContent.includes('맛집'), txt:w.textContent }; });
   ok(wl.n === 1 && !wl.food && !wl.xss && /<img/.test(wl.txt), '당첨 소식: 이벤트 줄만, 글자는 이스케이프');
   await shot(p, 'pepero-3-intro');
+  ok(gets.includes('autumn-open.webp') && /가을 낙산에서 함께 탔던 우리, 겨울 바다에서 다시 만나요/.test(await S(()=>document.querySelector('.pep-intro').textContent)) && !/리시가 묵직해요/.test(await S(()=>document.querySelector('.pep-intro').textContent)), '첫 장면 그림 autumn-open + 새 소개 문구');
   await S(()=>document.querySelector('[data-pgo]').click()); await sleep(400);
-  ok(await S(()=>_pepero.S.ph) === 'walk', '해변으로 출발 → 모래사장 걷기');
-  for(let i = 0; i < 4; i++){ await S(()=>document.querySelector('[data-pstep]').click()); await sleep(150); }
-  ok(/1111/.test(await S(()=>document.getElementById('pep-hint').textContent)), '보드 넷 세기 → 「1111」');
-  await sleep(1800);
-  ok(await S(()=>_pepero.S.ph) === 'paddle', '→ 라인업까지 패들');
+  const wk = await S(()=>({ ph:_pepero.S.ph, ctl:document.getElementById('pep-ctl').textContent + document.getElementById('pep-hint').textContent, skip:!!document.querySelector('[data-pstep]') }));
+  ok(wk.ph === 'walk' && wk.skip && !/1111|보드/.test(wk.ctl), '출발 → 가을이 식어 가는 장면(보드 넷 세기 없음, 건너뛰기만): ' + wk.ctl);
+  await sleep(4300);
+  ok(await S(()=>_pepero.S.ph) === 'paddle', '저절로 → 라인업까지 패들');
   await shot(p, 'pepero-4-paddle');
   for(let i = 0; i < 5; i++){ await S(()=>{ const bt = document.querySelector('[data-ppad]'); bt.dispatchEvent(new PointerEvent('pointerdown', { bubbles:true })); bt.dispatchEvent(new PointerEvent('pointerup', { bubbles:true })); }); await sleep(120); }
   ok(await S(()=>_pepero.S.ph) === 'wait', '패들 5번 → 세트 기다리기');
@@ -121,6 +125,12 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   ok(vd.size > 10000 && /^video\/(mp4|webm)/.test(vd.type), `스토리 영상 ${vd.type} ${vd.size}B`);
   if(SH) fs.writeFileSync(`${SH}/pepero-story.${/mp4/.test(vd.type) ? 'mp4' : 'webm'}`, Buffer.from(vd.b64, 'base64'));
   ok(rpcs.filter(x=>x[0] === 'gift_open').length === 1, '스토리 그림·영상은 기프티콘을 안 받는다(공유물에 없음)');
+  const fr = gets.filter(u=>/^front-/.test(u)), dr = await S(()=>window.__draws);
+  ok(fr.length && fr.every(u=>u === 'front-m3-br.webp'), '정면 「나」 — 고른 캐릭터(m3)·받은 종류(아이스크림 → -br) 한 장만 받음: ' + [...new Set(fr)]);
+  ok(dr.some(d=>/front-m3-br/.test(d.src)), '마지막 사진에 정면 「나」를 그림');
+  const ice = dr.filter(d=>d.story && /ice\.webp/.test(d.src));
+  ok(ice.length && ice.every(d=>d.y < 830), '선물 아이콘은 머리 위 배지에만(몸에 붙은 아이콘 없음): ' + ice.map(d=>Math.round(d.y)));
+  ok(!dr.some(d=>/^data:/.test(d.src)), '공유 그림·영상에 기프티콘(data:) 그림을 그리지 않음');
   /* 다시 열기 → 이름 기억, 같은 결과, 새로 안 보냄 */
   await p.reload({ waitUntil:'networkidle2' }); await sleep(500);
   ok(await S(()=>!document.getElementById('pp-again').hidden && /장진혁/.test(document.getElementById('pp-again').textContent)), '다시 열면 「장진혁 님으로 계속하기」');
@@ -194,16 +204,14 @@ for(const w of [320, 360, 390]){
 
 /* 6) 시연 모드(?demo=1) — 기간 밖에도 열림 · 서버 기록이 있어도 안 잠김 · 아무것도 안 보냄 · 새로 열면 잊음 */
 { const mine = { id:'acc9|1', target:'pepero:2026', user_id:'acc9', name:'김도훈', cohort:'6기', text:'p2|🍫 2등 빼빼로 1개', created_at:now };
-  const { b, p, errs, posts, rpcs, S, sleep } = await page([...talk, mine], { at:OFF, q:'?demo=1' });
+  const { b, p, errs, posts, rpcs, gets, S, sleep } = await page([...talk, mine], { at:OFF, q:'?demo=1' });
   ok(await S(()=>!document.getElementById('pp-demo').hidden), '시연 모드 표시');
   await pickName(S, sleep, '김도훈'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(900);
   ok(await S(()=>_pepero.S.ph === 'intro' && !!document.querySelector('[data-pgo]:not([disabled])')), '시연: 기간 밖·이미 뽑은 이름이어도 출발 가능');
-  await S(()=>document.querySelector('[data-pgo]').click()); await sleep(300);
-  await S(()=>{ for(let i = 0; i < 4; i++) _pepero.walk(); }); await sleep(1900);
-  await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
-  await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
-  for(let i = 0; i < 4; i++){ await S(()=>_pepero.next()); await sleep(150); }
+  await playThrough(S, sleep);
   ok(await S(()=>_pepero.S.ph === 'reveal' && !!_pepero.res && /\(시연\)/.test(document.getElementById('pep-wall').textContent)), '시연: 선물 공개 + 소식엔 (시연)');
+  const kd = await S(()=>_pepero.res.id), fd = gets.filter(u=>/^front-/.test(u));
+  ok(fd.length && fd.every(u=>u === `front-m1-${kd === 'br' ? 'br' : 'pep'}.webp`), `시연: 받은 종류(${kd})에 맞는 정면 그림만: ` + [...new Set(fd)]);
   await S(()=>document.querySelector('[data-popen]').click()); await sleep(400);
   ok(await S(()=>!document.getElementById('pp-gc').hidden && /^data:image\/png/.test(document.querySelector('#pp-gc img').src)), '시연: 예시 카드(가짜)');
   await S(()=>document.querySelector('[data-pgclose]').click());
