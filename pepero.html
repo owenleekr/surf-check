@@ -62,6 +62,11 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
 .pp-gc-in p{ margin:4px 0 10px; font-weight:900; font-size:17px; line-height:1.4 } .pp-gc-in small{ font-weight:700; font-size:13px; color:var(--ink2) }
 .pp-gc-in img{ display:block; width:100%; height:auto; border-radius:12px; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; margin-bottom:12px }
 .pep-open{ background:linear-gradient(180deg,#B8F2DA,#7FDDB6) !important; box-shadow:inset 0 -7px 0 rgba(20,110,80,.18), inset 0 5px 0 rgba(255,255,255,.55), 0 7px 0 #4FB98E, 0 14px 22px rgba(79,185,142,.3) !important }
+.pp-letter{ width:100%; max-width:380px; text-align:center; border-radius:22px; padding:18px 18px 14px; color:#4A3558; word-break:keep-all;
+  background:#FFFBF2 repeating-linear-gradient(180deg, transparent 0 31px, rgba(200,170,140,.18) 31px 32px); box-shadow:inset 0 -5px 0 #F1E2C6, inset 0 3px 0 #fff, 0 6px 0 #EAD9BD, 0 12px 22px rgba(90,60,30,.12);
+  font-family:"Nanum Pen Script","NanumPen","Gaegu","Apple SD Gothic Neo",cursive; transform:rotate(-1deg) }
+.pp-letter p{ margin:0 0 6px; font-size:15px; line-height:1.7 } .pp-letter b{ display:block; margin:4px 0 8px; font-size:18px; line-height:1.55; color:#C2456A }
+.pp-letter small{ display:block; margin-top:6px; font-size:12.5px; color:#8A6E7E }
 .pp-toast{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:var(--ink); color:#fff; font-weight:800; font-size:14px;
   border-radius:999px; padding:10px 18px; z-index:9; max-width:calc(100vw - 32px); text-align:center }
 .pep-stage canvas{ display:block; margin:6px auto 0; height:min(58vh, calc((100vw - 40px) * 16 / 9)); max-width:100%; aspect-ratio:9/16; border:5px solid #fff; border-radius:30px; background:#A9DBF5; touch-action:manipulation;
@@ -117,7 +122,7 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
     <div class="pp-card">
       <h2>캐릭터를 골라 주세요</h2>
       <p>낙산 해변을 함께 탐험할 내 캐릭터예요. 스토리 이미지에도 나와요.</p>
-      <div class="pp-tabs" role="tablist" aria-label="캐릭터 종류"><button type="button" role="tab" data-pg="m">남자</button><button type="button" role="tab" data-pg="f">여자</button></div>
+      
       <div id="pp-looks" class="pp-looks"></div>
     </div>
     <div class="pp-again"><button type="button" class="btn pep-big" data-plook>이 캐릭터로 출발 ›</button></div>

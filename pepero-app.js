@@ -35,9 +35,11 @@ let me = null, res = null, wall = [], checking = null, imgs = {}, cv = null, raf
 /* ── 참가 명단 — 이 이벤트만의 명단(roster.js 와 따로). 6기 18명(운영자 이성현 뺌) + 코치·매니저 6명 = 24명. 바꾸려면 여기만 ── */
 const STUDENTS = ['김도훈','김태은','심재영','이나영','이미진','정선아','조혜미','허예령','홍미영','최원재','장은옥','박초롱','이한솔','정유정','전영훈','전인수','엄주승','장베드로'];
 const STAFF = [['이승대','교장'],['김나리','코치'],['이해룡','코치'],['이상문','코치'],['장진혁','코치'],['김법성','매니저']];
+/* 성별 — 오웬이 정해 준 대로(이름으로 짐작하지 않는다). 여기 없는 이름은 여자 캐릭터 */
+const MEN = ['김도훈','심재영','최원재','전영훈','전인수','엄주승','장베드로','이승대','이해룡','이상문','장진혁','김법성'];
 const PEOPLE = [...STUDENTS.map(name=>({ name, cohort:'6기' })), ...STAFF.map(([name, role])=>({ name, cohort:role, staff:1 }))];
 const lookOf = m => m && LOOKS[m.g] && LOOKS[m.g][m.li] ? LOOKS[m.g][m.li].id : 'f1';
-function loadMe(){ try{ const v = JSON.parse(store.get(LSME) || 'null'); if(v && PEOPLE.some(p=>p.name === v.name)) me = { name:v.name, cohort:PEOPLE.find(p=>p.name === v.name).cohort, g:v.g === 'm' ? 'm' : 'f', li:Math.min(3, Math.max(0, v.li | 0)) }; }catch(e){} }
+function loadMe(){ try{ const v = JSON.parse(store.get(LSME) || 'null'); if(v && PEOPLE.some(p=>p.name === v.name)) me = { name:v.name, cohort:PEOPLE.find(p=>p.name === v.name).cohort, g:MEN.includes(v.name) ? 'm' : 'f', li:Math.min(3, Math.max(0, v.li | 0)) }; }catch(e){} }
 function saveMe(){ try{ store.set(LSME, JSON.stringify(me)); }catch(e){} }
 
 /* ── 서버(place_talk) — anon 키, 다른 표와 같은 수준 ── */
@@ -279,10 +281,12 @@ function loadCrew(){
   crew = { key:mine, list:[], p:Promise.all(ids.map((id, i)=>new Promise(ok=>{ const im = new Image(); im.onload = ()=>ok(im); im.onerror = ()=>ok(null); im.src = charSrc(id, i < 4 ? 'sit' : 'gift'); }))).then(l=>{ crew.list = l; }) };
   return crew.p;
 }
-function grade(g, a){
+function grade(g, a, sv){
   g.save(); g.globalCompositeOperation = 'soft-light'; const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, `rgba(255,150,90,${.55 * a})`); gr.addColorStop(.5, `rgba(255,190,120,${.35 * a})`); gr.addColorStop(1, `rgba(255,170,120,${.3 * a})`); g.fillStyle = gr; g.fillRect(0, 0, W, H);
   g.globalCompositeOperation = 'screen'; const b = g.createRadialGradient(SUN[0], SUN[1], 10, SUN[0], SUN[1], 700); b.addColorStop(0, `rgba(255,220,160,${.7 * a})`); b.addColorStop(.4, `rgba(255,170,110,${.22 * a})`); b.addColorStop(1, 'rgba(255,170,110,0)'); g.fillStyle = b; g.fillRect(0, 0, W, H);
   g.globalCompositeOperation = 'source-over'; const v = g.createRadialGradient(W / 2, H * .5, H * .34, W / 2, H * .5, H * .8); v.addColorStop(0, 'rgba(40,15,30,0)'); v.addColorStop(1, `rgba(40,15,30,${.42 * a})`); g.fillStyle = v; g.fillRect(0, 0, W, H);
+  if(sv > 0){ g.globalCompositeOperation = 'soft-light'; const c = g.createLinearGradient(0, 0, W, 0); c.addColorStop(0, 'rgba(150,165,235,0)'); c.addColorStop(.45, 'rgba(150,165,235,0)'); c.addColorStop(1, `rgba(140,160,240,${.75 * sv})`); g.fillStyle = c; g.fillRect(0, 0, W, H);   // 왼쪽 가을 → 오른쪽 겨울
+    g.globalCompositeOperation = 'screen'; const f = g.createLinearGradient(0, 0, W, 0); f.addColorStop(.5, 'rgba(200,215,255,0)'); f.addColorStop(1, `rgba(200,215,255,${.22 * sv})`); g.fillStyle = f; g.fillRect(0, 0, W, H); }
   g.restore();
 }
 /* 장면(세계 좌표) — 바다·라인업 버디·모래 버디·나 */
@@ -299,14 +303,15 @@ function crewWorld(g, X, t){
 function poster(g, X, o){
   const t = o.t || 0, [z, fx, fy] = o.cam || [1, 540, 960];
   g.save(); cam(g, z, fx, fy); crewWorld(g, X, t); g.restore();
-  grade(g, 1);
+  grade(g, 1, o.season == null ? 1 : o.season); snow(g, t, (o.season == null ? 1 : o.season) * .8, 420, 1080);
   if(o.text > 0){ const a = Math.min(1, o.text), dy = (1 - a) * 24; g.globalAlpha = a;
-    if(PIC['logo-w']){ const im = PIC['logo-w'], h = 64, w = h * im.width / im.height; g.save(); g.shadowColor = 'rgba(40,15,30,.5)'; g.shadowBlur = 14; g.drawImage(im, W / 2 - w / 2, 92, w, h); g.restore(); }
-    title(g, '아름다웠던', W / 2, 318 + dy, 104, 960); title(g, '가을 바다의 추억', W / 2, 446 + dy, 104, 960);
-    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.6)'; g.shadowBlur = 16; g.fillStyle = '#fff'; g.font = `900 46px ${FONT}`; g.fillText('겨울 바다에서 다시 만나요 🌊', W / 2, 540 + dy); g.restore();
-    pill(g, '11.11 낙산 해변', W / 2, 584 + dy, 32, 'rgba(255,255,255,.92)', 'rgba(232,190,160,.9)');
+    if(PIC['logo-w']){ const im = PIC['logo-w'], h = 56, w = h * im.width / im.height; g.save(); g.shadowColor = 'rgba(40,15,30,.5)'; g.shadowBlur = 14; g.drawImage(im, W / 2 - w / 2, 92, w, h); g.restore(); }
+    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.6)'; g.shadowBlur = 14; g.fillStyle = '#FFF3E4'; g.font = `800 34px ${FONT}`;
+    g.fillText('우리가 함께 나눈 추억, 가을 바다에서 시작해서', W / 2, 206 + dy); g.fillText('어느새 겨울 바다가 되어 가요.', W / 2, 252 + dy); g.restore();
+    title(g, '작은 선물이지만,', W / 2, 362 + dy, 100, 960); title(g, '함께 파도 위에서 나눈 마음을 나눠요.', W / 2, 452 + dy, 62, 980);
+    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.6)'; g.shadowBlur = 16; g.fillStyle = '#fff'; g.font = `900 46px ${FONT}`; g.fillText('겨울 바다에서도, 다시 만나요 🌊', W / 2, 540 + dy); g.restore();
     if(X.name) pill(g, '양양서핑학교 서프 버디 ' + String(X.name).slice(0, 10), W / 2, 1772, 36, '#fff', '#F2C9D3');
-    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 28px ${FONT}`; g.fillText('surf.owenai.xyz/pepero', W / 2, 1878); g.restore();
+    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 28px ${FONT}`; g.fillText('2026.11.11 낙산 해변 · surf.owenai.xyz/pepero', W / 2, 1878); g.restore();
     g.globalAlpha = 1; }
   const p = X.prize; if(p && o.badge > 0){ const k = Math.min(1, o.badge), sc = .4 + .6 * easeBack(k);
     g.save(); g.translate(850, 1010); g.scale(sc, sc); g.rotate(.12);
@@ -370,12 +375,13 @@ function music(on, keep){
 function sfx(fn){ if(SND.on && SND.ctx) try{ fn(SND.ctx, SND.out, SND.ctx.currentTime + .02); }catch(e){} }
 /* 장면 상태 — 화면과 영상이 같은 걸 쓴다(입자는 미리 만들어 두고 돌려 쓴다) */
 const CAM = { intro:[1, 540, 1150], walk:[1.18, 0, 1420], paddle:[1.1, 640, 1150], wait:[1.26, 610, 1080], tug:[1.3, 610, 1080], pop:[1, 540, 1000], reveal:[1, 540, 1000] };
-function newS(){ return { ph:'intro', k:0, t:0, w:0, wp:0, pg:0, n:0, pulls:0, cz:1, cx:540, cy:1150, sp:Array.from({ length:48 }, ()=>({ a:0, x:0, y:0, vx:0, vy:0 })) }; }
+function newS(){ return { ph:'intro', k:0, t:0, w:0, wp:0, pg:0, n:0, pulls:0, cz:1, cx:540, cy:1150, sv:0, sp:Array.from({ length:48 }, ()=>({ a:0, x:0, y:0, vx:0, vy:0 })) }; }
 function go(s, ph){ s.ph = ph; s.k = 0; }
 function splash(s, x, y, n){ for(const q of s.sp){ if(n <= 0) break; if(q.a > 0) continue; q.a = 1; q.x = x; q.y = y; q.vx = (Math.random() - .5) * 520; q.vy = -260 - Math.random() * 420; n--; } }
 function step(s, dt, rm){
   s.t += dt; s.k += dt;
   const pt = s.ph === 'intro' || s.ph === 'walk' ? 0 : s.ph === 'paddle' ? s.n / 5 : 1, e = rm ? 1 : Math.min(1, dt * 3);
+  const SV = { intro:0, walk:.12, paddle:.3, wait:.5, tug:.75, pop:.95, reveal:1 }; s.sv += ((SV[s.ph] || 0) - s.sv) * (rm ? 1 : Math.min(1, dt * .8));   // 가을 → 겨울
   s.pg += (pt - s.pg) * e; s.wp += (s.w - s.wp) * (rm ? 1 : Math.min(1, dt * 4));
   const c = CAM[s.ph] || CAM.intro, cx = s.ph === 'walk' ? Math.min(560, Math.max(380, 105 + 125 * s.wp)) : c[1], ce = rm ? 1 : Math.min(1, dt * 1.1);   // 천천히 따라붙는 카메라
   s.cz += (c[0] - s.cz) * ce; s.cx += (cx - s.cx) * ce; s.cy += (c[2] - s.cy) * ce;
@@ -383,8 +389,8 @@ function step(s, dt, rm){
   for(const q of s.sp) if(q.a > 0){ q.vy += 1100 * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.a -= dt * 1.3; }
 }
 /* 장면 자막 — 이야기 순서. 위쪽에 영화 자막처럼(물속 장면은 가운데) */
-const CAP = { intro:['11월 11일 아침 · 낙산 해변', '서프 버디, 바다로 가요'], walk:['모래사장에 보드 넷이 나란히', '1 · 1 · 1 · 1'], paddle:['엎드려서 라인업까지', '패들, 패들!'],
-  wait:['라인업에서 세트를 기다려요', '바다가 잔잔해요…'], tug:['어? 리시가 묵직해요…', '발밑에 뭔가 걸렸어요!'], pop:['영차, 영차!', '바다가 보낸 빼빼로 선물상자!'] };
+const CAP = { intro:['11월 11일 아침 · 낙산 해변', '가을 바다에서 시작한 우리'], walk:['모래사장에 보드 넷이 나란히', '1 · 1 · 1 · 1'], paddle:['엎드려서 라인업까지', '패들, 패들!'],
+  wait:['라인업에서 세트를 기다려요', '바람이 조금 차가워졌어요…'], tug:['바다가 조금씩 차가워질 즈음', '발밑에 뭔가 걸렸어요!'], pop:['영차, 영차!', '바다가 보낸 빼빼로 선물상자!'] };
 function caption(g, s, X){
   const c = CAP[s.ph]; if(!c) return;
   const a = X.rm ? 1 : Math.min(1, s.k / .5), y = (s.ph === 'tug' ? 820 : 300) + (1 - a) * 24, main = s.ph === 'walk' && s.w >= 4 ? '1111 — 우리 6기 보드!' : c[1];
@@ -394,12 +400,23 @@ function caption(g, s, X){
   fit(g, main, 960, 74, 900); g.fillStyle = '#fff'; g.fillText(main, W / 2, y + 92);
   g.restore();
 }
+/* 눈송이 — a(0~1)만큼, x0~x1 사이만 */
+const FLAKES = Array.from({ length:46 }, (_, i)=>({ x:(i * 173) % 1080, y:(i * 389) % 1920, r:3 + (i % 4) * 2.2, sp:40 + (i % 5) * 18, sw:20 + (i % 3) * 14 }));
+function snow(g, t, a, x0, x1){
+  if(a <= 0) return; g.save(); g.fillStyle = '#fff';
+  FLAKES.forEach((f, i)=>{ if(i / FLAKES.length > a) return; const x = f.x + Math.sin(t * .8 + i) * f.sw, y = (f.y + t * f.sp) % 1920; if(x0 != null && (x < x0 || x > x1)) return;
+    g.globalAlpha = .75; g.beginPath(); g.arc(x, y, f.r, 0, 7); g.fill(); g.globalAlpha = .18; g.beginPath(); g.arc(x, y, f.r * 2.4, 0, 7); g.fill(); });
+  g.restore();
+}
 /* 화면 마무리 — 따뜻한 색 보정 · 비네트 · 위아래 검은 띠(선물 공개 때 걷힌다) · 아주 옅은 필름 결 */
 function post(g, s, X, t){
   g.save();
-  g.globalCompositeOperation = 'soft-light'; const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(255,170,130,.5)'); gr.addColorStop(.55, 'rgba(255,214,170,.28)'); gr.addColorStop(1, 'rgba(120,170,220,.3)');
+  const sv = s.sv || 0, mix = (a, b) => a.map((v, i)=>Math.round(v + (b[i] - v) * sv)).join(',');   // 가을 황금빛 → 겨울 푸른 라일락
+  g.globalCompositeOperation = 'soft-light'; const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, `rgba(${mix([255, 170, 130], [150, 165, 235])},.5)`); gr.addColorStop(.55, `rgba(${mix([255, 214, 170], [190, 200, 240])},.28)`); gr.addColorStop(1, 'rgba(120,170,220,.3)');
   g.fillStyle = gr; g.fillRect(0, 0, W, H);
   g.globalCompositeOperation = 'source-over';
+  if(sv > .2 && s.ph !== 'tug'){ const m = g.createLinearGradient(0, 900, 0, 1260); m.addColorStop(0, 'rgba(235,240,255,0)'); m.addColorStop(.5, `rgba(235,240,255,${(sv - .2) * .35})`); m.addColorStop(1, 'rgba(235,240,255,0)'); g.fillStyle = m; g.fillRect(0, 900, W, 360); }   // 물 위 입김 같은 안개
+  snow(g, t, sv > .6 ? (sv - .6) / .4 : 0);
   const v = g.createRadialGradient(W / 2, H * .48, H * .32, W / 2, H * .5, H * .78); v.addColorStop(0, 'rgba(30,15,40,0)'); v.addColorStop(1, `rgba(30,15,40,${s.ph === 'reveal' ? .32 : .5})`);
   g.fillStyle = v; g.fillRect(0, 0, W, H);
   if(s.ph !== 'tug'){ const sc = g.createLinearGradient(0, 0, 0, 560); sc.addColorStop(0, 'rgba(30,15,40,.4)'); sc.addColorStop(1, 'rgba(30,15,40,0)'); if(CAP[s.ph]){ g.fillStyle = sc; g.fillRect(0, 0, W, 560); } }
@@ -458,7 +475,7 @@ function paintLook(){
 function pickName(name){
   const p = PEOPLE.find(x=>x.name === name); if(!p) return;
   const same = me && me.name === name;
-  me = { name:p.name, cohort:p.cohort, g:same ? me.g : 'f', li:same ? me.li : 0 };
+  me = { name:p.name, cohort:p.cohort, g:MEN.includes(p.name) ? 'm' : 'f', li:same ? me.li : 0 };
   lookG = me.g; lookI = me.li; $('pp-who').textContent = `${me.name} 님`;
   show('pp-look'); paintLook(); loadRes(); pullMine();
 }
@@ -470,9 +487,10 @@ function ctl(){
   if(res && ph !== 'pop'){
     const p = prizeOf(res); hint.textContent = '';
     el.innerHTML = `<div class="pep-res"><img src="img/pepero/${stickerOf(p)}.webp" alt="" width="76" height="76" onerror="this.hidden=true"><div><span>${esc(p.rank || '선물')}</span><b>${esc(p.n)}</b><small>${res.mine === false ? '이 이름은 다른 기기에서 이미 받았어요.<br>받은 폰에서 열어 주세요 — 문제가 있으면 오웬에게 알려 주세요.' : '아래 버튼으로 기프티콘을 열어<br>매장에서 보여 주세요.'}</small></div></div>
+      <div class="pp-letter"><p>우리가 함께 나눈 추억, 가을 바다에서 시작해서 어느새 겨울 바다가 되어 가요.</p><b>작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요.</b><p>겨울 바다에서도, 다시 만나요 🌊</p><small>양양서핑학교 서프 버디 ${esc(me.name)} · 2026.11.11 낙산 해변</small></div>
       ${res.mine === false ? '' : '<button type="button" class="btn pep-big pep-open" data-popen>🎁 당첨된 기프티콘 열기</button>'}
-      <button type="button" class="btn pep-big pep-brag" data-pimgsh>📸 인스타 스토리로 자랑하기</button>
-      <div class="pep-share"><button type="button" class="btn sm" data-pimg>💾 포스터 저장</button><button type="button" class="btn sm mint" data-pvid>🎬 스토리 영상 만들기</button></div><div id="pep-vid" class="pep-vid"></div>
+      <button type="button" class="btn pep-big pep-brag" data-pimgsh>📸 서프 버디에게 추억 나누기</button>
+      <div class="pep-share"><button type="button" class="btn sm" data-pimg>💾 추억 사진 저장</button><button type="button" class="btn sm mint" data-pvid>🎬 스토리 영상 만들기</button></div><div id="pep-vid" class="pep-vid"></div>
       <small class="pep-note">공유 창에서 Instagram › 스토리를 고르면 돼요</small>`;
     paintVid(); return;
   }
@@ -575,7 +593,7 @@ function reel(g, X, el){
   let camv;
   if(el < PAN){ const k = ease(el / PAN); camv = [1.7, 220 + (860 - 220) * k, 1080]; }   // 라인업을 왼쪽에서 오른쪽으로
   else{ const k = ease(Math.min(1, (el - PAN) / (SETTLE - PAN))); camv = [1.7 + (1 - 1.7) * k, 860 + (540 - 860) * k, 1080 + (960 - 1080) * k]; }   // 물러서며 나에게
-  poster(g, X, { t:el, cam:camv, badge:(el - BADGE) / .45, text:(el - TXT) / .8, grain:1, fade:Math.max(0, 1 - el / .5) });
+  poster(g, X, { t:el, cam:camv, badge:(el - BADGE) / .45, text:(el - TXT) / .8, grain:1, fade:Math.max(0, 1 - el / .5), season:Math.max(0, Math.min(1, (el - 1.5) / (BADGE - 1.5))) });
 }
 function score(ctx, out, a0){
   bar(ctx, out, a0, 0); bar(ctx, out, a0 + 4 * BEAT, 1); bar(ctx, out, a0 + 8 * BEAT, 2);
@@ -619,7 +637,6 @@ async function onClick(e){
   if(t.id === 'pp-snd') return music(!SND.on);
   if(t.matches('[data-name]')) return pickName(t.dataset.name);
   if(t.matches('[data-pagain]')) return pickName(me.name);
-  if(t.matches('[data-pg]')){ lookG = t.dataset.pg; lookI = 0; return paintLook(); }
   if(t.matches('[data-pl]')){ lookI = +t.dataset.pl; return paintLook(); }
   if(t.matches('[data-plook]')){ me.g = lookG; me.li = lookI; saveMe(); return play(); }
   if(t.matches('[data-pback]')) return enter();
@@ -634,7 +651,7 @@ async function onClick(e){
     if(!b) return say('그림을 만들지 못했어요 — 화면을 캡처해 주세요');
     const f = new File([b], `naksan-1111-${Date.now()}.png`, { type:'image/png' });
     if(t.matches('[data-pimgsh]') && await shareFile(f)) return;
-    saveBlob(b, f.name); say(t.matches('[data-pimgsh]') ? '📸 포스터를 저장했어요 — 인스타 스토리에 올려 주세요' : '📸 포스터를 저장했어요'); return;
+    saveBlob(b, f.name); say(t.matches('[data-pimgsh]') ? '📸 추억 사진을 저장했어요 — 인스타 스토리에 올려 주세요' : '📸 추억 사진을 저장했어요'); return;
   }
   if(t.matches('[data-pvid]')){
     if(vid && vid.p != null) return;

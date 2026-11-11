@@ -62,11 +62,11 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   const q = await S(()=>[...document.querySelectorAll('[data-name]')].map(x=>x.textContent));
   ok(q.length === 1 && /장진혁/.test(q[0]) && /코치/.test(q[0]), '이름 찾기 「진혁」 → 장진혁 코치: ' + q.join(','));
   await pickName(S, sleep, '장진혁');
-  const lk = await S(()=>({ on:!document.getElementById('pp-look').hidden, who:document.getElementById('pp-who').textContent, tabs:[...document.querySelectorAll('[data-pg]')].map(x=>x.textContent + ':' + x.getAttribute('aria-selected')), n:document.querySelectorAll('.pp-look img').length }));
-  ok(lk.on && /장진혁/.test(lk.who) && lk.n === 4 && lk.tabs.join() === '남자:false,여자:true', '캐릭터 고르기 — 남자/여자 탭, 넷씩(클레이 그림): ' + JSON.stringify(lk));
-  await S(()=>document.querySelector('[data-pg="m"]').click()); await S(()=>document.querySelector('[data-pl="2"]').click());
-  const lk2 = await S(()=>({ tab:document.querySelector('[data-pg="m"]').getAttribute('aria-selected'), on:document.querySelector('.pp-look.on')?.dataset.pl, pressed:document.querySelector('[data-pl="2"]').getAttribute('aria-pressed') }));
-  ok(lk2.tab === 'true' && lk2.on === '2' && lk2.pressed === 'true', '남자 탭 → 세 번째 캐릭터 고름');
+  const lk = await S(()=>({ on:!document.getElementById('pp-look').hidden, who:document.getElementById('pp-who').textContent, tabs:document.querySelectorAll('[data-pg]').length, srcs:[...document.querySelectorAll('.pp-look img')].map(i=>i.getAttribute('src')) }));
+  ok(lk.on && /장진혁/.test(lk.who) && lk.tabs === 0 && lk.srcs.length === 4 && lk.srcs.every(s=>/\/m\d-gift/.test(s)), '캐릭터 고르기 — 정해 둔 성별(장진혁 남자) 넷만, 탭 없음: ' + JSON.stringify(lk));
+  await S(()=>document.querySelector('[data-pl="2"]').click());
+  const lk2 = await S(()=>({ on:document.querySelector('.pp-look.on')?.dataset.pl, pressed:document.querySelector('[data-pl="2"]').getAttribute('aria-pressed') }));
+  ok(lk2.on === '2' && lk2.pressed === 'true', '세 번째 캐릭터 고름');
   await shot(p, 'pepero-2-look');
   await S(()=>document.querySelector('[data-plook]').click()); await sleep(900);
   const pl = await S(()=>({ on:!document.getElementById('pp-play').hidden, cv:document.getElementById('pep-cv').width > 0, go:!!document.querySelector('[data-pgo]:not([disabled])'), me:document.getElementById('pp-me').textContent,
@@ -92,6 +92,7 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   for(let i = 0; i < 2; i++){ await S(()=>document.querySelector('[data-ppull]').click()); await sleep(100); }
   await sleep(1700);
   const rv = await S(()=>({ ph:_pepero.S.ph, res:_pepero.res, card:document.querySelector('.pep-res')?.textContent.replace(/\s+/g, ' '), open:!!document.querySelector('[data-popen]') }));
+  ok(/작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요/.test(await S(()=>document.querySelector('.pp-letter')?.textContent || '')), '공개 뒤 편지 카드');
   ok(rv.ph === 'reveal' && rv.res && rv.res.id === 'br' && rv.res.mine === true && /베스킨라빈스 싱글레귤러/.test(rv.card) && rv.open, '선물 공개(서버가 정한 종류) + 기프티콘 열기 버튼: ' + rv.card);
   const cl = rpcs.filter(x=>x[0] === 'gift_claim');
   ok(cl.length === 1 && cl[0][1].p_name === '장진혁' && /^[0-9a-f]{32}$/.test(cl[0][1].p_token) && await S(t=>localStorage.getItem('lineup.pepero.tok:장진혁') === t, cl[0][1].p_token), 'gift_claim 한 번 · 32자 열쇠를 먼저 기기에 저장');
@@ -117,7 +118,7 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   await p.reload({ waitUntil:'networkidle2' }); await sleep(500);
   ok(await S(()=>!document.getElementById('pp-again').hidden && /장진혁/.test(document.getElementById('pp-again').textContent)), '다시 열면 「장진혁 님으로 계속하기」');
   await S(()=>document.querySelector('[data-pagain]').click()); await sleep(300);
-  ok(await S(()=>document.querySelector('[data-pg="m"]').getAttribute('aria-selected') === 'true' && document.querySelector('.pp-look.on')?.dataset.pl === '2'), '고른 캐릭터 기억');
+  ok(await S(()=>document.querySelector('.pp-look.on')?.dataset.pl === '2'), '고른 캐릭터 기억');
   await S(()=>document.querySelector('[data-plook]').click()); await sleep(900);
   const again = await S(()=>({ ph:_pepero.S.ph, go:!!document.querySelector('[data-pgo]'), card:document.querySelector('.pep-res')?.textContent || '' }));
   ok(again.ph === 'reveal' && !again.go && /베스킨라빈스/.test(again.card) && rpcs.filter(x=>x[0] === 'gift_claim').length === 1, '다시 열면 같은 선물(다시 안 받음)');
@@ -169,7 +170,8 @@ for(const w of [320, 360, 390]){
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
 /* 5b) 서버가 「다른 기기 것」(mine:false) · 「모두 나감」 · 기프티콘 못 염 */
 { const { b, errs, posts, S, sleep } = await page(talk, { rpc:{ gift_claim:()=>[200, { kind:'pepero', mine:false }] } });
-  await pickName(S, sleep, '김태은'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(800); await playThrough(S, sleep);
+  await pickName(S, sleep, '김태은');
+  ok(await S(()=>[...document.querySelectorAll('.pp-look img')].every(i=>/\/f\d-gift/.test(i.getAttribute('src')))), '김태은 → 여자 캐릭터 넷'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(800); await playThrough(S, sleep);
   const r = await S(()=>({ card:document.querySelector('.pep-res')?.textContent || '', open:!!document.querySelector('[data-popen]') }));
   ok(/다른 기기에서 이미 받았어요/.test(r.card) && !r.open && !posts.some(x=>x[0].startsWith('place_talk')), 'mine:false → 안내, 열기 없음, 소식 안 씀');
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
