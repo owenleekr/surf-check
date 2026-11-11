@@ -42,7 +42,7 @@ async function playThrough(S, sleep){
   await S(()=>{ for(let i = 0; i < 4; i++) _pepero.walk(); }); await sleep(1900);
   await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
   await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
-  for(let i = 0; i < 3; i++){ await S(()=>_pepero.next()); await sleep(150); }   // 혼자 → 버디들 → 다 같이(건너뛰기)
+  for(let i = 0; i < 4; i++){ await S(()=>_pepero.next()); await sleep(150); }   // 혼자 → 버디들 → 다 같이(건너뛰기)
   await sleep(300);
 }
 const blob = (S, fn) => S(async f => { const b = await window._pepero[f](); const a = new Uint8Array(await b.arrayBuffer()); let s = ''; for(let i = 0; i < a.length; i += 32768) s += String.fromCharCode(...a.subarray(i, i + 32768));
@@ -96,7 +96,8 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   ok(await S(()=>_pepero.S.ph) === 'alone', '선물 뒤 「여전히 혼자라 쓸쓸해요」');
   await S(()=>document.querySelector('[data-pskip]').click()); await sleep(200);
   ok(await S(()=>_pepero.S.ph) === 'gather', '다음 장면 → 버디들이 모여요');
-  await S(()=>document.getElementById('pep-cv').click()); await sleep(200); await S(()=>document.getElementById('pep-cv').click()); await sleep(300);
+  for(let i = 0; i < 3; i++){ await S(()=>document.getElementById('pep-cv').click()); await sleep(200); }   // 다 같이 파도 → 나눠 먹기 → 공개
+  await sleep(200);
   const rv = await S(()=>({ ph:_pepero.S.ph, res:_pepero.res, card:document.querySelector('.pep-res')?.textContent.replace(/\s+/g, ' '), open:!!document.querySelector('[data-popen]') }));
   ok(/작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요/.test(await S(()=>document.querySelector('.pp-letter')?.textContent || '')), '공개 뒤 편지 카드');
   ok(rv.ph === 'reveal' && rv.res && rv.res.id === 'br' && rv.res.mine === true && /베스킨라빈스 싱글레귤러/.test(rv.card) && rv.open, '선물 공개(서버가 정한 종류) + 기프티콘 열기 버튼: ' + rv.card);
@@ -201,7 +202,7 @@ for(const w of [320, 360, 390]){
   await S(()=>{ for(let i = 0; i < 4; i++) _pepero.walk(); }); await sleep(1900);
   await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
   await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
-  for(let i = 0; i < 3; i++){ await S(()=>_pepero.next()); await sleep(150); }
+  for(let i = 0; i < 4; i++){ await S(()=>_pepero.next()); await sleep(150); }
   ok(await S(()=>_pepero.S.ph === 'reveal' && !!_pepero.res && /\(시연\)/.test(document.getElementById('pep-wall').textContent)), '시연: 선물 공개 + 소식엔 (시연)');
   await S(()=>document.querySelector('[data-popen]').click()); await sleep(400);
   ok(await S(()=>!document.getElementById('pp-gc').hidden && /^data:image\/png/.test(document.querySelector('#pp-gc img').src)), '시연: 예시 카드(가짜)');

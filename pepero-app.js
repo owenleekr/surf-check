@@ -97,7 +97,7 @@ async function claim(){
   if(r.mine) send(); return res;
 }
 /* ── 그림 — 낙산 해변 클레이 일러스트(img/pepero/*.webp). bg: 해변(의상대·보드 넷 = 1111) · tug: 물속 단면 · gift: 선물상자 · p1~p4: 경품 스티커 ── */
-const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p2', 'ice', 'logo-w', 'ending-share'];
+const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p2', 'ice', 'logo-w', 'ending-share', 'ride'];
 function want(ns){ return Promise.all(ns.map(n=>PICP[n] || (PICP[n] = new Promise(ok=>{ const im = new Image();
   im.onload = ()=>{ PIC[n] = im; ok(); }; im.onerror = ()=>{ delete PICP[n]; ok(); }; im.src = `img/pepero/${n}.webp`; })))); }   // 못 받으면 다음에 다시 — 그동안은 색으로 그린다
 const stickerOf = p => p && KINDS[p.id] ? KINDS[p.id].pic : 'gift';
@@ -124,7 +124,8 @@ function fit(g, t, max, size, weight){ do{ g.font = `${weight} ${size}px ${FONT}
 function pill(g, t, x, y, size, face, side, ink){
   g.font = `900 ${size}px ${FONT}`; const w = g.measureText(t).width + size * 1.4, h = size * 1.75;
   clay(g, x - w / 2, y, w, h, h / 2, face, side, Math.round(size * .18));
-  g.textAlign = 'center'; g.fillStyle = ink || INK; g.fillText(t, x, y + h * .5 + size * .36);
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = ink || INK; g.fillText(t, x, y + h * .5 + size * .04); g.textBaseline = 'alphabetic';   // 글자를 알약 한가운데에
+  return y + h + Math.round(size * .18);   // 옆면까지 포함한 아래 끝
 }
 /* 제목 — 하얀 클레이 글자 + 분홍 옆면 + 부드러운 그림자 */
 function title(g, t, x, y, size, max){
@@ -229,10 +230,21 @@ function ripple(g, bx, by, w, h, t){   // bx·by = 그림 가운데 아래
 const GATHER = [[540, 1395, 270], [190, 1425, 300], [890, 1430, 300], [340, 1500, 350], [745, 1505, 350], [95, 1640, 420], [995, 1650, 420]];
 const easeO = x => 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3);
 function winterScene(g, s, X, t){
-  if(s.ph === 'together'){   // 함께 나눠 먹으며 즐겁게 — 마지막 그림으로 천천히 다가간다
-    const k = X.rm ? 1 : Math.min(1, s.k / 4);
+  if(s.ph === 'ride'){   // 다 같이, 각자의 파도 위에서 — 물보라 튀며 다가간다
+    const k = X.rm ? 1 : Math.min(1, s.k / 3.5);
     back(g, PIC.bg, t, 1.12, 540, 1300);
-    g.globalAlpha = X.rm ? 1 : Math.min(1, s.k / .8); back(g, PIC[ENDING_PIC] || PIC.bg, t, 1.02 + .1 * k, 540, 1000); g.globalAlpha = 1;
+    g.globalAlpha = X.rm ? 1 : Math.min(1, s.k / .6); back(g, PIC.ride || PIC.bg, t, 1.03 + .12 * k, 540, 1150); g.globalAlpha = 1;
+    if(!X.rm){ g.fillStyle = '#fff'; for(let i = 0; i < 26; i++){ const p = ((t * (.6 + (i % 5) * .15) + i * .37) % 1), x = (i * 211) % 1080 + Math.sin(i) * 40, y = 1900 - p * 1300 - (i % 7) * 40;
+      g.globalAlpha = (1 - p) * .7; g.beginPath(); g.arc(x, y, 4 + (i % 4) * 3, 0, 7); g.fill(); } g.globalAlpha = 1; }
+    return;
+  }
+  if(s.ph === 'together'){   // 단체 사진 — 흐릿하게 멀리서 → 초점이 맞으며 다가가고 → 찰칵! 하얗게 번쩍, 스냅사진으로 멈춘다
+    const k = X.rm ? 9 : s.k, f = Math.min(1, k / 1.6), e = f * f * (3 - 2 * f);
+    if(k < SHOT){ back(g, PIC[ENDING_PIC] || PIC.bg, t, 1 + .07 * e, 540, 1000); const b = soft(ENDING_PIC); if(b){ g.globalAlpha = 1 - e; back(g, b, t, 1 + .07 * e, 540, 1000); g.globalAlpha = 1; } return; }
+    back(g, soft(ENDING_PIC) || PIC.bg, t, 1.05, 540, 960); g.fillStyle = 'rgba(25,20,45,.38)'; g.fillRect(0, 0, W, H);
+    const q = Math.min(1, (k - SHOT) / .35), [, pb] = snapshot(g, 540, 860, 700, -.03 * q, 1 - .1 * q);
+    g.globalAlpha = Math.min(1, (k - SHOT - .2) / .5); if(g.globalAlpha > 0) title(g, '우리들의 아름다웠던 추억', W / 2, pb + 100, 72, 980); g.globalAlpha = 1;
+    const fl = 1 - (k - SHOT) / .3; if(fl > 0 && !X.rm){ g.fillStyle = `rgba(255,255,255,${fl})`; g.fillRect(0, 0, W, H); }
     return;
   }
   back(g, PIC.bg, t, 1.12, 540, 1300);
@@ -313,35 +325,39 @@ function loadCrew(){
   crew = { key:mine, walk:[], p:Promise.all(ids.map(id=>one(charSrc(id, 'walk')))).then(b=>{ crew.walk = b; }) };
   return crew.p;
 }
-const ENDING_PIC = 'ending-share';   // 마지막 그림 — 'ending-gemini' 로 바꾸면 다른 그림
-function vignette(g, a){ const v = g.createRadialGradient(W / 2, H * .5, H * .34, W / 2, H * .5, H * .8); v.addColorStop(0, 'rgba(30,15,40,0)'); v.addColorStop(1, `rgba(30,15,40,${a})`); g.fillStyle = v; g.fillRect(0, 0, W, H); }
+const ENDING_PIC = 'ending-share', SHOT = 1.9;   // 마지막 그림 — 'ending-gemini' 로 바꾸면 다른 그림
 /* o: { cam:[z, fx, fy], badge 0~1, text 0~1, t } */
+/* 찍힌 사진 — 흰 테두리 스냅사진(살짝 기울어짐). cx·cy 가운데, iw 사진 너비 */
+function snapshot(g, cx, cy, iw, rot, sc){
+  const im = PIC[ENDING_PIC] || PIC.bg; if(!im) return; const ih = iw * im.height / im.width, b = 22, w = iw + b * 2, h = ih + b * 2;
+  g.save(); g.translate(cx, cy); g.rotate(rot); g.scale(sc, sc);
+  g.shadowColor = 'rgba(20,10,30,.45)'; g.shadowBlur = 40; g.shadowOffsetY = 18; g.fillStyle = '#FFFDF8'; g.fillRect(-w / 2, -h / 2, w, h); g.shadowBlur = 0; g.shadowOffsetY = 0;
+  g.drawImage(im, -iw / 2, -ih / 2, iw, ih); g.restore(); return [cy - h / 2 * sc, cy + h / 2 * sc];
+}
+/* 공유 포스터 = 그 순간 찍힌 사진: 흐린 배경 위 스냅사진 · 「우리들의 아름다웠던 추억」 · 편지 두 줄 · 이름 알약 · 날짜 줄(모두 가운데 축) · 로고 · 받은 종류 배지 · 「나」 스티커
+   o: { badge 0~1, text 0~1, t } */
 function poster(g, X, o){
-  const t = o.t || 0, [z, fx, fy] = o.cam || [1, 540, 960];
-  back(g, PIC[ENDING_PIC] || PIC.bg, t, z, fx, fy);   // 함께 나눠 먹으며 즐겁게 타는 겨울 라인업
-  if(o.text > 0){ const sc = g.createLinearGradient(0, 0, 0, 640); sc.addColorStop(0, `rgba(30,15,40,${.5 * Math.min(1, o.text)})`); sc.addColorStop(1, 'rgba(30,15,40,0)'); g.fillStyle = sc; g.fillRect(0, 0, W, 640);
-    const sb = g.createLinearGradient(0, 1560, 0, H); sb.addColorStop(0, 'rgba(30,15,40,0)'); sb.addColorStop(1, `rgba(30,15,40,${.55 * Math.min(1, o.text)})`); g.fillStyle = sb; g.fillRect(0, 1560, W, 360); }
-  vignette(g, .3); snow(g, t, .7);
-  if(X.gift && o.text > 0){ const a = Math.min(1, o.text), h = 300, w = h * X.gift.width / X.gift.height;   // 「나」 스티커
-    g.save(); g.globalAlpha = a; g.translate(150, 1690); g.rotate(-.08); g.fillStyle = '#fff'; g.shadowColor = 'rgba(40,15,30,.4)'; g.shadowBlur = 18; rr(g, -w / 2 - 22, -h - 26, w + 44, h + 44, 34); g.fill(); g.shadowBlur = 0;
-    g.drawImage(X.gift, -w / 2, -h, w, h); pill(g, '나', 0, -h - 58, 30, '#FF8FA3', '#E86F86', '#fff'); g.restore(); }
-  if(o.text > 0){ const a = Math.min(1, o.text), dy = (1 - a) * 24; g.globalAlpha = a;
-    if(PIC['logo-w']){ const im = PIC['logo-w'], h = 56, w = h * im.width / im.height; g.save(); g.shadowColor = 'rgba(40,15,30,.5)'; g.shadowBlur = 14; g.drawImage(im, W / 2 - w / 2, 92, w, h); g.restore(); }
-    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.6)'; g.shadowBlur = 14; g.fillStyle = '#FFF3E4'; g.font = `800 34px ${FONT}`;
-    g.fillText('우리가 함께 나눈 추억, 가을 바다에서 시작해서', W / 2, 206 + dy); g.fillText('어느새 겨울 바다가 되어 가요.', W / 2, 252 + dy); g.restore();
-    title(g, '작은 선물이지만,', W / 2, 362 + dy, 100, 960); title(g, '함께 파도 위에서 나눈 마음을 나눠요.', W / 2, 452 + dy, 62, 980);
-    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.6)'; g.shadowBlur = 16; g.fillStyle = '#fff'; g.font = `900 46px ${FONT}`; g.fillText('겨울 바다에서도, 다시 만나요 🌊', W / 2, 540 + dy); g.restore();
-    if(X.name) pill(g, '양양서핑학교 서프 버디 ' + String(X.name).slice(0, 10), W / 2 + 90, 1772, 34, '#fff', '#F2C9D3');
-    g.save(); g.textAlign = 'center'; g.shadowColor = 'rgba(40,15,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 28px ${FONT}`; g.fillText('2026.11.11 낙산 해변 · surf.owenai.xyz/pepero', W / 2, 1878); g.restore();
-    g.globalAlpha = 1; }
+  const t = o.t || 0, a = Math.max(0, Math.min(1, o.text == null ? 1 : o.text));
+  back(g, soft(ENDING_PIC) || PIC[ENDING_PIC] || PIC.bg, t, 1.05, 540, 960); g.fillStyle = 'rgba(25,20,45,.38)'; g.fillRect(0, 0, W, H); snow(g, t, .6);
+  const [, pb] = snapshot(g, 540, 770, 640, -.025, 1);
+  if(PIC['logo-w']){ const im = PIC['logo-w'], h = 46, w = h * im.width / im.height; g.save(); g.shadowColor = 'rgba(20,10,30,.6)'; g.shadowBlur = 10; g.drawImage(im, W / 2 - w / 2, 64, w, h); g.restore(); }
+  if(X.gift){ const h = 250, w = h * X.gift.width / X.gift.height;   // 「나」 스티커 — 사진 왼쪽 아래 귀퉁이
+    g.save(); g.translate(205, pb + 20); g.rotate(-.1); g.fillStyle = '#fff'; g.shadowColor = 'rgba(20,10,30,.4)'; g.shadowBlur = 16; rr(g, -w / 2 - 20, -h - 22, w + 40, h + 40, 30); g.fill(); g.shadowBlur = 0;
+    g.drawImage(X.gift, -w / 2, -h, w, h); pill(g, '나', 0, -h - 56, 28, '#FF8FA3', '#E86F86', '#fff'); g.restore(); }
   const p = X.prize; if(p && o.badge > 0){ const k = Math.min(1, o.badge), sc = .4 + .6 * easeBack(k);
-    g.save(); g.translate(900, 1580); g.scale(sc, sc); g.rotate(.12);
-    g.save(); g.shadowColor = 'rgba(80,30,50,.4)'; g.shadowBlur = 24; g.shadowOffsetY = 10; g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 112, 0, 7); g.fill(); g.restore();
-    g.fillStyle = '#FFF4DE'; g.beginPath(); g.arc(0, 0, 98, 0, 7); g.fill();
-    sticker(g, PIC[stickerOf(p)], 0, -16, 120, -.12);
-    pill(g, p.rank, 0, 50, 26, p.id === 'br' ? '#FFC2CD' : '#FFE08A', p.id === 'br' ? '#EE8FA3' : '#E7B640');
+    g.save(); g.translate(860, 190); g.scale(sc, sc); g.rotate(.12);
+    g.save(); g.shadowColor = 'rgba(80,30,50,.4)'; g.shadowBlur = 24; g.shadowOffsetY = 10; g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 104, 0, 7); g.fill(); g.restore();
+    g.fillStyle = '#FFF4DE'; g.beginPath(); g.arc(0, 0, 90, 0, 7); g.fill();
+    sticker(g, PIC[stickerOf(p)], 0, -16, 112, -.12);
+    pill(g, p.rank, 0, 44, 24, p.id === 'br' ? '#FFC2CD' : '#FFE08A', p.id === 'br' ? '#EE8FA3' : '#E7B640');
     g.restore(); }
-  if(o.grain && !X.rm){ g.save(); g.globalCompositeOperation = 'overlay'; g.globalAlpha = .45; if(!g.__gp) g.__gp = g.createPattern(grain(), 'repeat'); g.fillStyle = g.__gp; const ox = (t * 997 % 160) | 0; g.translate(-ox, -ox); g.fillRect(0, 0, W + 160, H + 160); g.restore(); }
+  if(a > 0){ g.globalAlpha = a; const y0 = pb + 92;
+    title(g, '우리들의 아름다웠던 추억', W / 2, y0, 70, 980);
+    g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 12; g.fillStyle = '#fff'; g.font = `800 31px ${FONT}`;
+    g.fillText('작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요.', W / 2, y0 + 66); g.fillText('겨울 바다에서도, 다시 만나요 🌊', W / 2, y0 + 110); g.restore();
+    const foot = X.name ? pill(g, '양양서핑학교 서프 버디 ' + String(X.name).slice(0, 10), W / 2, y0 + 142, 32, '#fff', '#F2C9D3') : y0 + 190;   // 이름 알약과 날짜 줄은 같은 가운데 축, 20px 간격
+    g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.shadowColor = 'rgba(20,10,30,.7)'; g.shadowBlur = 10; g.fillStyle = '#FFE8CC'; g.font = `800 27px ${FONT}`; g.fillText('2026.11.11 낙산 해변 · surf.owenai.xyz/pepero', W / 2, foot + 20 + 15); g.restore();
+    g.globalAlpha = 1; }
   if(o.fade > 0){ g.fillStyle = `rgba(20,10,20,${o.fade})`; g.fillRect(0, 0, W, H); }
 }
 function sticker(g, im, x, y, sz, rot){ if(!im) return; const f = sz / Math.max(im.width, im.height); g.save(); g.translate(x, y); g.rotate(rot); g.shadowColor = 'rgba(80,40,60,.3)'; g.shadowBlur = 14; g.shadowOffsetY = 6;
@@ -406,7 +422,7 @@ function splash(s, x, y, n){ for(const q of s.sp){ if(n <= 0) break; if(q.a > 0)
 function step(s, dt, rm){
   s.t += dt; s.k += dt;
   const pt = s.ph === 'intro' || s.ph === 'walk' ? 0 : s.ph === 'paddle' ? s.n / 5 : 1, e = rm ? 1 : Math.min(1, dt * 3);
-  const SV = { intro:0, walk:.1 + (s.w || 0) * .09, paddle:.55, wait:.65, tug:.8, pop:.9, alone:1, gather:1, together:.7, reveal:1 }; s.sv += ((SV[s.ph] || 0) - s.sv) * (rm ? 1 : Math.min(1, dt * .8));   // 가을 → 겨울
+  const SV = { intro:0, walk:.1 + (s.w || 0) * .09, paddle:.55, wait:.65, tug:.8, pop:.9, alone:1, gather:1, ride:.6, together:.7, reveal:1 }; s.sv += ((SV[s.ph] || 0) - s.sv) * (rm ? 1 : Math.min(1, dt * .8));   // 가을 → 겨울
   s.pg += (pt - s.pg) * e; s.wp += (s.w - s.wp) * (rm ? 1 : Math.min(1, dt * 4));
   const c = CAM[s.ph] || CAM.intro, cx = s.ph === 'walk' ? Math.min(560, Math.max(380, 105 + 125 * s.wp)) : c[1], ce = rm ? 1 : Math.min(1, dt * 1.1);   // 천천히 따라붙는 카메라
   s.cz += (c[0] - s.cz) * ce; s.cx += (cx - s.cx) * ce; s.cy += (c[2] - s.cy) * ce;
@@ -415,9 +431,9 @@ function step(s, dt, rm){
 }
 /* 장면 자막 — 이야기 순서. 위쪽에 영화 자막처럼(물속 장면은 가운데) */
 const CAP = { intro:['가을의 낙산은', '웃음소리와 함성, 응원으로 가득했어요'], walk:['이제는…', '어쩐지 나만 남은 것 같아요'], paddle:['쓸쓸히 바다로 나가며', '동기들을 떠올려요'],
-  wait:['어느새 바다는 겨울이 되었어요', '라인업에서 세트를 기다려요'], tug:['쓸쓸히 떠 있는데…', '발밑에 뭔가 걸렸어요!'], alone:['선물은 기쁘지만…', '여전히 혼자라 쓸쓸해요'], gather:['그때, 멀리서 웃음소리가 들려와요', '버디들이 하나둘, 바다로 모여요'], together:['겨울 바다에서, 우리 다시', '함께 나눠 먹으며, 겨울 바다에서 다시 즐겁게 타요 🌊'], pop:['끌어올려 보니,', '선물이었어요 🎁'] };
+  wait:['어느새 바다는 겨울이 되었어요', '라인업에서 세트를 기다려요'], tug:['쓸쓸히 떠 있는데…', '발밑에 뭔가 걸렸어요!'], alone:['선물은 기쁘지만…', '여전히 혼자라 쓸쓸해요'], gather:['그때, 멀리서 웃음소리가 들려와요', '버디들이 하나둘, 바다로 모여요'], ride:['겨울 바다에서', '누군가는 파도를 타고, 누군가는 응원해요'], together:['파도에서 나와', '함께 나눠 먹으며 웃어요'], pop:['끌어올려 보니,', '선물이었어요 🎁'] };
 function caption(g, s, X){
-  const c = CAP[s.ph]; if(!c) return;
+  const c = CAP[s.ph]; if(!c || (s.ph === 'together' && (X.rm || s.k >= SHOT))) return;
   const a = X.rm ? 1 : Math.min(1, s.k / .5), y = (s.ph === 'tug' ? 820 : 300) + (1 - a) * 24, main = c[1];
   g.save(); g.globalAlpha = a; g.textAlign = 'center';
   g.shadowColor = 'rgba(30,15,40,.6)'; g.shadowBlur = 22; g.shadowOffsetY = 4;
@@ -458,7 +474,7 @@ function paint(g, s, X){
   const ph = s.ph, t = X.rm ? 0 : s.t;
   if(ph === 'reveal'){ const k = X.rm ? 9 : s.k; poster(g, X, { t, badge:(k - .3) / .45, text:k / .8, grain:1, fade:Math.max(0, .6 - k * 1.5) }); return; }   // 공개 = 단체 포스터(내보내는 그림과 같다)
   const tugA = ph === 'tug' ? (X.rm ? 1 : Math.min(1, s.k / .6)) : ph === 'pop' ? (X.rm ? 0 : Math.max(0, 1 - s.k / .35)) : 0;
-  if(ph === 'alone' || ph === 'gather' || ph === 'together'){ winterScene(g, s, X, t); post(g, s, X, t); caption(g, s, X); return; }
+  if(ph === 'alone' || ph === 'gather' || ph === 'ride' || ph === 'together'){ winterScene(g, s, X, t); post(g, s, X, t); caption(g, s, X); return; }
   if(tugA < 1){
     const beach = ph !== 'pop' && ph !== 'reveal';
     g.save(); if(beach) cam(g, 1 + (s.cz - 1) * .8, s.cx, s.cy);   // 배경은 조금 덜 움직여 깊이감(시차)
@@ -510,7 +526,7 @@ function ctl(){
   const el = $('pep-ctl'), hint = $('pep-hint'); if(!el) return;
   const ph = S ? S.ph : 'intro';
   if(res && res.soldout){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>앗</span><b>선물이 모두 나갔어요</b><small>문제가 있으면 오웬에게 알려 주세요.</small></div></div>'; return; }
-  if(['alone', 'gather', 'together'].includes(ph)){ hint.textContent = (CAP[ph] || [])[1] || ''; el.innerHTML = '<button type="button" class="btn sm ghost" data-pskip>다음 장면 ›</button>'; return; }
+  if(['alone', 'gather', 'ride', 'together'].includes(ph)){ hint.textContent = (CAP[ph] || [])[1] || ''; el.innerHTML = '<button type="button" class="btn sm ghost" data-pskip>다음 장면 ›</button>'; return; }
   if(res && ph !== 'pop'){
     const p = prizeOf(res); hint.textContent = '';
     el.innerHTML = `<div class="pep-res"><img src="img/pepero/${stickerOf(p)}.webp" alt="" width="76" height="76" onerror="this.hidden=true"><div><span>${esc(p.rank || '선물')}</span><b>${esc(p.n)}</b><small>${res.mine === false ? '이 이름은 다른 기기에서 이미 받았어요.<br>받은 폰에서 열어 주세요 — 문제가 있으면 오웬에게 알려 주세요.' : '아래 버튼으로 기프티콘을 열어<br>매장에서 보여 주세요.'}</small></div></div>
@@ -566,7 +582,9 @@ function loop(now){
   else if(S.ph === 'pop' && S.k > 1.8 && res){ X.prize = prizeOf(res); next(); }
   else if(S.ph === 'alone' && S.k > 3) next();
   else if(S.ph === 'gather' && S.k > 4.6) next();
-  else if(S.ph === 'together' && S.k > 4) next();
+  else if(S.ph === 'ride' && S.k > 3.5) next();
+  else if(S.ph === 'together' && S.k > SHOT + 2.2) next();
+  if(S.ph === 'together' && S.k >= SHOT && !S.shot){ S.shot = 1; sfx(shutter); navigator.vibrate?.(30); }
   if(S.ph === 'gather'){ const n = Math.max(0, Math.min(7, Math.floor((S.k - .3) / .5) + 1)); if(n > (S.gn || 0)){ S.gn = n; if(n === 1 || n === 7) sfx(cheer); sfx((c, o, t)=>{ tone(c, o, t, NOTE([72, 74, 76, 79, 81, 84, 86][n - 1]), .12, .5, 'triangle'); hit(c, o, t, .05, .12, ['bandpass', 400, 1]); }); } }
   paint(cv.getContext('2d'), S, X);
   raf = requestAnimationFrame(loop);
@@ -608,14 +626,15 @@ async function start(){
   await pullMine(); if(res){ go(S, 'reveal'); S.k = 1; X.prize = prizeOf(res); return ctl(); }   // 다른 기기에서 이 이름으로 이미 뽑았다
   go(S, 'walk'); sfx(cheer); ctl();
 }
-const ENDING = ['pop', 'alone', 'gather', 'together', 'reveal'];
+const ENDING = ['pop', 'alone', 'gather', 'ride', 'together', 'reveal'];
 function next(){   // 이야기 다음 장면 — 시간이 되거나 그림을 누르면(건너뛰기)
   const i = ENDING.indexOf(S.ph); if(i < 0 || i >= ENDING.length - 1 || !res) return;
   go(S, ENDING[i + 1]); if(X) X.prize = prizeOf(res);
   if(S.ph === 'reveal'){ navigator.vibrate?.([20, 40, 20]); sfx(sparkle); }
+  if(S.ph === 'ride') sfx(cheer);
   ctl();
 }
-const act = () => S && (S.ph === 'walk' ? walk() : S.ph === 'paddle' ? paddle() : S.ph === 'tug' ? pull() : ['alone', 'gather', 'together'].includes(S.ph) ? next() : 0);   // 그림을 눌러도 같은 동작   // 그림을 눌러도 같은 동작
+const act = () => S && (S.ph === 'walk' ? walk() : S.ph === 'paddle' ? paddle() : S.ph === 'tug' ? pull() : ['alone', 'gather', 'ride', 'together'].includes(S.ph) ? next() : 0);   // 그림을 눌러도 같은 동작   // 그림을 눌러도 같은 동작
 
 /* ── 스토리 내보내기 — 단체 포스터 PNG · 약 7.6초 영상(라인업 버디들을 천천히 훑다가 내 캐릭터에 멈추고, 선물 배지 → 문구 → 끝 화면, 우쿨렐레 음악까지 영상에 담는다) ── */
 function storyCanvas(){ const c = document.createElement('canvas'); c.width = W; c.height = H; return c; }
@@ -626,7 +645,7 @@ async function png(){
 }
 const MIMES = ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a.40.2', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
 /* 영상 장면표 — 가을의 기억 → 혼자 → 멀리서 웃음소리, 버디들이 하나둘 → 함께 나눠 먹으며 겨울 바다 → 편지 문구·배지·로고 */
-const TL = [['intro', 1.4], ['alone', 2.2], ['gather', 4.0], ['together', 2.4], ['reveal', 3]], REEL_END = TL.reduce((a, x)=>a + x[1], 0);
+const TL = [['intro', 1.4], ['alone', 2.0], ['gather', 3.4], ['ride', 2.2], ['together', 3.2], ['reveal', 3]], REEL_END = TL.reduce((a, x)=>a + x[1], 0);
 function reel(g, X, el, s, dt){
   let acc = 0, ph = 'reveal'; for(const [p, d] of TL){ if(el < acc + d){ ph = p; break; } acc += d; }
   if(s.ph !== ph) go(s, ph);
@@ -635,7 +654,7 @@ function reel(g, X, el, s, dt){
 function score(ctx, out, a0){
   for(let i = 0, t = 0; t < REEL_END - .5; i++, t += 4 * BEAT) if(t < 1.3 || t > 3.4) bar(ctx, out, a0 + t, i);   // 혼자인 장면은 음악이 잦아든다
   strum(ctx, out, a0 + 1.4, CHORDS[2], .5, 0); strum(ctx, out, a0 + 2.5, CHORDS[3], .4, 0);
-  cheer(ctx, out, a0 + 3.7); cheer(ctx, out, a0 + 6.6); sparkle(ctx, out, a0 + 9.0); chime(ctx, out, a0 + 10.4, .7);
+  cheer(ctx, out, a0 + 3.5); cheer(ctx, out, a0 + 6.8); shutter(ctx, out, a0 + 9.0 + SHOT); sparkle(ctx, out, a0 + 12.2); chime(ctx, out, a0 + 13.4, .7);
 }
 async function video(onP){
   await Promise.all([loadImgs(), want(ALL), loadCrew()]);
