@@ -97,7 +97,7 @@ async function claim(){
   if(r.mine) send(); return res;
 }
 /* ── 그림 — 낙산 해변 클레이 일러스트(img/pepero/*.webp). bg: 해변(의상대·보드 넷 = 1111) · tug: 물속 단면 · gift: 선물상자 · p1~p4: 경품 스티커 ── */
-const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p2', 'ice', 'logo-w', 'ending-share', 'ride'];
+const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p2', 'ice', 'logo-w', 'ending-center', 'ride'];
 function want(ns){ return Promise.all(ns.map(n=>PICP[n] || (PICP[n] = new Promise(ok=>{ const im = new Image();
   im.onload = ()=>{ PIC[n] = im; ok(); }; im.onerror = ()=>{ delete PICP[n]; ok(); }; im.src = `img/pepero/${n}.webp`; })))); }   // 못 받으면 다음에 다시 — 그동안은 색으로 그린다
 const stickerOf = p => p && KINDS[p.id] ? KINDS[p.id].pic : 'gift';
@@ -325,7 +325,21 @@ function loadCrew(){
   crew = { key:mine, walk:[], p:Promise.all(ids.map(id=>one(charSrc(id, 'walk')))).then(b=>{ crew.walk = b; }) };
   return crew.p;
 }
-const ENDING_PIC = 'ending-share', SHOT = 1.9;   // 마지막 그림 — 'ending-gemini' 로 바꾸면 다른 그림
+const ENDING_PIC = 'ending-me', SHOT = 1.9;   // 마지막 사진 = ending-center 의 가운데 빈자리에 「나」를 앉힌 합성
+/* 가운데의 나 — 보드에 앉아 반쯤 잠기고(같은 물높이·크기), 받은 선물을 들어 보이고, 머리 위에 「서프 버디 ○○」 */
+function photo(X){
+  const base = PIC['ending-center'], key = [imgs.key, X.prize && X.prize.id, X.name, !!X.sit, !!base, !!(X.prize && PIC[stickerOf(X.prize)])].join('|');
+  if(!base){ PIC['ending-me'] = null; return; } if(PIC['ending-me'] && PIC['ending-me'].__k === key) return;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); c.__k = key;
+  g.drawImage(base, 0, 0, W, H);
+  if(X.sit){ const h = 520, w = h * X.sit.width / X.sit.height, bx = 540, by = 1300, sp = sunk(X.sit);
+    const tmp = document.createElement('canvas'); tmp.width = sp.width; tmp.height = sp.height; const tg = tmp.getContext('2d'); tg.drawImage(sp, 0, 0); tg.globalCompositeOperation = 'source-atop'; tg.fillStyle = 'rgba(255,160,110,.16)'; tg.fillRect(0, 0, tmp.width, tmp.height);   // 노을빛 맞추기
+    g.fillStyle = 'rgba(20,30,60,.18)'; g.beginPath(); g.ellipse(bx, by - h * .36 + 8, w * .42, 14, 0, 0, 7); g.fill();
+    g.drawImage(tmp, bx - w / 2, by - h, w, h); ripple(g, bx, by, w, h, 0);
+    const p = X.prize; if(p){ const im = PIC[stickerOf(p)]; if(im) sticker(g, im, bx + w * .14, by - h * .58, 150, -.15); g.fillStyle = '#FFF6D8'; [[bx + w * .3, by - h * .76, 7], [bx - w * .02, by - h * .7, 5]].forEach(([x, y, r])=>{ g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); }
+    if(X.name) pill(g, '서프 버디 ' + String(X.name).slice(0, 10), bx, by - h - 58, 30, '#fff', '#F2C9D3'); }
+  PIC['ending-me'] = c; delete PIC['ending-me~'];
+}   // 마지막 그림 — 'ending-gemini' 로 바꾸면 다른 그림
 /* o: { cam:[z, fx, fy], badge 0~1, text 0~1, t } */
 /* 찍힌 사진 — 흰 테두리 스냅사진(살짝 기울어짐). cx·cy 가운데, iw 사진 너비 */
 function snapshot(g, cx, cy, iw, rot, sc){
@@ -337,13 +351,10 @@ function snapshot(g, cx, cy, iw, rot, sc){
 /* 공유 포스터 = 그 순간 찍힌 사진: 흐린 배경 위 스냅사진 · 「우리들의 아름다웠던 추억」 · 편지 두 줄 · 이름 알약 · 날짜 줄(모두 가운데 축) · 로고 · 받은 종류 배지 · 「나」 스티커
    o: { badge 0~1, text 0~1, t } */
 function poster(g, X, o){
-  const t = o.t || 0, a = Math.max(0, Math.min(1, o.text == null ? 1 : o.text));
+  photo(X); const t = o.t || 0, a = Math.max(0, Math.min(1, o.text == null ? 1 : o.text));
   back(g, soft(ENDING_PIC) || PIC[ENDING_PIC] || PIC.bg, t, 1.05, 540, 960); g.fillStyle = 'rgba(25,20,45,.38)'; g.fillRect(0, 0, W, H); snow(g, t, .6);
   const [, pb] = snapshot(g, 540, 770, 640, -.025, 1);
   if(PIC['logo-w']){ const im = PIC['logo-w'], h = 46, w = h * im.width / im.height; g.save(); g.shadowColor = 'rgba(20,10,30,.6)'; g.shadowBlur = 10; g.drawImage(im, W / 2 - w / 2, 64, w, h); g.restore(); }
-  if(X.gift){ const h = 250, w = h * X.gift.width / X.gift.height;   // 「나」 스티커 — 사진 왼쪽 아래 귀퉁이
-    g.save(); g.translate(205, pb + 20); g.rotate(-.1); g.fillStyle = '#fff'; g.shadowColor = 'rgba(20,10,30,.4)'; g.shadowBlur = 16; rr(g, -w / 2 - 20, -h - 22, w + 40, h + 40, 30); g.fill(); g.shadowBlur = 0;
-    g.drawImage(X.gift, -w / 2, -h, w, h); pill(g, '나', 0, -h - 56, 28, '#FF8FA3', '#E86F86', '#fff'); g.restore(); }
   const p = X.prize; if(p && o.badge > 0){ const k = Math.min(1, o.badge), sc = .4 + .6 * easeBack(k);
     g.save(); g.translate(860, 190); g.scale(sc, sc); g.rotate(.12);
     g.save(); g.shadowColor = 'rgba(80,30,50,.4)'; g.shadowBlur = 24; g.shadowOffsetY = 10; g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 104, 0, 7); g.fill(); g.restore();
@@ -472,6 +483,7 @@ function post(g, s, X, t){
 }
 function paint(g, s, X){
   const ph = s.ph, t = X.rm ? 0 : s.t;
+  if(ph === 'together' || ph === 'reveal') photo(X);
   if(ph === 'reveal'){ const k = X.rm ? 9 : s.k; poster(g, X, { t, badge:(k - .3) / .45, text:k / .8, grain:1, fade:Math.max(0, .6 - k * 1.5) }); return; }   // 공개 = 단체 포스터(내보내는 그림과 같다)
   const tugA = ph === 'tug' ? (X.rm ? 1 : Math.min(1, s.k / .6)) : ph === 'pop' ? (X.rm ? 0 : Math.max(0, 1 - s.k / .35)) : 0;
   if(ph === 'alone' || ph === 'gather' || ph === 'ride' || ph === 'together'){ winterScene(g, s, X, t); post(g, s, X, t); caption(g, s, X); return; }
