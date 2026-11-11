@@ -57,6 +57,17 @@ function tok(make){ const k = 'lineup.pepero.tok:' + me.name; let v = null; try{
 const prizeOf = r => r && !r.soldout && (KINDS[r.id] || { id:r.id, rank:'선물', ic:'🎁', n:seen(r).slice(0, 30) || '선물', short:seen(r).slice(0, 20) || '선물' });
 function loadRes(){ res = null; try{ const v = JSON.parse(store.get(LS + me.name) || 'null'); if(v && typeof v.id === 'string') res = v; }catch(e){} }
 function saveRes(){ try{ store.set(LS + me.name, JSON.stringify(res)); }catch(e){} }
+/* 이미 받은 이름 — 서버 당첨 줄(wall)·서버가 「다른 기기 것」이라 한 이름(TAKEN)·이 기기에 남은 결과(mine:false). 시연은 아무것도 안 잠근다.
+   이 기기가 받은 이름(받을 때 만든 열쇠가 있고 결과나 서버 줄이 있음)은 잠그지 않고 「내 선물 다시 보기」 */
+const TAKEN = new Set();
+function resOf(n){ try{ const v = JSON.parse(store.get(LS + n) || 'null'); return v && typeof v.id === 'string' ? v : null; }catch(e){ return null; } }
+const onWall = n => wall.some(r=>r.name === n);
+function mineHere(n){
+  const r = resOf(n); if(DEMO) return !!(r && r.id);
+  let t = null; try{ t = localStorage.getItem('lineup.pepero.tok:' + n); }catch(e){}
+  return !!t && !(r && r.mine === false) && (!!(r && r.id) || onWall(n));
+}
+const takenBy = n => !DEMO && !mineHere(n) && (onWall(n) || TAKEN.has(n) || (resOf(n) || {}).mine === false);
 /* 이 이름으로 이미 뽑았나 — 앱에서 뽑은 줄(user_id 가 계정)도 이름으로 찾는다 */
 function pullMine(){
   if(checking) return checking;
@@ -67,7 +78,7 @@ function pullMine(){
       if(me && me.name === nm){
         if(r){ const t = tok(false); let mine = false;   // 이 기기에 열쇠가 있을 때만 서버에 「내 것」인지 묻는다(이미 받은 이름이라 새로 배정되지 않는다)
           if(t){ try{ mine = !!(await rpc('gift_claim', { p_name:nm, p_token:t })).mine; }catch(e){ mine = !!(res && res.mine); } }
-          res = { id:String(r.text || '').split('|')[0], text:String(r.text || ''), at:Date.parse(r.created_at) || Date.now(), sent:1, mine }; saveRes(); }
+          res = { id:String(r.text || '').split('|')[0], text:String(r.text || ''), at:Date.parse(r.created_at) || Date.now(), sent:1, mine }; saveRes(); if(!mine) TAKEN.add(nm); }
         else if(res && !res.sent) send();
       }
     }catch(e){}
@@ -76,8 +87,8 @@ function pullMine(){
   return checking;
 }
 async function pullWall(){
-  try{ wall = ours(await api(`place_talk?select=id,target,user_id,name,cohort,text,created_at&target=eq.${encodeURIComponent(TARGET)}&order=created_at.desc&limit=40`)).slice(0, 40); }catch(e){}
-  paintWall();
+  try{ wall = ours(await api(`place_talk?select=id,target,user_id,name,cohort,text,created_at&target=eq.${encodeURIComponent(TARGET)}&order=created_at.desc&limit=100`)); }catch(e){}
+  paintWall(); if(!$('pp-enter').hidden) enterList();   // 받은 이름은 입장 화면에서 잠근다
 }
 async function send(){
   if(!res || res.sent || !me) return;
@@ -94,7 +105,7 @@ async function claim(){
   else r = await rpc('gift_claim', { p_name:me.name, p_token:tok(true) });
   if(!r || r.soldout || !KINDS[r.kind]){ res = { id:'', soldout:1, sent:1 }; return res; }   // 저장하지 않는다 — 다음에 열면 다시 묻는다
   const k = KINDS[r.kind]; res = { id:k.id, text:`${k.id}|${label(k)}`, at:Date.now(), sent:r.mine ? 0 : 1, mine:!!r.mine }; saveRes();
-  if(r.mine) send(); return res;
+  if(r.mine) send(); else TAKEN.add(me.name); return res;
 }
 /* ── 그림 — 낙산 해변 클레이 일러스트(img/pepero/*.webp). autumn-open: 가을 낙산의 친구들(첫 장면) · bg: 빈 해변 · tug: 물속 단면 · gift: 선물상자 · p1~p4: 경품 스티커 ── */
 const PIC = {}, PICP = {}, ALL = ['autumn-open', 'bg', 'tug', 'gift', 'p1', 'p2', 'ice', 'logo-w', 'ending-center', 'ride', 'gather'];
@@ -551,16 +562,32 @@ function show(id){ ['pp-enter', 'pp-look', 'pp-play'].forEach(k=>{ $(k).hidden =
 /* 1) 이름 찾기 */
 function paintList(){
   const q = $('pp-q').value.trim().replace(/\s+/g, ''), list = PEOPLE.filter(p=>!q || p.name.toLowerCase().includes(q.toLowerCase()));
-  const chip = p => `<button type="button" class="pp-name" data-name="${esc(p.name)}">${esc(p.name)}${p.staff ? `<small>${esc(p.cohort)}</small>` : ''}</button>`;
+  const chip = p => { const n = esc(p.name), role = p.staff ? `<small>${esc(p.cohort)}</small>` : '';
+    if(mineHere(p.name)) return `<button type="button" class="pp-name mine" data-name="${n}" data-mine="${n}">${n}${role}<em>🎁 내 선물 다시 보기</em></button>`;
+    if(takenBy(p.name)) return `<button type="button" class="pp-name off" data-name="${n}" disabled aria-disabled="true" aria-label="${n} — 이미 받았어요">${n}${role}<em>받음 ✓</em></button>`;
+    return `<button type="button" class="pp-name" data-name="${n}">${n}${role}</button>`; };
   const grp = (t, ps) => ps.length ? `<h3 class="pp-grp">${t}</h3><div class="pp-chips">${ps.map(chip).join('')}</div>` : '';
   $('pp-list').innerHTML = list.length ? grp('양양서핑학교 6기', list.filter(p=>!p.staff)) + grp('코치·매니저', list.filter(p=>p.staff))
     : '<p class="pep-note">명단에 없는 이름이에요 · 띄어쓰기 없이 다시 찾아 주세요</p>';
 }
-function enter(){
-  show('pp-enter'); paintList();
-  const again = $('pp-again'); again.hidden = !me;
-  if(me) again.innerHTML = `<button type="button" class="btn pep-big" data-pagain>${esc(me.name)} 님으로 계속하기 ›</button>`;
+function enter(){ show('pp-enter'); enterList(); pullWall(); }   // 돌아올 때마다 받은 이름을 새로 읽는다
+function enterList(){
+  paintList();
+  const mine = PEOPLE.filter(p=>mineHere(p.name)), top = $('pp-mine');
+  top.hidden = mine.length !== 1; top.innerHTML = mine.length === 1 ? `<button type="button" class="btn pep-big pep-open" data-mine="${esc(mine[0].name)}">🎁 ${esc(mine[0].name)}님 선물 다시 보기</button>` : '';
+  const again = $('pp-again'), show_ = !!me && !mineHere(me.name) && !takenBy(me.name); again.hidden = !show_;
+  again.innerHTML = show_ ? `<button type="button" class="btn pep-big" data-pagain>${esc(me.name)} 님으로 계속하기 ›</button>` : '';
 }
+/* 내 선물 다시 보기 — 이야기를 건너뛰고 결과 화면으로. 새로 뽑지 않는다(gift_claim 안 부름) */
+function again(n){
+  const p = PEOPLE.find(x=>x.name === n); if(!p) return;
+  me = { name:p.name, cohort:p.cohort, g:MEN.includes(p.name) ? 'm' : 'f', li:me && me.name === n ? me.li : 0 }; saveMe(); loadRes();
+  if(!res || !res.id){ const row = wall.find(r=>r.name === n); if(!row) return pickName(n);
+    res = { id:String(row.text || '').split('|')[0], text:String(row.text || ''), at:Date.parse(row.created_at) || Date.now(), sent:1, mine:true }; saveRes(); }   // 열쇠가 있는 이름 — 받은 종류는 서버 줄에서, 진짜 내 것인지는 gift_open 이 열쇠로 확인한다
+  play(true);
+}
+/* 이야기 처음부터 다시 보기 — 아는 선물로 다시 돌린다(새로 안 뽑음) */
+function replay(){ if(!S || !res || !res.id) return; S = newS(); S.re = 1; go(S, 'walk'); if(X) X.prize = prizeOf(res); sfx(cheer); loadCrew(); ctl(); scrollTo(0, 0); }
 /* 2) 캐릭터 고르기 — 남자/여자 탭 */
 let lookG = 'f', lookI = 0;
 const charSrc = (id, pose) => `img/pepero/${id}-${pose}.webp`;
@@ -582,14 +609,15 @@ function ctl(){
   const ph = S ? S.ph : 'intro';
   if(res && res.soldout){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>앗</span><b>선물이 모두 나갔어요</b><small>문제가 있으면 오웬에게 알려 주세요.</small></div></div>'; return; }
   if(['prize', 'alone', 'gather', 'ride', 'together'].includes(ph)){ const p = prizeOf(res); hint.textContent = ph === 'prize' ? (p ? p.short + ' 당첨!' : '') : (CAP[ph] || [])[1] || ''; el.innerHTML = '<button type="button" class="btn sm ghost" data-pskip>다음 장면 ›</button>'; return; }
-  if(res && ph !== 'pop'){
+  if(res && ph !== 'pop' && (!S || !S.re || ph === 'reveal')){
     const p = prizeOf(res); hint.textContent = '';
     el.innerHTML = `<div class="pep-res"><img src="img/pepero/${stickerOf(p)}.webp" alt="" width="76" height="76" onerror="this.hidden=true"><div><span>${esc(p.rank || '선물')}</span><b>${esc(p.n)}</b><small>${res.mine === false ? '이 이름은 다른 기기에서 이미 받았어요.<br>받은 폰에서 열어 주세요 — 문제가 있으면 오웬에게 알려 주세요.' : '아래 버튼으로 기프티콘을 열어<br>매장에서 보여 주세요.'}</small></div></div>
       <div class="pp-letter"><p>우리가 함께 나눈 추억, 가을 바다에서 시작해서 어느새 겨울 바다가 되어 가요.</p><b>작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요.</b><p>겨울 바다에서도, 다시 만나요 🌊</p><small>양양서핑학교 가을학기 6기<br>서프 버디 ${esc(me.name)} · 2026.11.11 낙산 해변</small></div>
       ${res.mine === false ? '' : '<button type="button" class="btn pep-big pep-open" data-popen>🎁 당첨된 기프티콘 열기</button>'}
       <button type="button" class="btn pep-big pep-brag" data-pimgsh>📸 서프 버디에게 추억 나누기</button>
       <div class="pep-share"><button type="button" class="btn sm" data-pimg>💾 추억 사진 저장</button><button type="button" class="btn sm mint" data-pvid>🎬 스토리 영상 만들기</button></div><div id="pep-vid" class="pep-vid"></div>
-      <small class="pep-note">공유 창에서 Instagram › 스토리를 고르면 돼요</small>`;
+      <small class="pep-note">공유 창에서 Instagram › 스토리를 고르면 돼요</small>
+      <button type="button" class="btn sm ghost" data-preplay>↺ 이야기 처음부터 다시 보기</button>`;
     paintVid(); return;
   }
   if(ph === 'intro'){
@@ -610,7 +638,7 @@ function ctl(){
 }
 function paintWall(){
   const el = $('pep-wall'); if(!el) return;
-  el.innerHTML = `<h4>🎉 오늘 당첨 소식</h4>${wall.length ? wall.map(r=>`<div class="pep-w${me && r.name === me.name ? ' me' : ''}"><b>${esc(String(r.name || '').slice(0, 20))}</b><span>${esc(seen(r).slice(0, 40))}</span></div>`).join('') : '<p class="pep-note">아직 소식이 없어요 · 첫 선물을 건져 보세요</p>'}`;
+  el.innerHTML = `<h4>🎉 오늘 당첨 소식</h4>${wall.length ? wall.slice(0, 40).map(r=>`<div class="pep-w${me && r.name === me.name ? ' me' : ''}"><b>${esc(String(r.name || '').slice(0, 20))}</b><span>${esc(seen(r).slice(0, 40))}</span></div>`).join('') : '<p class="pep-note">아직 소식이 없어요 · 첫 선물을 건져 보세요</p>'}`;
 }
 function paintVid(){
   const el = $('pep-vid'); if(!el) return;
@@ -650,7 +678,7 @@ function sizeCv(){
   const g = cv.getContext('2d'); g.setTransform(w / W, 0, 0, w / W, 0, 0); g.imageSmoothingQuality = 'high'; g.__gp = null;   // 기본(low)은 줄여 그릴 때 가장자리가 계단져 보인다
   X = assets();
 }
-async function play(){
+async function play(direct){
   show('pp-play'); $('pp-me').textContent = `서프 버디 ${me.name}${me.cohort !== '6기' ? ' · ' + me.cohort : ''}`;
   S = newS(); if(res){ go(S, 'reveal'); S.k = 1; }
   sizeCv(); ctl(); paintWall();
@@ -658,7 +686,7 @@ async function play(){
   loadImgs().then(()=>{ if(X) Object.assign(X, { pad:imgs.pad, sit:imgs.sit, gift:imgs.gift, alone:imgs.alone, walk:imgs.walk }); });
   loadCrew();
   pullWall();
-  await pullMine();
+  if(!direct) await pullMine();   // 다시 보기는 서버에 묻지 않는다
   if(res && S.ph === 'intro'){ go(S, 'reveal'); S.k = 1; X.prize = prizeOf(res); }
   ctl();
 }
@@ -751,6 +779,8 @@ async function onClick(e){
   const t = e.target.closest('button, canvas'); if(!t || t.disabled) return;
   if(t.id === 'pep-cv') return act();
   if(t.id === 'pp-snd') return music(!SND.on);
+  if(t.matches('[data-mine]')) return again(t.dataset.mine);
+  if(t.matches('[data-preplay]')) return replay();
   if(t.matches('[data-name]')) return pickName(t.dataset.name);
   if(t.matches('[data-pagain]')) return pickName(me.name);
   if(t.matches('[data-pl]')){ lookI = +t.dataset.pl; return paintLook(); }
@@ -817,8 +847,8 @@ function boot(){
   let again = false; try{ again = localStorage.getItem(LSND) === '1'; }catch(e){}
   paintSnd(); if(again){ const b = $('pp-snd'); if(b) b.textContent = '🔊';   // 켜 두었으면 첫 터치에 다시(자동 재생은 막혀 있다)
     addEventListener('pointerdown', e=>{ if(!SND.on && !e.target.closest('#pp-snd')) music(true, true); }, { once:true, capture:true }); }
-  want(['autumn-open', 'bg']); loadMe(); enter(); pullWall();
+  want(['autumn-open', 'bg']); loadMe(); enter();
 }
 boot();
-window._pepero = { next:()=>next(), KINDS, LOOKS, png, video, audio:{ bar, score, BEAT, REEL_END }, music, walk, paddle, pull, get res(){ return res; }, get S(){ return S; }, get wall(){ return wall; }, get me(){ return me; } };
+window._pepero = { next:()=>next(), replay:()=>replay(), KINDS, LOOKS, png, video, audio:{ bar, score, BEAT, REEL_END }, music, walk, paddle, pull, get res(){ return res; }, get S(){ return S; }, get wall(){ return wall; }, get me(){ return me; } };
 })();

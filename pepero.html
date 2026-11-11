@@ -41,6 +41,10 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
 .pp-name:active{ transform:translateY(3px) scale(.97) }
 .pp-name small{ margin-left:5px; font-size:11px; font-weight:900; background:#C9B3FF; border-radius:999px; padding:1px 7px; vertical-align:2px }
 .pp-again{ margin-top:14px; display:flex; justify-content:center }
+.pp-mine{ margin:0 0 14px; display:flex; justify-content:center }
+.pp-name em{ display:inline-block; margin-left:6px; font-style:normal; font-size:11px; font-weight:900; border-radius:999px; padding:1px 8px; vertical-align:2px }
+.pp-name.off{ cursor:default; opacity:.5; filter:grayscale(1); box-shadow:none } .pp-name.off em{ background:#E4DDEA; color:#5E5068 } .pp-name.off:active{ transform:none }
+.pp-name.mine{ background:#E6FBF2; box-shadow:inset 0 0 0 2px #7FDDB6, 0 4px 0 #4FB98E } .pp-name.mine em{ background:#7FDDB6; color:var(--ink) }
 .pp-tabs{ display:flex; gap:6px; background:#F3E6CF; border-radius:18px; padding:5px; margin:6px 0 14px }
 .pp-tabs button{ flex:1; font:inherit; font-weight:900; font-size:15px; border:0; border-radius:14px; min-height:46px; background:transparent; color:var(--ink2); cursor:pointer }
 .pp-tabs button[aria-selected="true"]{ background:#fff; color:var(--ink); box-shadow:inset 0 3px 0 #fff, 0 3px 0 #E2CFAE }
@@ -111,6 +115,7 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
   <section id="pp-enter">
     <div class="pp-hero" role="img" aria-label="아침 해가 뜨는 낙산 해변, 의상대와 모래에 꽂힌 서프보드 네 개"><div><img class="pp-logo" src="img/pepero/logo-w.webp" alt="양양서핑학교" width="151" height="40"><small>11.11 · 양양서핑학교 서프 버디</small><h1>낙산 해변<br>빼빼로 선물</h1></div></div>
     <div class="pp-card">
+      <div id="pp-mine" class="pp-mine" hidden></div>
       <h2>내 이름 찾기</h2>
       <p>나는 누구일까요? 명단에서 내 이름을 눌러 주세요. 한 이름에 한 번, 꽝은 없어요.</p>
       <input id="pp-q" class="pp-q" type="search" placeholder="이름을 적어 보세요" aria-label="이름 찾기" autocomplete="off" enterkeyhint="search">

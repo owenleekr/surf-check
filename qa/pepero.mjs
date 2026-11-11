@@ -141,23 +141,36 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   ok(!dr.some(d=>/^data:/.test(d.src)), '공유 그림·영상에 기프티콘(data:) 그림을 그리지 않음');
   const tx = await S(()=>window.__texts);
   ok(tx.includes('2026.11.11 낙산 해변') && !tx.some(t=>/owenai|surf\.|에스에이치테크/.test(t)), '포스터·영상 끝줄은 「2026.11.11 낙산 해변」만(주소·꼬리말 없음)');
-  /* 다시 열기 → 이름 기억, 같은 결과, 새로 안 보냄 */
+  /* 다시 열기 → 이 기기가 받은 이름은 「🎁 내 선물 다시 보기」 → 이야기 없이 결과, gift_claim 다시 안 부름 */
   await p.reload({ waitUntil:'networkidle2' }); await sleep(500);
-  ok(await S(()=>!document.getElementById('pp-again').hidden && /장진혁/.test(document.getElementById('pp-again').textContent)), '다시 열면 「장진혁 님으로 계속하기」');
-  await S(()=>document.querySelector('[data-pagain]').click()); await sleep(300);
-  ok(await S(()=>document.querySelector('.pp-look.on')?.dataset.pl === '2'), '고른 캐릭터 기억');
-  await S(()=>document.querySelector('[data-plook]').click()); await sleep(900);
-  const again = await S(()=>({ ph:_pepero.S.ph, go:!!document.querySelector('[data-pgo]'), card:document.querySelector('.pep-res')?.textContent || '' }));
-  ok(again.ph === 'reveal' && !again.go && /베스킨라빈스/.test(again.card) && rpcs.filter(x=>x[0] === 'gift_claim').length === 1, '다시 열면 같은 선물(다시 안 받음)');
+  const e2 = await S(()=>{ const top = document.getElementById('pp-mine'), c = document.querySelector('[data-name="장진혁"]'); return { top:top.hidden ? '' : top.textContent, chip:c.textContent, mine:c.hasAttribute('data-mine'), dis:c.disabled, again:document.getElementById('pp-again').hidden }; });
+  ok(/장진혁님 선물 다시 보기/.test(e2.top) && e2.mine && !e2.dis && /내 선물 다시 보기/.test(e2.chip) && e2.again, '다시 열면 위에 「🎁 장진혁님 선물 다시 보기」 + 칩도 다시 보기(잠기지 않음): ' + JSON.stringify(e2));
+  await shot(p, 'pepero-8-enter-mine');
+  await S(()=>document.querySelector('#pp-mine [data-mine]').click()); await sleep(900);
+  const again = await S(()=>({ ph:_pepero.S.ph, look:!document.getElementById('pp-look').hidden, li:_pepero.me.li, card:document.querySelector('.pep-res')?.textContent || '', open:!!document.querySelector('[data-popen]'), re:!!document.querySelector('[data-preplay]'), letter:!!document.querySelector('.pp-letter'), share:!!document.querySelector('[data-pimgsh]') }));
+  ok(again.ph === 'reveal' && !again.look && again.li === 2 && /베스킨라빈스/.test(again.card) && again.open && again.re && again.letter && again.share && rpcs.filter(x=>x[0] === 'gift_claim').length === 1, '다시 보기 → 바로 결과(편지·기프티콘 열기·공유·처음부터 다시 보기), 고른 캐릭터 그대로, gift_claim 다시 안 부름: ' + JSON.stringify({ ...again, card:'' }));
+  await S(()=>document.querySelector('[data-popen]').click()); await sleep(500);
+  const go2 = rpcs.filter(x=>x[0] === 'gift_open');
+  ok(go2.length === 2 && go2[1][1].p_token === cl[0][1].p_token && go2[1][1].p_name === '장진혁', '다시 보기에서 기프티콘 열기 — 저장된 열쇠로 gift_open');
+  await S(()=>document.querySelector('[data-pgclose]').click()); await sleep(200);
+  await S(()=>document.querySelector('[data-preplay]').click()); await sleep(400);
+  ok(await S(()=>_pepero.S.ph === 'walk' && !document.querySelector('.pep-res')), '「이야기 처음부터 다시 보기」 → 가을 장면부터(결과 카드 숨김)');
+  await S(()=>_pepero.walk()); await sleep(400); await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
+  ok(await S(()=>_pepero.S.ph === 'tug' && !!document.querySelector('[data-ppull]')), '다시 보기 이야기에서도 리시 당기기 버튼');
+  await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
+  for(let i = 0; i < 6; i++){ await S(()=>_pepero.next()); await sleep(150); }
+  ok(await S(()=>_pepero.S.ph === 'reveal' && /베스킨라빈스/.test(document.querySelector('.pep-res')?.textContent || '')) && rpcs.filter(x=>x[0] === 'gift_claim').length === 1, '다시 본 이야기 끝 — 같은 선물, gift_claim 여전히 한 번');
   ok(posts.filter(x=>x[0].startsWith('place_talk')).length === 1, '다시 열어도 새로 안 보냄');
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
 
 /* 2) 다른 기기 — 서버에 그 이름 줄이 있으면(앱에서 뽑은 줄도) 그 결과만 */
 { const mine = { id:'pepero26:김도훈', target:'pepero:2026', user_id:'roster:김도훈', name:'김도훈', cohort:'6기', text:'pepero|🍫 빼빼로', created_at:now };
-  const { b, errs, posts, rpcs, S, sleep } = await page([...talk, mine]);
-  await pickName(S, sleep, '김도훈'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(1500);
-  const r = await S(()=>({ ph:_pepero.S?.ph, go:!!document.querySelector('[data-pgo]'), open:!!document.querySelector('[data-popen]'), card:document.querySelector('.pep-res')?.textContent || '' }));
-  ok(r.ph === 'reveal' && !r.go && !r.open && /GS25 빼빼로/.test(r.card) && /다른 기기에서 이미 받았어요/.test(r.card) && !rpcs.length, '다른 기기에서 받은 이름 → 결과만, 열기 버튼 없음, 서버에 안 물음: ' + r.card.replace(/\s+/g, ' '));
+  const { b, p, errs, posts, rpcs, S, sleep } = await page([...talk, mine]);
+  const c = await S(()=>{ const e = document.querySelector('[data-name="김도훈"]'), f = document.querySelector('[data-name="김태은"]'); return { dis:e.disabled, aria:e.getAttribute('aria-disabled'), t:e.textContent, mine:e.hasAttribute('data-mine'), other:!f.disabled, top:document.getElementById('pp-mine').hidden }; });
+  ok(c.dis && c.aria === 'true' && /받음 ✓/.test(c.t) && !c.mine && c.other && c.top, '서버에 받은 줄이 있는 이름 → 회색·눌리지 않음·「받음 ✓」, 다른 이름은 그대로: ' + JSON.stringify(c));
+  await S(()=>document.querySelector('[data-name="김도훈"]').click()); await sleep(300);
+  ok(await S(()=>document.getElementById('pp-look').hidden && !document.getElementById('pp-enter').hidden) && !rpcs.length, '눌러도 안 열리고 서버에 안 물음');
+  await shot(p, 'pepero-9-enter-taken');
   ok(!posts.some(x=>x[0].startsWith('place_talk')), '서버 기록이 있으면 안 보냄');
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
 
@@ -201,6 +214,9 @@ for(const w of [320, 360, 390]){
   ok(await S(()=>[...document.querySelectorAll('.pp-look img')].every(i=>/\/f\d-gift/.test(i.getAttribute('src')))), '김태은 → 여자 캐릭터 넷'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(800); await playThrough(S, sleep);
   const r = await S(()=>({ card:document.querySelector('.pep-res')?.textContent || '', open:!!document.querySelector('[data-popen]') }));
   ok(/다른 기기에서 이미 받았어요/.test(r.card) && !r.open && !posts.some(x=>x[0].startsWith('place_talk')), 'mine:false → 안내, 열기 없음, 소식 안 씀');
+  await S(()=>document.querySelector('[data-pback]:not([hidden])') && [...document.querySelectorAll('[data-pback]')].find(x=>x.offsetParent).click()); await sleep(400);
+  const t5 = await S(()=>{ const e = document.querySelector('[data-name="김태은"]'); return { dis:e.disabled, t:e.textContent, again:document.getElementById('pp-again').hidden, top:document.getElementById('pp-mine').hidden }; });
+  ok(t5.dis && /받음 ✓/.test(t5.t) && t5.again && t5.top, 'mine:false 인 이름 → 입장 화면에서 잠김(다시 보기 아님): ' + JSON.stringify(t5));
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
 { const { b, errs, posts, S, sleep } = await page(talk, { rpc:{ gift_claim:()=>[200, { kind:null, soldout:true }] } });
   await pickName(S, sleep, '김태은'); await S(()=>document.querySelector('[data-plook]').click()); await sleep(800); await playThrough(S, sleep);
@@ -225,6 +241,12 @@ for(const w of [320, 360, 390]){
   await S(()=>document.querySelector('[data-popen]').click()); await sleep(400);
   ok(await S(()=>!document.getElementById('pp-gc').hidden && /^data:image\/png/.test(document.querySelector('#pp-gc img').src)), '시연: 예시 카드(가짜)');
   await S(()=>document.querySelector('[data-pgclose]').click());
+  await S(()=>[...document.querySelectorAll('[data-pback]')].find(x=>x.offsetParent).click()); await sleep(400);
+  const d6 = await S(()=>({ top:document.getElementById('pp-mine').textContent, mine:document.querySelector('[data-name="김도훈"]').hasAttribute('data-mine'), off:document.querySelectorAll('.pp-name.off').length }));
+  ok(/김도훈님 선물 다시 보기/.test(d6.top) && d6.mine && d6.off === 0, '시연: 뽑은 이름은 다시 보기(이 화면에서만), 잠긴 이름 없음: ' + JSON.stringify(d6));
+  await shot(p, 'pepero-10-demo-enter');
+  await S(()=>document.querySelector('#pp-mine [data-mine]').click()); await sleep(800);
+  ok(await S(()=>_pepero.S.ph === 'reveal' && !!document.querySelector('[data-preplay]')), '시연: 다시 보기 → 바로 결과');
   ok(!posts.length && !rpcs.length && await S(()=>!Object.keys(localStorage).some(k=>/pepero/.test(k))), '시연: 서버(gift_claim·gift_open 포함)·기기에 아무것도 안 남김');
   await p.reload({ waitUntil:'networkidle2' }); await sleep(400);
   ok(await S(()=>document.getElementById('pp-again').hidden), '시연: 새로 열면 처음부터');
