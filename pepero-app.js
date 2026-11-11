@@ -10,14 +10,10 @@
 /* 이벤트 기간(한국 시간) — 도전이 열리는 때. 바꾸려면 여기와 pepero.js(앱 띠) 둘 다 */
 const START = Date.parse('2026-11-11T00:00:00+09:00'), END = Date.parse('2026-11-13T00:00:00+09:00');
 const TARGET = 'pepero:2026', LS = 'lineup.pepero2026:', LSME = 'lineup.pepero.me';
-/* 경품 — 이름·이모지·확률(w, 서로의 비율) 자유롭게 고쳐도 된다. 꽝 없음.
-   ⚠️ 아래 값은 자리표시 — 실제 준비한 경품에 맞게 고칠 것(id 는 이미 뽑힌 기록과 맞추는 열쇠라 바꾸지 말 것) */
-const PRIZES = [
-  { id:'p1', rank:'1등',   ic:'🎁', n:'빼빼로 한 상자',          w:5 },
-  { id:'p2', rank:'2등',   ic:'🍫', n:'빼빼로 1개',              w:30 },
-  { id:'p3', rank:'3등',   ic:'☕', n:'다음 서핑 날 커피 한 잔', w:15 },
-  { id:'p4', rank:'참여상', ic:'🐚', n:'참여 선물',               w:50 },
-];
+/* 경품 — 24명에게 기프티콘 하나씩(GS25 빼빼로 15 · 배스킨라빈스 싱글레귤러 9). 누가 무엇을 받을지는 서버가 정한다(supabase-gift.sql 의 gift_claim).
+   기프티콘 그림은 서버에만 있고(gift_open, 받은 폰의 열쇠가 맞을 때만) 이 기기에도 공유 그림에도 남기지 않는다 */
+const KINDS = { pepero:{ id:'pepero', rank:'빼빼로', ic:'🍫', n:'GS25 빼빼로 기프티콘', short:'빼빼로', pic:'p2' },
+  br:{ id:'br', rank:'아이스크림', ic:'🍦', n:'베스킨라빈스 싱글레귤러 기프티콘', short:'베스킨라빈스 아이스크림', pic:'ice' } };
 /* 캐릭터 — 남자/여자 탭에서 넷 중 하나(이름으로 성별을 짐작하지 않는다 — 본인이 고른다).
    클레이 캐릭터 그림(GPT) 한 사람에 세 자세: pad 엎드려 패들 · sit 보드에 앉아 기다리기 · gift 선물상자 들고 서기 → img/pepero/<id>-<자세>.webp */
 const LOOKS = { m:[ { id:'m1', ko:'웻슈트' }, { id:'m2', ko:'버킷햇' }, { id:'m3', ko:'곱슬머리' }, { id:'m4', ko:'금발 곱슬' } ],
@@ -31,7 +27,7 @@ const store = { get:k => DEMO ? (MEM[k] ?? null) : localStorage.getItem(k), set:
 const live = () => { const n = Date.now(); return DEMO || (n >= START && n < END); };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c=>({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
-const label = p => `${p.ic} ${p.rank} ${p.n}`;
+const label = p => `${p.ic} ${p.short}`;
 const seen = r => String(r && r.text || '').split('|').slice(1).join('|') || String(r && r.text || '');
 function say(t){ const el = $('pp-toast'); if(!el) return; el.textContent = t; el.hidden = false; clearTimeout(say.t); say.t = setTimeout(()=>{ el.hidden = true; }, 2600); }
 let me = null, res = null, wall = [], checking = null, imgs = {}, cv = null, raf = 0, S = null, vid = null, X = null, last = 0;
@@ -48,16 +44,15 @@ function saveMe(){ try{ store.set(LSME, JSON.stringify(me)); }catch(e){} }
 async function api(path, opt){
   const C = window.SURF_CONFIG || {}, sig = typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(opt ? 20000 : 12000) : undefined;
   const r = await fetch(`${C.supabaseUrl}/rest/v1/${path}`, { headers:{ apikey:C.supabaseKey, Authorization:'Bearer ' + C.supabaseKey, 'Content-Type':'application/json', Prefer:'return=minimal' }, signal:sig, ...opt });
-  if(!r.ok) throw Object.assign(new Error('HTTP ' + r.status), { status:r.status });
+  if(!r.ok){ let m = 'HTTP ' + r.status; try{ const b = await r.json(); if(b && b.message) m = b.message; }catch(e){} throw Object.assign(new Error(m), { status:r.status }); }
   return r.status === 204 || r.status === 201 ? null : r.json().catch(()=>null);
 }
 const ours = r => (Array.isArray(r) ? r : []).filter(x=>x && x.target === TARGET);
-function pick(){
-  const tot = PRIZES.reduce((a, p)=>a + p.w, 0), u = crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296 * tot;
-  let acc = 0; for(const p of PRIZES){ acc += p.w; if(u < acc) return p; }
-  return PRIZES[PRIZES.length - 1];
-}
-const prizeOf = r => r && (PRIZES.find(p=>p.id === r.id) || { id:r.id, rank:'', ic:'🎁', n:seen(r).slice(0, 30) || '선물' });
+const rpc = (fn, body) => api('rpc/' + fn, { method:'POST', body:JSON.stringify(body) });
+/* 이 이름의 열쇠 — 처음 받을 때 이 기기에서 만든 32자. 서버는 이 열쇠로 「받은 폰」을 알아본다 */
+function tok(make){ const k = 'lineup.pepero.tok:' + me.name; let v = null; try{ v = localStorage.getItem(k); }catch(e){}
+  if(!v && make){ v = [...crypto.getRandomValues(new Uint8Array(16))].map(b=>b.toString(16).padStart(2, '0')).join(''); try{ localStorage.setItem(k, v); }catch(e){} } return v; }
+const prizeOf = r => r && !r.soldout && (KINDS[r.id] || { id:r.id, rank:'선물', ic:'🎁', n:seen(r).slice(0, 30) || '선물', short:seen(r).slice(0, 20) || '선물' });
 function loadRes(){ res = null; try{ const v = JSON.parse(store.get(LS + me.name) || 'null'); if(v && typeof v.id === 'string') res = v; }catch(e){} }
 function saveRes(){ try{ store.set(LS + me.name, JSON.stringify(res)); }catch(e){} }
 /* 이 이름으로 이미 뽑았나 — 앱에서 뽑은 줄(user_id 가 계정)도 이름으로 찾는다 */
@@ -68,7 +63,9 @@ function pullMine(){
   checking = (async ()=>{
     try{ const r = ours(await api(`place_talk?select=id,target,user_id,name,text,created_at&target=eq.${encodeURIComponent(TARGET)}&name=eq.${encodeURIComponent(nm)}&order=created_at.asc&limit=5`)).find(x=>x.name === nm);
       if(me && me.name === nm){
-        if(r){ res = { id:String(r.text || '').split('|')[0], text:String(r.text || ''), at:Date.parse(r.created_at) || Date.now(), sent:1 }; saveRes(); }
+        if(r){ const t = tok(false); let mine = false;   // 이 기기에 열쇠가 있을 때만 서버에 「내 것」인지 묻는다(이미 받은 이름이라 새로 배정되지 않는다)
+          if(t){ try{ mine = !!(await rpc('gift_claim', { p_name:nm, p_token:t })).mine; }catch(e){ mine = !!(res && res.mine); } }
+          res = { id:String(r.text || '').split('|')[0], text:String(r.text || ''), at:Date.parse(r.created_at) || Date.now(), sent:1, mine }; saveRes(); }
         else if(res && !res.sent) send();
       }
     }catch(e){}
@@ -87,17 +84,21 @@ async function send(){
   try{ await api('place_talk', { method:'POST', body:JSON.stringify(row) }); res.sent = 1; saveRes(); wall = [row, ...wall.filter(r=>r.id !== row.id)].slice(0, 40); paintWall(); }
   catch(e){ if(e && e.status === 409){ res.sent = 1; await pullMine(); ctl(); if(X) X.prize = prizeOf(res); } }   // 같은 이름이 이미 뽑았다 — 서버 결과로. 못 보냈으면 다음에 열 때 다시
 }
-function claim(){
-  if(res) return prizeOf(res);
-  const p = pick(); res = { id:p.id, text:`${p.id}|${label(p)}`, at:Date.now(), sent:0 }; saveRes();
-  send(); return p;
+/* 선물 받기 — 서버가 남은 기프티콘 중 하나를 이 이름에 묶는다. 시연은 서버 없이 이 화면에서만 */
+async function claim(){
+  if(res) return res;
+  let r;
+  if(DEMO) r = { kind:crypto.getRandomValues(new Uint8Array(1))[0] % 24 < 15 ? 'pepero' : 'br', mine:true };
+  else r = await rpc('gift_claim', { p_name:me.name, p_token:tok(true) });
+  if(!r || r.soldout || !KINDS[r.kind]){ res = { id:'', soldout:1, sent:1 }; return res; }   // 저장하지 않는다 — 다음에 열면 다시 묻는다
+  const k = KINDS[r.kind]; res = { id:k.id, text:`${k.id}|${label(k)}`, at:Date.now(), sent:r.mine ? 0 : 1, mine:!!r.mine }; saveRes();
+  if(r.mine) send(); return res;
 }
-
 /* ── 그림 — 낙산 해변 클레이 일러스트(img/pepero/*.webp). bg: 해변(의상대·보드 넷 = 1111) · tug: 물속 단면 · gift: 선물상자 · p1~p4: 경품 스티커 ── */
-const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p1', 'p2', 'p3', 'p4'];
+const PIC = {}, PICP = {}, ALL = ['bg', 'tug', 'gift', 'p2', 'p4', 'ice'];
 function want(ns){ return Promise.all(ns.map(n=>PICP[n] || (PICP[n] = new Promise(ok=>{ const im = new Image();
   im.onload = ()=>{ PIC[n] = im; ok(); }; im.onerror = ()=>{ delete PICP[n]; ok(); }; im.src = `img/pepero/${n}.webp`; })))); }   // 못 받으면 다음에 다시 — 그동안은 색으로 그린다
-const stickerOf = p => p && PRIZES.some(x=>x.id === p.id) ? p.id : 'gift';
+const stickerOf = p => p && KINDS[p.id] ? KINDS[p.id].pic : 'gift';
 /* 흐린 배경(피사계 심도) — 작게 줄였다 늘려서 만든다(캔버스 filter 는 iOS 에서 안 먹는다). 한 번만 */
 function soft(n){
   const im = PIC[n]; if(!im) return null; if(PIC[n + '~']) return PIC[n + '~'];
@@ -190,11 +191,28 @@ function rider(g, s, X, t){
       g.beginPath(); g.moveTo(x - 420 * (.6 + a), yy); g.quadraticCurveTo(x, yy - 22 - a * 20, x + 420 * (.6 + a), yy); g.stroke(); } g.globalAlpha = 1;
   }
   const w = (sit ? 380 : 500) * sc, h = im ? w * im.height / im.width : 0;
-  g.fillStyle = 'rgba(16,70,100,.24)'; g.beginPath(); g.ellipse(x, y - 4, w * .46, 20 * sc, 0, 0, 7); g.fill();
+  if(!sit){ g.fillStyle = 'rgba(16,70,100,.24)'; g.beginPath(); g.ellipse(x, y - 4, w * .46, 20 * sc, 0, 0, 7); g.fill(); }
   s.hx = x + w * .42; s.hy = y - h * .12;   // 손 끝 — 물보라가 여기서
   g.save(); g.translate(x, y); g.rotate(ang);
-  if(im) g.drawImage(im, -w / 2, -h, w, h);
+  if(im){ g.drawImage(sit ? sunk(im) : im, -w / 2, -h, w, h); if(sit) ripple(g, 0, 0, w, h, t); }
   else{ board(g, 0, -20 * sc, 430 * sc, 52 * sc, 0); g.textAlign = 'center'; g.font = `${Math.round(200 * sc)}px ${FONT}`; g.fillText('🏄', 0, -40); }
+  g.restore();
+}
+/* 물에 잠긴 듯 — 앉은 그림의 아래쪽(다리·보드 밑)을 물빛으로 물들이며 지워 배경 바다에 스며들게 하고, 물 위에 잔물결 고리를 얹는다 */
+const WL = .64;   // 물높이 — 그림 위에서부터 64%
+function sunk(im){
+  if(!im) return null; if(im.__sunk) return im.__sunk;
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'), h = im.height;
+  g.drawImage(im, 0, 0);
+  g.globalCompositeOperation = 'source-atop'; const tint = g.createLinearGradient(0, h * WL - 6, 0, h); tint.addColorStop(0, 'rgba(70,190,205,0)'); tint.addColorStop(.08, 'rgba(70,190,205,.55)'); tint.addColorStop(1, 'rgba(40,150,190,.7)'); g.fillStyle = tint; g.fillRect(0, 0, c.width, h);
+  g.globalCompositeOperation = 'destination-out'; const er = g.createLinearGradient(0, h * WL - 4, 0, h); er.addColorStop(0, 'rgba(0,0,0,0)'); er.addColorStop(.12, 'rgba(0,0,0,.55)'); er.addColorStop(.6, 'rgba(0,0,0,.9)'); er.addColorStop(1, 'rgba(0,0,0,1)'); g.fillStyle = er; g.fillRect(0, 0, c.width, h);
+  return im.__sunk = c;
+}
+function ripple(g, bx, by, w, h, t){   // bx·by = 그림 가운데 아래
+  const y = by - h * (1 - WL), rp = (t * .5) % 1;
+  g.save(); g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = Math.max(2, w * .014); g.lineCap = 'round';
+  g.beginPath(); g.ellipse(bx, y, w * .3, h * .03, 0, .15, Math.PI - .15); g.stroke();
+  g.globalAlpha = (1 - rp) * .6; g.beginPath(); g.ellipse(bx, y, w * (.34 + rp * .22), h * (.034 + rp * .02), 0, 0, 7); g.stroke();
   g.restore();
 }
 /* 발밑 단면 — 들어설 때 뒤로 빠지며(드러내기) 보여 주고, 리시를 당길수록 선물상자 쪽으로 다가간다 */
@@ -278,7 +296,7 @@ function cuts(X){
       g.fillStyle = '#fff'; [[420, 420, 9], [440, 395, 6], [400, 445, 7], [452, 430, 5], [118, 462, 7], [96, 448, 5]].forEach(([x, y, r])=>{ g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); }); }
     if(i === 1){ world(g, PIC.bg, 0, 520, 620, 836);
       g.save(); g.globalCompositeOperation = 'screen'; const gr = g.createRadialGradient(111, 308, 6, 111, 308, 300); gr.addColorStop(0, 'rgba(255,236,190,.95)'); gr.addColorStop(1, 'rgba(255,190,140,0)'); g.fillStyle = gr; g.fillRect(0, 0, CW, CH); g.restore();
-      fig(g, X.sit, 300, 500, 330); }
+      fig(g, sunk(X.sit), 300, 500, 330); if(X.sit) ripple(g, 300, 500, 330 * X.sit.width / X.sit.height, 330, 0); }
     if(i === 2){ world(g, PIC.tug, 140, 760, 700, 943);
       g.save(); g.globalCompositeOperation = 'screen'; for(let j = 0; j < 3; j++){ const x0 = 40 + j * 150, gr = g.createLinearGradient(0, 0, 0, CH); gr.addColorStop(0, 'rgba(220,255,250,.3)'); gr.addColorStop(1, 'rgba(220,255,250,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(x0, 0); g.lineTo(x0 + 50, 0); g.lineTo(x0 + 170, CH); g.lineTo(x0 + 60, CH); g.closePath(); g.fill(); } g.restore();
       for(let j = 0; j < 9; j++) bubble(g, 120 + (j * 97) % 260, 80 + (j * 131) % 360, 8 + (j % 3) * 6);
@@ -326,7 +344,7 @@ function strip(g, X, o){
   const la = o.lines == null ? 1 : o.lines;
   if(la > 0){ g.globalAlpha = la; const dy = (1 - la) * 30;
     if(X.name) pill(g, '서프 버디 ' + String(X.name).slice(0, 10), W / 2, 1596 + dy, 44, '#fff', '#F2C9D3');
-    if(X.prize){ const tx = `건진 선물: ${X.prize.rank && X.prize.rank !== '참여상' ? X.prize.rank + ' ' : ''}${X.prize.n}`; g.textAlign = 'center'; g.fillStyle = INK; fit(g, tx, 880, 50, 900); g.fillText(tx, W / 2, 1752 + dy); }
+    if(X.prize){ const tx = `건진 선물: ${X.prize.ic} ${X.prize.short}`; g.textAlign = 'center'; g.fillStyle = INK; fit(g, tx, 880, 50, 900); g.fillText(tx, W / 2, 1752 + dy); }
     g.fillStyle = '#A0687E'; g.font = `800 30px ${FONT}`; g.textAlign = 'center'; g.fillText('surf.owenai.xyz/pepero', W / 2, 1822 + dy); g.globalAlpha = 1; }
   if(o.fly){ const [i, p] = o.fly, e = 1 - Math.pow(1 - p, 3), [sx, sy] = SLOTS[i], bw = 940, bh = bw * CH / CW, bx = (W - bw) / 2, by = (H - bh) / 2;
     const x = bx + (sx - bx) * e, y = by + (sy - by) * e, w = bw + (CW - bw) * e, h = bh + (CH - bh) * e;
@@ -483,9 +501,11 @@ function pickName(name){
 function ctl(){
   const el = $('pep-ctl'), hint = $('pep-hint'); if(!el) return;
   const ph = S ? S.ph : 'intro';
+  if(res && res.soldout){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>앗</span><b>선물이 모두 나갔어요</b><small>문제가 있으면 오웬에게 알려 주세요.</small></div></div>'; return; }
   if(res && ph !== 'pop'){
     const p = prizeOf(res); hint.textContent = '';
-    el.innerHTML = `<div class="pep-res"><img src="img/pepero/${stickerOf(p)}.webp" alt="" width="76" height="76" onerror="this.hidden=true"><div><span>${esc(p.rank || '선물')}</span><b>${esc(p.n)}</b><small>운영진이 확인하고 전해 드려요.<br>이 화면을 보여 주세요.</small></div></div>
+    el.innerHTML = `<div class="pep-res"><img src="img/pepero/${stickerOf(p)}.webp" alt="" width="76" height="76" onerror="this.hidden=true"><div><span>${esc(p.rank || '선물')}</span><b>${esc(p.n)}</b><small>${res.mine === false ? '이 이름은 다른 기기에서 이미 받았어요.<br>받은 폰에서 열어 주세요 — 문제가 있으면 오웬에게 알려 주세요.' : '아래 버튼으로 기프티콘을 열어<br>매장에서 보여 주세요.'}</small></div></div>
+      ${res.mine === false ? '' : '<button type="button" class="btn pep-big pep-open" data-popen>🎁 당첨된 기프티콘 열기</button>'}
       <button type="button" class="btn pep-big pep-brag" data-pimgsh>📸 인스타 스토리로 자랑하기</button>
       <div class="pep-share"><button type="button" class="btn sm" data-pimg>💾 포스터 저장</button><button type="button" class="btn sm mint" data-pvid>🎬 스토리 영상 만들기</button></div><div id="pep-vid" class="pep-vid"></div>
       <small class="pep-note">공유 창에서 Instagram › 스토리를 고르면 돼요</small>`;
@@ -496,7 +516,7 @@ function ctl(){
     el.innerHTML = `<p class="pep-intro"><b>11월 11일 아침, 낙산 해변</b>
       양양서핑학교 서프 버디, 라인업에서 파도를 기다리는데… 리시가 묵직해요. 발밑에 걸린 건 바다가 보낸 빼빼로 선물상자! 꽝은 없어요.</p>
       <button type="button" class="btn pep-big" data-pgo ${open && !wait ? '' : 'disabled'}>${!open ? (Date.now() < START ? '11월 11일에 열려요' : '이벤트가 끝났어요') : wait ? '확인하는 중…' : '🏖️ 해변으로 출발'}</button>
-      <small class="pep-note">한 이름에 한 번 · ${PRIZES.map(p=>esc(p.ic + ' ' + p.n)).join(' · ')}</small>`;
+      <small class="pep-note">24명 모두 하나씩 · 🍫 GS25 빼빼로 또는 🍦 베스킨라빈스 싱글레귤러 기프티콘</small>`;
     return;
   }
   const dots = (n, of) => `<div class="pep-dots" aria-hidden="true">${'<i class="on"></i>'.repeat(n)}${'<i></i>'.repeat(Math.max(0, of - n))}</div>`;
@@ -533,7 +553,7 @@ function loop(now){
   step(S, dt, RM);
   if(S.ph === 'walk' && S.w >= 4 && S.k > 1.6){ go(S, 'paddle'); splash(S, 420, 1300, 12); ctl(); }
   else if(S.ph === 'wait' && S.k > 2.8){ go(S, 'tug'); navigator.vibrate?.([30, 40, 30, 40, 60]); ctl(); }
-  else if(S.ph === 'pop' && S.k > 1.1){ go(S, 'reveal'); X.prize = prizeOf(res); navigator.vibrate?.([20, 40, 20]); sfx(sparkle); ctl(); }
+  else if(S.ph === 'pop' && S.k > 1.1 && res){ go(S, 'reveal'); X.prize = prizeOf(res); navigator.vibrate?.([20, 40, 20]); sfx(sparkle); ctl(); }
   paint(cv.getContext('2d'), S, X);
   raf = requestAnimationFrame(loop);
 }
@@ -564,7 +584,8 @@ function paddle(){
 function pull(){
   if(!S || S.ph !== 'tug') return;
   S.pulls++; splash(S, 487, 1320, 10); sfx((c, o, t)=>clap(c, o, t, .9)); navigator.vibrate?.(18);
-  if(S.pulls >= 3){ claim(); go(S, 'pop'); splash(S, 540, 1500, 20); }
+  if(S.pulls >= 3){ go(S, 'pop'); splash(S, 540, 1500, 20);
+    claim().then(()=>{ if(X) X.prize = prizeOf(res); }).catch(e=>{ go(S, 'tug'); S.pulls = 2; ctl(); say(/noname|notoken/.test(e && e.message) ? '선물을 받을 수 없는 이름이에요 — 오웬에게 알려 주세요' : '신호가 약해요 — 한 번 더 당겨 주세요'); }); }   // 서버가 답할 때까지 상자가 떠 있다
   ctl();
 }
 async function start(){
@@ -644,6 +665,8 @@ async function onClick(e){
   if(t.matches('[data-plook]')){ me.g = lookG; me.li = lookI; saveMe(); return play(); }
   if(t.matches('[data-pback]')) return enter();
   if(t.matches('[data-pgo]')) return start();
+  if(t.matches('[data-popen]')) return openGift(t);
+  if(t.matches('[data-pgclose]')) return closeGift();
   if(t.matches('[data-pstep]')) return walk();
   if(t.matches('[data-ppad]')){ if(e.detail === 0) paddle(); return; }   // 키보드 — 손가락은 pointerdown 이 맡는다
   if(t.matches('[data-ppull]')) return pull();
@@ -668,6 +691,25 @@ async function onClick(e){
     saveBlob(vid.blob, f.name); say('🎬 영상을 저장했어요');
   }
 }
+/* 기프티콘 보기 — 받은 폰에서만(열쇠). 그림은 화면에만 잠깐 두고 닫으면 지운다(기기·캐시·공유 그림에 안 남김) */
+function closeGift(){ const m = $('pp-gc'); if(!m) return; m.hidden = true; const im = m.querySelector('img'); if(im) im.removeAttribute('src'); }
+function sampleCard(){   // 시연용 가짜 카드 — 바코드 숫자 없음
+  const c = document.createElement('canvas'); c.width = 600; c.height = 900; const g = c.getContext('2d'), k = KINDS[res.id] || KINDS.pepero;
+  g.fillStyle = '#fff'; g.fillRect(0, 0, 600, 900); g.fillStyle = '#FFE1E8'; g.fillRect(0, 0, 600, 140);
+  g.textAlign = 'center'; g.fillStyle = INK; g.font = `900 40px ${FONT}`; g.fillText('시연용 예시', 300, 70); g.font = `800 26px ${FONT}`; g.fillText('실제 기프티콘 아님', 300, 112);
+  const im = PIC[k.pic]; if(im){ const f = 300 / Math.max(im.width, im.height); g.drawImage(im, 300 - im.width * f / 2, 200, im.width * f, im.height * f); }
+  g.fillStyle = INK; g.font = `900 34px ${FONT}`; g.fillText(k.n, 300, 580);
+  g.fillStyle = '#ddd'; for(let x = 90; x < 510; x += 14) g.fillRect(x, 640, 6 + (x * 7) % 6, 120);
+  g.fillStyle = '#E0607A'; g.font = `900 30px ${FONT}`; g.fillText('시연용 — 실제 기프티콘 아님', 300, 830); return c.toDataURL('image/png');
+}
+async function openGift(b){
+  if(!res || res.mine === false) return;
+  b.disabled = true; let src = null;
+  try{ src = DEMO ? sampleCard() : await rpc('gift_open', { p_name:me.name, p_token:tok(false) || '' }); }catch(e){}
+  b.disabled = false;
+  if(typeof src !== 'string' || !/^data:image\//.test(src)) return say('기프티콘을 열 수 없어요 — 받은 폰에서 열어 주세요 · 문제가 있으면 오웬에게');
+  const m = $('pp-gc'); m.querySelector('img').src = src; m.hidden = false; m.querySelector('[data-pgclose]').focus();
+}
 function boot(){
   const app = $('pep-app'); if(!app) return;
   app.addEventListener('click', onClick);
@@ -676,6 +718,7 @@ function boot(){
   app.addEventListener('pointerdown', e=>{ const b = e.target.closest('[data-ppad]'); if(!b || b.disabled) return; e.preventDefault(); paddle(); stop(); hold = setInterval(paddle, 300); });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(k=>app.addEventListener(k, stop));
   $('pp-q').addEventListener('input', paintList);
+  addEventListener('keydown', e=>{ if(e.key === 'Escape') closeGift(); });
   addEventListener('resize', ()=>{ if(!$('pp-play').hidden) sizeCv(); });
   if(DEMO){ const bd = $('pp-demo'); if(bd) bd.hidden = false; }
   let again = false; try{ again = localStorage.getItem(LSND) === '1'; }catch(e){}
@@ -684,5 +727,5 @@ function boot(){
   want(['bg']); loadMe(); enter(); pullWall();
 }
 boot();
-window._pepero = { PRIZES, LOOKS, pick, png, video, audio:{ bar, score, BEAT, REEL_END }, music, walk, paddle, pull, get res(){ return res; }, get S(){ return S; }, get wall(){ return wall; }, get me(){ return me; } };
+window._pepero = { KINDS, LOOKS, png, video, audio:{ bar, score, BEAT, REEL_END }, music, walk, paddle, pull, get res(){ return res; }, get S(){ return S; }, get wall(){ return wall; }, get me(){ return me; } };
 })();

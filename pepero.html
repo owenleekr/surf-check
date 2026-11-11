@@ -56,6 +56,11 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
 .pp-snd{ position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:8; width:48px; height:48px; border:0; border-radius:50%; background:#fff; font-size:22px; cursor:pointer;
   box-shadow:inset 0 -4px 0 rgba(60,30,60,.1), inset 0 3px 0 #fff, 0 4px 0 #E8D6B6, 0 8px 16px rgba(90,60,120,.18) }
 .pp-snd[aria-pressed="true"]{ background:#FFE1E8 }
+.pp-gc{ position:fixed; inset:0; z-index:20; background:rgba(20,10,30,.82); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:calc(16px + env(safe-area-inset-top)) 16px 24px }
+.pp-gc-in{ width:100%; max-width:440px; background:#fff; border-radius:24px; padding:14px; text-align:center }
+.pp-gc-in p{ margin:4px 0 10px; font-weight:900; font-size:17px; line-height:1.4 } .pp-gc-in small{ font-weight:700; font-size:13px; color:var(--ink2) }
+.pp-gc-in img{ display:block; width:100%; height:auto; border-radius:12px; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; margin-bottom:12px }
+.pep-open{ background:linear-gradient(180deg,#B8F2DA,#7FDDB6) !important; box-shadow:inset 0 -7px 0 rgba(20,110,80,.18), inset 0 5px 0 rgba(255,255,255,.55), 0 7px 0 #4FB98E, 0 14px 22px rgba(79,185,142,.3) !important }
 .pp-toast{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:var(--ink); color:#fff; font-weight:800; font-size:14px;
   border-radius:999px; padding:10px 18px; z-index:9; max-width:calc(100vw - 32px); text-align:center }
 .pep-stage canvas{ display:block; margin:6px auto 0; height:min(58vh, calc((100vw - 40px) * 16 / 9)); max-width:100%; aspect-ratio:9/16; border:5px solid #fff; border-radius:30px; background:#A9DBF5; touch-action:manipulation;
@@ -122,6 +127,10 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
     <p id="pep-hint" class="pep-hint" aria-live="polite"></p><div id="pep-ctl" class="pep-ctl"></div><div id="pep-wall" class="pep-wall"></div>
   </section>
   <p class="pp-foot">양양서핑학교 6기 · <a href="/surfshare">SurfShare 열기</a></p>
+  <div id="pp-gc" class="pp-gc" role="dialog" aria-modal="true" aria-label="당첨된 기프티콘" hidden><div class="pp-gc-in">
+    <p>매장에서 이 화면을 보여 주세요<br><small>화면 밝기를 올리면 잘 찍혀요</small></p>
+    <img alt="당첨된 기프티콘" draggable="false" oncontextmenu="return false">
+    <button type="button" class="btn pep-big" data-pgclose>닫기</button></div></div>
   <button type="button" id="pp-snd" class="pp-snd" aria-pressed="false" aria-label="배경 음악 켜기">🔇</button>
   <div id="pp-toast" class="pp-toast" role="status" hidden></div>
 </main>
