@@ -184,10 +184,10 @@ for(const w of [320, 360, 390]){
   ok(a <= 0 && c <= 0 && d <= 0 && cv, `${w}px 넘침 없음 ${JSON.stringify({ a, c, d, cv })}`);
   ok(!errs.length, '오류 없음 ' + errs.join(' | ')); await b.close(); }
 
-/* 4) 뽑기 마감(11.12 00:00) 뒤 — 페이지는 열리고, 이 기기가 받은 이름만 「다시 보기」, 남이 받은 이름 「받음 ✓」, 나머지 「마감」 */
+/* 4) 뽑기 마감(11.13 00:00) 뒤 — 페이지는 열리고, 이 기기가 받은 이름만 「다시 보기」, 남이 받은 이름 「받음 ✓」, 나머지 「마감」 */
 { const row = n => ({ id:'pepero26:' + n, target:'pepero:2026', user_id:'roster:' + n, name:n, cohort:'6기', text:n === '정선아' ? 'br|🍦 베스킨라빈스 아이스크림' : 'pepero|🍫 빼빼로', created_at:now });
   const TOK = 'b'.repeat(32), ls = { 'lineup.pepero.tok:정선아':TOK, 'lineup.pepero2026:정선아':JSON.stringify({ id:'br', text:'br|🍦 베스킨라빈스 아이스크림', at:Date.now(), sent:1, mine:true }) };
-  for(const at of [Date.parse('2026-11-12T00:00:30+09:00'), OFF]){
+  for(const at of [Date.parse('2026-11-13T00:00:30+09:00'), OFF]){
     const { b, p, errs, posts, rpcs, S, sleep } = await page([...talk, row('김도훈'), row('정선아')], { at, ls });
     const e = await S(()=>{ const c = n => { const x = document.querySelector(`[data-name="${n}"]`); return { dis:x.disabled, t:x.textContent, mine:x.hasAttribute('data-mine') }; };
       return { note:document.getElementById('pp-closed').hidden ? '' : document.getElementById('pp-closed').textContent, top:document.getElementById('pp-mine').textContent, kim:c('김도훈'), tae:c('김태은'), jin:c('장진혁'), sun:c('정선아'), off:document.querySelectorAll('.pp-name.off').length, again:document.getElementById('pp-again').hidden }; });

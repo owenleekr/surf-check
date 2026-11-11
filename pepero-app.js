@@ -7,9 +7,9 @@
    당첨 뒤 인스타 스토리용 그림(1080×1920 PNG)과 짧은 영상(약 11초)을 폰에서 만든다 — 서버로는 당첨 한 줄만 간다.
    그림은 클레이 일러스트(img/pepero, GPT·제미나이로 그려 다듬음) 위에 카메라 이동·색 보정·빛 번짐·비네트·필름 결을 얹은 시네마틱 연출. */
 (function(){
-/* 이벤트 기간(한국 시간) — 뽑기는 START ~ DRAW_END(11.11 자정)까지. 페이지는 그 뒤에도 계속 열린다(받은 사람은 「내 선물 다시 보기」).
+/* 이벤트 기간(한국 시간) — 뽑기는 START ~ DRAW_END(11.12 자정, 하루 연장)까지. 페이지는 그 뒤에도 계속 열린다(받은 사람은 「내 선물 다시 보기」).
    여기 시계는 화면만 정한다 — 마감은 서버(gift_claim 의 closed)가 지킨다. 앱 띠는 pepero.js 따로 */
-const START = Date.parse('2026-11-11T00:00:00+09:00'), DRAW_END = Date.parse('2026-11-12T00:00:00+09:00');
+const START = Date.parse('2026-11-11T00:00:00+09:00'), DRAW_END = Date.parse('2026-11-13T00:00:00+09:00');
 const TARGET = 'pepero:2026', LS = 'lineup.pepero2026:', LSME = 'lineup.pepero.me';
 /* 경품 — 24명에게 기프티콘 하나씩(GS25 빼빼로 15 · 배스킨라빈스 싱글레귤러 9). 누가 무엇을 받을지는 서버가 정한다(supabase-gift.sql 의 gift_claim).
    기프티콘 그림은 서버에만 있고(gift_open, 받은 폰의 열쇠가 맞을 때만) 이 기기에도 공유 그림에도 남기지 않는다 */
@@ -613,7 +613,7 @@ function pickName(name){
 function ctl(){
   const el = $('pep-ctl'), hint = $('pep-hint'); if(!el) return;
   const ph = S ? S.ph : 'intro';
-  if(res && res.closed){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>🌙</span><b>선물 지급이 마감됐어요</b><small>빼빼로 이벤트 선물 지급은 11월 11일 자정에 마감됐어요.</small></div></div><button type="button" class="btn sm ghost" data-pback>‹ 처음으로</button>'; return; }
+  if(res && res.closed){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>🌙</span><b>선물 지급이 마감됐어요</b><small>빼빼로 이벤트 선물 지급은 11월 12일 자정에 마감됐어요.</small></div></div><button type="button" class="btn sm ghost" data-pback>‹ 처음으로</button>'; return; }
   if(res && res.soldout){ hint.textContent = ''; el.innerHTML = '<div class="pep-res"><div><span>앗</span><b>선물이 모두 나갔어요</b><small>문제가 있으면 오웬에게 알려 주세요.</small></div></div>'; return; }
   if(['prize', 'alone', 'gather', 'ride', 'together'].includes(ph)){ const p = prizeOf(res); hint.textContent = ph === 'prize' ? (p ? p.short + ' 당첨!' : '') : (CAP[ph] || [])[1] || ''; el.innerHTML = '<button type="button" class="btn sm ghost" data-pskip>다음 장면 ›</button>'; return; }
   if(res && ph !== 'pop' && (!S || !S.re || ph === 'reveal')){
@@ -645,7 +645,7 @@ function ctl(){
 }
 function paintWall(){
   const el = $('pep-wall'); if(!el) return;
-  el.innerHTML = `<h4>🎉 오늘 당첨 소식</h4>${wall.length ? wall.slice(0, 40).map(r=>`<div class="pep-w${me && r.name === me.name ? ' me' : ''}"><b>${esc(String(r.name || '').slice(0, 20))}</b><span>${esc(seen(r).slice(0, 40))}</span></div>`).join('') : '<p class="pep-note">아직 소식이 없어요 · 첫 선물을 건져 보세요</p>'}`;
+  el.innerHTML = `<h4>🎉 당첨 소식</h4>${wall.length ? wall.slice(0, 40).map(r=>`<div class="pep-w${me && r.name === me.name ? ' me' : ''}"><b>${esc(String(r.name || '').slice(0, 20))}</b><span>${esc(seen(r).slice(0, 40))}</span></div>`).join('') : '<p class="pep-note">아직 소식이 없어요 · 첫 선물을 건져 보세요</p>'}`;
 }
 function paintVid(){
   const el = $('pep-vid'); if(!el) return;

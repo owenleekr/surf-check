@@ -50,7 +50,7 @@ begin
   if r.id is not null then
     return jsonb_build_object('kind', r.kind, 'mine', r.token_hash = crypt(p_token, r.token_hash));
   end if;
-  if now() >= timestamptz '2026-11-12 00:00:00+09' then return jsonb_build_object('kind', null, 'closed', true); end if;   -- 11/12 자정에 새 지급 마감(받은 이름은 계속 열 수 있음)
+  if now() >= timestamptz '2026-11-13 00:00:00+09' then return jsonb_build_object('kind', null, 'closed', true); end if;   -- 11/13 0시(11/12 자정)에 새 지급 마감, 하루 연장(받은 이름은 계속 열 수 있음)
   select id into pick from gift_pool where assigned_to is null order by random() limit 1 for update skip locked;
   if pick is null then return jsonb_build_object('kind', null, 'soldout', true); end if;
   update gift_pool set assigned_to = p_name, token_hash = crypt(p_token, gen_salt('bf', 6)), assigned_at = now()
