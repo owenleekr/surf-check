@@ -26,6 +26,7 @@ export async function open(data, me, opts={}){
     if(u.includes('rpc/note_box')) return J(200,{inbox:[],sent:[],unread:0});
     if(u.includes('rest/v1/')) return J(200,[]);
     if(/smilecdn|wsbfarm|supabase/.test(u)) return r.abort(); r.continue(); });
+  if(opts.init) await p.evaluateOnNewDocument(opts.init, opts.initArg);   // 시계 바꾸기 등 — 페이지 스크립트보다 먼저
   if(opts.hour!=null) await p.evaluateOnNewDocument(h=>{ const g=Date.prototype.getHours; Date.prototype.getHours=function(){ return h; }; }, opts.hour);
   await p.goto(PAGE,{waitUntil:'domcontentloaded'});
   await p.evaluate(m=>{ localStorage.clear(); localStorage.setItem('lineup.share.invited','1'); localStorage.setItem('lineup.share.onb','1'); localStorage.setItem('lineup.share.me', JSON.stringify({cohort:'6기',token:'T',...m})); }, me);

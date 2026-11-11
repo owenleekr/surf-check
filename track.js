@@ -174,7 +174,7 @@ const ACT = { checkins:{ POST:b=>b && b.active === false ? 'checkout' : 'checkin
   rides:{ POST:b=>b && /^bus_/.test(String(b.dir || '')) ? 'bus_report' : 'ride_create', PATCH:'ride_join' },
   stays:{ POST:'stay_create', PATCH:'stay_join' }, parties:{ POST:'bolt_create', PATCH:'bolt_join' },
   stay_reviews:{ POST:'stay_review' }, reacts:{ POST:'react' }, drills:{ POST:'drill' }, place_edits:{ POST:'place_edit' }, places:{ PATCH:'place_edit' },
-  place_talk:{ POST:b=>{ const g = String(b && b.target || ''); return /^bd:/.test(g) ? 'bday_comment' : /^req:/.test(g) ? 'bus_request' : /^add:/.test(g) ? 'place_add' : 'food_review'; } },
+  place_talk:{ POST:b=>{ const g = String(b && b.target || ''); return /^bd:/.test(g) ? 'bday_comment' : /^pepero:/.test(g) ? 'pepero_win' : /^req:/.test(g) ? 'bus_request' : /^add:/.test(g) ? 'place_add' : 'food_review'; } },
   'rpc/note_send':{ POST:'note_send' } };
 let busAt = 0;
 F = window.fetch;
