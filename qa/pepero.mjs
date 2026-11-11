@@ -41,7 +41,9 @@ async function playThrough(S, sleep){
   await S(()=>document.querySelector('[data-pgo]').click()); await sleep(300);
   await S(()=>{ for(let i = 0; i < 4; i++) _pepero.walk(); }); await sleep(1900);
   await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
-  await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(1700);
+  await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
+  for(let i = 0; i < 3; i++){ await S(()=>_pepero.next()); await sleep(150); }   // 혼자 → 버디들 → 다 같이(건너뛰기)
+  await sleep(300);
 }
 const blob = (S, fn) => S(async f => { const b = await window._pepero[f](); const a = new Uint8Array(await b.arrayBuffer()); let s = ''; for(let i = 0; i < a.length; i += 32768) s += String.fromCharCode(...a.subarray(i, i + 32768));
   let w = 0, h = 0; if(/image/.test(b.type)){ const im = await createImageBitmap(b); w = im.width; h = im.height; } return { type:b.type, size:b.size, w, h, b64:btoa(s) }; }, fn);
@@ -78,7 +80,7 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   await S(()=>document.querySelector('[data-pgo]').click()); await sleep(400);
   ok(await S(()=>_pepero.S.ph) === 'walk', '해변으로 출발 → 모래사장 걷기');
   for(let i = 0; i < 4; i++){ await S(()=>document.querySelector('[data-pstep]').click()); await sleep(150); }
-  ok(/1111/.test(await S(()=>document.getElementById('pep-hint').textContent)), '보드 넷 지나기 → 「1111」');
+  ok(/1111/.test(await S(()=>document.getElementById('pep-hint').textContent)), '보드 넷 세기 → 「1111」');
   await sleep(1800);
   ok(await S(()=>_pepero.S.ph) === 'paddle', '→ 라인업까지 패들');
   await shot(p, 'pepero-4-paddle');
@@ -90,7 +92,11 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
   ok(!posts.some(x=>x[0].startsWith('place_talk')), '끌어올리기 전엔 아무것도 안 보냄');
   await S(()=>document.getElementById('pep-cv').click()); await sleep(100);   // 그림을 눌러도 당겨진다
   for(let i = 0; i < 2; i++){ await S(()=>document.querySelector('[data-ppull]').click()); await sleep(100); }
-  await sleep(1700);
+  await sleep(2100);
+  ok(await S(()=>_pepero.S.ph) === 'alone', '선물 뒤 「여전히 혼자라 쓸쓸해요」');
+  await S(()=>document.querySelector('[data-pskip]').click()); await sleep(200);
+  ok(await S(()=>_pepero.S.ph) === 'gather', '다음 장면 → 버디들이 모여요');
+  await S(()=>document.getElementById('pep-cv').click()); await sleep(200); await S(()=>document.getElementById('pep-cv').click()); await sleep(300);
   const rv = await S(()=>({ ph:_pepero.S.ph, res:_pepero.res, card:document.querySelector('.pep-res')?.textContent.replace(/\s+/g, ' '), open:!!document.querySelector('[data-popen]') }));
   ok(/작은 선물이지만, 함께 파도 위에서 나눈 마음을 나눠요/.test(await S(()=>document.querySelector('.pp-letter')?.textContent || '')), '공개 뒤 편지 카드');
   ok(rv.ph === 'reveal' && rv.res && rv.res.id === 'br' && rv.res.mine === true && /베스킨라빈스 싱글레귤러/.test(rv.card) && rv.open, '선물 공개(서버가 정한 종류) + 기프티콘 열기 버튼: ' + rv.card);
@@ -194,7 +200,8 @@ for(const w of [320, 360, 390]){
   await S(()=>document.querySelector('[data-pgo]').click()); await sleep(300);
   await S(()=>{ for(let i = 0; i < 4; i++) _pepero.walk(); }); await sleep(1900);
   await S(()=>{ for(let i = 0; i < 5; i++) _pepero.paddle(); }); await sleep(3200);
-  await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(1600);
+  await S(()=>{ for(let i = 0; i < 3; i++) _pepero.pull(); }); await sleep(2100);
+  for(let i = 0; i < 3; i++){ await S(()=>_pepero.next()); await sleep(150); }
   ok(await S(()=>_pepero.S.ph === 'reveal' && !!_pepero.res && /\(시연\)/.test(document.getElementById('pep-wall').textContent)), '시연: 선물 공개 + 소식엔 (시연)');
   await S(()=>document.querySelector('[data-popen]').click()); await sleep(400);
   ok(await S(()=>!document.getElementById('pp-gc').hidden && /^data:image\/png/.test(document.querySelector('#pp-gc img').src)), '시연: 예시 카드(가짜)');
