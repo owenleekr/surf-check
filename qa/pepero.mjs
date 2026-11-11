@@ -17,7 +17,7 @@ let fail = 0; const ok = (c, m) => { console.log((c ? '✔' : '✘') + ' ' + m);
 const CORS = { 'Access-Control-Allow-Origin':'*', 'Access-Control-Allow-Headers':'*', 'Access-Control-Allow-Methods':'*' };
 /* 페이지 열기 — supabase 는 가짜로 받는다(place_talk 읽기 · 쓰기 기록) */
 async function page(rows, opts = {}){
-  const b = await puppeteer.launch({ executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless:'new' });
+  const b = await puppeteer.launch({ executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless:'new', args:['--autoplay-policy=no-user-gesture-required'] });
   const p = await b.newPage(), errs = [], posts = [];
   p.on('pageerror', e=>errs.push(String(e).slice(0, 160)));
   p.on('console', m=>{ if(m.type() === 'error' && !/Failed to load resource|net::ERR/.test(m.text())) errs.push('console:' + m.text().slice(0, 140)); });
@@ -44,6 +44,10 @@ const pickName = async (S, sleep, n) => { await S(n=>document.querySelector(`[da
     wall:document.querySelectorAll('#pep-wall .pep-w').length }));
   ok(en.names.length === 24 && !en.names.includes('이성현') && !en.names.includes('루비') && en.names.includes('김도훈') && en.coach === 6 && en.grp === '양양서핑학교 6기,코치·매니저', `명단 24명(6기 18 + 코치·매니저 6, 이성현·루비 등 뺌): ${en.names.length}`);
   await shot(p, 'pepero-1-enter');
+  await S(()=>document.getElementById('pp-snd').click());
+  ok(await S(()=>document.getElementById('pp-snd').getAttribute('aria-pressed') === 'true' && localStorage.getItem('lineup.pepero.sound') === '1'), '🔊 배경 음악 켜기 · 기억');
+  await S(()=>document.getElementById('pp-snd').click());
+  ok(await S(()=>document.getElementById('pp-snd').textContent === '🔇' && localStorage.getItem('lineup.pepero.sound') === '0'), '🔇 끄기');
   ok(await S(()=>/매니저/.test(document.querySelector('[data-name="김법성"]').textContent) && /교장/.test(document.querySelector('[data-name="이승대"]').textContent)), '이승대 교장 · 김법성 매니저 표시');
   await p.type('#pp-q', '진혁'); await sleep(200);
   const q = await S(()=>[...document.querySelectorAll('[data-name]')].map(x=>x.textContent));

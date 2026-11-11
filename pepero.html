@@ -49,10 +49,13 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
 .pp-look img{ width:auto; height:150px; max-width:100%; object-fit:contain; filter:drop-shadow(0 6px 6px rgba(60,30,60,.18)) }
 .pp-look span{ font-weight:900; font-size:13px; color:var(--ink) }
 .pp-look.on{ background:#FFE1E8; transform:translateY(-4px); box-shadow:inset 0 -5px 0 rgba(200,60,100,.12), 0 9px 0 #E86F86, 0 0 0 3px #FF8FA3 }
-.pp-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px }
+.pp-top{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:2px; padding-right:58px }
 .pp-top b{ font-size:14px; font-weight:900; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
 .pp-foot{ margin-top:18px; text-align:center; font-size:12.5px; color:var(--ink2) } .pp-foot a{ color:#C2456A; font-weight:800 }
 .pp-demo{ margin:0 auto 10px; width:max-content; max-width:100%; background:#2B2340; color:#FFE08A; font-weight:900; font-size:12.5px; border-radius:999px; padding:5px 14px }
+.pp-snd{ position:fixed; top:calc(10px + env(safe-area-inset-top)); right:12px; z-index:8; width:48px; height:48px; border:0; border-radius:50%; background:#fff; font-size:22px; cursor:pointer;
+  box-shadow:inset 0 -4px 0 rgba(60,30,60,.1), inset 0 3px 0 #fff, 0 4px 0 #E8D6B6, 0 8px 16px rgba(90,60,120,.18) }
+.pp-snd[aria-pressed="true"]{ background:#FFE1E8 }
 .pp-toast{ position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:var(--ink); color:#fff; font-weight:800; font-size:14px;
   border-radius:999px; padding:10px 18px; z-index:9; max-width:calc(100vw - 32px); text-align:center }
 .pep-stage canvas{ display:block; margin:6px auto 0; height:min(58vh, calc((100vw - 40px) * 16 / 9)); max-width:100%; aspect-ratio:9/16; border:5px solid #fff; border-radius:30px; background:#A9DBF5; touch-action:manipulation;
@@ -119,6 +122,7 @@ button:focus-visible, input:focus-visible{ outline:3px solid #6FD0EA; outline-of
     <p id="pep-hint" class="pep-hint" aria-live="polite"></p><div id="pep-ctl" class="pep-ctl"></div><div id="pep-wall" class="pep-wall"></div>
   </section>
   <p class="pp-foot">양양서핑학교 6기 · <a href="/surfshare">SurfShare 열기</a></p>
+  <button type="button" id="pp-snd" class="pp-snd" aria-pressed="false" aria-label="배경 음악 켜기">🔇</button>
   <div id="pp-toast" class="pp-toast" role="status" hidden></div>
 </main>
 <script src="config.js"></script>
